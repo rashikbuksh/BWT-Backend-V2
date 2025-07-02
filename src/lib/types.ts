@@ -50,7 +50,20 @@ export interface ColumnProps {
     | 'completed_date'
     | 'estimated_date'
     | 'ready_for_delivery_date'
-    | 'status_update_date';
+    | 'status_update_date'
+    | 'effective_date'
+    | 'late_time'
+    | 'early_exit_before'
+    | 'first_half_end'
+    | 'break_time_end'
+    | 'from_date'
+    | 'to_date'
+    | 'dob'
+    | 'temporary_from_date'
+    | 'temporary_to_date'
+    | 'punch_time'
+    | 'entry_time'
+    | 'exit_time';
 }
 
 export interface PublicUrlProps { url: string; method: string }
