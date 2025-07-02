@@ -1,0 +1,63 @@
+{
+  "name": "eub-backend-v2",
+  "type": "module",
+  "version": "1.0.1",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tsx watch --watch-preserve-output --clear-screen=false src/index.ts",
+    "start": "node ./dist/src/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "cross-env NODE_ENV=test vitest",
+    "build": "tsc && tsc-alias",
+    "prepare": "husky",
+    "precommit": "lint-staged --allow-empty",
+    "db-generate": "drizzle-kit generate",
+    "db-migrate": "drizzle-kit migrate",
+    "db-drop": "drizzle-kit drop",
+    "db-introspect": "drizzle-kit introspect",
+    "db-push": "drizzle-kit push",
+    "db-studio": "drizzle-kit studio --port 4000",
+    "deploy": "git pull && npm i && pm2 restart bwt-backend --update-env",
+    "deploy-dev": "git pull && npm i && pm2 restart bwt-dev --update-env"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "@hono/zod-openapi": "^0.19.6",
+    "@scalar/hono-api-reference": "^0.8.9",
+    "bcrypt-ts": "^7.0.0",
+    "dotenv": "^16.5.0",
+    "dotenv-expand": "^12.0.2",
+    "drizzle-orm": "^0.43.1",
+    "drizzle-zod": "^0.5.1",
+    "hono": "^4.7.9",
+    "hono-pino": "^0.8.0",
+    "nanoid": "^5.1.5",
+    "pg": "^8.16.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "stoker": "1.4.2",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.13.0",
+    "@types/node": "^22.15.18",
+    "@types/pg": "^8.15.1",
+    "cross-env": "^7.0.3",
+    "drizzle-kit": "^0.31.1",
+    "eslint": "^9.26.0",
+    "eslint-plugin-format": "^1.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.0.0",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "eslint . --fix"
+    ]
+  }
+}
