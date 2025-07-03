@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['hr.challan_entry'];
+const tags = ['hr.stock'];
 
 export const list = createRoute({
-  path: '/hr/challan-entry',
+  path: '/hr/stock',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of challan_entry',
+      'The list of stock',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/hr/challan-entry',
+  path: '/hr/stock',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The challan_entry to create',
+      'The stock to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created challan_entry',
+      'The created stock',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/hr/challan-entry/{uuid}',
+  path: '/hr/stock/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested challan_entry',
+      'The requested stock',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'challan_entry not found',
+      'stock not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/hr/challan-entry/{uuid}',
+  path: '/hr/stock/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The challan_entry updates',
+      'The stock updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated challan_entry',
+      'The updated stock',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'challan_entry not found',
+      'stock not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/challan-entry/{uuid}',
+  path: '/hr/stock/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'challan_entry deleted',
+      description: 'stock deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'challan_entry not found',
+      'stock not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),

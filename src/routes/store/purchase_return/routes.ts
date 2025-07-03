@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['hr.challan_entry'];
+const tags = ['hr.purchase_return'];
 
 export const list = createRoute({
-  path: '/hr/challan-entry',
+  path: '/hr/purchase-return',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of challan_entry',
+      'The list of purchase_return',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/hr/challan-entry',
+  path: '/hr/purchase-return',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The challan_entry to create',
+      'The purchase_return to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created challan_entry',
+      'The created purchase_return',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/hr/challan-entry/{uuid}',
+  path: '/hr/purchase-return/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested challan_entry',
+      'The requested purchase_return',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'challan_entry not found',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/hr/challan-entry/{uuid}',
+  path: '/hr/purchase-return/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The challan_entry updates',
+      'The purchase_return updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated challan_entry',
+      'The updated purchase_return',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'challan_entry not found',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/challan-entry/{uuid}',
+  path: '/hr/purchase-return/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'challan_entry deleted',
+      description: 'purchase_return deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'challan_entry not found',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
