@@ -11,16 +11,16 @@ export const selectSchema = createSelectSchema(diagnosis);
 export const insertSchema = createInsertSchema(
   diagnosis,
   {
-    uuid: schema => schema.uuid.length(21),
+    uuid: schema => schema.uuid.length(15),
     order_uuid: schema => schema.order_uuid.min(1),
-    engineer_uuid: schema => schema.engineer_uuid.length(21),
+    engineer_uuid: schema => schema.engineer_uuid.length(15),
     problems_uuid: schema => schema.problems_uuid.array().optional(),
     problem_statement: schema => schema.problem_statement.optional(),
     status: schema => schema.status.optional(),
     status_update_date: schema => schema.status_update_date.optional(),
     proposed_cost: z.number().optional().default(0),
     is_proceed_to_repair: schema => schema.is_proceed_to_repair.optional(),
-    created_by: schema => schema.created_by.length(21),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

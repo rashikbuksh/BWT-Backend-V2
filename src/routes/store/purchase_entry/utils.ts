@@ -10,9 +10,9 @@ export const selectSchema = createSelectSchema(purchase_entry);
 export const insertSchema = createInsertSchema(
   purchase_entry,
   {
-    uuid: schema => schema.uuid.length(21),
-    purchase_uuid: schema => schema.purchase_uuid.length(21),
-    product_uuid: schema => schema.product_uuid.length(21),
+    uuid: schema => schema.uuid.length(15),
+    purchase_uuid: schema => schema.purchase_uuid.length(15),
+    product_uuid: schema => schema.product_uuid.length(15),
     serial_no: schema => schema.serial_no.length(50),
     quantity: schema => schema.quantity.min(1, {
       message: 'quantity must be at least 1',
@@ -21,11 +21,11 @@ export const insertSchema = createInsertSchema(
       message: 'price_per_unit must be at least 0',
     }),
     discount: schema => schema.discount.optional(),
-    warehouse_uuid: schema => schema.warehouse_uuid.length(21),
-    rack_uuid: schema => schema.rack_uuid.length(21),
-    floor_uuid: schema => schema.floor_uuid.length(21),
-    box_uuid: schema => schema.box_uuid.length(21),
-    created_by: schema => schema.created_by.length(21),
+    warehouse_uuid: schema => schema.warehouse_uuid.length(15),
+    rack_uuid: schema => schema.rack_uuid.length(15),
+    floor_uuid: schema => schema.floor_uuid.length(15),
+    box_uuid: schema => schema.box_uuid.length(15),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

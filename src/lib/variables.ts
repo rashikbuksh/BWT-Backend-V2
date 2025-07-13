@@ -5,7 +5,7 @@ import type { ColumnProps } from './types';
 
 export function defaultUUID(column = 'uuid') {
   return char(column, {
-    length: 21,
+    length: 15,
   });
 }
 

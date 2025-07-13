@@ -107,6 +107,9 @@ export const order = work.table('order', {
   ),
   ready_for_delivery_date: DateTime('ready_for_delivery_date').default(sql`null`),
   bill_amount: PG_DECIMAL('bill_amount').default(sql`0`),
+  is_home_repair: boolean('is_home_repair').default(false),
+  proposed_cost: PG_DECIMAL('proposed_cost').default(sql`0`),
+  is_challan_needed: boolean('is_challan_needed').default(false),
 });
 export const statusEnum = pgEnum('status', [
   'pending',
