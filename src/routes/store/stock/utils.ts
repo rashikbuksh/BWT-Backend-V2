@@ -10,12 +10,12 @@ export const selectSchema = createSelectSchema(stock);
 export const insertSchema = createInsertSchema(
   stock,
   {
-    uuid: schema => schema.uuid.length(21),
-    product_uuid: schema => schema.product_uuid.length(21),
+    uuid: schema => schema.uuid.length(15),
+    product_uuid: schema => schema.product_uuid.length(15),
     warehouse_1: schema => schema.warehouse_1.optional(),
     warehouse_2: schema => schema.warehouse_2.optional(),
     warehouse_3: schema => schema.warehouse_3.optional(),
-    created_by: schema => schema.created_by.length(21),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

@@ -10,14 +10,14 @@ export const selectSchema = createSelectSchema(purchase);
 export const insertSchema = createInsertSchema(
   purchase,
   {
-    uuid: schema => schema.uuid.length(21),
-    vendor_uuid: schema => schema.vendor_uuid.length(21),
-    branch_uuid: schema => schema.branch_uuid.length(21),
+    uuid: schema => schema.uuid.length(15),
+    vendor_uuid: schema => schema.vendor_uuid.length(15),
+    branch_uuid: schema => schema.branch_uuid.length(15),
     date: schema => schema.date.regex(dateTimePattern, {
       message: 'date must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     payment_mode: schema => schema.payment_mode.min(1),
-    created_by: schema => schema.created_by.length(21),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

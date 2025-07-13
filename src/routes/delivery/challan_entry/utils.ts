@@ -10,10 +10,10 @@ export const selectSchema = createSelectSchema(challan_entry);
 export const insertSchema = createInsertSchema(
   challan_entry,
   {
-    uuid: schema => schema.uuid.length(21),
-    challan_uuid: schema => schema.challan_uuid.length(21),
-    order_uuid: schema => schema.order_uuid.length(21),
-    created_by: schema => schema.created_by.length(21),
+    uuid: schema => schema.uuid.length(15),
+    challan_uuid: schema => schema.challan_uuid.length(15),
+    order_uuid: schema => schema.order_uuid.length(15),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

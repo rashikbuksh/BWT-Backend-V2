@@ -8,10 +8,10 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['hr.purchase_entry'];
+const tags = ['store.purchase_entry'];
 
 export const list = createRoute({
-  path: '/hr/purchase-entry',
+  path: '/store/purchase-entry',
   method: 'get',
   tags,
   responses: {
@@ -23,7 +23,7 @@ export const list = createRoute({
 });
 
 export const create = createRoute({
-  path: '/hr/purchase-entry',
+  path: '/store/purchase-entry',
   method: 'post',
   request: {
     body: jsonContentRequired(
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/hr/purchase-entry/{uuid}',
+  path: '/store/purchase-entry/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -68,7 +68,7 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/hr/purchase-entry/{uuid}',
+  path: '/store/purchase-entry/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/purchase-entry/{uuid}',
+  path: '/store/purchase-entry/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,

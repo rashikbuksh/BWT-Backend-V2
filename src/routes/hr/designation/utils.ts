@@ -10,7 +10,7 @@ export const selectSchema = createSelectSchema(designation);
 export const insertSchema = createInsertSchema(
   designation,
   {
-    uuid: schema => schema.uuid.length(21),
+    uuid: schema => schema.uuid.length(15),
     designation: schema => schema.designation.min(1),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',

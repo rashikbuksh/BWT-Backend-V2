@@ -10,10 +10,10 @@ export const selectSchema = createSelectSchema(purchase_return);
 export const insertSchema = createInsertSchema(
   purchase_return,
   {
-    uuid: schema => schema.uuid.length(21),
-    purchase_uuid: schema => schema.purchase_uuid.length(21),
-    warehouse_uuid: schema => schema.warehouse_uuid.length(21),
-    created_by: schema => schema.created_by.length(21),
+    uuid: schema => schema.uuid.length(15),
+    purchase_uuid: schema => schema.purchase_uuid.length(15),
+    warehouse_uuid: schema => schema.warehouse_uuid.length(15),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

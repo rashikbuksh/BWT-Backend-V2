@@ -10,7 +10,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
     openapi: '3.0.0',
     info: {
       title: packageJSON.name,
-      description: 'EUB API Documentation',
+      description: 'BWT API Documentation',
       contact: { name: 'RBR', email: 'rafsan@fortunezip.com' },
       version: packageJSON.version,
     },
