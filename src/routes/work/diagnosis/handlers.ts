@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, inArray, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -12,7 +12,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { diagnosis, info, order } from '../schema';
+import { diagnosis, info, order, problem } from '../schema';
 
 const info_user = alias(users, 'info_user');
 
@@ -116,6 +116,73 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   const data = await resultPromise;
 
+  // Gather all unique UUIDs from both diagnosis.problems_uuid and order_problems_uuid
+  const diagnosisProblemsUUIDs = data
+    .filter(d => d.problems_uuid != null)
+    .map(d => d.problems_uuid)
+    .flat();
+
+  const orderProblemsUUIDs = data
+    .filter(d => d.order_problems_uuid != null)
+    .map(d => d.order_problems_uuid)
+    .flat();
+
+  const allProblemsUUIDs = Array.from(
+    new Set([...diagnosisProblemsUUIDs, ...orderProblemsUUIDs]),
+  ).filter((uuid): uuid is string => typeof uuid === 'string');
+
+  let problemsMap: Record<string, string> = {};
+
+  if (allProblemsUUIDs.length > 0) {
+    const problems = await db
+      .select({
+        name: problem.name,
+        uuid: problem.uuid,
+      })
+      .from(problem)
+      .where(inArray(problem.uuid, allProblemsUUIDs));
+
+    problemsMap = problems.reduce((acc, problem) => {
+      acc[problem.uuid] = problem.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
+  // Define type for diagnosis with extras
+  type DiagnosisWithExtras = typeof data[number] & {
+    diagnosis_problems_name?: string[];
+    order_problems_name?: string[];
+  };
+
+  (data as DiagnosisWithExtras[]).forEach((diagnosis) => {
+    // diagnosis_problems_name
+    if (
+      diagnosis.problems_uuid
+      && Array.isArray(diagnosis.problems_uuid)
+    ) {
+      diagnosis.diagnosis_problems_name = diagnosis.problems_uuid.map(
+        uuid => problemsMap[uuid] || uuid,
+      );
+    }
+    else {
+      diagnosis.diagnosis_problems_name = [];
+    }
+
+    // order_problems_name
+    if (
+      diagnosis.order_problems_uuid
+      && Array.isArray(diagnosis.order_problems_uuid)
+    ) {
+      diagnosis.order_problems_name
+        = diagnosis.order_problems_uuid.map(
+          uuid => problemsMap[uuid] || uuid,
+        );
+    }
+    else {
+      diagnosis.order_problems_name = [];
+    }
+  });
+
   return c.json(data || [], HSCode.OK);
 };
 
@@ -174,10 +241,70 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(info_user, eq(info.user_uuid, info_user.uuid))
     .where(eq(diagnosis.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await resultPromise;
 
   if (!data)
     return DataNotFound(c);
 
-  return c.json(data || {}, HSCode.OK);
+  // Gather all unique UUIDs from both diagnosis.problems_uuid and order_problems_uuid
+  const diagnosisProblemsUUIDs = data.problems_uuid ? [data.problems_uuid].flat() : [];
+  const orderProblemsUUIDs = data.order_problems_uuid ? [data.order_problems_uuid].flat() : [];
+
+  const allProblemsUUIDs = Array.from(
+    new Set([...diagnosisProblemsUUIDs, ...orderProblemsUUIDs]),
+  ).filter((uuid): uuid is string => typeof uuid === 'string');
+
+  let problemsMap: Record<string, string> = {};
+
+  if (allProblemsUUIDs.length > 0) {
+    const problems = await db
+      .select({
+        name: problem.name,
+        uuid: problem.uuid,
+      })
+      .from(problem)
+      .where(inArray(problem.uuid, allProblemsUUIDs));
+
+    problemsMap = problems.reduce((acc, problem) => {
+      acc[problem.uuid] = problem.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
+  // Define type for diagnosis with extras
+  type DiagnosisWithExtras = typeof data & {
+    diagnosis_problems_name?: string[];
+    order_problems_name?: string[];
+  };
+
+  const diagnosisWithExtras = data as DiagnosisWithExtras;
+
+  // diagnosis_problems_name
+  if (
+    diagnosisWithExtras.problems_uuid
+    && Array.isArray(diagnosisWithExtras.problems_uuid)
+  ) {
+    diagnosisWithExtras.diagnosis_problems_name = diagnosisWithExtras.problems_uuid.map(
+      uuid => problemsMap[uuid] || uuid,
+    );
+  }
+  else {
+    diagnosisWithExtras.diagnosis_problems_name = [];
+  }
+
+  // order_problems_name
+  if (
+    diagnosisWithExtras.order_problems_uuid
+    && Array.isArray(diagnosisWithExtras.order_problems_uuid)
+  ) {
+    diagnosisWithExtras.order_problems_name
+      = diagnosisWithExtras.order_problems_uuid.map(
+        uuid => problemsMap[uuid] || uuid,
+      );
+  }
+  else {
+    diagnosisWithExtras.order_problems_name = [];
+  }
+
+  return c.json(diagnosisWithExtras, HSCode.OK);
 };
