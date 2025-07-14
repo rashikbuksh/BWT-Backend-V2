@@ -117,8 +117,34 @@ export const remove = createRoute({
   },
 });
 
+export const getByOrder = createRoute({
+  path: '/work/diagnosis-by-order/{order_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      order_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of diagnosis for the order',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'diagnosis not found for the order',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({ order_uuid: z.string() })),
+      'Invalid order UUID error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetByOrderRoute = typeof getByOrder;

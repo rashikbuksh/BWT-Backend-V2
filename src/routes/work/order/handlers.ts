@@ -383,12 +383,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
           throw error;
         });
 
-    // Fetch product transfer data for each order
+    // Fetch product transfer data for the order
     for (const order of data) {
       const productTransfer = await fetchData(
-        `/store/product-transfer/by/${order.uuid}`,
+        `/v1/store/product-transfer/by/${order.uuid}`,
       );
-      (order as OrderWithExtras).product_transfer = productTransfer?.data || [];
+      (order as OrderWithExtras).product_transfer = productTransfer || [];
     }
   }
 
@@ -400,81 +400,81 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const orderPromise = db
     .select({
-      id: order.id,
-      order_id: sql`CONCAT('WO', TO_CHAR(${order.created_at}, 'YY'), '-', TO_CHAR(${order.id}, 'FM0000'))`,
-      uuid: order.uuid,
-      info_uuid: order.info_uuid,
+      id: orderTable.id,
+      order_id: sql`CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000'))`,
+      uuid: orderTable.uuid,
+      info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
       user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
       user_name: user.name,
       user_phone: user.phone,
-      model_uuid: order.model_uuid,
+      model_uuid: orderTable.model_uuid,
       model_name: storeSchema.model.name,
-      brand_uuid: order.brand_uuid,
+      brand_uuid: orderTable.brand_uuid,
       brand_name: storeSchema.brand.name,
-      serial_no: order.serial_no,
-      problems_uuid: order.problems_uuid,
-      problem_statement: order.problem_statement,
-      accessories: order.accessories,
+      serial_no: orderTable.serial_no,
+      problems_uuid: orderTable.problems_uuid,
+      problem_statement: orderTable.problem_statement,
+      accessories: orderTable.accessories,
       is_product_received: info.is_product_received,
       received_date: info.received_date,
-      warehouse_uuid: order.warehouse_uuid,
+      warehouse_uuid: orderTable.warehouse_uuid,
       warehouse_name: storeSchema.warehouse.name,
-      rack_uuid: order.rack_uuid,
+      rack_uuid: orderTable.rack_uuid,
       rack_name: storeSchema.rack.name,
-      floor_uuid: order.floor_uuid,
+      floor_uuid: orderTable.floor_uuid,
       floor_name: storeSchema.floor.name,
-      box_uuid: order.box_uuid,
+      box_uuid: orderTable.box_uuid,
       box_name: storeSchema.box.name,
-      created_by: order.created_by,
+      created_by: orderTable.created_by,
       created_by_name: hrSchema.users.name,
-      created_at: order.created_at,
-      updated_at: order.updated_at,
-      remarks: order.remarks,
-      is_diagnosis_need: order.is_diagnosis_need,
-      quantity: order.quantity,
+      created_at: orderTable.created_at,
+      updated_at: orderTable.updated_at,
+      remarks: orderTable.remarks,
+      is_diagnosis_need: orderTable.is_diagnosis_need,
+      quantity: orderTable.quantity,
       info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
-      is_transferred_for_qc: order.is_transferred_for_qc,
-      is_ready_for_delivery: order.is_ready_for_delivery,
-      is_proceed_to_repair: order.is_proceed_to_repair,
+      is_transferred_for_qc: orderTable.is_transferred_for_qc,
+      is_ready_for_delivery: orderTable.is_ready_for_delivery,
+      is_proceed_to_repair: orderTable.is_proceed_to_repair,
       branch_uuid: storeSchema.warehouse.branch_uuid,
       branch_name: storeSchema.branch.name,
       is_delivery_complete: deliverySchema.challan.is_delivery_complete,
-      repairing_problems_uuid: order.repairing_problems_uuid,
-      qc_problems_uuid: order.qc_problems_uuid,
-      delivery_problems_uuid: order.delivery_problems_uuid,
-      repairing_problem_statement: order.repairing_problem_statement,
-      qc_problem_statement: order.qc_problem_statement,
-      delivery_problem_statement: order.delivery_problem_statement,
-      ready_for_delivery_date: order.ready_for_delivery_date,
+      repairing_problems_uuid: orderTable.repairing_problems_uuid,
+      qc_problems_uuid: orderTable.qc_problems_uuid,
+      delivery_problems_uuid: orderTable.delivery_problems_uuid,
+      repairing_problem_statement: orderTable.repairing_problem_statement,
+      qc_problem_statement: orderTable.qc_problem_statement,
+      delivery_problem_statement: orderTable.delivery_problem_statement,
+      ready_for_delivery_date: orderTable.ready_for_delivery_date,
       diagnosis_problems_uuid: diagnosis.problems_uuid,
       diagnosis_problem_statement: diagnosis.problem_statement,
-      bill_amount: PG_DECIMAL_TO_FLOAT(order.bill_amount),
-      is_home_repair: order.is_home_repair,
-      proposed_cost: PG_DECIMAL_TO_FLOAT(order.proposed_cost),
-      is_challan_needed: order.is_challan_needed,
+      bill_amount: PG_DECIMAL_TO_FLOAT(orderTable.bill_amount),
+      is_home_repair: orderTable.is_home_repair,
+      proposed_cost: PG_DECIMAL_TO_FLOAT(orderTable.proposed_cost),
+      is_challan_needed: orderTable.is_challan_needed,
     })
-    .from(order)
-    .leftJoin(hrSchema.users, eq(order.created_by, hrSchema.users.uuid))
+    .from(orderTable)
+    .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
     .leftJoin(
       storeSchema.model,
-      eq(order.model_uuid, storeSchema.model.uuid),
+      eq(orderTable.model_uuid, storeSchema.model.uuid),
     )
     .leftJoin(
       storeSchema.brand,
-      eq(order.brand_uuid, storeSchema.brand.uuid),
+      eq(orderTable.brand_uuid, storeSchema.brand.uuid),
     )
     .leftJoin(
       storeSchema.warehouse,
-      eq(order.warehouse_uuid, storeSchema.warehouse.uuid),
+      eq(orderTable.warehouse_uuid, storeSchema.warehouse.uuid),
     )
-    .leftJoin(storeSchema.rack, eq(order.rack_uuid, storeSchema.rack.uuid))
+    .leftJoin(storeSchema.rack, eq(orderTable.rack_uuid, storeSchema.rack.uuid))
     .leftJoin(
       storeSchema.floor,
-      eq(order.floor_uuid, storeSchema.floor.uuid),
+      eq(orderTable.floor_uuid, storeSchema.floor.uuid),
     )
-    .leftJoin(storeSchema.box, eq(order.box_uuid, storeSchema.box.uuid))
-    .leftJoin(info, eq(order.info_uuid, info.uuid))
+    .leftJoin(storeSchema.box, eq(orderTable.box_uuid, storeSchema.box.uuid))
+    .leftJoin(info, eq(orderTable.info_uuid, info.uuid))
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(
       storeSchema.branch,
@@ -482,7 +482,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(
       deliverySchema.challan_entry,
-      eq(order.uuid, deliverySchema.challan_entry.order_uuid),
+      eq(orderTable.uuid, deliverySchema.challan_entry.order_uuid),
     )
     .leftJoin(
       deliverySchema.challan,
@@ -491,8 +491,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         deliverySchema.challan.uuid,
       ),
     )
-    .leftJoin(diagnosis, eq(order.uuid, diagnosis.order_uuid))
-    .where(eq(order.uuid, uuid));
+    .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
+    .where(eq(orderTable.uuid, uuid));
 
   const data = await orderPromise;
 
@@ -604,7 +604,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     const productTransfer = await fetchData(
       `/v1/store/product-transfer/by/${order.uuid}`,
     );
-    (order as OrderWithExtras).product_transfer = productTransfer?.data || [];
+    (order as OrderWithExtras).product_transfer = productTransfer || [];
   }
 
   if (!data)
@@ -638,10 +638,10 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
   ]);
 
   const data = {
-    ...order?.data,
-    diagnosis: diagnosis?.data || [],
-    process: process?.data || [],
-    product_transfer: product_transfer?.data || [],
+    ...order,
+    diagnosis: diagnosis || [],
+    process: process || [],
+    product_transfer: product_transfer || [],
   };
 
   if (!data)
@@ -655,84 +655,84 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
 
   const orderPromise = db
     .select({
-      id: order.id,
-      order_id: sql`CONCAT('WO', TO_CHAR(${order.created_at}, 'YY'), '-', TO_CHAR(${order.id}, 'FM0000'))`,
-      uuid: order.uuid,
-      info_uuid: order.info_uuid,
+      id: orderTable.id,
+      order_id: sql`CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000'))`,
+      uuid: orderTable.uuid,
+      info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
       user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
       user_name: user.name,
-      model_uuid: order.model_uuid,
+      model_uuid: orderTable.model_uuid,
       model_name: storeSchema.model.name,
-      brand_uuid: order.brand_uuid,
+      brand_uuid: orderTable.brand_uuid,
       brand_name: storeSchema.brand.name,
-      serial_no: order.serial_no,
-      problems_uuid: order.problems_uuid,
-      problem_statement: order.problem_statement,
-      accessories: order.accessories,
+      serial_no: orderTable.serial_no,
+      problems_uuid: orderTable.problems_uuid,
+      problem_statement: orderTable.problem_statement,
+      accessories: orderTable.accessories,
       is_product_received: info.is_product_received,
       received_date: info.received_date,
-      warehouse_uuid: order.warehouse_uuid,
+      warehouse_uuid: orderTable.warehouse_uuid,
       warehouse_name: storeSchema.warehouse.name,
-      rack_uuid: order.rack_uuid,
+      rack_uuid: orderTable.rack_uuid,
       rack_name: storeSchema.rack.name,
-      floor_uuid: order.floor_uuid,
+      floor_uuid: orderTable.floor_uuid,
       floor_name: storeSchema.floor.name,
-      box_uuid: order.box_uuid,
+      box_uuid: orderTable.box_uuid,
       box_name: storeSchema.box.name,
-      created_by: order.created_by,
+      created_by: orderTable.created_by,
       created_by_name: hrSchema.users.name,
-      created_at: order.created_at,
-      updated_at: order.updated_at,
-      remarks: order.remarks,
-      is_diagnosis_need: order.is_diagnosis_need,
-      quantity: order.quantity,
+      created_at: orderTable.created_at,
+      updated_at: orderTable.updated_at,
+      remarks: orderTable.remarks,
+      is_diagnosis_need: orderTable.is_diagnosis_need,
+      quantity: orderTable.quantity,
       info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
-      is_transferred_for_qc: order.is_transferred_for_qc,
-      is_ready_for_delivery: order.is_ready_for_delivery,
+      is_transferred_for_qc: orderTable.is_transferred_for_qc,
+      is_ready_for_delivery: orderTable.is_ready_for_delivery,
       is_delivery_complete: sql`COALESCE(${deliverySchema.challan.is_delivery_complete}, false)`,
-      is_proceed_to_repair: order.is_proceed_to_repair,
+      is_proceed_to_repair: orderTable.is_proceed_to_repair,
       branch_uuid: storeSchema.warehouse.branch_uuid,
       branch_name: storeSchema.branch.name,
-      repairing_problems_uuid: order.repairing_problems_uuid,
-      qc_problems_uuid: order.qc_problems_uuid,
-      delivery_problems_uuid: order.delivery_problems_uuid,
-      repairing_problem_statement: order.repairing_problem_statement,
-      qc_problem_statement: order.qc_problem_statement,
-      delivery_problem_statement: order.delivery_problem_statement,
-      ready_for_delivery_date: order.ready_for_delivery_date,
+      repairing_problems_uuid: orderTable.repairing_problems_uuid,
+      qc_problems_uuid: orderTable.qc_problems_uuid,
+      delivery_problems_uuid: orderTable.delivery_problems_uuid,
+      repairing_problem_statement: orderTable.repairing_problem_statement,
+      qc_problem_statement: orderTable.qc_problem_statement,
+      delivery_problem_statement: orderTable.delivery_problem_statement,
+      ready_for_delivery_date: orderTable.ready_for_delivery_date,
       diagnosis_problems_uuid: diagnosis.problems_uuid,
       diagnosis_problem_statement: diagnosis.problem_statement,
-      bill_amount: PG_DECIMAL_TO_FLOAT(order.bill_amount),
-      is_home_repair: order.is_home_repair,
-      proposed_cost: PG_DECIMAL_TO_FLOAT(order.proposed_cost),
-      is_challan_needed: order.is_challan_needed,
+      bill_amount: PG_DECIMAL_TO_FLOAT(orderTable.bill_amount),
+      is_home_repair: orderTable.is_home_repair,
+      proposed_cost: PG_DECIMAL_TO_FLOAT(orderTable.proposed_cost),
+      is_challan_needed: orderTable.is_challan_needed,
     })
-    .from(order)
-    .leftJoin(hrSchema.users, eq(order.created_by, hrSchema.users.uuid))
+    .from(orderTable)
+    .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
     .leftJoin(
       storeSchema.model,
-      eq(order.model_uuid, storeSchema.model.uuid),
+      eq(orderTable.model_uuid, storeSchema.model.uuid),
     )
     .leftJoin(
       storeSchema.brand,
-      eq(order.brand_uuid, storeSchema.brand.uuid),
+      eq(orderTable.brand_uuid, storeSchema.brand.uuid),
     )
     .leftJoin(
       storeSchema.warehouse,
-      eq(order.warehouse_uuid, storeSchema.warehouse.uuid),
+      eq(orderTable.warehouse_uuid, storeSchema.warehouse.uuid),
     )
-    .leftJoin(storeSchema.rack, eq(order.rack_uuid, storeSchema.rack.uuid))
+    .leftJoin(storeSchema.rack, eq(orderTable.rack_uuid, storeSchema.rack.uuid))
     .leftJoin(
       storeSchema.floor,
-      eq(order.floor_uuid, storeSchema.floor.uuid),
+      eq(orderTable.floor_uuid, storeSchema.floor.uuid),
     )
-    .leftJoin(storeSchema.box, eq(order.box_uuid, storeSchema.box.uuid))
-    .leftJoin(info, eq(order.info_uuid, info.uuid))
+    .leftJoin(storeSchema.box, eq(orderTable.box_uuid, storeSchema.box.uuid))
+    .leftJoin(info, eq(orderTable.info_uuid, info.uuid))
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(
       deliverySchema.challan_entry,
-      eq(order.uuid, deliverySchema.challan_entry.order_uuid),
+      eq(orderTable.uuid, deliverySchema.challan_entry.order_uuid),
     )
     .leftJoin(
       deliverySchema.challan,
@@ -745,8 +745,8 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       storeSchema.branch,
       eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
     )
-    .leftJoin(diagnosis, eq(order.uuid, diagnosis.order_uuid))
-    .where(eq(order.info_uuid, info_uuid));
+    .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
+    .where(eq(orderTable.info_uuid, info_uuid));
 
   const data = await orderPromise;
 
