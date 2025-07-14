@@ -288,6 +288,9 @@ export const product_transfer = store.table('product_transfer', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  purchase_entry_uuid: defaultUUID('purchase_entry_uuid').references(
+    () => purchase_entry.uuid,
+  ),
 });
 
 export default store;

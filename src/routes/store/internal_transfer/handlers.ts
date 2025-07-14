@@ -1,19 +1,22 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { box, floor, internal_transfer, product, rack, warehouse } from '../schema';
+import { box, branch, floor, internal_transfer, product, rack, warehouse } from '../schema';
 
-const from_warehouse = alias(warehouse, 'from_warehouse');
-const to_warehouse = alias(warehouse, 'to_warehouse');
+const fromWarehouse = alias(warehouse, 'from_warehouse');
+const toWarehouse = alias(warehouse, 'to_warehouse');
+const fromBranch = alias(branch, 'from_branch');
+const toBranch = alias(branch, 'to_branch');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -61,39 +64,75 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: internal_transfer.uuid,
-    id: internal_transfer.id,
-    product_uuid: internal_transfer.product_uuid,
-    product_name: product.name,
-    from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
-    from_warehouse_name: from_warehouse.name,
-    to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
-    to_warehouse_name: to_warehouse.name,
-    rack_uuid: internal_transfer.rack_uuid,
-    rack_name: rack.name,
-    floor_uuid: internal_transfer.floor_uuid,
-    floor_name: floor.name,
-    box_uuid: internal_transfer.box_uuid,
-    box_name: box.name,
-    quantity: internal_transfer.quantity,
-    created_by: internal_transfer.created_by,
-    created_by_name: users.name,
-    created_at: internal_transfer.created_at,
-    updated_at: internal_transfer.updated_at,
-    remarks: internal_transfer.remarks,
-  })
+  const internalTransferPromise = db
+    .select({
+      uuid: internal_transfer.uuid,
+      id: internal_transfer.id,
+      internal_transfer_id: sql`CONCAT(
+                                    'SIT',
+                                        TO_CHAR(${internal_transfer.created_at}, 'YY'),
+                                        ' - ',
+                                        TO_CHAR(${internal_transfer.id}, 'FM0000')
+                                    )`,
+      product_uuid: internal_transfer.product_uuid,
+      product_name: product.name,
+      rack_uuid: internal_transfer.rack_uuid,
+      rack_name: rack.name,
+      floor_uuid: internal_transfer.floor_uuid,
+      floor_name: floor.name,
+      box_uuid: internal_transfer.box_uuid,
+      box_name: box.name,
+      quantity: PG_DECIMAL_TO_FLOAT(internal_transfer.quantity),
+      created_by: internal_transfer.created_by,
+      created_by_name: users.name,
+      created_at: internal_transfer.created_at,
+      updated_at: internal_transfer.updated_at,
+      remarks: internal_transfer.remarks,
+      from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
+      from_warehouse_name: fromWarehouse.name,
+      from_warehouse: PG_DECIMAL_TO_FLOAT(
+        sql`CASE WHEN ${
+          fromWarehouse.assigned
+        } ='warehouse_1' THEN ${product.warehouse_1} WHEN ${
+          fromWarehouse.assigned
+        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      ),
+      to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
+      to_warehouse_name: toWarehouse.name,
+      to_warehouse: PG_DECIMAL_TO_FLOAT(
+        sql`CASE WHEN ${
+          toWarehouse.assigned
+        } = 'warehouse_1' THEN ${product.warehouse_1} WHEN ${
+          toWarehouse.assigned
+        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      ),
+      from_branch_uuid: fromWarehouse.branch_uuid,
+      from_branch_name: fromBranch.name,
+      to_branch_uuid: toWarehouse.branch_uuid,
+      to_branch_name: toBranch.name,
+    })
     .from(internal_transfer)
-    .leftJoin(users, eq(internal_transfer.created_by, users.uuid))
-    .leftJoin(product, eq(internal_transfer.product_uuid, product.uuid))
-    .leftJoin(from_warehouse, eq(internal_transfer.from_warehouse_uuid, from_warehouse.uuid))
-    .leftJoin(to_warehouse, eq(internal_transfer.to_warehouse_uuid, to_warehouse.uuid))
-    .leftJoin(rack, eq(internal_transfer.rack_uuid, rack.uuid))
     .leftJoin(floor, eq(internal_transfer.floor_uuid, floor.uuid))
     .leftJoin(box, eq(internal_transfer.box_uuid, box.uuid))
+    .leftJoin(
+      users,
+      eq(internal_transfer.created_by, users.uuid),
+    )
+    .leftJoin(rack, eq(internal_transfer.rack_uuid, rack.uuid))
+    .leftJoin(
+      fromWarehouse,
+      eq(internal_transfer.from_warehouse_uuid, fromWarehouse.uuid),
+    )
+    .leftJoin(
+      toWarehouse,
+      eq(internal_transfer.to_warehouse_uuid, toWarehouse.uuid),
+    )
+    .leftJoin(product, eq(internal_transfer.product_uuid, product.uuid))
+    .leftJoin(fromBranch, eq(fromWarehouse.branch_uuid, fromBranch.uuid))
+    .leftJoin(toBranch, eq(toWarehouse.branch_uuid, toBranch.uuid))
     .orderBy(desc(internal_transfer.created_at));
 
-  const data = await resultPromise;
+  const data = await internalTransferPromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -101,39 +140,75 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: internal_transfer.uuid,
-    id: internal_transfer.id,
-    product_uuid: internal_transfer.product_uuid,
-    product_name: product.name,
-    from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
-    from_warehouse_name: from_warehouse.name,
-    to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
-    to_warehouse_name: to_warehouse.name,
-    rack_uuid: internal_transfer.rack_uuid,
-    rack_name: rack.name,
-    floor_uuid: internal_transfer.floor_uuid,
-    floor_name: floor.name,
-    box_uuid: internal_transfer.box_uuid,
-    box_name: box.name,
-    quantity: internal_transfer.quantity,
-    created_by: internal_transfer.created_by,
-    created_by_name: users.name,
-    created_at: internal_transfer.created_at,
-    updated_at: internal_transfer.updated_at,
-    remarks: internal_transfer.remarks,
-  })
+  const internalTransferPromise = db
+    .select({
+      uuid: internal_transfer.uuid,
+      id: internal_transfer.id,
+      internal_transfer_id: sql`CONCAT(
+                'SIT',
+                TO_CHAR(${internal_transfer.created_at}, 'YY'),
+                ' - ',
+                TO_CHAR(${internal_transfer.id}, 'FM0000')
+            )`,
+      product_uuid: internal_transfer.product_uuid,
+      product_name: product.name,
+      rack_uuid: internal_transfer.rack_uuid,
+      rack_name: rack.name,
+      floor_uuid: internal_transfer.floor_uuid,
+      floor_name: floor.name,
+      box_uuid: internal_transfer.box_uuid,
+      box_name: box.name,
+      quantity: PG_DECIMAL_TO_FLOAT(internal_transfer.quantity),
+      created_by: internal_transfer.created_by,
+      created_by_name: users.name,
+      created_at: internal_transfer.created_at,
+      updated_at: internal_transfer.updated_at,
+      remarks: internal_transfer.remarks,
+      from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
+      from_warehouse_name: fromWarehouse.name,
+      from_warehouse: PG_DECIMAL_TO_FLOAT(
+        sql`CASE WHEN ${
+          fromWarehouse.assigned
+        } ='warehouse_1' THEN ${product.warehouse_1} WHEN ${
+          fromWarehouse.assigned
+        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      ),
+      to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
+      to_warehouse_name: toWarehouse.name,
+      to_warehouse: PG_DECIMAL_TO_FLOAT(
+        sql`CASE WHEN ${
+          toWarehouse.assigned
+        } = 'warehouse_1' THEN ${product.warehouse_1} WHEN ${
+          toWarehouse.assigned
+        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      ),
+      from_branch_uuid: fromWarehouse.branch_uuid,
+      from_branch_name: fromBranch.name,
+      to_branch_uuid: toWarehouse.branch_uuid,
+      to_branch_name: toBranch.name,
+    })
     .from(internal_transfer)
-    .leftJoin(users, eq(internal_transfer.created_by, users.uuid))
-    .leftJoin(product, eq(internal_transfer.product_uuid, product.uuid))
-    .leftJoin(from_warehouse, eq(internal_transfer.from_warehouse_uuid, from_warehouse.uuid))
-    .leftJoin(to_warehouse, eq(internal_transfer.to_warehouse_uuid, to_warehouse.uuid))
-    .leftJoin(rack, eq(internal_transfer.rack_uuid, rack.uuid))
     .leftJoin(floor, eq(internal_transfer.floor_uuid, floor.uuid))
     .leftJoin(box, eq(internal_transfer.box_uuid, box.uuid))
+    .leftJoin(
+      users,
+      eq(internal_transfer.created_by, users.uuid),
+    )
+    .leftJoin(rack, eq(internal_transfer.rack_uuid, rack.uuid))
+    .leftJoin(
+      fromWarehouse,
+      eq(internal_transfer.from_warehouse_uuid, fromWarehouse.uuid),
+    )
+    .leftJoin(
+      toWarehouse,
+      eq(internal_transfer.to_warehouse_uuid, toWarehouse.uuid),
+    )
+    .leftJoin(product, eq(internal_transfer.product_uuid, product.uuid))
+    .leftJoin(fromBranch, eq(fromWarehouse.branch_uuid, fromBranch.uuid))
+    .leftJoin(toBranch, eq(toWarehouse.branch_uuid, toBranch.uuid))
     .where(eq(internal_transfer.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await internalTransferPromise;
 
   if (!data)
     return DataNotFound(c);

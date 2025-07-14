@@ -8,34 +8,40 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.product_transfer'];
+const tags = ['work.process'];
 
 export const list = createRoute({
-  path: '/store/product-transfer',
+  path: '/work/process',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      order_uuid: z.string().optional(),
+      entry: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of product_transfer',
+      'The list of process',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/store/product-transfer',
+  path: '/work/process',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The product_transfer to create',
+      'The process to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created product_transfer',
+      'The created process',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +51,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/product-transfer/{uuid}',
+  path: '/work/process/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +60,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested product_transfer',
+      'The requested process',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'product_transfer not found',
+      'process not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +74,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/product-transfer/{uuid}',
+  path: '/work/process/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The product_transfer updates',
+      'The process updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated product_transfer',
+      'The updated process',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'product_transfer not found',
+      'process not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +102,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/product-transfer/{uuid}',
+  path: '/work/process/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,42 +110,15 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'product_transfer deleted',
+      description: 'process deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'product_transfer not found',
+      'process not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
       'Invalid id error',
-    ),
-  },
-});
-
-export const getByOrderUuid = createRoute({
-  path: '/store/product-transfer/by/{order_uuid}',
-  method: 'get',
-  request: {
-    params: z.object({
-      order_uuid: z.string().length(15, 'Order UUID must be 15 characters long'),
-    }),
-  },
-  tags,
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
-      'The list of product transfers by order UUID',
-    ),
-    [HSCode.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      'No product transfers found for the given order UUID',
-    ),
-    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(z.object({
-        order_uuid: z.string().length(15, 'Order UUID must be 15 characters long'),
-      })),
-      'Invalid order UUID error',
     ),
   },
 });
@@ -149,4 +128,3 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
-export type GetByOrderUuidRoute = typeof getByOrderUuid;

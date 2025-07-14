@@ -57,7 +57,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
+  const modelPromise = db.select({
     uuid: model.uuid,
     name: model.name,
     brand_uuid: model.brand_uuid,
@@ -72,7 +72,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(users, eq(model.created_by, users.uuid))
     .leftJoin(brand, eq(model.brand_uuid, brand.uuid));
 
-  const data = await resultPromise;
+  const data = await modelPromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -80,7 +80,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
+  const modelPromise = db.select({
     uuid: model.uuid,
     name: model.name,
     brand_uuid: model.brand_uuid,
@@ -96,7 +96,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(brand, eq(model.brand_uuid, brand.uuid))
     .where(eq(model.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await modelPromise;
 
   if (!data)
     return DataNotFound(c);

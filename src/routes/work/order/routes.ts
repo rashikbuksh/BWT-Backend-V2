@@ -126,8 +126,64 @@ export const remove = createRoute({
   },
 });
 
+export const getDiagnosisDetailsByOrder = createRoute({
+  path: '/work/diagnosis-details-by-order/{order_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      order_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        problems_uuid: z.string(),
+        problem_statement: z.string(),
+        diagnosis_date: z.string(),
+        diagnosis_time: z.string(),
+      }),
+      'The diagnosis details for the order',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'order not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({ order_uuid: z.string() })),
+      'Invalid order UUID error',
+    ),
+  },
+});
+export const getByInfo = createRoute({
+  path: '/work/order-by-info/{info_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      info_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The order matching the info',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'order not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({ info: z.string() })),
+      'Invalid info error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetDiagnosisDetailsByOrderRoute = typeof getDiagnosisDetailsByOrder;
+export type GetByInfoRoute = typeof getByInfo;

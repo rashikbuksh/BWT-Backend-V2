@@ -1,21 +1,17 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
-import { product_transfer } from '../schema';
+import { zone } from '../schema';
 
 //* crud
-export const selectSchema = createSelectSchema(product_transfer);
+export const selectSchema = createSelectSchema(zone);
 
 export const insertSchema = createInsertSchema(
-  product_transfer,
+  zone,
   {
     uuid: schema => schema.uuid.length(15),
-    product_uuid: schema => schema.product_uuid.length(15),
-    warehouse_uuid: schema => schema.warehouse_uuid.length(15),
-    order_uuid: schema => schema.order_uuid.length(15).optional(),
-    quantity: z.number().int().positive(),
+    name: schema => schema.name.min(1),
     created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
@@ -24,22 +20,18 @@ export const insertSchema = createInsertSchema(
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     remarks: schema => schema.remarks.optional(),
-    purchase_entry_uuid: schema => schema.purchase_entry_uuid.length(15).optional(),
   },
 ).required({
   uuid: true,
-  product_uuid: true,
-  warehouse_uuid: true,
-  order_uuid: true,
-  quantity: true,
+  name: true,
+  division: true,
   created_by: true,
   created_at: true,
 }).partial({
-  purchase_entry_uuid: true,
+  latitude: true,
+  longitude: true,
   updated_at: true,
   remarks: true,
-}).omit({
-  id: true,
 });
 
 export const patchSchema = insertSchema.partial();
