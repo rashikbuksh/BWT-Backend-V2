@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -57,20 +57,22 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: vehicle.uuid,
-    name: vehicle.name,
-    no: vehicle.no,
-    created_by: vehicle.created_by,
-    created_by_name: users.name,
-    created_at: vehicle.created_at,
-    updated_at: vehicle.updated_at,
-    remarks: vehicle.remarks,
-  })
+  const vehiclePromise = db
+    .select({
+      uuid: vehicle.uuid,
+      name: vehicle.name,
+      no: vehicle.no,
+      created_by: vehicle.created_by,
+      created_by_name: users.name,
+      created_at: vehicle.created_at,
+      updated_at: vehicle.updated_at,
+      remarks: vehicle.remarks,
+    })
     .from(vehicle)
-    .leftJoin(users, eq(vehicle.created_by, users.uuid));
+    .leftJoin(users, eq(vehicle.created_by, users.uuid))
+    .orderBy(desc(vehicle.created_at));
 
-  const data = await resultPromise;
+  const data = await vehiclePromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -78,21 +80,22 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: vehicle.uuid,
-    name: vehicle.name,
-    no: vehicle.no,
-    created_by: vehicle.created_by,
-    created_by_name: users.name,
-    created_at: vehicle.created_at,
-    updated_at: vehicle.updated_at,
-    remarks: vehicle.remarks,
-  })
+  const vehiclePromise = db
+    .select({
+      uuid: vehicle.uuid,
+      name: vehicle.name,
+      no: vehicle.no,
+      created_by: vehicle.created_by,
+      created_by_name: users.name,
+      created_at: vehicle.created_at,
+      updated_at: vehicle.updated_at,
+      remarks: vehicle.remarks,
+    })
     .from(vehicle)
     .leftJoin(users, eq(vehicle.created_by, users.uuid))
     .where(eq(vehicle.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await vehiclePromise;
 
   if (!data)
     return DataNotFound(c);
