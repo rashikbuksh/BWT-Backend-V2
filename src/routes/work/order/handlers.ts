@@ -13,9 +13,9 @@ import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { accessory, diagnosis, info, order, problem, zone } from '../schema';
+import { accessory, diagnosis, info, order, problem } from '../schema';
 
 const user = alias(hrSchema.users, 'user');
 const orderTable = alias(order, 'work_order');
@@ -398,37 +398,449 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const infoPromise = db
+  const orderPromise = db
     .select({
-      id: info.id,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
-      uuid: info.uuid,
+      id: order.id,
+      order_id: sql`CONCAT('WO', TO_CHAR(${order.created_at}, 'YY'), '-', TO_CHAR(${order.id}, 'FM0000'))`,
+      uuid: order.uuid,
+      info_uuid: order.info_uuid,
       user_uuid: info.user_uuid,
-      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}, 'FM0000'))`,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
       user_name: user.name,
       user_phone: user.phone,
-      received_date: info.received_date,
+      model_uuid: order.model_uuid,
+      model_name: storeSchema.model.name,
+      brand_uuid: order.brand_uuid,
+      brand_name: storeSchema.brand.name,
+      serial_no: order.serial_no,
+      problems_uuid: order.problems_uuid,
+      problem_statement: order.problem_statement,
+      accessories: order.accessories,
       is_product_received: info.is_product_received,
-      created_by: info.created_by,
+      received_date: info.received_date,
+      warehouse_uuid: order.warehouse_uuid,
+      warehouse_name: storeSchema.warehouse.name,
+      rack_uuid: order.rack_uuid,
+      rack_name: storeSchema.rack.name,
+      floor_uuid: order.floor_uuid,
+      floor_name: storeSchema.floor.name,
+      box_uuid: order.box_uuid,
+      box_name: storeSchema.box.name,
+      created_by: order.created_by,
       created_by_name: hrSchema.users.name,
-      created_at: info.created_at,
-      updated_at: info.updated_at,
-      remarks: info.remarks,
-      location: info.location,
-      zone_uuid: info.zone_uuid,
-      zone_name: zone.name,
-      submitted_by: info.submitted_by,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      remarks: order.remarks,
+      is_diagnosis_need: order.is_diagnosis_need,
+      quantity: order.quantity,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      is_transferred_for_qc: order.is_transferred_for_qc,
+      is_ready_for_delivery: order.is_ready_for_delivery,
+      is_proceed_to_repair: order.is_proceed_to_repair,
+      branch_uuid: storeSchema.warehouse.branch_uuid,
+      branch_name: storeSchema.branch.name,
+      is_delivery_complete: deliverySchema.challan.is_delivery_complete,
+      repairing_problems_uuid: order.repairing_problems_uuid,
+      qc_problems_uuid: order.qc_problems_uuid,
+      delivery_problems_uuid: order.delivery_problems_uuid,
+      repairing_problem_statement: order.repairing_problem_statement,
+      qc_problem_statement: order.qc_problem_statement,
+      delivery_problem_statement: order.delivery_problem_statement,
+      ready_for_delivery_date: order.ready_for_delivery_date,
+      diagnosis_problems_uuid: diagnosis.problems_uuid,
+      diagnosis_problem_statement: diagnosis.problem_statement,
+      bill_amount: PG_DECIMAL_TO_FLOAT(order.bill_amount),
+      is_home_repair: order.is_home_repair,
+      proposed_cost: PG_DECIMAL_TO_FLOAT(order.proposed_cost),
+      is_challan_needed: order.is_challan_needed,
     })
-    .from(info)
+    .from(order)
+    .leftJoin(hrSchema.users, eq(order.created_by, hrSchema.users.uuid))
+    .leftJoin(
+      storeSchema.model,
+      eq(order.model_uuid, storeSchema.model.uuid),
+    )
+    .leftJoin(
+      storeSchema.brand,
+      eq(order.brand_uuid, storeSchema.brand.uuid),
+    )
+    .leftJoin(
+      storeSchema.warehouse,
+      eq(order.warehouse_uuid, storeSchema.warehouse.uuid),
+    )
+    .leftJoin(storeSchema.rack, eq(order.rack_uuid, storeSchema.rack.uuid))
+    .leftJoin(
+      storeSchema.floor,
+      eq(order.floor_uuid, storeSchema.floor.uuid),
+    )
+    .leftJoin(storeSchema.box, eq(order.box_uuid, storeSchema.box.uuid))
+    .leftJoin(info, eq(order.info_uuid, info.uuid))
     .leftJoin(user, eq(info.user_uuid, user.uuid))
-    .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
-    .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
-    .where(eq(info.uuid, uuid));
+    .leftJoin(
+      storeSchema.branch,
+      eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
+    )
+    .leftJoin(
+      deliverySchema.challan_entry,
+      eq(order.uuid, deliverySchema.challan_entry.order_uuid),
+    )
+    .leftJoin(
+      deliverySchema.challan,
+      eq(
+        deliverySchema.challan_entry.challan_uuid,
+        deliverySchema.challan.uuid,
+      ),
+    )
+    .leftJoin(diagnosis, eq(order.uuid, diagnosis.order_uuid))
+    .where(eq(order.uuid, uuid));
 
-  const data = await infoPromise;
+  const data = await orderPromise;
+
+  // Gather all unique problem UUIDs from all relevant fields
+  const orderProblemsUUIDs = data
+    .map(order => order.problems_uuid)
+    .flat();
+  const diagnosisProblemsUUIDs = data
+    .map(order => order.diagnosis_problems_uuid || [])
+    .flat();
+  const repairingProblemsUUIDs = data
+    .map(order => order.repairing_problems_uuid || [])
+    .flat();
+  const qcProblemsUUIDs = data
+    .map(order => order.qc_problems_uuid || [])
+    .flat();
+  const deliveryProblemsUUIDs = data
+    .map(order => order.delivery_problems_uuid || [])
+    .flat();
+
+  const allProblemsUUIDs = Array.from(
+    new Set([
+      ...orderProblemsUUIDs,
+      ...diagnosisProblemsUUIDs,
+      ...repairingProblemsUUIDs,
+      ...qcProblemsUUIDs,
+      ...deliveryProblemsUUIDs,
+    ]),
+  );
+
+  const problems = await db
+    .select({
+      name: problem.name,
+      uuid: problem.uuid,
+    })
+    .from(problem)
+    .where(inArray(problem.uuid, allProblemsUUIDs.filter((uuid): uuid is string => typeof uuid === 'string')));
+  const problemsMap: Record<string, string> = problems.reduce((acc, problem) => {
+    if (problem.uuid && problem.name) {
+      acc[problem.uuid] = problem.name;
+    }
+    return acc;
+  }, {} as Record<string, string>);
+
+  const accessories_uuid = data
+    .map(order => order.accessories)
+    .flat();
+
+  const accessories = await db
+    .select({
+      name: accessory.name,
+      uuid: accessory.uuid,
+    })
+    .from(accessory)
+    .where(inArray(accessory.uuid, accessories_uuid.filter((uuid): uuid is string => typeof uuid === 'string')));
+
+  const accessoriesMap = accessories.reduce<Record<string, string>>((acc, accessory) => {
+    acc[accessory.uuid] = accessory.name;
+    return acc;
+  }, {});
+
+  type OrderWithExtras = typeof data[number] & {
+    order_problems_name?: string[];
+    diagnosis_problems_name?: string[];
+    repairing_problems_name?: string[];
+    qc_problems_name?: string[];
+    delivery_problems_name?: string[];
+    accessories_name?: string[];
+    product_transfer?: any[];
+  };
+
+  (data as OrderWithExtras[]).forEach((order) => {
+    order.order_problems_name = (order.problems_uuid || []).map(
+      uuid => problemsMap[uuid],
+    );
+    order.diagnosis_problems_name = (
+      order.diagnosis_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.repairing_problems_name = (
+      order.repairing_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.qc_problems_name = (order.qc_problems_uuid || []).map(
+      uuid => problemsMap[uuid],
+    );
+    order.delivery_problems_name = (
+      order.delivery_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.accessories_name = (order.accessories || []).map(
+      uuid => accessoriesMap[uuid],
+    );
+  });
+
+  const api = createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`${endpoint}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  // Fetch product transfer data for the order
+  for (const order of data) {
+    const productTransfer = await fetchData(
+      `/v1/store/product-transfer/by/${order.uuid}`,
+    );
+    (order as OrderWithExtras).product_transfer = productTransfer?.data || [];
+  }
 
   if (!data)
     return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
+};
+
+export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOrderRoute> = async (c: any) => {
+  const { order_uuid } = c.req.valid('param');
+
+  const api = createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`${endpoint}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  const [order, diagnosis, process, product_transfer] = await Promise.all([
+    fetchData(`/v1/work/order/${order_uuid}`),
+    fetchData(`/v1/work/diagnosis-by-order/${order_uuid}`),
+    fetchData(`/v1/work/process?order_uuid=${order_uuid}`),
+    fetchData(`/v1/store/product-transfer/by/${order_uuid}`),
+  ]);
+
+  const data = {
+    ...order?.data,
+    diagnosis: diagnosis?.data || [],
+    process: process?.data || [],
+    product_transfer: product_transfer?.data || [],
+  };
+
+  if (!data)
+    return DataNotFound(c);
+
+  return c.json(data, HSCode.OK);
+};
+
+export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
+  const { info_uuid } = c.req.valid('param');
+
+  const orderPromise = db
+    .select({
+      id: order.id,
+      order_id: sql`CONCAT('WO', TO_CHAR(${order.created_at}, 'YY'), '-', TO_CHAR(${order.id}, 'FM0000'))`,
+      uuid: order.uuid,
+      info_uuid: order.info_uuid,
+      user_uuid: info.user_uuid,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
+      user_name: user.name,
+      model_uuid: order.model_uuid,
+      model_name: storeSchema.model.name,
+      brand_uuid: order.brand_uuid,
+      brand_name: storeSchema.brand.name,
+      serial_no: order.serial_no,
+      problems_uuid: order.problems_uuid,
+      problem_statement: order.problem_statement,
+      accessories: order.accessories,
+      is_product_received: info.is_product_received,
+      received_date: info.received_date,
+      warehouse_uuid: order.warehouse_uuid,
+      warehouse_name: storeSchema.warehouse.name,
+      rack_uuid: order.rack_uuid,
+      rack_name: storeSchema.rack.name,
+      floor_uuid: order.floor_uuid,
+      floor_name: storeSchema.floor.name,
+      box_uuid: order.box_uuid,
+      box_name: storeSchema.box.name,
+      created_by: order.created_by,
+      created_by_name: hrSchema.users.name,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      remarks: order.remarks,
+      is_diagnosis_need: order.is_diagnosis_need,
+      quantity: order.quantity,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      is_transferred_for_qc: order.is_transferred_for_qc,
+      is_ready_for_delivery: order.is_ready_for_delivery,
+      is_delivery_complete: sql`COALESCE(${deliverySchema.challan.is_delivery_complete}, false)`,
+      is_proceed_to_repair: order.is_proceed_to_repair,
+      branch_uuid: storeSchema.warehouse.branch_uuid,
+      branch_name: storeSchema.branch.name,
+      repairing_problems_uuid: order.repairing_problems_uuid,
+      qc_problems_uuid: order.qc_problems_uuid,
+      delivery_problems_uuid: order.delivery_problems_uuid,
+      repairing_problem_statement: order.repairing_problem_statement,
+      qc_problem_statement: order.qc_problem_statement,
+      delivery_problem_statement: order.delivery_problem_statement,
+      ready_for_delivery_date: order.ready_for_delivery_date,
+      diagnosis_problems_uuid: diagnosis.problems_uuid,
+      diagnosis_problem_statement: diagnosis.problem_statement,
+      bill_amount: PG_DECIMAL_TO_FLOAT(order.bill_amount),
+      is_home_repair: order.is_home_repair,
+      proposed_cost: PG_DECIMAL_TO_FLOAT(order.proposed_cost),
+      is_challan_needed: order.is_challan_needed,
+    })
+    .from(order)
+    .leftJoin(hrSchema.users, eq(order.created_by, hrSchema.users.uuid))
+    .leftJoin(
+      storeSchema.model,
+      eq(order.model_uuid, storeSchema.model.uuid),
+    )
+    .leftJoin(
+      storeSchema.brand,
+      eq(order.brand_uuid, storeSchema.brand.uuid),
+    )
+    .leftJoin(
+      storeSchema.warehouse,
+      eq(order.warehouse_uuid, storeSchema.warehouse.uuid),
+    )
+    .leftJoin(storeSchema.rack, eq(order.rack_uuid, storeSchema.rack.uuid))
+    .leftJoin(
+      storeSchema.floor,
+      eq(order.floor_uuid, storeSchema.floor.uuid),
+    )
+    .leftJoin(storeSchema.box, eq(order.box_uuid, storeSchema.box.uuid))
+    .leftJoin(info, eq(order.info_uuid, info.uuid))
+    .leftJoin(user, eq(info.user_uuid, user.uuid))
+    .leftJoin(
+      deliverySchema.challan_entry,
+      eq(order.uuid, deliverySchema.challan_entry.order_uuid),
+    )
+    .leftJoin(
+      deliverySchema.challan,
+      eq(
+        deliverySchema.challan_entry.challan_uuid,
+        deliverySchema.challan.uuid,
+      ),
+    )
+    .leftJoin(
+      storeSchema.branch,
+      eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
+    )
+    .leftJoin(diagnosis, eq(order.uuid, diagnosis.order_uuid))
+    .where(eq(order.info_uuid, info_uuid));
+
+  const data = await orderPromise;
+
+  const orderProblemsUUIDs = data
+    .map(order => order.problems_uuid)
+    .flat();
+  const diagnosisProblemsUUIDs = data
+    .map(order => order.diagnosis_problems_uuid || [])
+    .flat();
+  const repairingProblemsUUIDs = data
+    .map(order => order.repairing_problems_uuid || [])
+    .flat();
+  const qcProblemsUUIDs = data
+    .map(order => order.qc_problems_uuid || [])
+    .flat();
+  const deliveryProblemsUUIDs = data
+    .map(order => order.delivery_problems_uuid || [])
+    .flat();
+
+  const allProblemsUUIDs = Array.from(
+    new Set([
+      ...orderProblemsUUIDs,
+      ...diagnosisProblemsUUIDs,
+      ...repairingProblemsUUIDs,
+      ...qcProblemsUUIDs,
+      ...deliveryProblemsUUIDs,
+    ]),
+
+  );
+
+  const problems = await db
+    .select({
+      name: problem.name,
+      uuid: problem.uuid,
+    })
+    .from(problem)
+    .where(inArray(problem.uuid, allProblemsUUIDs.filter((uuid): uuid is string => typeof uuid === 'string')));
+
+  const problemsMap: Record<string, string> = problems.reduce((acc, problem) => {
+    if (problem.uuid && problem.name) {
+      acc[problem.uuid] = problem.name;
+    }
+    return acc;
+  }, {} as Record<string, string>);
+
+  const accessories_uuid = data
+    .map(order => order.accessories)
+    .flat();
+
+  const accessories = await db
+    .select({
+      name: accessory.name,
+      uuid: accessory.uuid,
+    })
+    .from(accessory)
+    .where(inArray(accessory.uuid, accessories_uuid.filter((uuid): uuid is string => typeof uuid === 'string')));
+  const accessoriesMap = accessories.reduce<Record<string, string>>((acc, accessory) => {
+    acc[accessory.uuid] = accessory.name;
+    return acc;
+  }, {});
+
+  type OrderWithExtras = typeof data[number] & {
+    order_problems_name?: string[];
+    diagnosis_problems_name?: string[];
+    repairing_problems_name?: string[];
+    qc_problems_name?: string[];
+    delivery_problems_name?: string[];
+    accessories_name?: string[];
+    product_transfer?: any[];
+  };
+
+  (data as OrderWithExtras[]).forEach((order) => {
+    order.order_problems_name = (order.problems_uuid || []).map(
+      uuid => problemsMap[uuid],
+    );
+    order.diagnosis_problems_name = (
+      order.diagnosis_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.repairing_problems_name = (
+      order.repairing_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.qc_problems_name = (order.qc_problems_uuid || []).map(
+      uuid => problemsMap[uuid],
+    );
+    order.delivery_problems_name = (
+      order.delivery_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.accessories_name = (order.accessories || []).map(
+      uuid => accessoriesMap[uuid],
+    );
+  });
+
+  if (data.length === 0)
+    return DataNotFound(c);
+
+  return c.json(data, HSCode.OK);
 };

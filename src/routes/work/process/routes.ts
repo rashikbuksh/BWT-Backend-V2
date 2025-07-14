@@ -8,43 +8,40 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['work.order'];
+const tags = ['work.process'];
 
 export const list = createRoute({
-  path: '/work/order',
+  path: '/work/process',
   method: 'get',
   tags,
   request: {
     query: z.object({
-      qc: z.string().optional(),
-      is_delivered: z.string().optional(),
-      work_in_hand: z.string().optional(),
-      customer_uuid: z.string().optional(),
-      is_repair: z.string().optional(),
+      order_uuid: z.string().optional(),
+      entry: z.string().optional(),
     }),
   },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of order',
+      'The list of process',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/work/order',
+  path: '/work/process',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The order to create',
+      'The process to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created order',
+      'The created process',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -54,7 +51,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/work/order/{uuid}',
+  path: '/work/process/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -63,11 +60,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested order',
+      'The requested process',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'order not found',
+      'process not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -77,24 +74,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/work/order/{uuid}',
+  path: '/work/process/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The order updates',
+      'The process updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated order',
+      'The updated process',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'order not found',
+      'process not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -105,7 +102,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/work/order/{uuid}',
+  path: '/work/process/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -113,69 +110,15 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'order deleted',
+      description: 'process deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'order not found',
+      'process not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
       'Invalid id error',
-    ),
-  },
-});
-
-export const getDiagnosisDetailsByOrder = createRoute({
-  path: '/work/diagnosis-details-by-order/{order_uuid}',
-  method: 'get',
-  request: {
-    params: z.object({
-      order_uuid: z.string(),
-    }),
-  },
-  tags,
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.object({
-        problems_uuid: z.string(),
-        problem_statement: z.string(),
-        diagnosis_date: z.string(),
-        diagnosis_time: z.string(),
-      }),
-      'The diagnosis details for the order',
-    ),
-    [HSCode.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      'order not found',
-    ),
-    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(z.object({ order_uuid: z.string() })),
-      'Invalid order UUID error',
-    ),
-  },
-});
-export const getByInfo = createRoute({
-  path: '/work/order-by-info/{info_uuid}',
-  method: 'get',
-  request: {
-    params: z.object({
-      info_uuid: z.string(),
-    }),
-  },
-  tags,
-  responses: {
-    [HSCode.OK]: jsonContent(
-      selectSchema,
-      'The order matching the info',
-    ),
-    [HSCode.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      'order not found',
-    ),
-    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(z.object({ info: z.string() })),
-      'Invalid info error',
     ),
   },
 });
@@ -185,5 +128,3 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
-export type GetDiagnosisDetailsByOrderRoute = typeof getDiagnosisDetailsByOrder;
-export type GetByInfoRoute = typeof getByInfo;
