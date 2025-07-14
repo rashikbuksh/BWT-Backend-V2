@@ -286,7 +286,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .where(eq(process.uuid, uuid));
 
-  const data = await processPromise;
+  const [data] = await processPromise;
 
   if (!data)
     return DataNotFound(c);

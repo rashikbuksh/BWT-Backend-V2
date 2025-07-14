@@ -100,7 +100,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(users, eq(zone.created_by, users.uuid))
     .where(eq(zone.uuid, uuid));
 
-  const data = await zonePromise;
+  const [data] = await zonePromise;
 
   if (!data)
     return DataNotFound(c);

@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -60,6 +60,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: brand.uuid,
     id: brand.id,
+    brand_id: sql`CONCAT('SB',TO_CHAR(${brand.created_at}, 'YY'),' - ', TO_CHAR(${brand.id}, 'FM0000'))`,
     name: brand.name,
     created_by: brand.created_by,
     created_by_name: users.name,
@@ -81,6 +82,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: brand.uuid,
     id: brand.id,
+    brand_id: sql`CONCAT('SB',TO_CHAR(${brand.created_at}, 'YY'),' - ', TO_CHAR(${brand.id}, 'FM0000'))`,
     name: brand.name,
     created_by: brand.created_by,
     created_by_name: users.name,
@@ -92,7 +94,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(users, eq(brand.created_by, users.uuid))
     .where(eq(brand.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await resultPromise;
 
   if (!data)
     return DataNotFound(c);

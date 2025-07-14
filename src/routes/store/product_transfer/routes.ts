@@ -117,8 +117,36 @@ export const remove = createRoute({
   },
 });
 
+export const getByOrderUuid = createRoute({
+  path: '/store/product-transfer/by/{order_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      order_uuid: z.string().length(15, 'Order UUID must be 15 characters long'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of product transfers by order UUID',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'No product transfers found for the given order UUID',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({
+        order_uuid: z.string().length(15, 'Order UUID must be 15 characters long'),
+      })),
+      'Invalid order UUID error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetByOrderUuidRoute = typeof getByOrderUuid;

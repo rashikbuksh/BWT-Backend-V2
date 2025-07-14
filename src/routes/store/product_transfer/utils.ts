@@ -24,6 +24,7 @@ export const insertSchema = createInsertSchema(
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     remarks: schema => schema.remarks.optional(),
+    purchase_entry_uuid: schema => schema.purchase_entry_uuid.length(15).optional(),
   },
 ).required({
   uuid: true,
@@ -34,6 +35,7 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
 }).partial({
+  purchase_entry_uuid: true,
   updated_at: true,
   remarks: true,
 }).omit({

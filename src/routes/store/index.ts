@@ -2,6 +2,7 @@ import box from './box';
 import branch from './branch';
 import brand from './brand';
 import category from './category';
+import floor from './floor';
 import group from './group';
 import internal_transfer from './internal_transfer';
 import model from './model';
@@ -36,4 +37,5 @@ export default [
   stock,
   vendor,
   warehouse,
+  floor,
 ];

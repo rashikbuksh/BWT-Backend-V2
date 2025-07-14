@@ -96,7 +96,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(group, eq(category.group_uuid, group.uuid))
     .where(eq(category.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await resultPromise;
 
   if (!data)
     return DataNotFound(c);
