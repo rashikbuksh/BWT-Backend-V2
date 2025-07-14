@@ -2,13 +2,13 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { dateTimePattern } from '@/utils';
 
-import { problem } from '../schema';
+import { section } from '../schema';
 
 //* crud
-export const selectSchema = createSelectSchema(problem);
+export const selectSchema = createSelectSchema(section);
 
 export const insertSchema = createInsertSchema(
-  problem,
+  section,
   {
     uuid: schema => schema.uuid.length(15),
     name: schema => schema.name.min(1),
@@ -27,7 +27,6 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
 }).partial({
-  category: true,
   updated_at: true,
   remarks: true,
 });
