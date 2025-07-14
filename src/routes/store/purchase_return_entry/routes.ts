@@ -117,8 +117,36 @@ export const remove = createRoute({
   },
 });
 
+export const getByPurchaseReturnUuid = createRoute({
+  path: '/store/purchase-return-entry/by/{purchase_return_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      purchase_return_uuid: z.string().uuid(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of purchase_return_entry by purchase_return_uuid',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'purchase_return_entry not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({
+        purchase_return_uuid: z.string().uuid(),
+      })),
+      'Invalid purchase_return_uuid error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetByPurchaseReturnUuidRoute = typeof getByPurchaseReturnUuid;

@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -57,27 +57,29 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: vendor.uuid,
-    name: vendor.name,
-    model_uuid: vendor.model_uuid,
-    model_name: model.name,
-    company_name: vendor.company_name,
-    phone: vendor.phone,
-    address: vendor.address,
-    description: vendor.description,
-    is_active: vendor.is_active,
-    created_by: vendor.created_by,
-    created_by_name: users.name,
-    created_at: vendor.created_at,
-    updated_at: vendor.updated_at,
-    remarks: vendor.remarks,
-  })
+  const vendorPromise = db
+    .select({
+      uuid: vendor.uuid,
+      model_uuid: vendor.model_uuid,
+      model_name: model.name,
+      name: vendor.name,
+      company_name: vendor.company_name,
+      phone: vendor.phone,
+      address: vendor.address,
+      description: vendor.description,
+      is_active: vendor.is_active,
+      created_by: vendor.created_by,
+      created_by_name: users.name,
+      created_at: vendor.created_at,
+      updated_at: vendor.updated_at,
+      remarks: vendor.remarks,
+    })
     .from(vendor)
+    .leftJoin(model, eq(vendor.model_uuid, model.uuid))
     .leftJoin(users, eq(vendor.created_by, users.uuid))
-    .leftJoin(model, eq(vendor.model_uuid, model.uuid));
+    .orderBy(desc(vendor.created_at));
 
-  const data = await resultPromise;
+  const data = await vendorPromise;
 
   return c.json(data, HSCode.OK);
 };
@@ -85,28 +87,29 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: vendor.uuid,
-    name: vendor.name,
-    model_uuid: vendor.model_uuid,
-    model_name: model.name,
-    company_name: vendor.company_name,
-    phone: vendor.phone,
-    address: vendor.address,
-    description: vendor.description,
-    is_active: vendor.is_active,
-    created_by: vendor.created_by,
-    created_by_name: users.name,
-    created_at: vendor.created_at,
-    updated_at: vendor.updated_at,
-    remarks: vendor.remarks,
-  })
+  const vendorPromise = db
+    .select({
+      uuid: vendor.uuid,
+      model_uuid: vendor.model_uuid,
+      model_name: model.name,
+      name: vendor.name,
+      company_name: vendor.company_name,
+      phone: vendor.phone,
+      address: vendor.address,
+      description: vendor.description,
+      is_active: vendor.is_active,
+      created_by: vendor.created_by,
+      created_by_name: users.name,
+      created_at: vendor.created_at,
+      updated_at: vendor.updated_at,
+      remarks: vendor.remarks,
+    })
     .from(vendor)
-    .leftJoin(users, eq(vendor.created_by, users.uuid))
     .leftJoin(model, eq(vendor.model_uuid, model.uuid))
+    .leftJoin(users, eq(vendor.created_by, users.uuid))
     .where(eq(vendor.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await vendorPromise;
 
   if (!data)
     return DataNotFound(c);

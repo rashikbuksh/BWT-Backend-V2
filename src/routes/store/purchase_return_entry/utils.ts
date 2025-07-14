@@ -12,13 +12,7 @@ export const insertSchema = createInsertSchema(
   {
     uuid: schema => schema.uuid.length(15),
     purchase_return_uuid: schema => schema.purchase_return_uuid.length(15),
-    product_uuid: schema => schema.product_uuid.length(15),
-    quantity: schema => schema.quantity.min(1, {
-      message: 'quantity must be at least 1',
-    }),
-    price_per_unit: schema => schema.price_per_unit.min(0, {
-      message: 'price_per_unit must be at least 0',
-    }),
+    purchase_entry_uuid: schema => schema.purchase_entry_uuid.length(15),
     created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
@@ -31,9 +25,8 @@ export const insertSchema = createInsertSchema(
 ).required({
   uuid: true,
   purchase_return_uuid: true,
-  product_uuid: true,
   quantity: true,
-  price_per_unit: true,
+  purchase_entry_uuid: true,
   created_by: true,
   created_at: true,
 }).partial({

@@ -57,23 +57,24 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: rack.uuid,
-    warehouse_uuid: rack.warehouse_uuid,
-    warehouse_name: warehouse.name,
-    name: rack.name,
-    created_by: rack.created_by,
-    created_by_name: users.name,
-    created_at: rack.created_at,
-    updated_at: rack.updated_at,
-    remarks: rack.remarks,
-  })
+  const rackPromise = db
+    .select({
+      uuid: rack.uuid,
+      name: rack.name,
+      warehouse_uuid: rack.warehouse_uuid,
+      warehouse_name: warehouse.name,
+      created_by: rack.created_by,
+      created_by_name: users.name,
+      created_at: rack.created_at,
+      updated_at: rack.updated_at,
+      remarks: rack.remarks,
+    })
     .from(rack)
-    .leftJoin(users, eq(rack.created_by, users.uuid))
     .leftJoin(warehouse, eq(rack.warehouse_uuid, warehouse.uuid))
+    .leftJoin(users, eq(rack.created_by, users.uuid))
     .orderBy(desc(rack.created_at));
 
-  const data = await resultPromise;
+  const data = await rackPromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -81,23 +82,23 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: rack.uuid,
-    warehouse_uuid: rack.warehouse_uuid,
-    warehouse_name: warehouse.name,
-    name: rack.name,
-    created_by: rack.created_by,
-    created_by_name: users.name,
-    created_at: rack.created_at,
-    updated_at: rack.updated_at,
-    remarks: rack.remarks,
-  })
+  const rackPromise = db
+    .select({
+      uuid: rack.uuid,
+      name: rack.name,
+      warehouse_uuid: rack.warehouse_uuid,
+      warehouse_name: warehouse.name,
+      created_by: rack.created_by,
+      created_at: rack.created_at,
+      updated_at: rack.updated_at,
+      remarks: rack.remarks,
+    })
     .from(rack)
-    .leftJoin(users, eq(rack.created_by, users.uuid))
     .leftJoin(warehouse, eq(rack.warehouse_uuid, warehouse.uuid))
+    .leftJoin(users, eq(rack.created_by, users.uuid))
     .where(eq(rack.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await rackPromise;
 
   if (!data)
     return DataNotFound(c);
