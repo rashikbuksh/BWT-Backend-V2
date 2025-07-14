@@ -122,7 +122,7 @@ export const getPurchaseReturnEntryDetailsByPurchaseReturnUuid = createRoute({
   method: 'get',
   request: {
     params: z.object({
-      purchase_return_uuid: z.string().uuid(),
+      purchase_return_uuid: z.string(),
     }),
   },
   tags,

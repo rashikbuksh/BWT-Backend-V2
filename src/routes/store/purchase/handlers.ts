@@ -143,8 +143,8 @@ export const getPurchaseEntryDetailsByPurchaseUuid: AppRouteHandler<GetPurchaseE
   ]);
 
   const response = {
-    ...purchase?.data,
-    purchase_entry: purchase_entry?.data || [],
+    ...purchase,
+    purchase_entry: purchase_entry || [],
   };
 
   if (!response)

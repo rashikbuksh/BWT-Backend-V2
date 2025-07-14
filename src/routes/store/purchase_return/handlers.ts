@@ -145,7 +145,7 @@ export const getPurchaseReturnEntryDetailsByPurchaseReturnUuid: AppRouteHandler<
   ]);
 
   const response = {
-    ...purchase_return?.data,
+    ...purchase_return,
     purchase_return_entry: purchase_return_entry?.data || [],
   };
 

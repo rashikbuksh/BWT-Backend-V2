@@ -90,22 +90,33 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: internal_transfer.remarks,
       from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
       from_warehouse_name: fromWarehouse.name,
-      from_warehouse: PG_DECIMAL_TO_FLOAT(
-        sql`CASE WHEN ${
-          fromWarehouse.assigned
-        } ='warehouse_1' THEN ${product.warehouse_1} WHEN ${
-          fromWarehouse.assigned
-        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
-      ),
+      // from_warehouse: PG_DECIMAL_TO_FLOAT(
+      //   sql`CASE WHEN ${
+      //     fromWarehouse.assigned
+      //   } ='warehouse_1' THEN ${product.warehouse_1} WHEN ${
+      //     fromWarehouse.assigned
+      //   } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      // ),
+      form_warehouse: sql`(CASE 
+        WHEN ${fromWarehouse.assigned} = 'warehouse_1' THEN COALESCE(${product.warehouse_1}, 0)
+        WHEN ${fromWarehouse.assigned} = 'warehouse_2' THEN COALESCE(${product.warehouse_2}, 0)
+        ELSE COALESCE(${product.warehouse_3}, 0)
+      END)::float8`,
       to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
       to_warehouse_name: toWarehouse.name,
-      to_warehouse: PG_DECIMAL_TO_FLOAT(
-        sql`CASE WHEN ${
-          toWarehouse.assigned
-        } = 'warehouse_1' THEN ${product.warehouse_1} WHEN ${
-          toWarehouse.assigned
-        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
-      ),
+      // to_warehouse: PG_DECIMAL_TO_FLOAT(
+      //   sql`CASE WHEN ${
+      //     toWarehouse.assigned
+      //   } = 'warehouse_1' THEN ${product.warehouse_1} WHEN ${
+      //     toWarehouse.assigned
+      //   } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      // ),
+      to_warehouse:
+        sql`(CASE 
+          WHEN ${toWarehouse.assigned} = 'warehouse_1' THEN COALESCE(${product.warehouse_1}, 0) 
+          WHEN ${toWarehouse.assigned} = 'warehouse_2' THEN COALESCE(${product.warehouse_2}, 0) 
+          ELSE COALESCE(${product.warehouse_3}, 0)
+        END)::float8`,
       from_branch_uuid: fromWarehouse.branch_uuid,
       from_branch_name: fromBranch.name,
       to_branch_uuid: toWarehouse.branch_uuid,
@@ -166,22 +177,36 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       remarks: internal_transfer.remarks,
       from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
       from_warehouse_name: fromWarehouse.name,
-      from_warehouse: PG_DECIMAL_TO_FLOAT(
-        sql`CASE WHEN ${
-          fromWarehouse.assigned
-        } ='warehouse_1' THEN ${product.warehouse_1} WHEN ${
-          fromWarehouse.assigned
-        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
-      ),
+      // from_warehouse: PG_DECIMAL_TO_FLOAT(
+      //   sql`CASE WHEN ${
+      //     fromWarehouse.assigned
+      //   } ='warehouse_1' THEN ${product.warehouse_1} WHEN ${
+      //     fromWarehouse.assigned
+      //   } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      // ),
+      from_warehouse: sql`(CASE 
+        WHEN ${fromWarehouse.assigned} = 'warehouse_1' THEN COALESCE(${
+          product.warehouse_1
+        }, 0) 
+        WHEN ${fromWarehouse.assigned} = 'warehouse_2' THEN COALESCE(${
+          product.warehouse_2
+        }, 0) 
+        ELSE COALESCE(${product.warehouse_3}, 0)
+      END)::float8`,
       to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
       to_warehouse_name: toWarehouse.name,
-      to_warehouse: PG_DECIMAL_TO_FLOAT(
-        sql`CASE WHEN ${
-          toWarehouse.assigned
-        } = 'warehouse_1' THEN ${product.warehouse_1} WHEN ${
-          toWarehouse.assigned
-        } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
-      ),
+      // to_warehouse: PG_DECIMAL_TO_FLOAT(
+      //   sql`CASE WHEN ${
+      //     toWarehouse.assigned
+      //   } = 'warehouse_1' THEN ${product.warehouse_1} WHEN ${
+      //     toWarehouse.assigned
+      //   } = 'warehouse_2' THEN ${product.warehouse_2} ELSE ${product.warehouse_3} END`,
+      // ),
+      to_warehouse: sql`(CASE
+        WHEN ${toWarehouse.assigned} = 'warehouse_1' THEN COALESCE(${product.warehouse_1}, 0)
+        WHEN ${toWarehouse.assigned} = 'warehouse_2' THEN COALESCE(${product.warehouse_2}, 0)
+        ELSE COALESCE(${product.warehouse_3}, 0)
+      END)::float8`,
       from_branch_uuid: fromWarehouse.branch_uuid,
       from_branch_name: fromBranch.name,
       to_branch_uuid: toWarehouse.branch_uuid,
