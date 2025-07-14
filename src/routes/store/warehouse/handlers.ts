@@ -57,24 +57,25 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: warehouse.uuid,
-    name: warehouse.name,
-    branch_uuid: warehouse.branch_uuid,
-    branch_name: branch.name,
-    assigned: warehouse.assigned,
-    created_by: warehouse.created_by,
-    created_by_name: users.name,
-    created_at: warehouse.created_at,
-    updated_at: warehouse.updated_at,
-    remarks: warehouse.remarks,
-  })
+  const warehousePromise = db
+    .select({
+      uuid: warehouse.uuid,
+      name: warehouse.name,
+      branch_uuid: warehouse.branch_uuid,
+      branch_name: branch.name,
+      created_by: warehouse.created_by,
+      created_by_name: users.name,
+      created_at: warehouse.created_at,
+      updated_at: warehouse.created_at,
+      remarks: warehouse.remarks,
+      assigned: warehouse.assigned,
+    })
     .from(warehouse)
-    .leftJoin(users, eq(warehouse.created_by, users.uuid))
     .leftJoin(branch, eq(warehouse.branch_uuid, branch.uuid))
+    .leftJoin(users, eq(warehouse.created_by, users.uuid))
     .orderBy(desc(warehouse.created_at));
 
-  const data = await resultPromise;
+  const data = await warehousePromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -82,24 +83,25 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: warehouse.uuid,
-    name: warehouse.name,
-    branch_uuid: warehouse.branch_uuid,
-    branch_name: branch.name,
-    assigned: warehouse.assigned,
-    created_by: warehouse.created_by,
-    created_by_name: users.name,
-    created_at: warehouse.created_at,
-    updated_at: warehouse.updated_at,
-    remarks: warehouse.remarks,
-  })
+  const warehousePromise = db
+    .select({
+      uuid: warehouse.uuid,
+      name: warehouse.name,
+      branch_uuid: warehouse.branch_uuid,
+      branch_name: branch.name,
+      created_by: warehouse.created_by,
+      created_by_name: users.name,
+      created_at: warehouse.created_at,
+      updated_at: warehouse.updated_at,
+      remarks: warehouse.remarks,
+      assigned: warehouse.assigned,
+    })
     .from(warehouse)
-    .leftJoin(users, eq(warehouse.created_by, users.uuid))
     .leftJoin(branch, eq(warehouse.branch_uuid, branch.uuid))
+    .leftJoin(users, eq(warehouse.created_by, users.uuid))
     .where(eq(warehouse.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await warehousePromise;
 
   if (!data)
     return DataNotFound(c);

@@ -244,13 +244,14 @@ export const purchase_return_entry = store.table('purchase_return_entry', {
   purchase_return_uuid: defaultUUID('purchase_return_uuid').references(
     () => purchase_return.uuid,
   ),
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
   quantity: PG_DECIMAL('quantity').notNull(),
-  price_per_unit: PG_DECIMAL('price_per_unit').notNull(),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  purchase_entry_uuid: defaultUUID('purchase_entry_uuid').references(
+    () => purchase_entry.uuid,
+  ),
 });
 
 export const internal_transfer = store.table('internal_transfer', {

@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -57,19 +57,21 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: size.uuid,
-    name: size.name,
-    created_by: size.created_by,
-    created_by_name: users.name,
-    created_at: size.created_at,
-    updated_at: size.updated_at,
-    remarks: size.remarks,
-  })
+  const sizePromise = db
+    .select({
+      uuid: size.uuid,
+      name: size.name,
+      created_by: size.created_by,
+      created_by_name: users.name,
+      created_at: size.created_at,
+      updated_at: size.updated_at,
+      remarks: size.remarks,
+    })
     .from(size)
-    .leftJoin(users, eq(size.created_by, users.uuid));
+    .leftJoin(users, eq(size.created_by, users.uuid))
+    .orderBy(desc(size.created_at));
 
-  const data = await resultPromise;
+  const data = await sizePromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -77,20 +79,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: size.uuid,
-    name: size.name,
-    created_by: size.created_by,
-    created_by_name: users.name,
-    created_at: size.created_at,
-    updated_at: size.updated_at,
-    remarks: size.remarks,
-  })
+  const sizePromise = db
+    .select({
+      uuid: size.uuid,
+      name: size.name,
+      created_by: size.created_by,
+      created_by_name: users.name,
+      created_at: size.created_at,
+      updated_at: size.updated_at,
+      remarks: size.remarks,
+    })
     .from(size)
     .leftJoin(users, eq(size.created_by, users.uuid))
     .where(eq(size.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await sizePromise;
 
   if (!data)
     return DataNotFound(c);
