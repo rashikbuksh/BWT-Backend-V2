@@ -1,13 +1,14 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { users } from '@/routes/hr/schema';
+import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetOneRoute, GetPurchaseEntryDetailsByPurchaseUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { branch, purchase, vendor } from '../schema';
 
@@ -57,28 +58,30 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const resultPromise = db.select({
-    uuid: purchase.uuid,
-    id: purchase.id,
-    vendor_uuid: purchase.vendor_uuid,
-    vendor_name: vendor.name,
-    branch_uuid: purchase.branch_uuid,
-    branch_name: branch.name,
-    date: purchase.date,
-    payment_mode: purchase.payment_mode,
-    created_by: purchase.created_by,
-    created_by_name: users.name,
-    created_at: purchase.created_at,
-    updated_at: purchase.updated_at,
-    remarks: purchase.remarks,
-  })
+  const purchasePromise = db
+    .select({
+      uuid: purchase.uuid,
+      id: purchase.id,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',TO_CHAR(${purchase.id}, 'FM0000'))`,
+      vendor_uuid: purchase.vendor_uuid,
+      vendor_name: vendor.name,
+      branch_uuid: purchase.branch_uuid,
+      branch_name: branch.name,
+      date: purchase.date,
+      payment_mode: purchase.payment_mode,
+      created_by: purchase.created_by,
+      created_by_name: users.name,
+      created_at: purchase.created_at,
+      updated_at: purchase.updated_at,
+      remarks: purchase.remarks,
+    })
     .from(purchase)
-    .leftJoin(users, eq(purchase.created_by, users.uuid))
     .leftJoin(vendor, eq(purchase.vendor_uuid, vendor.uuid))
     .leftJoin(branch, eq(purchase.branch_uuid, branch.uuid))
+    .leftJoin(users, eq(purchase.created_by, users.uuid))
     .orderBy(desc(purchase.created_at));
 
-  const data = await resultPromise;
+  const data = await purchasePromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -86,31 +89,66 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const resultPromise = db.select({
-    uuid: purchase.uuid,
-    id: purchase.id,
-    vendor_uuid: purchase.vendor_uuid,
-    vendor_name: vendor.name,
-    branch_uuid: purchase.branch_uuid,
-    branch_name: branch.name,
-    date: purchase.date,
-    payment_mode: purchase.payment_mode,
-    created_by: purchase.created_by,
-    created_by_name: users.name,
-    created_at: purchase.created_at,
-    updated_at: purchase.updated_at,
-    remarks: purchase.remarks,
-  })
+  const purchasePromise = db
+    .select({
+      uuid: purchase.uuid,
+      id: purchase.id,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',TO_CHAR(${purchase.id}, 'FM0000'))`,
+      vendor_uuid: purchase.vendor_uuid,
+      vendor_name: vendor.name,
+      branch_uuid: purchase.branch_uuid,
+      branch_name: branch.name,
+      date: purchase.date,
+      payment_mode: purchase.payment_mode,
+      created_by: purchase.created_by,
+      created_by_name: users.name,
+      created_at: purchase.created_at,
+      updated_at: purchase.updated_at,
+      remarks: purchase.remarks,
+    })
     .from(purchase)
-    .leftJoin(users, eq(purchase.created_by, users.uuid))
     .leftJoin(vendor, eq(purchase.vendor_uuid, vendor.uuid))
     .leftJoin(branch, eq(purchase.branch_uuid, branch.uuid))
+    .leftJoin(users, eq(purchase.created_by, users.uuid))
     .where(eq(purchase.uuid, uuid));
 
-  const data = await resultPromise;
+  const [data] = await purchasePromise;
 
   if (!data)
     return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
+};
+
+export const getPurchaseEntryDetailsByPurchaseUuid: AppRouteHandler<GetPurchaseEntryDetailsByPurchaseUuidRoute> = async (c: any) => {
+  const { purchase_uuid } = c.req.valid('param');
+
+  const api = await createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`${endpoint}/${purchase_uuid}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  const [purchase, purchase_entry] = await Promise.all([
+    fetchData('/v1/store/purchase'),
+    fetchData('/v1/store/purchase-entry/by'),
+  ]);
+
+  const response = {
+    ...purchase?.data,
+    purchase_entry: purchase_entry?.data || [],
+  };
+
+  if (!response)
+    return DataNotFound(c);
+
+  return c.json(response || {}, HSCode.OK);
 };
