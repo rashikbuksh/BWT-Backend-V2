@@ -7,11 +7,13 @@ import device_permission from './device_permission';
 import employee from './employee';
 import employee_address from './employee_address';
 import employee_document from './employee_document';
+import employee_education from './employee_education';
 import employee_history from './employee_history';
 import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
+import punch_log from './punch_log';
 import roster from './roster';
 import shift_group from './shift_group';
 import shifts from './shifts';
@@ -42,4 +44,6 @@ export default [
   employee_history,
   employee_document,
   device_permission,
+  employee_education,
+  punch_log,
 ];
