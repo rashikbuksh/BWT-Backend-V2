@@ -1,5 +1,6 @@
 import department from './department';
 import designation from './designation';
+import device_list from './device_list';
 import employee from './employee';
 import employment_type from './employment_type';
 import leave_category from './leave_category';
@@ -22,4 +23,5 @@ export default [
   leave_policy,
   leave_category,
   employee,
+  device_list,
 ];
