@@ -778,7 +778,6 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
 
   const { from_date, to_date } = c.req.valid('query');
 
-  // ...existing code...
   const SpecialHolidaysQuery = sql`
                             SELECT
                                 SUM(sh.to_date::date - sh.from_date::date + 1) -
@@ -922,7 +921,6 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
                     AND employee.uuid = ${employee_uuid}
                     ORDER BY employee.created_at DESC
         `;
-  // ...existing code...
 
   const resultPromise = db.execute(query);
 
