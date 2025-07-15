@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -56,7 +56,21 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const data = await db.query.designation.findMany();
+  const designationPromise = db
+    .select({
+      uuid: designation.uuid,
+      designation: designation.designation,
+      created_at: designation.created_at,
+      updated_at: designation.updated_at,
+      remarks: designation.remarks,
+      id: designation.id,
+      hierarchy: designation.hierarchy,
+      status: designation.status,
+    })
+    .from(designation)
+    .orderBy(desc(designation.created_at));
+
+  const data = await designationPromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -64,11 +78,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const data = await db.query.designation.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const designationPromise = db
+    .select({
+      uuid: designation.uuid,
+      designation: designation.designation,
+      created_at: designation.created_at,
+      updated_at: designation.updated_at,
+      remarks: designation.remarks,
+      id: designation.id,
+      hierarchy: designation.hierarchy,
+      status: designation.status,
+    })
+    .from(designation)
+    .where(eq(designation.uuid, uuid));
+
+  const [data] = await designationPromise;
 
   if (!data)
     return DataNotFound(c);

@@ -1,5 +1,3 @@
-import type { JWTPayload } from 'hono/utils/jwt/types';
-
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -10,27 +8,29 @@ import { users } from '../schema';
 //* crud
 export const selectSchema = createSelectSchema(users);
 
-export const signinSchema = z.object({
+export const loginSchema = z.object({
   email: z.string().email(),
   pass: z.string().min(4).max(50),
 });
 
-export const signinOutputSchema = z.object({
-  payload: z.object({
-    uuid: z.string(),
-    name: z.string(),
-    email: z.string(),
-    can_access: z.string(),
-    exp: z.number(),
-  }) as z.Schema<JWTPayload>,
-  token: z.string(),
-});
+// export const signinOutputSchema = z.object({
+//   payload: z.object({
+//     uuid: z.string(),
+//     name: z.string(),
+//     email: z.string(),
+//     can_access: z.string(),
+//     exp: z.number(),
+//   }) as z.Schema<JWTPayload>,
+//   token: z.string(),
+// });
 
 export const insertSchema = createInsertSchema(
   users,
   {
     uuid: schema => schema.uuid.length(15),
     pass: schema => schema.pass.min(4).max(50),
+    designation_uuid: schema => schema.designation_uuid.length(15),
+    department_uuid: schema => schema.department_uuid.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
@@ -40,13 +40,26 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
+  name: true,
+  email: true,
   pass: true,
+  designation_uuid: true,
+  department_uuid: true,
+  phone: true,
   created_at: true,
 }).partial({
+  ext: true,
   status: true,
   can_access: true,
+  user_type: true,
+  business_type: true,
+  where_they_find_us: true,
+  rating: true,
+  price: true,
   updated_at: true,
   remarks: true,
+}).omit({
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();

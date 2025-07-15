@@ -2,16 +2,23 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { dateTimePattern } from '@/utils';
 
-import { department } from '../schema';
+import { special_holidays } from '../schema';
 
 //* crud
-export const selectSchema = createSelectSchema(department);
+export const selectSchema = createSelectSchema(special_holidays);
 
 export const insertSchema = createInsertSchema(
-  department,
+  special_holidays,
   {
     uuid: schema => schema.uuid.length(15),
-    department: schema => schema.department.min(1),
+    workplace_uuid: schema => schema.workplace_uuid.length(15),
+    from_date: schema => schema.from_date.regex(dateTimePattern, {
+      message: 'from_date must be in the format "YYYY-MM-DD HH:MM:SS"',
+    }),
+    to_date: schema => schema.to_date.regex(dateTimePattern, {
+      message: 'to_date must be in the format "YYYY-MM-DD HH:MM:SS"',
+    }),
+    created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
@@ -21,11 +28,13 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  department: true,
+  name: true,
+  workplace_uuid: true,
+  from_date: true,
+  to_date: true,
+  created_by: true,
   created_at: true,
 }).partial({
-  hierarchy: true,
-  status: true,
   updated_at: true,
   remarks: true,
 }).omit({

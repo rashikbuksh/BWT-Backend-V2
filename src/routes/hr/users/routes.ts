@@ -6,14 +6,20 @@ import { notFoundSchema, unauthorizedSchema } from '@/lib/constants';
 import * as param from '@/lib/param';
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { insertSchema, patchSchema, selectSchema, signinOutputSchema, signinSchema } from '../users/utils';
+import { insertSchema, loginSchema, patchSchema, selectSchema } from '../users/utils';
 
 const tags = ['hr.users'];
 
 export const list = createRoute({
-  path: '/hr/users',
+  path: '/hr/user',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      status: z.string().optional(),
+      user_type: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
@@ -23,7 +29,7 @@ export const list = createRoute({
 });
 
 export const create = createRoute({
-  path: '/hr/users',
+  path: '/hr/user',
   method: 'post',
   request: {
     body: jsonContentRequired(
@@ -45,7 +51,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/hr/users/{uuid}',
+  path: '/hr/user/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -68,7 +74,7 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/hr/users/{uuid}',
+  path: '/hr/user/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
@@ -96,7 +102,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/users/{uuid}',
+  path: '/hr/user/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -117,30 +123,42 @@ export const remove = createRoute({
   },
 });
 
-export const signout = createRoute({
-  path: '/signout/{uuid}',
-  method: 'delete',
-  request: {
-    params: param.uuid,
-  },
+// export const signout = createRoute({
+//   path: '/signout/{uuid}',
+//   method: 'delete',
+//   request: {
+//     params: param.uuid,
+//   },
+//   tags,
+//   responses: {
+//     [HSCode.NO_CONTENT]: {
+//       description: 'User Signout',
+//     },
+//     [HSCode.NOT_FOUND]: jsonContent(
+//       notFoundSchema,
+//       'User not found',
+//     ),
+//     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+//       createErrorSchema(param.uuid),
+//       'Invalid id error',
+//     ),
+//   },
+// });
+
+export const getCommonUser = createRoute({
+  path: '/hr/user-common',
+  method: 'get',
   tags,
   responses: {
-    [HSCode.NO_CONTENT]: {
-      description: 'User Signout',
-    },
-    [HSCode.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      'User not found',
-    ),
-    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(param.uuid),
-      'Invalid id error',
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of common users',
     ),
   },
 });
 
 export const getCanAccess = createRoute({
-  path: '/hr/users/can-access/{uuid}',
+  path: '/hr/user/can-access/{uuid}',
   method: 'get',
   tags,
   request: {
@@ -157,7 +175,53 @@ export const getCanAccess = createRoute({
 });
 
 export const patchCanAccess = createRoute({
-  path: '/hr/users/can-access/{uuid}',
+  path: '/hr/user/can-access/{uuid}',
+  method: 'patch',
+  request: {
+    params: param.uuid,
+    body: jsonContentRequired(
+      z.object({
+        can_access: z.string(),
+        updated_at: z.string().optional(),
+      }),
+      'The can_access to update',
+    ),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The updated user',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'User not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(patchSchema)
+        .or(createErrorSchema(param.uuid)),
+      'The validation error(s)',
+    ),
+  },
+});
+
+// export const patchCanAccess = createRoute({
+//   path: '/hr/user/can-access/{uuid}',
+//   method: 'patch',
+//   tags,
+//   request: {
+//     params: param.uuid,
+//   },
+//   responses: {
+//     [HSCode.OK]: jsonContent(
+//       z.array(selectSchema),
+//       'The valueLabel of user',
+//     ),
+//   },
+// });
+
+export const patchUserStatus = createRoute({
+  path: '/hr/user/status/{uuid}',
   method: 'patch',
   tags,
   request: {
@@ -168,39 +232,90 @@ export const patchCanAccess = createRoute({
       z.array(selectSchema),
       'The valueLabel of user',
     ),
-  },
-});
-
-export const patchStatus = createRoute({
-  path: '/hr/users/status/{uuid}',
-  method: 'patch',
-  tags,
-  request: {
-    params: param.uuid,
-  },
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
-      'The valueLabel of user',
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'User not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
     ),
   },
 });
 
-export const signin = createRoute({
-  path: '/signin',
+export const patchUserPassword = createRoute({
+  path: '/hr/user/password/{uuid}',
+  method: 'patch',
+  tags,
+  request: {
+    params: param.uuid,
+    body: jsonContentRequired(
+      z.object({
+        pass: z.string(),
+        updated_at: z.string().optional(),
+      }),
+      'The password to update',
+    ),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The updated user',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'User not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(patchSchema)
+        .or(createErrorSchema(param.uuid)),
+      'The validation error(s)',
+    ),
+  },
+});
+
+export const patchRatingPrice = createRoute({
+  path: '/hr/user/rating-price/{uuid}',
+  method: 'patch',
+  tags,
+  request: {
+    params: param.uuid,
+    body: jsonContentRequired(
+      z.object({
+        rating_price: z.number(),
+        updated_at: z.string().optional(),
+      }),
+      'The rating price to update',
+    ),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The updated user',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'User not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(patchSchema)
+        .or(createErrorSchema(param.uuid)),
+      'The validation error(s)',
+    ),
+  },
+});
+
+export const loginUser = createRoute({
+  path: '/hr/user/login',
   method: 'post',
   request: {
     body: jsonContentRequired(
-      signinSchema,
+      loginSchema,
       'The user login',
     ),
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent(
-      signinOutputSchema,
-      'The logged user',
-    ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
       'User not found',
@@ -216,37 +331,16 @@ export const signin = createRoute({
     ),
   },
 });
-export const patchChangePassword = createRoute({
-  path: '/hr/users/password/{uuid}',
-  method: 'patch',
-  tags,
-  request: {
-    params: param.uuid,
-    body: jsonContentRequired(
-      z.object({
-        pass: z.string(),
-        updated_at: z.string().optional(),
-      }),
-      'The valueLabel of user',
-    ),
-  },
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
-      'The valueLabel of user',
-    ),
-  },
-
-});
 
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
-export type SigninRoute = typeof signin;
+export type GetCommonUserRoute = typeof getCommonUser;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
-export type SignoutRoute = typeof signout;
 export type GetCanAccessRoute = typeof getCanAccess;
 export type PatchCanAccessRoute = typeof patchCanAccess;
-export type PatchStatusRoute = typeof patchStatus;
-export type PatchChangePasswordRoute = typeof patchChangePassword;
+export type PatchUserStatusRoute = typeof patchUserStatus;
+export type PatchUserPasswordRoute = typeof patchUserPassword;
+export type PatchRatingPriceRoute = typeof patchRatingPrice;
+export type LoginRoute = typeof loginUser;
