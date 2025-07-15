@@ -3,7 +3,11 @@ import configuration_entry from './configuration_entry';
 import department from './department';
 import designation from './designation';
 import device_list from './device_list';
+import device_permission from './device_permission';
 import employee from './employee';
+import employee_address from './employee_address';
+import employee_document from './employee_document';
+import employee_history from './employee_history';
 import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
@@ -34,4 +38,8 @@ export default [
   configuration,
   configuration_entry,
   employee,
+  employee_address,
+  employee_history,
+  employee_document,
+  device_permission,
 ];
