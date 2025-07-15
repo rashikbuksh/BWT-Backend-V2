@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -56,7 +56,20 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const data = await db.query.department.findMany();
+  const departmentPromise = db
+    .select({
+      uuid: department.uuid,
+      id: department.id,
+      name: department.department,
+      created_at: department.created_at,
+      updated_at: department.updated_at,
+      hierarchy: department.hierarchy,
+      status: department.status,
+    })
+    .from(department)
+    .orderBy(desc(department.created_at));
+
+  const data = await departmentPromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -64,11 +77,20 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const data = await db.query.department.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const departmentPromise = db
+    .select({
+      uuid: department.uuid,
+      id: department.id,
+      name: department.department,
+      created_at: department.created_at,
+      updated_at: department.updated_at,
+      hierarchy: department.hierarchy,
+      status: department.status,
+    })
+    .from(department)
+    .where(eq(department.uuid, uuid));
+
+  const [data] = await departmentPromise;
 
   if (!data)
     return DataNotFound(c);
