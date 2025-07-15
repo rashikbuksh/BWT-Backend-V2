@@ -111,8 +111,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  console.log('uuid', uuid);
-
   const configurationEntryPromise = db
     .select({
       uuid: configuration_entry.uuid,
