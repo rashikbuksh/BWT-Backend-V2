@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['hr.special_holidays'];
+const tags = ['hr.roster'];
 
 export const list = createRoute({
-  path: '/hr/special-holidays',
+  path: '/hr/roster',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of special-holidays',
+      'The list of roster',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/hr/special-holidays',
+  path: '/hr/roster',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The special-holidays to create',
+      'The roster to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created special-holidays',
+      'The created roster',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,20 +45,22 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/hr/special-holidays/{uuid}',
+  path: '/hr/roster/{id}',
   method: 'get',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested special-holidays',
+      'The requested roster',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'Special-holidays not found',
+      'Roster not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +70,26 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/hr/special-holidays/{uuid}',
+  path: '/hr/roster/{id}',
   method: 'patch',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
     body: jsonContentRequired(
       patchSchema,
-      'The special-holidays updates',
+      'The roster updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated special-holidays',
+      'The updated roster',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'Special-holidays not found',
+      'Roster not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,19 +100,48 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/special-holidays/{uuid}',
+  path: '/hr/roster/{id}',
   method: 'delete',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
   },
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'Special-holidays deleted',
+      description: 'Roster deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'Special-holidays not found',
+      'Roster not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
+export const getRosterCalenderByEmployeeUuid = createRoute({
+  path: '/hr/roster-calendar/by/{employee_uuid}/{year}/{month}',
+  method: 'get',
+  request: {
+    params: z.object({
+      employee_uuid: z.string(),
+      year: z.string(),
+      month: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The roster calendar for the employee',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'Roster calendar not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -122,3 +155,4 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetRosterCalenderByEmployeeUuidRoute = typeof getRosterCalenderByEmployeeUuid;
