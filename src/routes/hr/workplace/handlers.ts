@@ -59,7 +59,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
-  const workPromise = db
+  const workplacePromise = db
     .select({
       uuid: workplace.uuid,
       id: workplace.id,
@@ -78,7 +78,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(users, eq(workplace.created_by, users.uuid))
     .orderBy(desc(workplace.created_at));
 
-  const data = await workPromise;
+  const data = await workplacePromise;
 
   return c.json(data || [], HSCode.OK);
 };
