@@ -239,7 +239,7 @@ export const shift_group = hr.table('shift_group', {
 // ? Roster
 // ! effective_date, shifts_uuid any of these changes will create a new roster entry
 export const roster = hr.table('roster', {
-  id: serial('id').notNull(),
+  id: serial('id').notNull().primaryKey(),
   shift_group_uuid: defaultUUID('shift_group_uuid').references(
     () => shift_group.uuid,
   ),

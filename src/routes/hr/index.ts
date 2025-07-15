@@ -7,8 +7,8 @@ import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
-// import roster from './roster';
-// import shift_group from './shift_group';
+import roster from './roster';
+import shift_group from './shift_group';
 import shifts from './shifts';
 import special_holidays from './special_holidays';
 import sub_department from './sub_department';
@@ -26,8 +26,8 @@ export default [
   device_list,
   general_holiday,
   shifts,
-  // shift_group,
-  // roster,
+  shift_group,
+  roster,
   leave_policy,
   leave_category,
   configuration,

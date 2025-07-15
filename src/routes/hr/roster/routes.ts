@@ -48,7 +48,7 @@ export const getOne = createRoute({
   method: 'get',
   request: {
     params: z.object({
-      id: z.string(),
+      id: z.coerce.number().int().positive(),
     }),
   },
   tags,
@@ -62,7 +62,7 @@ export const getOne = createRoute({
       'Roster not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(z.object({ id: z.string() })), // Fix this line
+      createErrorSchema(z.object({ id: z.coerce.number().int().positive() })),
       'Invalid id error',
     ),
   },
@@ -73,7 +73,7 @@ export const patch = createRoute({
   method: 'patch',
   request: {
     params: z.object({
-      id: z.string(),
+      id: z.coerce.number().int().positive(),
     }),
     body: jsonContentRequired(
       patchSchema,
@@ -92,7 +92,7 @@ export const patch = createRoute({
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
-        .or(createErrorSchema(z.object({ id: z.string() }))),
+        .or(createErrorSchema(z.object({ id: z.coerce.number().int().positive() }))),
       'The validation error(s)',
     ),
   },
@@ -103,7 +103,7 @@ export const remove = createRoute({
   method: 'delete',
   request: {
     params: z.object({
-      id: z.string(),
+      id: z.coerce.number().int().positive(),
     }),
   },
   tags,
@@ -116,7 +116,7 @@ export const remove = createRoute({
       'Roster not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(z.object({ id: z.string() })), // Fix this line
+      createErrorSchema(z.object({ id: z.coerce.number().int().positive() })),
       'Invalid id error',
     ),
   },
