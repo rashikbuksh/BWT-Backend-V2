@@ -17,5 +17,5 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
 
   const data = await designationPromise;
 
-  return c.json(data, HSCode.OK);
+  return c.json(data || [], HSCode.OK);
 };

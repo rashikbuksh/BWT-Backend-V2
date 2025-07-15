@@ -13,6 +13,7 @@ import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
+import policy_and_notice from './policy_and_notice';
 import punch_log from './punch_log';
 import roster from './roster';
 import shift_group from './shift_group';
@@ -46,4 +47,5 @@ export default [
   device_permission,
   employee_education,
   punch_log,
+  policy_and_notice,
 ];
