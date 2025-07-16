@@ -117,8 +117,37 @@ export const remove = createRoute({
   },
 });
 
+export const getEmployeeSalaryDetailsByYearDate = createRoute({
+  path: '/hr/employee-salary-details/by/year-month/{year}/{month}',
+  method: 'get',
+  request: {
+    params: z.object({
+      year: z.string(),
+      month: z.string(),
+    }),
+    query: z.object({
+      employee_uuid: z.string().length(15).optional(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of employee salary details for the specified year and month',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({
+        year: z.string(),
+        month: z.string(),
+      })),
+      'Invalid year or month',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetEmployeeSalaryDetailsByYearDateRoute = typeof getEmployeeSalaryDetailsByYearDate;
