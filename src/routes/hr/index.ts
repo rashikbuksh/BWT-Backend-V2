@@ -1,3 +1,4 @@
+import apply_balance from './apply_balance';
 import apply_leave from './apply_leave';
 import configuration from './configuration';
 import configuration_entry from './configuration_entry';
@@ -18,6 +19,9 @@ import manual_entry from './manual_entry';
 import policy_and_notice from './policy_and_notice';
 import punch_log from './punch_log';
 import roster from './roster';
+import salary_entry from './salary_entry';
+import salary_increment from './salary_increment';
+import salary_occasional from './salary_occasional';
 import shift_group from './shift_group';
 import shifts from './shifts';
 import special_holidays from './special_holidays';
@@ -52,4 +56,8 @@ export default [
   policy_and_notice,
   manual_entry,
   apply_leave,
+  apply_balance,
+  salary_occasional,
+  salary_increment,
+  salary_entry,
 ];
