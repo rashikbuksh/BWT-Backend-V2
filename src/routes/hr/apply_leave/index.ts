@@ -9,8 +9,6 @@ const router = createRouter()
   .openapi(routes.getOne, handlers.getOne)
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
-  .openapi(routes.SelectLateEntryDateByEmployeeUuid, handlers.selectLateEntryDateByEmployeeUuid)
-  .openapi(routes.SelectEmployeePunchLogPerDayByEmployeeUuid, handlers.selectEmployeePunchLogPerDayByEmployeeUuid)
-  .openapi(routes.SelectEmployeeLateDayByEmployeeUuid, handlers.selectEmployeeLateDayByEmployeeUuid);
+  .openapi(routes.selectAllApplyLeaveWithPagination, handlers.selectAllApplyLeaveWithPagination);
 
 export default router;

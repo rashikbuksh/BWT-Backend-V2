@@ -1,3 +1,4 @@
+import apply_leave from './apply_leave';
 import configuration from './configuration';
 import configuration_entry from './configuration_entry';
 import department from './department';
@@ -13,6 +14,7 @@ import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
+import manual_entry from './manual_entry';
 import policy_and_notice from './policy_and_notice';
 import punch_log from './punch_log';
 import roster from './roster';
@@ -48,4 +50,6 @@ export default [
   employee_education,
   punch_log,
   policy_and_notice,
+  manual_entry,
+  apply_leave,
 ];
