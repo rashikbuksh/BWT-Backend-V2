@@ -28,7 +28,7 @@ export async function VerifyToken(token: string) {
 
 export function isPublicRoute(url: string, method: string) {
   const publicUrls: PublicUrlProps[] = [
-    { url: '/v1/signin', method: 'POST' },
+    { url: '/v1/hr/user/login', method: 'POST' },
     { url: '/v1/portfolio', method: 'GET' },
     { url: '/v1/portfolio/online-admission', method: 'POST' },
     { url: '/v1/portfolio/contact-us', method: 'POST' },

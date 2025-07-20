@@ -9,7 +9,6 @@ const other = [
   ...store,
   ...work,
   ...delivery,
-
 ];
 
 export default other;
