@@ -8,21 +8,29 @@ import db from '@/db';
 import type { LeaveHistoryBalanceReportRoute } from './routes';
 
 export const leaveHistoryBalanceReport: AppRouteHandler<LeaveHistoryBalanceReportRoute> = async (c: any) => {
+  const { employee_uuid } = c.req.valid('query');
+
   const query = sql`
-  SELECT
-    leave_history.id,
-    leave_history.user_id,
-    leave_history.start_date,
-    leave_history.end_date,
-    leave_history.status,
-    users.name AS user_name,
-    users.email AS user_email
-  FROM
-    leave_history
-  JOIN
-    users ON leave_history.user_id = users.id
-  WHERE
-    leave_history.status = 'approved'
+    SELECT
+        employee.uuid as employee_uuid,
+        users.name as employee_name,
+        leave_category.uuid as leave_category_uuid,
+        leave_category.name as leave_category_name,
+        apply_leave.year as year,
+        apply_leave.type as type,
+        apply_leave.from_date as from_date,
+        apply_leave.to_date as to_date,
+        apply_leave.reason
+    FROM
+        hr.apply_leave
+    LEFT JOIN
+        hr.employee ON employee.uuid = apply_leave.employee_uuid
+    LEFT JOIN
+        hr.users ON employee.user_uuid = users.uuid
+    LEFT JOIN
+        hr.leave_category ON apply_leave.leave_category_uuid = leave_category.uuid
+    WHERE 
+        ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
   `;
 
   const data = await db.execute(query);
