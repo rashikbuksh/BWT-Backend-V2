@@ -147,7 +147,7 @@ export const manualEntryByEmployee = createRoute({
 });
 
 export const selectAllManualEntryWithPaginationFieldVisit = createRoute({
-  path: '/hr/manual-entry/field-visit',
+  path: '/hr/manual-entry/field-visit/by/pagination',
   method: 'get',
   request: {
     query: z.object({
