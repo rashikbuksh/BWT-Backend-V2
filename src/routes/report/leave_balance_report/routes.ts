@@ -3,16 +3,18 @@ import { jsonContent } from 'stoker/openapi/helpers';
 
 import { createRoute, z } from '@hono/zod-openapi';
 
-const tags = ['report'];
+const tags = ['reports'];
 
-export const leaveHistoryBalanceReport = createRoute({
+export const leaveHistoryReport = createRoute({
   path: '/report/leave-history-report',
   method: 'get',
-  summary: 'Leave History Balance Report',
-  description: 'Get the leave history balance report for an employee',
-  query: z.object({
-    employee_uuid: z.string().optional(),
-  }),
+  summary: 'Leave History Report',
+  description: 'Get the leave history report for an employee',
+  request: {
+    query: z.object({
+      employee_uuid: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(
@@ -34,4 +36,36 @@ export const leaveHistoryBalanceReport = createRoute({
   tags,
 });
 
-export type LeaveHistoryBalanceReportRoute = typeof leaveHistoryBalanceReport;
+export const leaveBalanceReport = createRoute({
+  path: '/report/leave-balance-report',
+  method: 'get',
+  summary: 'Leave Balance Report',
+  description: 'Get the leave balance report for an employee',
+  request: {
+    query: z.object({
+      employee_uuid: z.string().optional(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(
+        z.object({
+          employee_uuid: z.string(),
+          employee_name: z.string(),
+          leave_category_uuid: z.string(),
+          leave_category_name: z.string(),
+          year: z.number(),
+          type: z.string(),
+          from_date: z.string(),
+          to_date: z.string(),
+          reason: z.string().optional(),
+        }),
+      ),
+      'The leave balance report',
+    ),
+  },
+  tags,
+});
+
+export type LeaveHistoryReportRoute = typeof leaveHistoryReport;
+export type LeaveBalanceReportRoute = typeof leaveBalanceReport;
