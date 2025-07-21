@@ -118,7 +118,7 @@ export const remove = createRoute({
 });
 
 export const selectAllApplyLeaveWithPagination = createRoute({
-  path: '/apply-leave/by/pagination',
+  path: '/hr/apply-leave/by/pagination',
   method: 'get',
   request: {
     query: z.object({
