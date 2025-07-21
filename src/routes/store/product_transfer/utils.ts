@@ -12,7 +12,6 @@ export const insertSchema = createInsertSchema(
   product_transfer,
   {
     uuid: schema => schema.uuid.length(15),
-    product_uuid: schema => schema.product_uuid.length(15),
     warehouse_uuid: schema => schema.warehouse_uuid.length(15),
     order_uuid: schema => schema.order_uuid.length(15).optional(),
     quantity: z.number().int().positive(),
@@ -28,14 +27,13 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  product_uuid: true,
+  purchase_entry_uuid: true,
   warehouse_uuid: true,
   order_uuid: true,
   quantity: true,
   created_by: true,
   created_at: true,
 }).partial({
-  purchase_entry_uuid: true,
   updated_at: true,
   remarks: true,
 }).omit({

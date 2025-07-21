@@ -277,7 +277,7 @@ export const internal_transfer = store.table('internal_transfer', {
 export const product_transfer = store.table('product_transfer', {
   id: serial('id').notNull().unique(),
   uuid: uuid_primary,
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+  // product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
   warehouse_uuid: defaultUUID('warehouse_uuid').references(
     () => warehouse.uuid,
   ),
