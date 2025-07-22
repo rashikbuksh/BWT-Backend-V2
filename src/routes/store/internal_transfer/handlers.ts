@@ -122,6 +122,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       from_branch_name: fromBranch.name,
       to_branch_uuid: toWarehouse.branch_uuid,
       to_branch_name: toBranch.name,
+      serial_no: purchase_entry.serial_no,
     })
     .from(internal_transfer)
     .leftJoin(floor, eq(internal_transfer.floor_uuid, floor.uuid))
@@ -214,6 +215,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       from_branch_name: fromBranch.name,
       to_branch_uuid: toWarehouse.branch_uuid,
       to_branch_name: toBranch.name,
+      serial_no: purchase_entry.serial_no,
     })
     .from(internal_transfer)
     .leftJoin(floor, eq(internal_transfer.floor_uuid, floor.uuid))
