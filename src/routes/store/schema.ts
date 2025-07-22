@@ -257,7 +257,6 @@ export const purchase_return_entry = store.table('purchase_return_entry', {
 export const internal_transfer = store.table('internal_transfer', {
   uuid: uuid_primary,
   id: serial('id').notNull().unique(),
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
   from_warehouse_uuid: defaultUUID('from_warehouse_uuid').references(
     () => warehouse.uuid,
   ),
@@ -272,6 +271,9 @@ export const internal_transfer = store.table('internal_transfer', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  purchase_entry_uuid: defaultUUID('purchase_entry_uuid').references(
+    () => purchase_entry.uuid,
+  ),
 });
 
 export const product_transfer = store.table('product_transfer', {
