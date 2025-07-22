@@ -48,11 +48,6 @@ export const ALLOWED_ROUTES: string[] = [
   'http://localhost:3000',
   'http://192.168.10.58:5090',
   'http://103.147.163.46:5090',
-  'http://69.62.85.234',
-  'http://69.62.85.234:4010',
-  'http://69.62.85.234:3000',
-  'https://backend.eub.edu.bd',
-  'https://eub.edu.bd',
-  'https://www.eub.edu.bd',
-  'https://admin.eub.edu.bd',
+  'http://192.168.10.58:4070',
+  'http://103.147.163.46:4070',
 ];
