@@ -9,11 +9,11 @@ export const valueLabel = createRoute({
   path: '/other/work/order/value/label',
   method: 'get',
   tags,
-  // request: {
-  //   query: z.object({
-  //     category: z.string().optional(),
-  //   }),
-  // },
+  request: {
+    query: z.object({
+      is_repair: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
