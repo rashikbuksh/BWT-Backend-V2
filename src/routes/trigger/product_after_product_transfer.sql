@@ -4,8 +4,12 @@ RETURNS TRIGGER AS $$
 
 DECLARE 
     warehouse_name TEXT;
+    product_uuid_new TEXT;
 BEGIN
    SELECT assigned INTO warehouse_name FROM store.warehouse WHERE uuid = NEW.warehouse_uuid;
+
+   SELECT product_uuid INTO product_uuid_new FROM store.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
+
    UPDATE
         store.product
     SET
@@ -22,10 +26,9 @@ BEGIN
         warehouse_10 = CASE WHEN warehouse_name = 'warehouse_10' THEN warehouse_10 - NEW.quantity ELSE warehouse_10 END,
         warehouse_11 = CASE WHEN warehouse_name = 'warehouse_11' THEN warehouse_11 - NEW.quantity ELSE warehouse_11 END,
         warehouse_12 = CASE WHEN warehouse_name = 'warehouse_12' THEN warehouse_12 - NEW.quantity ELSE warehouse_12 END
-        
   
     WHERE
-        uuid = NEW.product_uuid;
+        uuid = product_uuid_new;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -36,9 +39,15 @@ RETURNS TRIGGER AS $$
 DECLARE 
     old_warehouse_name TEXT;
     new_warehouse_name TEXT;
+    product_uuid_old TEXT;
+    product_uuid_new TEXT;
 BEGIN
     SELECT assigned INTO old_warehouse_name FROM store.warehouse WHERE uuid = OLD.warehouse_uuid;
     SELECT assigned INTO new_warehouse_name FROM store.warehouse WHERE uuid = NEW.warehouse_uuid;
+
+    SELECT product_uuid INTO product_uuid_old FROM store.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
+    SELECT product_uuid INTO product_uuid_new FROM store.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
+
     IF old_warehouse_name <> new_warehouse_name THEN
         UPDATE
             store.product
@@ -56,7 +65,7 @@ BEGIN
             warehouse_11 = CASE WHEN old_warehouse_name = 'warehouse_11' THEN warehouse_11 + OLD.quantity ELSE warehouse_11 END,
             warehouse_12 = CASE WHEN old_warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity ELSE warehouse_12 END
         WHERE
-            uuid = OLD.product_uuid;
+            uuid = product_uuid_old;
         UPDATE
             store.product
         SET
@@ -73,8 +82,7 @@ BEGIN
             warehouse_11 = CASE WHEN new_warehouse_name = 'warehouse_11' THEN warehouse_11 - NEW.quantity ELSE warehouse_11 END,
             warehouse_12 = CASE WHEN new_warehouse_name = 'warehouse_12' THEN warehouse_12 - NEW.quantity ELSE warehouse_12 END
         WHERE
-            uuid = NEW.product_uuid;
-
+            uuid = product_uuid_new;
     ELSE
         UPDATE
             store.product
@@ -92,7 +100,7 @@ BEGIN
             warehouse_11 = CASE WHEN old_warehouse_name = 'warehouse_11' THEN warehouse_11 + OLD.quantity - NEW.quantity ELSE warehouse_11 END,
             warehouse_12 = CASE WHEN old_warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity - NEW.quantity ELSE warehouse_12 END
         WHERE
-            uuid = OLD.product_uuid;
+            uuid = product_uuid_old;
     END IF;
     RETURN NEW;
 END;
@@ -103,8 +111,10 @@ RETURNS TRIGGER AS $$
 
 DECLARE 
     warehouse_name TEXT;
+    product_uuid_old TEXT;
 BEGIN
     SELECT assigned INTO warehouse_name FROM store.warehouse WHERE uuid = OLD.warehouse_uuid;
+    SELECT product_uuid INTO product_uuid_old FROM store.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
     UPDATE
         store.product
     SET
@@ -121,7 +131,7 @@ BEGIN
         warehouse_11 = CASE WHEN warehouse_name = 'warehouse_11' THEN warehouse_11 + OLD.quantity ELSE warehouse_11 END,
         warehouse_12 = CASE WHEN warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity ELSE warehouse_12 END
     WHERE
-        uuid = OLD.product_uuid;
+        uuid = product_uuid_old;
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

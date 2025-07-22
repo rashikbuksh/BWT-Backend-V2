@@ -98,6 +98,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                           WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
                           ELSE 0
                         END)::float8`,
+      serial_no: purchase_entry.serial_no,
     })
     .from(product_transfer)
     .leftJoin(
@@ -167,6 +168,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                           WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
                           ELSE 0
                         END)::float8`,
+      serial_no: purchase_entry.serial_no,
     })
     .from(product_transfer)
     .leftJoin(
