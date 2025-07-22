@@ -42,7 +42,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
                         to_warehouse_uuid,
                         created_at,
                         ROW_NUMBER() OVER (PARTITION BY purchase_entry_uuid ORDER BY created_at DESC) as rn
-                      FROM internal_transfer
+                      FROM store.internal_transfer
                     )
                     SELECT purchase_entry_uuid 
                     FROM latest_transfers 
