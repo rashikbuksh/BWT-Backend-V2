@@ -86,6 +86,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     username: data.name,
     // can_access: data.can_access,
     exp: now + 60 * 60 * 24,
+    employee_uuid: data.employee_uuid,
   };
 
   const token = await CreateToken(payload);
@@ -96,6 +97,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     name: data.name,
     department_name: data.department,
     designation_name: data.designation,
+    employee_uuid: data.employee_uuid,
   };
 
   const can_access = data.can_access;
