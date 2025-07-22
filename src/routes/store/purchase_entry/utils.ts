@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -13,14 +14,9 @@ export const insertSchema = createInsertSchema(
     uuid: schema => schema.uuid.length(15),
     purchase_uuid: schema => schema.purchase_uuid.length(15),
     product_uuid: schema => schema.product_uuid.length(15),
-    serial_no: schema => schema.serial_no.length(50),
-    quantity: schema => schema.quantity.min(1, {
-      message: 'quantity must be at least 1',
-    }),
-    price_per_unit: schema => schema.price_per_unit.min(0, {
-      message: 'price_per_unit must be at least 0',
-    }),
-    discount: schema => schema.discount.optional(),
+    quantity: z.number().optional(),
+    price_per_unit: z.number().optional(),
+    discount: z.number().optional(),
     warehouse_uuid: schema => schema.warehouse_uuid.length(15),
     rack_uuid: schema => schema.rack_uuid.length(15),
     floor_uuid: schema => schema.floor_uuid.length(15),
