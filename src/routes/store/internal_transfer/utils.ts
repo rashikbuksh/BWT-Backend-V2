@@ -12,7 +12,7 @@ export const insertSchema = createInsertSchema(
   internal_transfer,
   {
     uuid: schema => schema.uuid.length(15),
-    product_uuid: schema => schema.product_uuid.length(15),
+    purchase_entry_uuid: schema => schema.purchase_entry_uuid.length(15),
     from_warehouse_uuid: schema => schema.from_warehouse_uuid.length(15),
     to_warehouse_uuid: schema => schema.to_warehouse_uuid.length(15),
     rack_uuid: schema => schema.rack_uuid.length(15),
@@ -32,7 +32,7 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  product_uuid: true,
+  purchase_entry_uuid: true,
   from_warehouse_uuid: true,
   to_warehouse_uuid: true,
   quantity: true,

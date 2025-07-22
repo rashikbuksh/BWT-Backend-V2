@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { box, branch, floor, internal_transfer, product, rack, warehouse } from '../schema';
+import { box, branch, floor, internal_transfer, product, purchase_entry, rack, warehouse } from '../schema';
 
 const fromWarehouse = alias(warehouse, 'from_warehouse');
 const toWarehouse = alias(warehouse, 'to_warehouse');
@@ -74,7 +74,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                                         ' - ',
                                         TO_CHAR(${internal_transfer.id}, 'FM0000')
                                     )`,
-      product_uuid: internal_transfer.product_uuid,
+      purchase_entry_uuid: internal_transfer.purchase_entry_uuid,
+      product_uuid: purchase_entry.product_uuid,
       product_name: product.name,
       rack_uuid: internal_transfer.rack_uuid,
       rack_name: rack.name,
@@ -138,7 +139,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       toWarehouse,
       eq(internal_transfer.to_warehouse_uuid, toWarehouse.uuid),
     )
-    .leftJoin(product, eq(internal_transfer.product_uuid, product.uuid))
+    .leftJoin(purchase_entry, eq(internal_transfer.purchase_entry_uuid, purchase_entry.uuid))
+    .leftJoin(product, eq(purchase_entry.product_uuid, product.uuid))
     .leftJoin(fromBranch, eq(fromWarehouse.branch_uuid, fromBranch.uuid))
     .leftJoin(toBranch, eq(toWarehouse.branch_uuid, toBranch.uuid))
     .orderBy(desc(internal_transfer.created_at));
@@ -161,7 +163,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                 ' - ',
                 TO_CHAR(${internal_transfer.id}, 'FM0000')
             )`,
-      product_uuid: internal_transfer.product_uuid,
+      purchase_entry_uuid: internal_transfer.purchase_entry_uuid,
+      product_uuid: purchase_entry.product_uuid,
       product_name: product.name,
       rack_uuid: internal_transfer.rack_uuid,
       rack_name: rack.name,
@@ -228,7 +231,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       toWarehouse,
       eq(internal_transfer.to_warehouse_uuid, toWarehouse.uuid),
     )
-    .leftJoin(product, eq(internal_transfer.product_uuid, product.uuid))
+    .leftJoin(purchase_entry, eq(internal_transfer.purchase_entry_uuid, purchase_entry.uuid))
+    .leftJoin(product, eq(purchase_entry.product_uuid, product.uuid))
     .leftJoin(fromBranch, eq(fromWarehouse.branch_uuid, fromBranch.uuid))
     .leftJoin(toBranch, eq(toWarehouse.branch_uuid, toBranch.uuid))
     .where(eq(internal_transfer.uuid, uuid));
