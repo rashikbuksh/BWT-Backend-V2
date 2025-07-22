@@ -38,19 +38,15 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     const latestInternalTransfers = await db
       .select({
         purchase_entry_uuid: internal_transfer.purchase_entry_uuid,
-        to_warehouse_uuid: internal_transfer.to_warehouse_uuid,
         latest_created_at: max(internal_transfer.created_at).as('latest_created_at'),
       })
       .from(internal_transfer)
-      .groupBy(internal_transfer.purchase_entry_uuid, internal_transfer.to_warehouse_uuid)
+      .where(eq(internal_transfer.to_warehouse_uuid, warehouse_uuid))
+      .groupBy(internal_transfer.purchase_entry_uuid)
       .orderBy(max(internal_transfer.created_at));
 
-    // Filter to get only transfers where to_warehouse_uuid matches the requested warehouse_uuid
-    const matchingTransfers = latestInternalTransfers.filter(
-      transfer => transfer.to_warehouse_uuid === warehouse_uuid,
-    );
-
-    const transferredPurchaseEntryUuids = matchingTransfers.map(t => t.purchase_entry_uuid);
+    // No need for additional filtering since we already filtered in the query
+    const transferredPurchaseEntryUuids = latestInternalTransfers.map(t => t.purchase_entry_uuid);
 
     if (transferredPurchaseEntryUuids.length > 0) {
     // Include entries from internal transfers OR entries from purchase_entry table not in internal_transfer
