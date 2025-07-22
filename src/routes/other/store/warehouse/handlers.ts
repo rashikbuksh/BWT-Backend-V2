@@ -10,7 +10,7 @@ import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const { branch_uuid, purchase_uuid, product_uuid } = c.req.valid('query');
-  let warehousePromise = db.select({
+  let warehousePromise = db.selectDistinct({
     value: warehouse.uuid,
     label: sql`CONCAT( ${warehouse.name}, '(', ${branch.name}, ')' )`,
     assigned: warehouse.assigned,
