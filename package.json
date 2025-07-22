@@ -20,7 +20,7 @@
     "db-push": "drizzle-kit push",
     "db-studio": "drizzle-kit studio --port 4000",
     "deploy": "git pull && npm i && pm2 restart bwt-backend --update-env",
-    "deploy-dev": "git pull && npm i && pm2 restart bwt-backend-v2-dev --update-env"
+    "deploy-dev": "git pull && npm run build && npm i && pm2 restart bwt-backend-v2-dev --update-env"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
