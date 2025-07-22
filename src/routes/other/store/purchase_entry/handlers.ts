@@ -1,10 +1,10 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, eq, max, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { internal_transfer, product, product_transfer, purchase_entry, purchase_return_entry } from '@/routes/store/schema';
+import { product, product_transfer, purchase_entry, purchase_return_entry } from '@/routes/store/schema';
 
 import type { ValueLabelRoute } from './routes';
 
@@ -34,19 +34,23 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     );
   }
   if (warehouse_uuid) {
-  // Get latest internal transfers grouped by purchase_entry_uuid for the specified warehouse
-    const latestInternalTransfers = await db
-      .select({
-        purchase_entry_uuid: internal_transfer.purchase_entry_uuid,
-        latest_created_at: max(internal_transfer.created_at).as('latest_created_at'),
-      })
-      .from(internal_transfer)
-      .where(eq(internal_transfer.to_warehouse_uuid, warehouse_uuid))
-      .groupBy(internal_transfer.purchase_entry_uuid)
-      .orderBy(max(internal_transfer.created_at));
+    // Get latest internal transfers using window function
+    const latestInternalTransfers = await db.execute(sql`
+                    WITH latest_transfers AS (
+                      SELECT 
+                        purchase_entry_uuid,
+                        to_warehouse_uuid,
+                        created_at,
+                        ROW_NUMBER() OVER (PARTITION BY purchase_entry_uuid ORDER BY created_at DESC) as rn
+                      FROM store.internal_transfer
+                    )
+                    SELECT purchase_entry_uuid 
+                    FROM latest_transfers 
+                    WHERE rn = 1 AND to_warehouse_uuid = ${warehouse_uuid}`);
 
-    // No need for additional filtering since we already filtered in the query
-    const transferredPurchaseEntryUuids = latestInternalTransfers.map(t => t.purchase_entry_uuid);
+    const transferredPurchaseEntryUuids = latestInternalTransfers.rows.map(
+      (row: any) => row.purchase_entry_uuid,
+    );
 
     if (transferredPurchaseEntryUuids.length > 0) {
     // Include entries from internal transfers OR entries from purchase_entry table not in internal_transfer
