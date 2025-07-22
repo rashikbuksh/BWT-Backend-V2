@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -10,6 +10,7 @@ import { info, order } from '@/routes/work/schema';
 import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
+  const { is_repair } = c.req.valid('query');
   const orderPromise = db
     .select({
       value: order.uuid,
@@ -35,6 +36,22 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       users,
       eq(info.user_uuid, users.uuid),
     );
+
+  const filters = [];
+
+  if (is_repair === 'true') {
+    filters.push(
+      and(
+        eq(order.is_proceed_to_repair, true),
+        eq(order.is_transferred_for_qc, false),
+        eq(order.is_ready_for_delivery, false),
+      ),
+    );
+  }
+
+  if (filters.length > 0) {
+    orderPromise.where(and(...filters));
+  }
 
   const data = await orderPromise;
 
