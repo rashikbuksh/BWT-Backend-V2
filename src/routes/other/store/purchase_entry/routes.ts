@@ -15,6 +15,7 @@ export const valueLabel = createRoute({
       warehouse_uuid: z.string().optional(),
       purchase_uuid: z.string().optional(),
       is_product_transfer: z.string().optional(),
+      is_warehouse: z.string().optional(),
     }),
   },
   responses: {
