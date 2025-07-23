@@ -1,9 +1,9 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
 import { info } from '../schema';
-
 //* crud
 export const selectSchema = createSelectSchema(info);
 
@@ -43,6 +43,15 @@ export const insertSchema = createInsertSchema(
   remarks: true,
 }).omit({
   id: true,
+}).extend({
+  // Additional fields for user creation
+  is_new_customer: z.string().transform(val => val === 'true').or(z.boolean()).optional(),
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  department_uuid: z.string().length(15).nullable().optional(),
+  designation_uuid: z.string().length(15).nullable().optional(),
+  business_type: z.string().optional(),
+  where_they_find_us: z.string().optional(),
 });
 
 export const patchSchema = insertSchema.partial();
