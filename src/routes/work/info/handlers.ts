@@ -9,6 +9,7 @@ import { nanoid } from '@/lib/nanoid';
 import * as deliverySchema from '@/routes/delivery/schema';
 import * as hrSchema from '@/routes/hr/schema';
 import { users } from '@/routes/hr/schema';
+import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -208,6 +209,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         sql`COALESCE(order_count_tbl.order_count::float8, 0)`,
       delivered_count:
         sql`COALESCE(delivered_count_tbl.delivered_count::float8, 0)`,
+      branch_uuid: info.branch_uuid,
+      branch_name: storeSchema.branch.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -220,7 +223,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(
       deliveredCountSubquery,
       eq(info.uuid, deliveredCountSubquery.info_uuid),
-    );
+    )
+    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid));
 
   if (customer_uuid) {
     infoPromise.where(eq(info.user_uuid, customer_uuid));
@@ -264,11 +268,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       zone_uuid: info.zone_uuid,
       zone_name: zone.name,
       submitted_by: info.submitted_by,
+      branch_uuid: info.branch_uuid,
+      branch_name: storeSchema.branch.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
     .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
+    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .where(eq(info.uuid, uuid));
 
   const [data] = await infoPromise;
