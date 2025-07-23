@@ -610,7 +610,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
-  return c.json(data || {}, HSCode.OK);
+  return c.json(data[0] || {}, HSCode.OK);
 };
 
 export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOrderRoute> = async (c: any) => {
