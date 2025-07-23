@@ -26,19 +26,29 @@ export async function VerifyToken(token: string) {
   return !!decodedPayload;
 }
 
-export function isPublicRoute(url: string, method: string) {
+export function isPublicRoute(url: string, method: string, query?: Record<string, string>) {
+  // Dynamic public route check for /work endpoints
+  const isWorkPublic = url.startsWith('/v1/work') && query?.public === 'true';
+
+  if (isWorkPublic) {
+    return true;
+  }
+
   const publicUrls: PublicUrlProps[] = [
     { url: '/v1/hr/user/login', method: 'POST' },
-    { url: '/v1/portfolio', method: 'GET' },
-    { url: '/v1/portfolio/online-admission', method: 'POST' },
-    { url: '/v1/portfolio/contact-us', method: 'POST' },
-    { url: '/v1/other/', method: 'GET' },
-    { url: '/v1/fde/qns', method: 'GET' },
-    { url: '/v1/fde/qns-category', method: 'GET' },
-    { url: '/v1/fde/respond-student', method: 'POST' },
-    { url: '/v1/fde/evaluation', method: 'POST' },
-    { url: '/v1/lib/sem-crs-thr-entry/', method: 'GET' },
+    { url: '/v1/hr/employee-login', method: 'POST' },
+    { url: '/v1/public', method: 'GET' },
+    { url: '/v1/other/model/value/label', method: 'GET' },
+    { url: '/v1/other/brand/value/label', method: 'GET' },
+    { url: '/v1/work/info', method: 'POST' },
+    { url: '/v1/work/order', method: 'POST' },
+    { url: '/v1/uploads', method: 'GET' },
   ];
+
+  // Check for api-docs routes
+  if (url.startsWith('/api-docs')) {
+    return true;
+  }
 
   return publicUrls.some(route => url.startsWith(route.url) && route.method === method);
 }

@@ -28,7 +28,6 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  id: true,
   user_uuid: true,
   zone_uuid: true,
   created_by: true,
@@ -40,6 +39,8 @@ export const insertSchema = createInsertSchema(
   submitted_by: true,
   updated_at: true,
   remarks: true,
+}).omit({
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();

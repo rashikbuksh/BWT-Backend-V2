@@ -1,6 +1,7 @@
 import delivery from './delivery';
 import hr from './hr';
 import other from './other';
+import publicRoute from './publicRoute';
 import report from './report';
 import store from './store';
 import work from './work';
@@ -12,6 +13,7 @@ const routes = [
   ...report,
   ...work,
   ...other,
+  ...publicRoute,
 ] as const;
 
 export default routes;
