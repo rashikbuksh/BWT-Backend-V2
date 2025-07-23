@@ -12,7 +12,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetByOrderUuidRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { product, product_transfer, purchase_entry, warehouse } from '../schema';
+import { branch, product, product_transfer, purchase_entry, warehouse } from '../schema';
 
 const user = alias(users, 'user');
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
@@ -245,6 +245,9 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
                           WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
                           ELSE 0
                         END)::float8`,
+      serial_no: purchase_entry.serial_no,
+      branch_uuid: warehouse.branch_uuid,
+      branch_name: branch.name,
     })
     .from(product_transfer)
     .leftJoin(
@@ -269,6 +272,7 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
       eq(workSchema.order.info_uuid, workSchema.info.uuid),
     )
     .leftJoin(user, eq(workSchema.info.user_uuid, user.uuid))
+    .leftJoin(branch, eq(warehouse.branch_uuid, branch.uuid))
     .where(eq(product_transfer.order_uuid, order_uuid))
 
     .groupBy(
@@ -303,6 +307,9 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
       product.warehouse_10,
       product.warehouse_11,
       product.warehouse_12,
+      purchase_entry.serial_no,
+      branch.name,
+      warehouse.branch_uuid,
     );
 
   const data = await productTransferPromise;
