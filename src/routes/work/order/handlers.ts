@@ -808,6 +808,10 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       image_1: orderTable.image_1,
       image_2: orderTable.image_2,
       image_3: orderTable.image_3,
+      status: diagnosis.status,
+      diagnosis_proposed_cost: PG_DECIMAL_TO_FLOAT(diagnosis.proposed_cost),
+      status_update_date: diagnosis.status_update_date,
+
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
