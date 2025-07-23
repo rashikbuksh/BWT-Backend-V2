@@ -310,7 +310,7 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
   ]);
 
   // Check if order.data exists and is an array before processing
-  const orderData = order;
+  const orderData = Array.isArray(order) ? order : [];
 
   // Process each order to fetch diagnosis and process data conditionally
   const enrichedOrders = await Promise.all(
