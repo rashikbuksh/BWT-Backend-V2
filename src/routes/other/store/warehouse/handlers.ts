@@ -37,13 +37,14 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
 
   if (product_uuid) {
     warehousePromise = warehousePromise
-      .leftJoin(
-        purchase_entry,
-        eq(warehouse.uuid, purchase_entry.warehouse_uuid),
-      )
-      .leftJoin(product, eq(purchase_entry.product_uuid, product.uuid));
+      // .leftJoin(
+      //   purchase_entry,
+      //   eq(warehouse.uuid, purchase_entry.warehouse_uuid),
+      // )
+      // .leftJoin(product, eq(purchase_entry.product_uuid, product.uuid))
+      .leftJoin(product, eq(product.uuid, product_uuid));
 
-    filters.push(eq(purchase_entry.product_uuid, product_uuid));
+    // filters.push(eq(purchase_entry.product_uuid, product_uuid));
 
     // Filter based on assigned warehouse and product stock for warehouse_1 to warehouse_12
     filters.push(
