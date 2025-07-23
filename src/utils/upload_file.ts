@@ -11,7 +11,10 @@ const __dirname = path.dirname(__filename);
 export async function insertFile(file: any, folderName: string) {
   const buffer = await file.arrayBuffer(); // Ensure this is awaited
 
-  const upload_path = `/uploads/${folderName}/${nanoid()}.${file.name.split('.').pop()}`;
+  // Use provided year or current year
+  const targetYear = new Date().getFullYear();
+
+  const upload_path = `/uploads/${targetYear}/${folderName}/${nanoid()}.${file.name.split('.').pop()}`;
   const fullUploadPath = path.join(__dirname, '../', upload_path);
 
   // Ensure the directory exists

@@ -12,6 +12,7 @@ import * as hrSchema from '@/routes/hr/schema';
 import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
+import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
@@ -21,14 +22,32 @@ const user = alias(hrSchema.users, 'user');
 const orderTable = alias(order, 'work_order');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
-  const value = c.req.valid('json');
+  // const value = c.req.valid('json');
+
+  const formData = await c.req.parseBody();
 
   const {
     model_uuid,
     brand_uuid,
     created_by,
     created_at,
-  } = value;
+    image_1,
+    image_2,
+    image_3,
+  } = formData;
+
+  let imagePath_1 = null;
+  let imagePath_2 = null;
+  let imagePath_3 = null;
+
+  if (image_1)
+    imagePath_1 = await insertFile(image_1, 'work/order');
+
+  if (image_2)
+    imagePath_2 = await insertFile(image_2, 'work/order');
+
+  if (image_3)
+    imagePath_3 = await insertFile(image_3, 'work/order');
 
   let finalModelUuid = model_uuid;
 
@@ -57,7 +76,17 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
-  const [data] = await db.insert(order).values({ ...value, model_uuid: finalModelUuid }).returning({
+  const value = {
+    ...formData,
+    model_uuid: finalModelUuid,
+    image_1: imagePath_1,
+    image_2: imagePath_2,
+    image_3: imagePath_3,
+    created_by,
+    created_at,
+  };
+
+  const [data] = await db.insert(order).values({ ...value }).returning({
     name: order.uuid,
   });
 
@@ -68,6 +97,47 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
   const updates = c.req.valid('json');
 
+  const formData = await c.req.parseBody();
+
+  // updates includes image then do it else exclude it
+  if ((formData.image_1 && typeof formData.image_1 === 'object')
+    || (formData.image_2 && typeof formData.image_2 === 'object')
+    || (formData.image_3 && typeof formData.image_3 === 'object')) {
+    // get user image name
+    const userData = await db.query.order.findFirst({
+      where(fields, operators) {
+        return operators.eq(fields.uuid, uuid);
+      },
+    });
+
+    if (userData && userData.image_1 && formData.image_1) {
+      const imagePath = await updateFile(formData.image_1, userData.image_1, 'work/order');
+      formData.image_1 = imagePath;
+    }
+    else {
+      const imagePath = await insertFile(formData.image_1, 'work/order');
+      formData.image_1 = imagePath;
+    }
+
+    if (userData && userData.image_2 && formData.image_2) {
+      const imagePath = await updateFile(formData.image_2, userData.image_2, 'work/order');
+      formData.image_2 = imagePath;
+    }
+    else {
+      const imagePath = await insertFile(formData.image_2, 'work/order');
+      formData.image_2 = imagePath;
+    }
+
+    if (userData && userData.image_3 && formData.image_3) {
+      const imagePath = await updateFile(formData.image_3, userData.image_3, 'work/order');
+      formData.image_3 = imagePath;
+    }
+    else {
+      const imagePath = await insertFile(formData.image_3, 'work/order');
+      formData.image_3 = imagePath;
+    }
+  }
+
   if (Object.keys(updates).length === 0)
     return ObjectNotFound(c);
 
@@ -76,7 +146,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     brand_uuid,
     created_by,
     updated_at,
-  } = updates;
+  } = formData;
 
   let finalModelUuid = model_uuid;
   if (model_uuid) {
@@ -103,7 +173,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     }
   }
   const [data] = await db.update(order)
-    .set({ ...updates, model_uuid: finalModelUuid })
+    .set({ ...formData, model_uuid: finalModelUuid })
     .where(eq(order.uuid, uuid))
     .returning({
       name: order.uuid,
@@ -117,6 +187,23 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
+
+  // get order image name
+
+  const orderData = await db.query.order.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
+
+  if (orderData && (orderData.image_1 || orderData.image_2 || orderData.image_3)) {
+    if (orderData.image_1)
+      deleteFile(orderData.image_1);
+    if (orderData.image_2)
+      deleteFile(orderData.image_2);
+    if (orderData.image_3)
+      deleteFile(orderData.image_3);
+  }
 
   const [data] = await db.delete(order)
     .where(eq(order.uuid, uuid))
@@ -187,6 +274,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_home_repair: orderTable.is_home_repair,
       proposed_cost: PG_DECIMAL_TO_FLOAT(orderTable.proposed_cost),
       is_challan_needed: orderTable.is_challan_needed,
+      image_1: orderTable.image_1,
+      image_2: orderTable.image_2,
+      image_3: orderTable.image_3,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -453,6 +543,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_home_repair: orderTable.is_home_repair,
       proposed_cost: PG_DECIMAL_TO_FLOAT(orderTable.proposed_cost),
       is_challan_needed: orderTable.is_challan_needed,
+      image_1: orderTable.image_1,
+      image_2: orderTable.image_2,
+      image_3: orderTable.image_3,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -707,6 +800,9 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       is_home_repair: orderTable.is_home_repair,
       proposed_cost: PG_DECIMAL_TO_FLOAT(orderTable.proposed_cost),
       is_challan_needed: orderTable.is_challan_needed,
+      image_1: orderTable.image_1,
+      image_2: orderTable.image_2,
+      image_3: orderTable.image_3,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))

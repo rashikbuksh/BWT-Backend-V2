@@ -113,6 +113,9 @@ export const order = work.table('order', {
   is_home_repair: boolean('is_home_repair').default(false),
   proposed_cost: PG_DECIMAL('proposed_cost').default(sql`0`),
   is_challan_needed: boolean('is_challan_needed').default(false),
+  image_1: text('image_1').default(sql`null`),
+  image_2: text('image_2').default(sql`null`),
+  image_3: text('image_3').default(sql`null`),
 });
 export const statusEnum = pgEnum('status', [
   'pending',
