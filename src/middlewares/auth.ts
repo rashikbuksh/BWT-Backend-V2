@@ -43,6 +43,10 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     { url: '/v1/work/info', method: 'POST' },
     { url: '/v1/work/order', method: 'POST' },
     { url: '/v1/uploads', method: 'GET' },
+    { url: '/v1/work/order', method: 'GET' }, /// public route need to add
+    { url: '/v1/work/order-by-info', method: 'GET' },
+    { url: '/v1/work/diagnosis-by-order', method: 'GET' },
+    { url: '/v1/work/process', method: 'GET' },
   ];
 
   // Check for api-docs routes
