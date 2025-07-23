@@ -32,18 +32,18 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   if (is_quantity) {
     productPromise.where(
       or(
-        gt(product.warehouse_1, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_2, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_3, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_4, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_5, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_6, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_7, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_8, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_9, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_10, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_11, PG_DECIMAL_TO_FLOAT(0)),
-        gt(product.warehouse_12, PG_DECIMAL_TO_FLOAT(0)),
+        gt(product.warehouse_1, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_2, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_3, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_4, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_5, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_6, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_7, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_8, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_9, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_10, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_11, PG_DECIMAL_TO_FLOAT(0, false)),
+        gt(product.warehouse_12, PG_DECIMAL_TO_FLOAT(0, false)),
       ),
     );
   }

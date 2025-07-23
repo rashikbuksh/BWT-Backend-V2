@@ -25,9 +25,14 @@ export function PG_DECIMAL(column: ColumnProps['default']) {
   }).notNull();
 }
 
-export function PG_DECIMAL_TO_FLOAT(column: any) {
-  const tableName = column.table[Symbol.for('drizzle:Name')];
-  return sql`coalesce(${sql.raw(tableName)}.${sql.raw(column.name)}, 0)::float8`;
+export function PG_DECIMAL_TO_FLOAT(column: any, table = true) {
+  if (table) {
+    const tableName = column.table[Symbol.for('drizzle:Name')];
+    return sql`coalesce(${sql.raw(tableName)}.${sql.raw(column.name)}, 0)::float8`;
+  }
+  else {
+    return sql`${sql.raw(column.name)}::float8`;
+  }
 }
 
 export function constructSelectAllQuery(
