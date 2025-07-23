@@ -16,6 +16,7 @@ export const insertSchema = createInsertSchema(
       message: 'received_date must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     zone_uuid: schema => schema.zone_uuid.length(15),
+    branch_uuid: schema => schema.branch_uuid.length(15),
     created_by: schema => schema.created_by.length(15),
 
     created_at: schema => schema.created_at.regex(dateTimePattern, {
@@ -33,6 +34,7 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
 }).partial({
+  branch_uuid: true,
   received_date: true,
   is_product_received: true,
   location: true,

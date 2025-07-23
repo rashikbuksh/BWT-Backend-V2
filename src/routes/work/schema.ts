@@ -60,6 +60,9 @@ export const info = work.table('info', {
   zone_uuid: defaultUUID('zone_uuid').references(() => zone.uuid),
   location: text('location').default(sql`null`),
   submitted_by: submittedByEnum('submitted_by').default('employee'),
+  branch_uuid: defaultUUID('branch_uuid').references(
+    () => storeSchema.branch.uuid,
+  ).default(sql`'wW4ofP5YSFmlLAH'`),
 });
 
 export const order = work.table('order', {
