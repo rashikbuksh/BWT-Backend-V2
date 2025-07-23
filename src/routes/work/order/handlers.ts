@@ -86,7 +86,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     created_at,
   };
 
-  const [data] = await db.insert(order).values({ ...value }).returning({
+  const [data] = await db.insert(order).values(value).returning({
     name: order.uuid,
   });
 
