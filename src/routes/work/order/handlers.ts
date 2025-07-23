@@ -40,13 +40,13 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   let imagePath_2 = null;
   let imagePath_3 = null;
 
-  if (image_1)
+  if (image_1 && image_1 !== 'undefined' && image_1 !== 'null')
     imagePath_1 = await insertFile(image_1, 'work/order');
 
-  if (image_2)
+  if (image_2 && image_2 !== 'undefined' && image_2 !== 'null')
     imagePath_2 = await insertFile(image_2, 'work/order');
 
-  if (image_3)
+  if (image_3 && image_3 !== 'undefined' && image_3 !== 'null')
     imagePath_3 = await insertFile(image_3, 'work/order');
 
   let finalModelUuid = model_uuid;
