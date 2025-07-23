@@ -17,6 +17,7 @@ export const getOrderDetailsByInfoUuidForPublic = createRoute({
     query: z.object({
       diagnosis: z.string().optional(),
       process: z.string().optional(),
+      public: z.string().optional(),
     }),
   },
   tags,

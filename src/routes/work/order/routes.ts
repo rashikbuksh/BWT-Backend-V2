@@ -162,6 +162,9 @@ export const getByInfo = createRoute({
     params: z.object({
       info_uuid: z.string(),
     }),
+    query: z.object({
+      public: z.string().optional(),
+    }),
   },
   tags,
   responses: {
