@@ -72,6 +72,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_at: purchase_return_entry.created_at,
       updated_at: purchase_return_entry.updated_at,
       remarks: purchase_return_entry.remarks,
+      serial_no: purchase_entry.serial_no,
     })
     .from(purchase_return_entry)
     .leftJoin(
@@ -111,6 +112,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       created_at: purchase_return_entry.created_at,
       updated_at: purchase_return_entry.updated_at,
       remarks: purchase_return_entry.remarks,
+      serial_no: purchase_entry.serial_no,
     })
     .from(purchase_return_entry)
     .leftJoin(
@@ -153,6 +155,7 @@ export const getByPurchaseReturnUuid: AppRouteHandler<GetByPurchaseReturnUuidRou
       created_at: purchase_return_entry.created_at,
       updated_at: purchase_return_entry.updated_at,
       remarks: purchase_return_entry.remarks,
+      serial_no: purchase_entry.serial_no,
     })
     .from(purchase_return_entry)
     .leftJoin(
