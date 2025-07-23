@@ -77,7 +77,12 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   const value = {
-    ...formData,
+    uuid: formData.uuid,
+    is_diagnosis_need: formData.is_diagnosis_need,
+    is_proceed_to_repair: formData.is_proceed_to_repair,
+    problem_statement: formData.problem_statement,
+    info_uuid: formData.info_uuid,
+    brand_uuid: formData.brand_uuid,
     model_uuid: finalModelUuid,
     image_1: imagePath_1,
     image_2: imagePath_2,
