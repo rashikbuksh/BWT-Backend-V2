@@ -35,6 +35,10 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     submitted_by,
   } = value;
 
+  console.log('Creating info with value:', value);
+  console.log('User UUID:', user_uuid);
+  console.log('Is new customer:', is_new_customer);
+
   let userUuid = user_uuid;
   if (is_new_customer) {
     const formattedName = name.toLowerCase().replace(/\s+/g, '');
