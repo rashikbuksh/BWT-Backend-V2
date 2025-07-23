@@ -102,8 +102,28 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                 END
             ), 0)) as unauthorized_absent_days,
 
-            -- Absent Dates
-            json_agg(calendar_date) as absent_days
+            -- Absent Dates (only dates without punch records and not on leave)
+            json_agg(
+                DISTINCT CASE 
+                    WHEN punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL 
+                    THEN calendar_date.date 
+                    ELSE NULL 
+                END
+            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as absent_days,
+            json_agg(
+                CASE 
+                    WHEN punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL 
+                    THEN shifts.start_time::time
+                    ELSE NULL 
+                END
+            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as start_times,
+            json_agg(
+                CASE 
+                    WHEN punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL 
+                    THEN shifts.end_time::time
+                    ELSE NULL 
+                END
+            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as end_times
         FROM 
             hr.employee
         LEFT JOIN 
@@ -137,12 +157,16 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
             AND employee.workplace_uuid = special_holidays.workplace_uuid
         LEFT JOIN
             hr.shift_group sg_calendar ON employee.shift_group_uuid = sg_calendar.uuid
+        LEFT JOIN
+            hr.shifts ON sg_calendar.shifts_uuid = shifts.uuid
+        LEFT JOIN 
+            hr.roster ON shifts.uuid = roster.shifts_uuid AND sg_calendar.uuid = roster.shift_group_uuid
         WHERE 
             employee.status = true
             AND employee.exclude_from_attendance = false
             ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
             -- Exclude off days based on shift group off_days
-            AND NOT (sg_calendar.off_days::jsonb ? LPAD(LOWER(TO_CHAR(calendar_date.date, 'Day')), 3))
+            AND NOT (CASE WHEN calendar_date.date < roster.effective_date THEN sg_calendar.off_days::jsonb ? LPAD(LOWER(TO_CHAR(calendar_date.date, 'Day')), 3) ELSE roster.off_days::jsonb ? LPAD(LOWER(TO_CHAR(calendar_date.date, 'Day')), 3) END)
             AND general_holidays.uuid IS NULL
             AND special_holidays.uuid IS NULL
         GROUP BY
