@@ -8,7 +8,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 const tags = ['publics'];
 
 export const getOrderDetailsByInfoUuidForPublic = createRoute({
-  path: '/work/order-details-by-info/{info_uuid}',
+  path: '/public/work/order-details-by-info/{info_uuid}',
   method: 'get',
   request: {
     params: z.object({
