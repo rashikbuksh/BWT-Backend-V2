@@ -18,6 +18,8 @@ export const list = createRoute({
     query: z.object({
       order_uuid: z.string().optional(),
       entry: z.string().optional(),
+      info_uuid: z.string().optional(),
+      public: z.string().optional(),
     }),
   },
   responses: {

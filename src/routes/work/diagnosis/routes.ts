@@ -124,6 +124,9 @@ export const getByOrder = createRoute({
     params: z.object({
       order_uuid: z.string(),
     }),
+    query: z.object({
+      public: z.string().optional(),
+    }),
   },
   tags,
   responses: {
