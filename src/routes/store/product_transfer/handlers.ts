@@ -99,6 +99,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                           ELSE 0
                         END)::float8`,
       serial_no: purchase_entry.serial_no,
+      branch_uuid: warehouse.branch_uuid,
+      branch_name: branch.name,
     })
     .from(product_transfer)
     .leftJoin(
@@ -122,7 +124,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       workSchema.info,
       eq(workSchema.order.info_uuid, workSchema.info.uuid),
     )
-    .leftJoin(user, eq(workSchema.info.user_uuid, user.uuid));
+    .leftJoin(user, eq(workSchema.info.user_uuid, user.uuid))
+    .leftJoin(branch, eq(warehouse.branch_uuid, branch.uuid));
 
   const data = await productTransferPromise;
 
@@ -169,6 +172,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                           ELSE 0
                         END)::float8`,
       serial_no: purchase_entry.serial_no,
+      branch_uuid: warehouse.branch_uuid,
+      branch_name: branch.name,
     })
     .from(product_transfer)
     .leftJoin(
@@ -193,6 +198,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       eq(workSchema.order.info_uuid, workSchema.info.uuid),
     )
     .leftJoin(user, eq(workSchema.info.user_uuid, user.uuid))
+    .leftJoin(branch, eq(warehouse.branch_uuid, branch.uuid))
     .where(eq(product_transfer.uuid, uuid));
 
   const [data] = await productTransferPromise;
