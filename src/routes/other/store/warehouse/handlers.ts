@@ -32,7 +32,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
         purchase_entry,
         eq(warehouse.uuid, purchase_entry.warehouse_uuid),
       );
-    filters.push(eq(purchase_entry.uuid, purchase_uuid));
+    filters.push(eq(purchase_entry.purchase_uuid, purchase_uuid));
   }
 
   if (product_uuid) {
