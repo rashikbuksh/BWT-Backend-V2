@@ -31,7 +31,7 @@ export function PG_DECIMAL_TO_FLOAT(column: any, table = true) {
     return sql`coalesce(${sql.raw(tableName)}.${sql.raw(column.name)}, 0)::float8`;
   }
   else {
-    return sql`${sql.raw(column.name)}::float8`;
+    return sql`${column}::float8`;
   }
 }
 
