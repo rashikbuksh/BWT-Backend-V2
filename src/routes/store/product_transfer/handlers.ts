@@ -245,6 +245,7 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
                           WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
                           ELSE 0
                         END)::float8`,
+      serial_no: purchase_entry.serial_no,
     })
     .from(product_transfer)
     .leftJoin(
@@ -303,6 +304,7 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
       product.warehouse_10,
       product.warehouse_11,
       product.warehouse_12,
+      purchase_entry.serial_no,
     );
 
   const data = await productTransferPromise;
