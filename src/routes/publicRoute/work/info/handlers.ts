@@ -30,7 +30,21 @@ export const getOrderDetailsByInfoUuidForPublic: AppRouteHandler<GetOrderDetails
   ]);
 
   // Check if order.data exists and is an array before processing
-  const orderData = order;
+  // const orderData = order;
+
+  //  // Handle different response structures between local and remote servers
+  const orderData = Array.isArray(order) ? order : (order?.data || []);
+
+  // Ensure orderData is an array before processing
+  if (!Array.isArray(orderData)) {
+    console.error('Order data is not an array:', orderData);
+    return c.json({
+      ...info,
+      order_entry: [],
+    }, HSCode.OK);
+  }
+
+  // console.log('Order Data:', orderData);
 
   // Process each order to fetch diagnosis and process data conditionally
   const enrichedOrders = await Promise.all(
