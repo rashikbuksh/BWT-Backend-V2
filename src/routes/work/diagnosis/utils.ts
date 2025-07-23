@@ -14,7 +14,7 @@ export const insertSchema = createInsertSchema(
     uuid: schema => schema.uuid.length(15),
     order_uuid: schema => schema.order_uuid.min(1),
     engineer_uuid: schema => schema.engineer_uuid.length(15),
-    problems_uuid: schema => schema.problems_uuid.array().optional(),
+    problems_uuid: z.array(z.string()).optional(),
     problem_statement: schema => schema.problem_statement.optional(),
     status: schema => schema.status.optional(),
     status_update_date: schema => schema.status_update_date.optional(),
