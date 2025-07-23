@@ -57,8 +57,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
-  const [data] = await db.insert(orderTable).values({ ...value, model_uuid: finalModelUuid }).returning({
-    name: orderTable.uuid,
+  const [data] = await db.insert(order).values({ ...value, model_uuid: finalModelUuid }).returning({
+    name: order.uuid,
   });
 
   return c.json(createToast('create', data.name), HSCode.OK);
@@ -102,11 +102,11 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       finalModelUuid = newModel.uuid;
     }
   }
-  const [data] = await db.update(orderTable)
+  const [data] = await db.update(order)
     .set({ ...updates, model_uuid: finalModelUuid })
-    .where(eq(orderTable.uuid, uuid))
+    .where(eq(order.uuid, uuid))
     .returning({
-      name: orderTable.uuid,
+      name: order.uuid,
     });
 
   if (!data)
@@ -118,10 +118,10 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const [data] = await db.delete(orderTable)
-    .where(eq(orderTable.uuid, uuid))
+  const [data] = await db.delete(order)
+    .where(eq(order.uuid, uuid))
     .returning({
-      name: orderTable.uuid,
+      name: order.uuid,
     });
 
   if (!data)
