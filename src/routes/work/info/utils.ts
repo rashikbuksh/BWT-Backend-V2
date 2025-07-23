@@ -11,14 +11,13 @@ export const insertSchema = createInsertSchema(
   info,
   {
     uuid: schema => schema.uuid.length(15),
-    user_uuid: schema => schema.user_uuid.length(15),
+    user_uuid: schema => schema.user_uuid.length(15).optional(),
     received_date: schema => schema.received_date.regex(dateTimePattern, {
       message: 'received_date must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
-    zone_uuid: schema => schema.zone_uuid.length(15),
-    branch_uuid: schema => schema.branch_uuid.length(15),
+    zone_uuid: schema => schema.zone_uuid.length(15).optional(),
+    branch_uuid: schema => schema.branch_uuid.length(15).optional(),
     created_by: schema => schema.created_by.length(15),
-
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
@@ -29,11 +28,11 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  user_uuid: true,
-  zone_uuid: true,
   created_by: true,
   created_at: true,
 }).partial({
+  user_uuid: true,
+  zone_uuid: true,
   branch_uuid: true,
   received_date: true,
   is_product_received: true,
