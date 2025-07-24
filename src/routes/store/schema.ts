@@ -69,7 +69,7 @@ export const model = store.table('model', {
 
 export const vendor = store.table('vendor', {
   uuid: uuid_primary,
-  model_uuid: defaultUUID('model_uuid').references(() => model.uuid),
+  // model_uuid: defaultUUID('model_uuid').references(() => model.uuid),
   name: text('name').notNull(),
   company_name: text('company_name').notNull(),
   phone: text('phone').notNull(),
@@ -80,6 +80,7 @@ export const vendor = store.table('vendor', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  brand_uuid: defaultUUID('brand_uuid').references(() => brand.uuid).default(sql`null`),
 });
 
 export const typeEnum = pgEnum('type', ['inventory', 'service']);
