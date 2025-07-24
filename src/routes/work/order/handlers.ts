@@ -21,6 +21,26 @@ import { accessory, diagnosis, info, order, problem } from '../schema';
 const user = alias(hrSchema.users, 'user');
 const orderTable = alias(order, 'work_order');
 
+// Helper function to process array fields from form data
+function processArrayField(value: any): string[] {
+  if (!value)
+    return [];
+  if (Array.isArray(value))
+    return value;
+  if (typeof value === 'string') {
+    // Try parsing as JSON first
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [value];
+    }
+    catch {
+      // If not JSON, check for comma-separated values
+      return value.includes(',') ? value.split(',').map(s => s.trim()) : [value];
+    }
+  }
+  return [value];
+}
+
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   // const value = c.req.valid('json');
 
@@ -105,9 +125,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     proposed_cost: proposed_cost || 0,
     bill_amount: bill_amount || 0,
     serial_no,
-    problems_uuid: Array.isArray(problems_uuid) ? problems_uuid : (problems_uuid ? [problems_uuid] : []),
+    problems_uuid: processArrayField(problems_uuid),
     problem_statement,
-    accessories: Array.isArray(accessories) ? accessories : (accessories ? [accessories] : []),
+    accessories: processArrayField(accessories),
     warehouse_uuid,
     rack_uuid,
     floor_uuid,
@@ -188,20 +208,20 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     accessories,
   } = formData;
 
-  if (problems_uuid && !Array.isArray(problems_uuid)) {
-    formData.problems_uuid = [problems_uuid];
+  if (problems_uuid) {
+    formData.problems_uuid = processArrayField(problems_uuid);
   }
 
-  if (qc_problems_uuid && !Array.isArray(qc_problems_uuid)) {
-    formData.qc_problems_uuid = [qc_problems_uuid];
+  if (qc_problems_uuid) {
+    formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
   }
 
-  if (delivery_problems_uuid && !Array.isArray(delivery_problems_uuid)) {
-    formData.delivery_problems_uuid = [delivery_problems_uuid];
+  if (delivery_problems_uuid) {
+    formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
   }
 
-  if (accessories && !Array.isArray(accessories)) {
-    formData.accessories = [accessories];
+  if (accessories) {
+    formData.accessories = processArrayField(accessories);
   }
 
   let finalModelUuid = model_uuid;
