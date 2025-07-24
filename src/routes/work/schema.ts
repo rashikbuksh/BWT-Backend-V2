@@ -122,6 +122,7 @@ export const statusEnum = pgEnum('status', [
   'rejected',
   'accepted',
   'not_repairable',
+  'customer_reject',
 ]);
 
 export const diagnosis = work.table('diagnosis', {
