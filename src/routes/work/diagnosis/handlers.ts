@@ -100,6 +100,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     branch_name: branch.name,
     order_problems_uuid: order.problems_uuid,
     order_problem_statement: order.problem_statement,
+    image_1: order.image_1,
+    image_2: order.image_2,
+    image_3: order.image_3,
   })
     .from(diagnosis)
     .leftJoin(users, eq(diagnosis.created_by, users.uuid))
@@ -228,6 +231,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       branch_name: branch.name,
       order_problems_uuid: order.problems_uuid,
       order_problem_statement: order.problem_statement,
+      image_1: order.image_1,
+      image_2: order.image_2,
+      image_3: order.image_3,
     })
     .from(diagnosis)
     .leftJoin(users, eq(diagnosis.created_by, users.uuid))
@@ -351,6 +357,9 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
       branch_name: branch.name,
       order_problems_uuid: order.problems_uuid,
       order_problem_statement: order.problem_statement,
+      image_1: order.image_1,
+      image_2: order.image_2,
+      image_3: order.image_3,
     })
     .from(diagnosis)
     .leftJoin(users, eq(diagnosis.created_by, users.uuid))
