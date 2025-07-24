@@ -13,7 +13,7 @@ export const insertSchema = createInsertSchema(
   {
     uuid: schema => schema.uuid.length(15),
     name: schema => schema.name.min(1),
-    model_uuid: schema => schema.model_uuid.length(15),
+    brand_uuid: schema => schema.brand_uuid.length(15),
     company_name: schema => schema.company_name.min(1),
     phone: schema => schema.phone.min(1).max(15),
     address: schema => schema.address.min(1),
@@ -31,7 +31,7 @@ export const insertSchema = createInsertSchema(
 ).required({
   uuid: true,
   name: true,
-  model_uuid: true,
+  brand_uuid: true,
   company_name: true,
   phone: true,
   address: true,
