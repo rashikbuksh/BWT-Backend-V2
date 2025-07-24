@@ -182,7 +182,27 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     brand_uuid,
     created_by,
     updated_at,
+    problems_uuid,
+    qc_problems_uuid,
+    delivery_problems_uuid,
+    accessories,
   } = formData;
+
+  if (problems_uuid && !Array.isArray(problems_uuid)) {
+    formData.problems_uuid = [problems_uuid];
+  }
+
+  if (qc_problems_uuid && !Array.isArray(qc_problems_uuid)) {
+    formData.qc_problems_uuid = [qc_problems_uuid];
+  }
+
+  if (delivery_problems_uuid && !Array.isArray(delivery_problems_uuid)) {
+    formData.delivery_problems_uuid = [delivery_problems_uuid];
+  }
+
+  if (accessories && !Array.isArray(accessories)) {
+    formData.accessories = [accessories];
+  }
 
   let finalModelUuid = model_uuid;
   if (model_uuid) {
