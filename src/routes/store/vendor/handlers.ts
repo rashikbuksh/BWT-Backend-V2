@@ -9,7 +9,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { model, vendor } from '../schema';
+import { brand, vendor } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -60,8 +60,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const vendorPromise = db
     .select({
       uuid: vendor.uuid,
-      model_uuid: vendor.model_uuid,
-      model_name: model.name,
+      brand_uuid: vendor.brand_uuid,
+      brand_name: brand.name,
       name: vendor.name,
       company_name: vendor.company_name,
       phone: vendor.phone,
@@ -75,7 +75,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: vendor.remarks,
     })
     .from(vendor)
-    .leftJoin(model, eq(vendor.model_uuid, model.uuid))
+    .leftJoin(brand, eq(vendor.brand_uuid, brand.uuid))
     .leftJoin(users, eq(vendor.created_by, users.uuid))
     .orderBy(desc(vendor.created_at));
 
@@ -90,8 +90,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const vendorPromise = db
     .select({
       uuid: vendor.uuid,
-      model_uuid: vendor.model_uuid,
-      model_name: model.name,
+      brand_uuid: vendor.brand_uuid,
+      brand_name: brand.name,
       name: vendor.name,
       company_name: vendor.company_name,
       phone: vendor.phone,
@@ -105,7 +105,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       remarks: vendor.remarks,
     })
     .from(vendor)
-    .leftJoin(model, eq(vendor.model_uuid, model.uuid))
+    .leftJoin(brand, eq(vendor.brand_uuid, brand.uuid))
     .leftJoin(users, eq(vendor.created_by, users.uuid))
     .where(eq(vendor.uuid, uuid));
 
