@@ -59,9 +59,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const formData = await c.req.parseBody();
 
   // Debug: Log the form data to see what we're getting
-  console.warn('Form Data:', formData);
-  console.warn('problems_uuid type:', typeof formData.problems_uuid);
-  console.warn('problems_uuid value:', formData.problems_uuid);
+  // console.warn('Form Data:', formData);
+  // console.warn('problems_uuid type:', typeof formData.problems_uuid);
+  // console.warn('problems_uuid value:', formData.problems_uuid);
 
   const {
     is_diagnosis_need,
@@ -132,14 +132,14 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   // Process array fields for form data
-  console.warn('Raw problems_uuid:', problems_uuid, 'Type:', typeof problems_uuid);
-  console.warn('Raw accessories:', accessories, 'Type:', typeof accessories);
+  // console.warn('Raw problems_uuid:', problems_uuid, 'Type:', typeof problems_uuid);
+  // console.warn('Raw accessories:', accessories, 'Type:', typeof accessories);
 
   const processedProblemsUuid = problems_uuid === '' ? [] : processArrayField(problems_uuid);
   const processedAccessories = accessories === '' ? [] : processArrayField(accessories);
 
-  console.warn('Processed problems_uuid:', processedProblemsUuid, 'IsArray:', Array.isArray(processedProblemsUuid));
-  console.warn('Processed accessories:', processedAccessories, 'IsArray:', Array.isArray(processedAccessories));
+  // console.warn('Processed problems_uuid:', processedProblemsUuid, 'IsArray:', Array.isArray(processedProblemsUuid));
+  // console.warn('Processed accessories:', processedAccessories, 'IsArray:', Array.isArray(processedAccessories));
 
   const value = {
     is_diagnosis_need,
@@ -169,10 +169,10 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     created_by,
   };
 
-  console.warn('Final value object before insert:', {
-    problems_uuid: value.problems_uuid,
-    accessories: value.accessories,
-  });
+  // console.warn('Final value object before insert:', {
+  //   problems_uuid: value.problems_uuid,
+  //   accessories: value.accessories,
+  // });
 
   try {
     const [data] = await db.insert(order).values(value).returning({
@@ -530,16 +530,16 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const data = await orderPromise;
 
   // Debug: Log the raw data to see what we're getting from the database
-  console.warn('Raw data from database (first item):', data[0]
-    ? {
-        problems_uuid: data[0].problems_uuid,
-        diagnosis_problems_uuid: data[0].diagnosis_problems_uuid,
-        repairing_problems_uuid: data[0].repairing_problems_uuid,
-        qc_problems_uuid: data[0].qc_problems_uuid,
-        delivery_problems_uuid: data[0].delivery_problems_uuid,
-        accessories: data[0].accessories,
-      }
-    : 'No data');
+  // console.warn('Raw data from database (first item):', data[0]
+  //   ? {
+  //       problems_uuid: data[0].problems_uuid,
+  //       diagnosis_problems_uuid: data[0].diagnosis_problems_uuid,
+  //       repairing_problems_uuid: data[0].repairing_problems_uuid,
+  //       qc_problems_uuid: data[0].qc_problems_uuid,
+  //       delivery_problems_uuid: data[0].delivery_problems_uuid,
+  //       accessories: data[0].accessories,
+  //     }
+  //   : 'No data');
 
   const orderProblemsUUIDs = data
     .map(order => Array.isArray(order.problems_uuid) ? order.problems_uuid : [])
@@ -762,16 +762,16 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const data = await orderPromise;
 
   // Debug: Log the raw data to see what we're getting from the database
-  console.warn('GetOne raw data:', data[0]
-    ? {
-        problems_uuid: data[0].problems_uuid,
-        diagnosis_problems_uuid: data[0].diagnosis_problems_uuid,
-        repairing_problems_uuid: data[0].repairing_problems_uuid,
-        qc_problems_uuid: data[0].qc_problems_uuid,
-        delivery_problems_uuid: data[0].delivery_problems_uuid,
-        accessories: data[0].accessories,
-      }
-    : 'No data');
+  // console.warn('GetOne raw data:', data[0]
+  //   ? {
+  //       problems_uuid: data[0].problems_uuid,
+  //       diagnosis_problems_uuid: data[0].diagnosis_problems_uuid,
+  //       repairing_problems_uuid: data[0].repairing_problems_uuid,
+  //       qc_problems_uuid: data[0].qc_problems_uuid,
+  //       delivery_problems_uuid: data[0].delivery_problems_uuid,
+  //       accessories: data[0].accessories,
+  //     }
+  //   : 'No data');
 
   // Gather all unique problem UUIDs from all relevant fields
   const orderProblemsUUIDs = data
@@ -1035,16 +1035,16 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   const data = await orderPromise;
 
   // Debug: Log the raw data to see what we're getting from the database
-  console.warn('GetByInfo raw data (first item):', data[0]
-    ? {
-        problems_uuid: data[0].problems_uuid,
-        diagnosis_problems_uuid: data[0].diagnosis_problems_uuid,
-        repairing_problems_uuid: data[0].repairing_problems_uuid,
-        qc_problems_uuid: data[0].qc_problems_uuid,
-        delivery_problems_uuid: data[0].delivery_problems_uuid,
-        accessories: data[0].accessories,
-      }
-    : 'No data');
+  // console.warn('GetByInfo raw data (first item):', data[0]
+  //   ? {
+  //       problems_uuid: data[0].problems_uuid,
+  //       diagnosis_problems_uuid: data[0].diagnosis_problems_uuid,
+  //       repairing_problems_uuid: data[0].repairing_problems_uuid,
+  //       qc_problems_uuid: data[0].qc_problems_uuid,
+  //       delivery_problems_uuid: data[0].delivery_problems_uuid,
+  //       accessories: data[0].accessories,
+  //     }
+  //   : 'No data');
 
   const orderProblemsUUIDs = data
     .map(order => Array.isArray(order.problems_uuid) ? order.problems_uuid : [])
