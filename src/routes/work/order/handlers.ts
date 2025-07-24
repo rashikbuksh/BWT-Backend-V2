@@ -218,7 +218,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       const imagePath = await updateFile(formData.image_1, userData.image_1, 'work/order');
       formData.image_1 = imagePath;
     }
-    else {
+    else if (formData.image_1) {
       const imagePath = await insertFile(formData.image_1, 'work/order');
       formData.image_1 = imagePath;
     }
@@ -227,7 +227,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       const imagePath = await updateFile(formData.image_2, userData.image_2, 'work/order');
       formData.image_2 = imagePath;
     }
-    else {
+    else if (formData.image_2) {
       const imagePath = await insertFile(formData.image_2, 'work/order');
       formData.image_2 = imagePath;
     }
@@ -236,7 +236,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       const imagePath = await updateFile(formData.image_3, userData.image_3, 'work/order');
       formData.image_3 = imagePath;
     }
-    else {
+    else if (formData.image_3) {
       const imagePath = await insertFile(formData.image_3, 'work/order');
       formData.image_3 = imagePath;
     }
