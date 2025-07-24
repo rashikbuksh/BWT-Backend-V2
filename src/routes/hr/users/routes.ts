@@ -251,6 +251,7 @@ export const patchUserPassword = createRoute({
     params: param.uuid,
     body: jsonContentRequired(
       z.object({
+        current_pass: z.string(),
         pass: z.string(),
         updated_at: z.string().optional(),
       }),
