@@ -21,6 +21,38 @@ import { accessory, diagnosis, info, order, problem } from '../schema';
 const user = alias(hrSchema.users, 'user');
 const orderTable = alias(order, 'work_order');
 
+// Helper function to process array fields from form data
+function processArrayField(value: any): string[] {
+  if (!value)
+    return [];
+
+  // If it's already an array, return it
+  if (Array.isArray(value))
+    return value;
+
+  // Handle form data that might send arrays as multiple values
+  if (typeof value === 'object' && value.constructor === Array)
+    return value;
+
+  if (typeof value === 'string') {
+    // Handle empty string
+    if (value.trim() === '')
+      return [];
+
+    // Try parsing as JSON first
+    try {
+      const parsed = value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : value;
+      return Array.isArray(parsed) ? parsed : [parsed];
+    }
+    catch {
+      // If not JSON, check for comma-separated values
+      return value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : [value];
+    }
+  }
+
+  return [value];
+}
+
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   // const value = c.req.valid('json');
 
@@ -99,6 +131,13 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
+  // Process array fields for form data
+  const processedProblemsUuid = processArrayField(problems_uuid);
+  const processedAccessories = processArrayField(accessories);
+
+  console.warn('Processed problems_uuid:', processedProblemsUuid);
+  console.warn('Processed accessories:', processedAccessories);
+
   const value = {
     is_diagnosis_need,
     is_proceed_to_repair,
@@ -110,9 +149,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     proposed_cost: proposed_cost || 0,
     bill_amount: bill_amount || 0,
     serial_no,
-    problems_uuid,
+    problems_uuid: processedProblemsUuid,
     problem_statement,
-    accessories,
+    accessories: processedAccessories,
     warehouse_uuid,
     rack_uuid,
     floor_uuid,
@@ -127,18 +166,11 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     created_by,
   };
 
-  try {
-    const [data] = await db.insert(order).values(value).returning({
-      name: order.uuid,
-    });
+  const [data] = await db.insert(order).values(value).returning({
+    name: order.uuid,
+  });
 
-    return c.json(createToast('create', data.name), HSCode.OK);
-  }
-  catch (error) {
-    console.error('Database insert error:', error);
-    console.error('Value causing error:', value);
-    throw error;
-  }
+  return c.json(createToast('create', data.name), HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
@@ -198,6 +230,10 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     brand_uuid,
     created_by,
     updated_at,
+    problems_uuid,
+    qc_problems_uuid,
+    delivery_problems_uuid,
+    accessories,
     quantity,
     proposed_cost,
     bill_amount,
@@ -206,6 +242,25 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.quantity = quantity || 0;
   formData.proposed_cost = proposed_cost || 0;
   formData.bill_amount = bill_amount || 0;
+
+  // Process arrays using raw form data if available
+  if (formData) {
+    if (problems_uuid) {
+      formData.problems_uuid = processArrayField(problems_uuid);
+    }
+
+    if (qc_problems_uuid) {
+      formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
+    }
+
+    if (delivery_problems_uuid) {
+      formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
+    }
+
+    if (accessories) {
+      formData.accessories = processArrayField(accessories);
+    }
+  }
 
   let finalModelUuid = model_uuid;
   if (model_uuid) {
@@ -230,26 +285,18 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
         });
       finalModelUuid = newModel.uuid;
     }
+  }
+  const [data] = await db.update(order)
+    .set({ ...formData, model_uuid: finalModelUuid })
+    .where(eq(order.uuid, uuid))
+    .returning({
+      name: order.uuid,
+    });
 
-    try {
-      const [data] = await db.update(order)
-        .set({ ...formData, model_uuid: finalModelUuid })
-        .where(eq(order.uuid, uuid))
-        .returning({
-          name: order.uuid,
-        });
+  if (!data)
+    return DataNotFound(c);
 
-      if (!data)
-        return DataNotFound(c);
-
-      return c.json(createToast('update', data.name), HSCode.OK);
-    }
-    catch (error) {
-      console.error('Database update error:', error);
-      console.error('FormData causing error:', formData);
-      throw error;
-    }
-  };
+  return c.json(createToast('update', data.name), HSCode.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
@@ -439,19 +486,19 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const data = await orderPromise;
 
   const orderProblemsUUIDs = data
-    .map(order => (order.problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.problems_uuid)
     .flat();
   const diagnosisProblemsUUIDs = data
-    .map(order => (order.diagnosis_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.diagnosis_problems_uuid)
     .flat();
   const repairingProblemsUUIDs = data
-    .map(order => (order.repairing_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.repairing_problems_uuid)
     .flat();
   const qcProblemsUUIDs = data
-    .map(order => (order.qc_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.qc_problems_uuid)
     .flat();
   const deliveryProblemsUUIDs = data
-    .map(order => (order.delivery_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.delivery_problems_uuid)
     .flat();
 
   const allProblemsUUIDs = Array.from(
@@ -479,7 +526,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     return acc;
   }, {} as Record<string, string>);
 
-  const accessories_uuid = data.map(order => Array.isArray(order.accessories) ? order.accessories : []).flat();
+  const accessories_uuid = data.map(order => order.accessories).flat();
 
   const accessories = await db
     .select({
@@ -505,22 +552,22 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   };
 
   (data as OrderWithExtras[]).forEach((order) => {
-    order.order_problems_name = ((order.problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.order_problems_name = (order.problems_uuid || []).map(
       uuid => problemsMap[uuid],
     );
-    order.diagnosis_problems_name = ((order.diagnosis_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.diagnosis_problems_name = (
+      order.diagnosis_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.repairing_problems_name = (
+      order.repairing_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.qc_problems_name = (order.qc_problems_uuid || []).map(
       uuid => problemsMap[uuid],
     );
-    order.repairing_problems_name = ((order.repairing_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.qc_problems_name = ((order.qc_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.delivery_problems_name = ((order.delivery_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.accessories_name = ((order.accessories ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.delivery_problems_name = (
+      order.delivery_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.accessories_name = (order.accessories || []).map(
       uuid => accessoriesMap[uuid],
     );
   });
@@ -658,19 +705,19 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   // Gather all unique problem UUIDs from all relevant fields
   const orderProblemsUUIDs = data
-    .map(order => ((order.problems_uuid ?? '').split(',').map(uuid => uuid.trim())))
+    .map(order => order.problems_uuid)
     .flat();
   const diagnosisProblemsUUIDs = data
-    .map(order => ((order.diagnosis_problems_uuid ?? '').split(',').map(uuid => uuid.trim())))
+    .map(order => order.diagnosis_problems_uuid || [])
     .flat();
   const repairingProblemsUUIDs = data
-    .map(order => ((order.repairing_problems_uuid ?? '').split(',').map(uuid => uuid.trim())))
+    .map(order => order.repairing_problems_uuid || [])
     .flat();
   const qcProblemsUUIDs = data
-    .map(order => ((order.qc_problems_uuid ?? '').split(',').map(uuid => uuid.trim())))
+    .map(order => order.qc_problems_uuid || [])
     .flat();
   const deliveryProblemsUUIDs = data
-    .map(order => ((order.delivery_problems_uuid ?? '').split(',').map(uuid => uuid.trim())))
+    .map(order => order.delivery_problems_uuid || [])
     .flat();
 
   const allProblemsUUIDs = Array.from(
@@ -698,7 +745,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   }, {} as Record<string, string>);
 
   const accessories_uuid = data
-    .map(order => Array.isArray(order.accessories) ? order.accessories : [])
+    .map(order => order.accessories)
     .flat();
 
   const accessories = await db
@@ -725,22 +772,22 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   };
 
   (data as OrderWithExtras[]).forEach((order) => {
-    order.order_problems_name = ((order.problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.order_problems_name = (order.problems_uuid || []).map(
       uuid => problemsMap[uuid],
     );
-    order.diagnosis_problems_name = ((order.diagnosis_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.diagnosis_problems_name = (
+      order.diagnosis_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.repairing_problems_name = (
+      order.repairing_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.qc_problems_name = (order.qc_problems_uuid || []).map(
       uuid => problemsMap[uuid],
     );
-    order.repairing_problems_name = ((order.repairing_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.qc_problems_name = ((order.qc_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.delivery_problems_name = ((order.delivery_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.accessories_name = ((order.accessories ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.delivery_problems_name = (
+      order.delivery_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.accessories_name = (order.accessories || []).map(
       uuid => accessoriesMap[uuid],
     );
   });
@@ -918,19 +965,19 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   const data = await orderPromise;
 
   const orderProblemsUUIDs = data
-    .map(order => (order.problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.problems_uuid)
     .flat();
   const diagnosisProblemsUUIDs = data
-    .map(order => (order.diagnosis_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.diagnosis_problems_uuid || [])
     .flat();
   const repairingProblemsUUIDs = data
-    .map(order => (order.repairing_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.repairing_problems_uuid || [])
     .flat();
   const qcProblemsUUIDs = data
-    .map(order => (order.qc_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.qc_problems_uuid || [])
     .flat();
   const deliveryProblemsUUIDs = data
-    .map(order => (order.delivery_problems_uuid ?? '').split(',').map(uuid => uuid.trim()))
+    .map(order => order.delivery_problems_uuid || [])
     .flat();
 
   const allProblemsUUIDs = Array.from(
@@ -960,7 +1007,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   }, {} as Record<string, string>);
 
   const accessories_uuid = data
-    .map(order => Array.isArray(order.accessories) ? order.accessories : [])
+    .map(order => order.accessories)
     .flat();
 
   const accessories = await db
@@ -986,22 +1033,22 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   };
 
   (data as OrderWithExtras[]).forEach((order) => {
-    order.order_problems_name = ((order.problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.order_problems_name = (order.problems_uuid || []).map(
       uuid => problemsMap[uuid],
     );
-    order.diagnosis_problems_name = ((order.diagnosis_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.diagnosis_problems_name = (
+      order.diagnosis_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.repairing_problems_name = (
+      order.repairing_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.qc_problems_name = (order.qc_problems_uuid || []).map(
       uuid => problemsMap[uuid],
     );
-    order.repairing_problems_name = ((order.repairing_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.qc_problems_name = ((order.qc_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.delivery_problems_name = ((order.delivery_problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
-      uuid => problemsMap[uuid],
-    );
-    order.accessories_name = ((order.accessories ?? '').split(',').map(uuid => uuid.trim())).map(
+    order.delivery_problems_name = (
+      order.delivery_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    order.accessories_name = (order.accessories || []).map(
       uuid => accessoriesMap[uuid],
     );
   });

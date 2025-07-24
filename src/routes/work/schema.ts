@@ -74,9 +74,9 @@ export const order = work.table('order', {
   ),
   serial_no: text('serial_no'),
   quantity: integer('quantity').default(0),
-  problems_uuid: text('problems_uuid'),
+  problems_uuid: text('problems_uuid').array(),
   problem_statement: text('problem_statement').notNull(),
-  accessories: text('accessories').default(sql`null`),
+  accessories: text('accessories').array().default(sql`null`),
   is_diagnosis_need: boolean('is_diagnosis_need').default(false),
   warehouse_uuid: defaultUUID('warehouse_uuid').references(
     () => storeSchema.warehouse.uuid,
@@ -97,9 +97,10 @@ export const order = work.table('order', {
   ),
   is_proceed_to_repair: boolean('is_proceed_to_repair').default(false),
   repairing_problems_uuid: text('repairing_problems_uuid')
-    .default(sql`null`),
-  qc_problems_uuid: text('qc_problems_uuid').default(sql`null`),
-  delivery_problems_uuid: text('delivery_problems_uuid').default(sql`null`),
+    .array()
+    .default([]),
+  qc_problems_uuid: text('qc_problems_uuid').array().default([]),
+  delivery_problems_uuid: text('delivery_problems_uuid').array().default([]),
   repairing_problem_statement: text('repairing_problem_statement').default(
     sql`null`,
   ),
@@ -130,7 +131,7 @@ export const diagnosis = work.table('diagnosis', {
   engineer_uuid: defaultUUID('engineer_uuid').references(
     () => hrSchema.users.uuid,
   ),
-  problems_uuid: text('problems_uuid').default(sql`null`),
+  problems_uuid: text('problems_uuid').array().default([]),
   problem_statement: text('problem_statement'),
   status: statusEnum('status').default('pending'),
   status_update_date: DateTime('status_update_date').default(sql`null`),
