@@ -27,13 +27,31 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const formData = await c.req.parseBody();
 
   const {
-    model_uuid,
+    is_diagnosis_need,
+    is_proceed_to_repair,
+    is_challan_needed,
+    is_home_repair,
     brand_uuid,
-    created_by,
-    created_at,
+    model_uuid,
+    quantity,
+    proposed_cost,
+    bill_amount,
+    serial_no,
+    problems_uuid,
+    problem_statement,
+    accessories,
+    warehouse_uuid,
+    rack_uuid,
+    floor_uuid,
+    box_uuid,
+    remarks,
     image_1,
     image_2,
     image_3,
+    info_uuid,
+    uuid,
+    created_at,
+    created_by,
   } = formData;
 
   let imagePath_1 = null;
@@ -77,18 +95,31 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   const value = {
-    uuid: formData.uuid,
-    is_diagnosis_need: formData.is_diagnosis_need,
-    is_proceed_to_repair: formData.is_proceed_to_repair,
-    problem_statement: formData.problem_statement,
-    info_uuid: formData.info_uuid,
-    brand_uuid: formData.brand_uuid,
+    is_diagnosis_need,
+    is_proceed_to_repair,
+    is_challan_needed,
+    is_home_repair,
+    brand_uuid,
     model_uuid: finalModelUuid,
+    quantity,
+    proposed_cost,
+    bill_amount,
+    serial_no,
+    problems_uuid,
+    problem_statement,
+    accessories,
+    warehouse_uuid,
+    rack_uuid,
+    floor_uuid,
+    box_uuid,
+    remarks,
     image_1: imagePath_1,
     image_2: imagePath_2,
     image_3: imagePath_3,
-    created_by,
+    info_uuid,
+    uuid,
     created_at,
+    created_by,
   };
 
   const [data] = await db.insert(order).values(value).returning({
