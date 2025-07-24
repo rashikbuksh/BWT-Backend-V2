@@ -140,22 +140,42 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const orderData = await db.delete(order)
-    .where(eq(order.info_uuid, uuid))
-    .returning({
-      name: order.uuid,
-    });
+  try {
+    const orderData = await db.delete(order)
+      .where(eq(order.info_uuid, uuid))
+      .returning({
+        name: order.uuid,
+      });
 
-  const [data] = await db.delete(info)
-    .where(eq(info.uuid, uuid))
-    .returning({
-      name: info.uuid,
-    });
+    const [data] = await db.delete(info)
+      .where(eq(info.uuid, uuid))
+      .returning({
+        name: info.uuid,
+      });
 
-  if (!data)
-    return DataNotFound(c);
+    if (!data)
+      return DataNotFound(c);
 
-  return c.json(createToast('delete', data.name || ' ' || orderData[0].name), HSCode.OK);
+    return c.json(createToast('delete', data.name || ' ' || orderData[0]?.name), HSCode.OK);
+  }
+  catch (error: any) {
+    // Check if the error is related to the foreign key constraint
+    if (error.code === '23503' && error.constraint === 'product_transfer_order_uuid_order_uuid_fk') {
+      return c.json(
+        createToast('error', 'Cannot delete this order because it has associated product transfers. Please remove product transfers first.'),
+        HSCode.CONFLICT,
+      );
+    }
+
+    // Handle other potential foreign key constraints or database errors
+    if (error.code === '23503') {
+      return c.json(
+        createToast('error', 'Cannot delete this order because it has associated records. Please remove associated records first.'),
+        HSCode.CONFLICT,
+      );
+    }
+    throw error;
+  }
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
@@ -327,15 +347,15 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
         const diagnosisData
             = diagnosis === 'true'
               ? await fetchData(
-                `/v1/work/diagnosis-by-order/${order_uuid}`,
-              )
+                  `/v1/work/diagnosis-by-order/${order_uuid}`,
+                )
               : null;
 
         const processData
             = process === 'true'
               ? await fetchData(
-                `/v1/work/process?order_uuid=${order_uuid}`,
-              )
+                  `/v1/work/process?order_uuid=${order_uuid}`,
+                )
               : null;
 
         return {
