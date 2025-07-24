@@ -25,9 +25,20 @@ const orderTable = alias(order, 'work_order');
 function processArrayField(value: any): string[] {
   if (!value)
     return [];
+
+  // If it's already an array, return it
   if (Array.isArray(value))
     return value;
+
+  // Handle form data that might send arrays as multiple values
+  if (typeof value === 'object' && value.constructor === Array)
+    return value;
+
   if (typeof value === 'string') {
+    // Handle empty string
+    if (value.trim() === '')
+      return [];
+
     // Try parsing as JSON first
     try {
       const parsed = JSON.parse(value);
@@ -35,9 +46,10 @@ function processArrayField(value: any): string[] {
     }
     catch {
       // If not JSON, check for comma-separated values
-      return value.includes(',') ? value.split(',').map(s => s.trim()) : [value];
+      return value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : [value];
     }
   }
+
   return [value];
 }
 
@@ -45,6 +57,18 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   // const value = c.req.valid('json');
 
   const formData = await c.req.parseBody();
+
+  // Debug: Log the form data to see what we're getting
+  console.warn('Form Data:', formData);
+  console.warn('problems_uuid type:', typeof formData.problems_uuid);
+  console.warn('problems_uuid value:', formData.problems_uuid);
+
+  // Handle form data arrays manually
+  const rawFormData = await c.req.formData?.();
+  if (rawFormData) {
+    console.warn('Raw form data problems_uuid:', rawFormData.getAll('problems_uuid'));
+    console.warn('Raw form data accessories:', rawFormData.getAll('accessories'));
+  }
 
   const {
     is_diagnosis_need,
@@ -114,6 +138,26 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
+  // Process array fields for form data
+  let processedProblemsUuid = processArrayField(problems_uuid);
+  let processedAccessories = processArrayField(accessories);
+
+  // Try to get arrays from raw form data if available
+  if (rawFormData) {
+    const rawProblems = rawFormData.getAll('problems_uuid');
+    const rawAccessories = rawFormData.getAll('accessories');
+
+    if (rawProblems.length > 0) {
+      processedProblemsUuid = rawProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
+    }
+    if (rawAccessories.length > 0) {
+      processedAccessories = rawAccessories.filter((a: any) => a && a !== 'undefined' && a !== 'null');
+    }
+  }
+
+  console.warn('Processed problems_uuid:', processedProblemsUuid);
+  console.warn('Processed accessories:', processedAccessories);
+
   const value = {
     is_diagnosis_need,
     is_proceed_to_repair,
@@ -125,9 +169,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     proposed_cost: proposed_cost || 0,
     bill_amount: bill_amount || 0,
     serial_no,
-    problems_uuid: processArrayField(problems_uuid),
+    problems_uuid: processedProblemsUuid,
     problem_statement,
-    accessories: processArrayField(accessories),
+    accessories: processedAccessories,
     warehouse_uuid,
     rack_uuid,
     floor_uuid,
@@ -154,6 +198,19 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   // const updates = c.req.valid('json');
 
   const formData = await c.req.parseBody();
+
+  // Debug patch form data
+  console.warn('Patch Form Data:', formData);
+  console.warn('Patch problems_uuid:', formData.problems_uuid);
+
+  // Handle form data arrays manually for patch as well
+  const rawFormData = await c.req.formData?.();
+  if (rawFormData) {
+    console.warn('Patch Raw problems_uuid:', rawFormData.getAll('problems_uuid'));
+    console.warn('Patch Raw qc_problems_uuid:', rawFormData.getAll('qc_problems_uuid'));
+    console.warn('Patch Raw delivery_problems_uuid:', rawFormData.getAll('delivery_problems_uuid'));
+    console.warn('Patch Raw accessories:', rawFormData.getAll('accessories'));
+  }
 
   // updates includes image then do it else exclude it
   if ((formData.image_1 && typeof formData.image_1 === 'object')
@@ -208,20 +265,58 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     accessories,
   } = formData;
 
-  if (problems_uuid) {
-    formData.problems_uuid = processArrayField(problems_uuid);
-  }
+  // Process arrays using raw form data if available
+  if (rawFormData) {
+    const rawProblems = rawFormData.getAll('problems_uuid');
+    const rawQcProblems = rawFormData.getAll('qc_problems_uuid');
+    const rawDeliveryProblems = rawFormData.getAll('delivery_problems_uuid');
+    const rawAccessories = rawFormData.getAll('accessories');
 
-  if (qc_problems_uuid) {
-    formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
-  }
+    if (rawProblems.length > 0) {
+      formData.problems_uuid = rawProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
+    }
+    else if (problems_uuid) {
+      formData.problems_uuid = processArrayField(problems_uuid);
+    }
 
-  if (delivery_problems_uuid) {
-    formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
-  }
+    if (rawQcProblems.length > 0) {
+      formData.qc_problems_uuid = rawQcProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
+    }
+    else if (qc_problems_uuid) {
+      formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
+    }
 
-  if (accessories) {
-    formData.accessories = processArrayField(accessories);
+    if (rawDeliveryProblems.length > 0) {
+      formData.delivery_problems_uuid = rawDeliveryProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
+    }
+    else if (delivery_problems_uuid) {
+      formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
+    }
+
+    if (rawAccessories.length > 0) {
+      formData.accessories = rawAccessories.filter((a: any) => a && a !== 'undefined' && a !== 'null');
+    }
+    else if (accessories) {
+      formData.accessories = processArrayField(accessories);
+    }
+  }
+  else {
+    // Fallback to processArrayField if no raw form data
+    if (problems_uuid) {
+      formData.problems_uuid = processArrayField(problems_uuid);
+    }
+
+    if (qc_problems_uuid) {
+      formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
+    }
+
+    if (delivery_problems_uuid) {
+      formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
+    }
+
+    if (accessories) {
+      formData.accessories = processArrayField(accessories);
+    }
   }
 
   let finalModelUuid = model_uuid;
