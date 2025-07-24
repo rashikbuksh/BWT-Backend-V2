@@ -347,15 +347,15 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
         const diagnosisData
             = diagnosis === 'true'
               ? await fetchData(
-                `/v1/work/diagnosis-by-order/${order_uuid}`,
-              )
+                  `/v1/work/diagnosis-by-order/${order_uuid}`,
+                )
               : null;
 
         const processData
             = process === 'true'
               ? await fetchData(
-                `/v1/work/process?order_uuid=${order_uuid}`,
-              )
+                  `/v1/work/process?order_uuid=${order_uuid}`,
+                )
               : null;
 
         return {
