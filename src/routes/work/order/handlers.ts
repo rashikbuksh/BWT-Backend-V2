@@ -63,13 +63,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   console.warn('problems_uuid type:', typeof formData.problems_uuid);
   console.warn('problems_uuid value:', formData.problems_uuid);
 
-  // Handle form data arrays manually
-  const rawFormData = await c.req.formData?.();
-  if (rawFormData) {
-    console.warn('Raw form data problems_uuid:', rawFormData.getAll('problems_uuid'));
-    console.warn('Raw form data accessories:', rawFormData.getAll('accessories'));
-  }
-
   const {
     is_diagnosis_need,
     is_proceed_to_repair,
@@ -202,15 +195,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   // Debug patch form data
   console.warn('Patch Form Data:', formData);
   console.warn('Patch problems_uuid:', formData.problems_uuid);
-
-  // Handle form data arrays manually for patch as well
-  const rawFormData = await c.req.formData?.();
-  if (rawFormData) {
-    console.warn('Patch Raw problems_uuid:', rawFormData.getAll('problems_uuid'));
-    console.warn('Patch Raw qc_problems_uuid:', rawFormData.getAll('qc_problems_uuid'));
-    console.warn('Patch Raw delivery_problems_uuid:', rawFormData.getAll('delivery_problems_uuid'));
-    console.warn('Patch Raw accessories:', rawFormData.getAll('accessories'));
-  }
 
   // updates includes image then do it else exclude it
   if ((formData.image_1 && typeof formData.image_1 === 'object')
