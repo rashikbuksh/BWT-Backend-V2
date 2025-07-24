@@ -215,18 +215,22 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   if (formData) {
     if (problems_uuid) {
       formData.problems_uuid = problems_uuid && problems_uuid !== '' ? problems_uuid.split(',') : [];
+      console.log(formData.problems_uuid, 'problems_uuid');
     }
 
     if (qc_problems_uuid) {
       formData.qc_problems_uuid = qc_problems_uuid && qc_problems_uuid !== '' ? qc_problems_uuid.split(',') : [];
+      console.log(formData.qc_problems_uuid, 'qc_problems_uuid');
     }
 
     if (delivery_problems_uuid) {
       formData.delivery_problems_uuid = delivery_problems_uuid && delivery_problems_uuid !== '' ? delivery_problems_uuid.split(',') : [];
+      console.log(formData.delivery_problems_uuid, 'delivery_problems_uuid');
     }
 
     if (accessories) {
       formData.accessories = accessories && accessories !== '' ? accessories.split(',') : [];
+      console.log(formData.accessories, 'accessories');
     }
   }
 
