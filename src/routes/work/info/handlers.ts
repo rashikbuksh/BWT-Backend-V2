@@ -140,6 +140,12 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
+  const orderData = await db.delete(order)
+    .where(eq(order.info_uuid, uuid))
+    .returning({
+      name: order.uuid,
+    });
+
   const [data] = await db.delete(info)
     .where(eq(info.uuid, uuid))
     .returning({
@@ -149,7 +155,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('delete', data.name), HSCode.OK);
+  return c.json(createToast('delete', data.name || ' ' || orderData[0].name), HSCode.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
@@ -321,15 +327,15 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
         const diagnosisData
             = diagnosis === 'true'
               ? await fetchData(
-                  `/v1/work/diagnosis-by-order/${order_uuid}`,
-                )
+                `/v1/work/diagnosis-by-order/${order_uuid}`,
+              )
               : null;
 
         const processData
             = process === 'true'
               ? await fetchData(
-                  `/v1/work/process?order_uuid=${order_uuid}`,
-                )
+                `/v1/work/process?order_uuid=${order_uuid}`,
+              )
               : null;
 
         return {
