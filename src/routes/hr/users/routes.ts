@@ -249,9 +249,12 @@ export const patchUserPassword = createRoute({
   tags,
   request: {
     params: param.uuid,
+    query: z.object({
+      is_reset: z.string().optional(),
+    }),
     body: jsonContentRequired(
       z.object({
-        current_pass: z.string(),
+        current_pass: z.string().optional(),
         pass: z.string(),
         updated_at: z.string().optional(),
       }),

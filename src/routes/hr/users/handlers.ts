@@ -5,7 +5,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { ComparePass, CreateToken, HashPass } from '@/middlewares/auth';
+import { ComparePass, CreateToken, HashPass, isHashedPassword } from '@/middlewares/auth';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type {
@@ -71,7 +71,17 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     );
   }
 
-  const match = await ComparePass(pass, data.pass);
+  // Check if password is hashed or plain text
+  let match = false;
+
+  if (isHashedPassword(data.pass)) {
+    // Password is hashed, use bcrypt compare
+    match = await ComparePass(pass, data.pass);
+  }
+  else {
+    // Password is plain text, compare directly
+    match = pass === data.pass;
+  }
 
   if (!match) {
     return c.json(
@@ -318,6 +328,7 @@ export const patchUserStatus: AppRouteHandler<PatchUserStatusRoute> = async (c: 
 export const patchUserPassword: AppRouteHandler<PatchUserPasswordRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
   const { current_pass, pass, updated_at } = await c.req.json();
+  const { is_reset } = c.req.valid('query');
 
   const userPrevPromise = db
     .select({
@@ -333,31 +344,56 @@ export const patchUserPassword: AppRouteHandler<PatchUserPasswordRoute> = async 
   if (!userPrev)
     return DataNotFound(c);
 
-  const match = await ComparePass(current_pass, userPrev.pass);
+  if (is_reset === 'true') {
+    const pass2 = await HashPass(pass);
 
-  if (!match) {
-    return c.json(
-      { message: 'Current password is incorrect' },
-      HSCode.UNAUTHORIZED,
-    );
+    const [data] = await db.update(users)
+      .set({
+        pass: pass2,
+        updated_at,
+      })
+      .where(eq(users.uuid, uuid))
+      .returning({
+        name: users.name,
+      });
+
+    if (!data)
+      return DataNotFound(c);
+
+    return c.json(createToast('update', data.name), HSCode.OK);
   }
+  else {
+    let match = false;
 
-  const pass2 = await HashPass(pass);
+    if (isHashedPassword(userPrev.pass)) {
+      match = await ComparePass(current_pass, userPrev.pass);
+    }
+    else {
+      match = current_pass === userPrev.pass;
+    }
 
-  const [data] = await db.update(users)
-    .set({
-      pass: pass2,
-      updated_at,
-    })
-    .where(eq(users.uuid, uuid))
-    .returning({
-      name: users.name,
-    });
+    if (!match) {
+      return c.json(
+        { message: 'Current password is incorrect' },
+        HSCode.UNAUTHORIZED,
+      );
+    }
+    const pass2 = await HashPass(pass);
 
-  if (!data)
-    return DataNotFound(c);
+    const [data] = await db.update(users)
+      .set({
+        pass: pass2,
+        updated_at,
+      })
+      .where(eq(users.uuid, uuid))
+      .returning({
+        name: users.name,
+      });
+    if (!data)
+      return DataNotFound(c);
 
-  return c.json(createToast('update', data.name), HSCode.OK);
+    return c.json(createToast('update', data.name), HSCode.OK);
+  }
 };
 
 export const patchRatingPrice: AppRouteHandler<PatchRatingPriceRoute> = async (c: any) => {

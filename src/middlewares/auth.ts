@@ -16,6 +16,12 @@ export async function ComparePass(password: string, hashPassword: string) {
   return compareSync(password, hashPassword);
 }
 
+export function isHashedPassword(password: string): boolean {
+  // bcrypt hashes typically start with $2a$, $2b$, or $2y$ and are 60 characters long
+  const bcryptPattern = /^\$2[ayb]\$\d{2}\$.{53}$/;
+  return bcryptPattern.test(password);
+}
+
 export async function CreateToken(payload: JWTPayload) {
   return sign(payload, env.PRIVATE_KEY);
 }
