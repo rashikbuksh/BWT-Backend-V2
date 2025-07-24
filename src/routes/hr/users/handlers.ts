@@ -152,16 +152,39 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const [data] = await db.delete(users)
-    .where(eq(users.uuid, uuid))
-    .returning({
-      name: users.name,
-    });
+  // const [data] = await db.delete(users)
+  //   .where(eq(users.uuid, uuid))
+  //   .returning({
+  //     name: users.name,
+  //   });
 
-  if (!data)
-    return DataNotFound(c);
+  // if (!data)
+  //   return DataNotFound(c);
 
-  return c.json(createToast('delete', data.name), HSCode.OK);
+  // return c.json(createToast('delete', data.name), HSCode.OK);
+
+  try {
+    const [data] = await db.delete(users)
+      .where(eq(users.uuid, uuid))
+      .returning({
+        name: users.name,
+      });
+
+    if (!data)
+      return DataNotFound(c);
+
+    return c.json(createToast('delete', data.name), HSCode.OK);
+  }
+  catch (error: any) {
+    // Check if it's a foreign key constraint error
+    if (error.code === '23503' || error.message.includes('foreign key')) {
+      return c.json(
+        createToast('error', 'Cannot delete user - user is referenced in other records'),
+        HSCode.BAD_REQUEST,
+      );
+    }
+    throw error;
+  }
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
