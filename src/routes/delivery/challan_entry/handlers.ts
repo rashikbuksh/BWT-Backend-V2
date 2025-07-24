@@ -254,10 +254,10 @@ type ChallanEntryWithExtras = typeof data[number] & {
 };
 
 (data as ChallanEntryWithExtras[]).forEach((item) => {
-  item.problems_name = (item.problems_uuid || []).map(
+  item.problems_name = ((item.problems_uuid ?? '').split(',').map(uuid => uuid.trim())).map(
     (uuid: string) => problemsMap[uuid],
   );
-  item.accessories_name = (item.accessories || []).map(
+  item.accessories_name = ((item.accessories ?? '').split(',').map(uuid => uuid.trim())).map(
     (uuid: string) => accessoriesMap[uuid],
   );
 });
