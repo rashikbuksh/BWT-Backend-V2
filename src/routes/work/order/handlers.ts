@@ -42,11 +42,12 @@ function processArrayField(value: any): string[] {
     // Try parsing as JSON first
     try {
       const parsed = value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : value;
-      return Array.isArray(parsed) ? parsed : [parsed];
+      const array = Array.isArray(parsed) ? parsed : [parsed];
+      console.warn('Processed array:', array);
+      return array;
     }
     catch {
-      // If not JSON, check for comma-separated values
-      return value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : [value];
+
     }
   }
 
