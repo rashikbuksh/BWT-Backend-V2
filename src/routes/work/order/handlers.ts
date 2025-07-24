@@ -132,21 +132,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   // Process array fields for form data
-  let processedProblemsUuid = processArrayField(problems_uuid);
-  let processedAccessories = processArrayField(accessories);
-
-  // Try to get arrays from raw form data if available
-  if (formData) {
-    const rawProblems = formData.problems_uuid;
-    const rawAccessories = formData.accessories;
-
-    if (rawProblems.length > 0) {
-      processedProblemsUuid = rawProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
-    }
-    if (rawAccessories.length > 0) {
-      processedAccessories = rawAccessories.filter((a: any) => a && a !== 'undefined' && a !== 'null');
-    }
-  }
+  const processedProblemsUuid = processArrayField(problems_uuid);
+  const processedAccessories = processArrayField(accessories);
 
   console.warn('Processed problems_uuid:', processedProblemsUuid);
   console.warn('Processed accessories:', processedAccessories);
@@ -258,36 +245,19 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
   // Process arrays using raw form data if available
   if (formData) {
-    const rawProblems = formData.problems_uuid;
-    const rawQcProblems = formData.qc_problems_uuid;
-    const rawDeliveryProblems = formData.delivery_problems_uuid;
-    const rawAccessories = formData.accessories;
-
-    if (rawProblems.length > 0) {
-      formData.problems_uuid = rawProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
-    }
-    else if (problems_uuid) {
+    if (problems_uuid) {
       formData.problems_uuid = processArrayField(problems_uuid);
     }
 
-    if (rawQcProblems.length > 0) {
-      formData.qc_problems_uuid = rawQcProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
-    }
-    else if (qc_problems_uuid) {
+    if (qc_problems_uuid) {
       formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
     }
 
-    if (rawDeliveryProblems.length > 0) {
-      formData.delivery_problems_uuid = rawDeliveryProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
-    }
-    else if (delivery_problems_uuid) {
+    if (delivery_problems_uuid) {
       formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
     }
 
-    if (rawAccessories.length > 0) {
-      formData.accessories = rawAccessories.filter((a: any) => a && a !== 'undefined' && a !== 'null');
-    }
-    else if (accessories) {
+    if (accessories) {
       formData.accessories = processArrayField(accessories);
     }
   }
