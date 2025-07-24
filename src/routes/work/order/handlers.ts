@@ -21,38 +21,6 @@ import { accessory, diagnosis, info, order, problem } from '../schema';
 const user = alias(hrSchema.users, 'user');
 const orderTable = alias(order, 'work_order');
 
-// Helper function to process array fields from form data
-function processArrayField(value: any): string[] {
-  if (!value)
-    return [];
-
-  // If it's already an array, return it
-  if (Array.isArray(value))
-    return value;
-
-  // Handle form data that might send arrays as multiple values
-  if (typeof value === 'object' && value.constructor === Array)
-    return value;
-
-  if (typeof value === 'string') {
-    // Handle empty string
-    if (value.trim() === '')
-      return [];
-
-    // Try parsing as JSON first
-    try {
-      const parsed = value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : value;
-      return Array.isArray(parsed) ? parsed : [parsed];
-    }
-    catch {
-      // If not JSON, check for comma-separated values
-      return value.includes(',') ? value.split(',').map(s => s.trim()).filter(s => s) : [value];
-    }
-  }
-
-  return [value];
-}
-
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   // const value = c.req.valid('json');
 
@@ -132,8 +100,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   // Process array fields for form data
-  const processedProblemsUuid = processArrayField(problems_uuid);
-  const processedAccessories = processArrayField(accessories);
+  const processedProblemsUuid = problems_uuid && problems_uuid !== '' ? problems_uuid.split(',') : [];
+  const processedAccessories = accessories && accessories !== '' ? accessories.split(',') : [];
 
   console.warn('Processed problems_uuid:', processedProblemsUuid);
   console.warn('Processed accessories:', processedAccessories);
@@ -246,19 +214,19 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   // Process arrays using raw form data if available
   if (formData) {
     if (problems_uuid) {
-      formData.problems_uuid = processArrayField(problems_uuid);
+      formData.problems_uuid = problems_uuid && problems_uuid !== '' ? problems_uuid.split(',') : [];
     }
 
     if (qc_problems_uuid) {
-      formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
+      formData.qc_problems_uuid = qc_problems_uuid && qc_problems_uuid !== '' ? qc_problems_uuid.split(',') : [];
     }
 
     if (delivery_problems_uuid) {
-      formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
+      formData.delivery_problems_uuid = delivery_problems_uuid && delivery_problems_uuid !== '' ? delivery_problems_uuid.split(',') : [];
     }
 
     if (accessories) {
-      formData.accessories = processArrayField(accessories);
+      formData.accessories = accessories && accessories !== '' ? accessories.split(',') : [];
     }
   }
 
