@@ -12,9 +12,9 @@ import * as hrSchema from '@/routes/hr/schema';
 import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
-import { insertFile, updateFile } from '@/utils/upload_file';
+import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
 
-import type { CreateRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute } from './routes';
+import type { CreateRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { accessory, diagnosis, info, order, problem } from '../schema';
 
@@ -361,6 +361,38 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     return DataNotFound(c);
 
   return c.json(createToast('update', data.name), HSCode.OK);
+};
+
+export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
+  const { uuid } = c.req.valid('param');
+
+  // get order image name
+
+  const orderData = await db.query.order.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
+
+  if (orderData && (orderData.image_1 || orderData.image_2 || orderData.image_3)) {
+    if (orderData.image_1)
+      deleteFile(orderData.image_1);
+    if (orderData.image_2)
+      deleteFile(orderData.image_2);
+    if (orderData.image_3)
+      deleteFile(orderData.image_3);
+  }
+
+  const [data] = await db.delete(order)
+    .where(eq(order.uuid, uuid))
+    .returning({
+      name: order.uuid,
+    });
+
+  if (!data)
+    return DataNotFound(c);
+
+  return c.json(createToast('delete', data.name), HSCode.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
