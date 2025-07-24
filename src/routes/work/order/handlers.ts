@@ -252,6 +252,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     problems_uuid,
     qc_problems_uuid,
     delivery_problems_uuid,
+    repairing_problems_uuid,
     accessories,
     quantity,
     proposed_cost,
@@ -266,22 +267,27 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   if (formData) {
     if (problems_uuid) {
       formData.problems_uuid = problems_uuid === '' ? [] : processArrayField(problems_uuid);
-      // console.warn('Patch problems_uuid processed:', formData.problems_uuid);
+      console.warn('Patch problems_uuid processed:', formData.problems_uuid);
     }
 
     if (qc_problems_uuid) {
       formData.qc_problems_uuid = qc_problems_uuid === '' ? [] : processArrayField(qc_problems_uuid);
-      // console.warn('Patch qc_problems_uuid processed:', formData.qc_problems_uuid);
+      console.warn('Patch qc_problems_uuid processed:', formData.qc_problems_uuid);
     }
 
     if (delivery_problems_uuid) {
       formData.delivery_problems_uuid = delivery_problems_uuid === '' ? [] : processArrayField(delivery_problems_uuid);
-      // console.warn('Patch delivery_problems_uuid processed:', formData.delivery_problems_uuid);
+      console.warn('Patch delivery_problems_uuid processed:', formData.delivery_problems_uuid);
+    }
+
+    if (repairing_problems_uuid) {
+      formData.repairing_problems_uuid = repairing_problems_uuid === '' ? [] : processArrayField(repairing_problems_uuid);
+      console.warn('Patch repairing_problems_uuid processed:', formData.repairing_problems_uuid);
     }
 
     if (accessories) {
       formData.accessories = accessories === '' ? [] : processArrayField(accessories);
-      // console.warn('Patch accessories processed:', formData.accessories);
+      console.warn('Patch accessories processed:', formData.accessories);
     }
   }
 
@@ -309,13 +315,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       finalModelUuid = newModel.uuid;
     }
   }
-
-  // console.warn('Final formData before update:', {
-  //   problems_uuid: formData.problems_uuid,
-  //   qc_problems_uuid: formData.qc_problems_uuid,
-  //   delivery_problems_uuid: formData.delivery_problems_uuid,
-  //   accessories: formData.accessories,
-  // });
 
   console.warn(formData, 'Final formData before update');
 
