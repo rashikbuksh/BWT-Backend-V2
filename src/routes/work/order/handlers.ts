@@ -100,7 +100,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
-  const updates = c.req.valid('json');
+  // const updates = c.req.valid('json');
 
   const formData = await c.req.parseBody();
 
@@ -143,7 +143,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     }
   }
 
-  if (Object.keys(updates).length === 0)
+  if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
 
   const {
