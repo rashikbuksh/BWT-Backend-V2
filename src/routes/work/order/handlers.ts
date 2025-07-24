@@ -143,9 +143,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   let processedAccessories = processArrayField(accessories);
 
   // Try to get arrays from raw form data if available
-  if (rawFormData) {
-    const rawProblems = rawFormData.getAll('problems_uuid');
-    const rawAccessories = rawFormData.getAll('accessories');
+  if (formData) {
+    const rawProblems = formData.problems_uuid;
+    const rawAccessories = formData.accessories;
 
     if (rawProblems.length > 0) {
       processedProblemsUuid = rawProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
@@ -273,11 +273,11 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.bill_amount = bill_amount || 0;
 
   // Process arrays using raw form data if available
-  if (rawFormData) {
-    const rawProblems = rawFormData.getAll('problems_uuid');
-    const rawQcProblems = rawFormData.getAll('qc_problems_uuid');
-    const rawDeliveryProblems = rawFormData.getAll('delivery_problems_uuid');
-    const rawAccessories = rawFormData.getAll('accessories');
+  if (formData) {
+    const rawProblems = formData.problems_uuid;
+    const rawQcProblems = formData.qc_problems_uuid;
+    const rawDeliveryProblems = formData.delivery_problems_uuid;
+    const rawAccessories = formData.accessories;
 
     if (rawProblems.length > 0) {
       formData.problems_uuid = rawProblems.filter((p: any) => p && p !== 'undefined' && p !== 'null');
