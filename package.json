@@ -19,8 +19,8 @@
     "db-introspect": "drizzle-kit introspect",
     "db-push": "drizzle-kit push",
     "db-studio": "drizzle-kit studio --port 4000",
-    "deploy": "git pull && npm i && npm run build && pm2 restart bwt-backend --update-env",
-    "deploy-dev": "git pull && npm i && npm run build && pm2 restart bwt-backend-v2-dev --update-env"
+    "deploy": "git pull && npm i && npm run db-generate && npm run db-migrate && npm run build && pm2 restart bwt-backend --update-env",
+    "deploy-dev": "git pull && npm i && npm run db-generate && npm run db-migrate && npm run build && pm2 restart bwt-backend-v2-dev --update-env"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
