@@ -261,24 +261,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       formData.accessories = processArrayField(accessories);
     }
   }
-  else {
-    // Fallback to processArrayField if no raw form data
-    if (problems_uuid) {
-      formData.problems_uuid = processArrayField(problems_uuid);
-    }
-
-    if (qc_problems_uuid) {
-      formData.qc_problems_uuid = processArrayField(qc_problems_uuid);
-    }
-
-    if (delivery_problems_uuid) {
-      formData.delivery_problems_uuid = processArrayField(delivery_problems_uuid);
-    }
-
-    if (accessories) {
-      formData.accessories = processArrayField(accessories);
-    }
-  }
 
   let finalModelUuid = model_uuid;
   if (model_uuid) {
