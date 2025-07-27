@@ -1,4 +1,5 @@
 import accessory from './accessory';
+import chat from './chat';
 import diagnosis from './diagnosis';
 import info from './info';
 import order from './order';
@@ -16,4 +17,5 @@ export default [
   process,
   section,
   zone,
+  chat,
 ];
