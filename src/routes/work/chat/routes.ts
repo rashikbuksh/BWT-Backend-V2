@@ -14,6 +14,12 @@ export const list = createRoute({
   path: '/work/chat',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      order_uuid: z.string().length(15).optional(),
+      // page: z.coerce.number().int().min(1).default(1),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
