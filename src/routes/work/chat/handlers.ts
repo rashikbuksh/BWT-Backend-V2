@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -62,6 +62,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { order_uuid } = c.req.valid('query');
+
   const resultPromise = db.select({
     uuid: chat.uuid,
     id: chat.id,
@@ -83,7 +85,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(users, eq(chat.created_by, users.uuid))
     .leftJoin(order, eq(chat.order_uuid, order.uuid))
     .leftJoin(chat_user, eq(chat.user_uuid, chat_user.uuid))
-    .orderBy(desc(chat.created_at));
+    .orderBy(asc(chat.created_at));
+
+  if (order_uuid)
+    resultPromise.where(eq(chat.order_uuid, order_uuid));
 
   const data = await resultPromise;
 
