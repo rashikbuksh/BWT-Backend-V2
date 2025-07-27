@@ -262,8 +262,8 @@ type ChallanEntryWithExtras = typeof data[number] & {
   );
 });
 
-if (!data || data.length === 0)
-  return DataNotFound(c);
+// if (!data || data.length === 0)
+//   return DataNotFound(c);
 
 return c.json(data || [], HSCode.OK);
 };
