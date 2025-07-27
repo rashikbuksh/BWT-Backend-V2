@@ -198,4 +198,23 @@ export const accessory = work.table('accessory', {
   remarks: text('remarks').default(sql`null`),
 });
 
+export const pageEnum = pgEnum('page', [
+  'diagnosis',
+  'repair',
+
+]);
+
+export const chat = work.table('chat', {
+  id: serial('id').notNull().unique(),
+  uuid: uuid_primary,
+  order_uuid: defaultUUID('order_uuid').references(() => order.uuid),
+  page: pageEnum('page').default('diagnosis'),
+  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
+  message: text('message').notNull(),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default work;
