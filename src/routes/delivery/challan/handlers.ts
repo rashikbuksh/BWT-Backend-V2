@@ -36,6 +36,23 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   if (Object.keys(updates).length === 0)
     return ObjectNotFound(c);
 
+  // Check if trying to update is_delivery_complete to true
+  if (updates.is_delivery_complete === true) {
+    // Verify that challan has entries
+    const challanEntries = await db
+      .select({ uuid: challan_entry.uuid })
+      .from(challan_entry)
+      .where(eq(challan_entry.challan_uuid, uuid))
+      .limit(1);
+
+    if (challanEntries.length === 0) {
+      return c.json(
+        createToast('error', 'Cannot mark delivery as complete. Challan has no entries.'),
+        HSCode.BAD_REQUEST,
+      );
+    }
+  }
+
   const [data] = await db.update(challan)
     .set(updates)
     .where(eq(challan.uuid, uuid))
