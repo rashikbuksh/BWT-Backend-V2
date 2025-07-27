@@ -171,8 +171,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const [data] = await challanPromise;
 
-  if (!data)
-    return DataNotFound(c);
+  // if (!data)
+  //   return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
 };
@@ -204,8 +204,8 @@ export const getChallanDetailsByChallan: AppRouteHandler<GetChallanDetailsByChal
     challan_entries: challan_entries?.data || challan_entries || [],
   };
 
-  if (!response)
-    return DataNotFound(c);
+  // if (!response)
+  //   return DataNotFound(c);
 
   return c.json(response || {}, HSCode.OK);
 };
