@@ -26,11 +26,11 @@ export const insertSchema = createInsertSchema(
   uuid: true,
   order_uuid: true,
   page: true,
-  user_uuid: true,
   message: true,
   created_by: true,
   created_at: true,
 }).partial({
+  user_uuid: true,
   updated_at: true,
   remarks: true,
 }).omit({
