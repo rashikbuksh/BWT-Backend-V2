@@ -114,8 +114,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const [data] = await purchasePromise;
 
-  if (!data)
-    return DataNotFound(c);
+  // if (!data)
+  //   return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
 };
@@ -147,8 +147,8 @@ export const getPurchaseEntryDetailsByPurchaseUuid: AppRouteHandler<GetPurchaseE
     purchase_entry: purchase_entry || [],
   };
 
-  if (!response)
-    return DataNotFound(c);
+  // if (!response)
+  //   return DataNotFound(c);
 
   return c.json(response || {}, HSCode.OK);
 };
