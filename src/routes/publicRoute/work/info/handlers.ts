@@ -56,15 +56,15 @@ export const getOrderDetailsByInfoUuidForPublic: AppRouteHandler<GetOrderDetails
             const diagnosisData
               = diagnosis === 'true'
                 ? await fetchData(
-                  `/v1/work/diagnosis-by-order/${order_uuid}?public=true`,
-                )
+                    `/v1/work/diagnosis-by-order/${order_uuid}?public=true`,
+                  )
                 : null;
 
             const processData
               = process === 'true'
                 ? await fetchData(
-                  `/v1/work/process?order_uuid=${order_uuid}?public=true`,
-                )
+                    `/v1/work/process?order_uuid=${order_uuid}?public=true`,
+                  )
                 : null;
 
             return {
