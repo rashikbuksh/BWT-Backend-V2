@@ -132,8 +132,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const [data] = await purchaseReturnEntryPromise;
 
-  if (!data)
-    return DataNotFound(c);
+  // if (!data)
+  //   return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
 };

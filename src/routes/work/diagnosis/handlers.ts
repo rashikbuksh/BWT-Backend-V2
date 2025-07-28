@@ -375,8 +375,8 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
 
   const [data] = await resultPromise;
 
-  if (!data)
-    return DataNotFound(c);
+  // if (!data)
+  //   return DataNotFound(c);
 
   // Gather all unique UUIDs from both diagnosis.problems_uuid and order_problems_uuid
   const diagnosisProblemsUUIDs = data.problems_uuid ? [data.problems_uuid].flat() : [];
