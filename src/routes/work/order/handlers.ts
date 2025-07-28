@@ -959,6 +959,9 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       status: diagnosis.status,
       status_update_date: diagnosis.status_update_date,
+      challan_no: sql`CONCAT('CH', TO_CHAR(${deliverySchema.challan.created_at}::timestamp, 'YY'), '-', TO_CHAR(${deliverySchema.challan.id}, 'FM0000'))`,
+      challan_uuid: deliverySchema.challan.uuid,
+      challan_type: deliverySchema.challan.challan_type,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
