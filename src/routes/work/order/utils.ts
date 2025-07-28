@@ -15,7 +15,7 @@ export const insertSchema = createInsertSchema(
     info_uuid: schema => schema.info_uuid.length(15),
     model_uuid: schema => schema.model_uuid.length(15).optional(),
     serial_no: schema => schema.serial_no.optional(),
-    quantity: z.number().positive().default(0),
+    quantity: z.number().positive().default(1),
     problems_uuid: schema => schema.problems_uuid.optional(),
     problem_statement: schema => schema.problem_statement,
     accessories: schema => schema.accessories.optional(),

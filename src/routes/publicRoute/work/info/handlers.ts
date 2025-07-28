@@ -48,22 +48,22 @@ export const getOrderDetailsByInfoUuidForPublic: AppRouteHandler<GetOrderDetails
 
   // Process each order to fetch diagnosis and process data conditionally
   const enrichedOrders = await Promise.all(
-    orderData.map(async (orderItem: any) => {
+    orderData?.map(async (orderItem: any) => {
       const { uuid: order_uuid } = orderItem;
 
       try {
         const diagnosisData
             = diagnosis === 'true'
               ? await fetchData(
-                  `/v1/work/diagnosis-by-order/${order_uuid}?public=true`,
-                )
+                `/v1/work/diagnosis-by-order/${order_uuid}?public=true`,
+              )
               : null;
 
         const processData
             = process === 'true'
               ? await fetchData(
-                  `/v1/work/process?order_uuid=${order_uuid}?public=true`,
-                )
+                `/v1/work/process?order_uuid=${order_uuid}?public=true`,
+              )
               : null;
 
         return {
