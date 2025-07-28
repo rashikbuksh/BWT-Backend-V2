@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -22,6 +23,7 @@ export const insertSchema = createInsertSchema(
     end_date: schema => schema.end_date.regex(dateTimePattern, {
       message: 'end_date must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
+    joining_amount: z.number().optional(),
     shift_group_uuid: schema => schema.shift_group_uuid.length(15),
     line_manager_uuid: schema => schema.line_manager_uuid.length(15),
     hr_manager_uuid: schema => schema.hr_manager_uuid.length(15),
