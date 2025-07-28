@@ -952,15 +952,13 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       diagnosis_problem_statement: diagnosis.problem_statement,
       bill_amount: PG_DECIMAL_TO_FLOAT(orderTable.bill_amount),
       is_home_repair: orderTable.is_home_repair,
-      proposed_cost: PG_DECIMAL_TO_FLOAT(orderTable.proposed_cost),
+      proposed_cost: PG_DECIMAL_TO_FLOAT(diagnosis.proposed_cost),
       is_challan_needed: orderTable.is_challan_needed,
       image_1: orderTable.image_1,
       image_2: orderTable.image_2,
       image_3: orderTable.image_3,
       status: diagnosis.status,
-      diagnosis_proposed_cost: PG_DECIMAL_TO_FLOAT(diagnosis.proposed_cost),
       status_update_date: diagnosis.status_update_date,
-
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
