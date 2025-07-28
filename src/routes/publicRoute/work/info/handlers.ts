@@ -48,38 +48,42 @@ export const getOrderDetailsByInfoUuidForPublic: AppRouteHandler<GetOrderDetails
 
   // Process each order to fetch diagnosis and process data conditionally
   const enrichedOrders = await Promise.all(
-    orderData?.map(async (orderItem: any) => {
-      const { uuid: order_uuid } = orderItem;
+    orderData.length > 0
+      ? orderData.map(async (orderItem: any) => {
+          const { uuid: order_uuid } = orderItem;
 
-      try {
-        const diagnosisData
-            = diagnosis === 'true'
-              ? await fetchData(
-                `/v1/work/diagnosis-by-order/${order_uuid}?public=true`,
-              )
-              : null;
+          try {
+            const diagnosisData
+              = diagnosis === 'true'
+                ? await fetchData(
+                  `/v1/work/diagnosis-by-order/${order_uuid}?public=true`,
+                )
+                : null;
 
-        const processData
-            = process === 'true'
-              ? await fetchData(
-                `/v1/work/process?order_uuid=${order_uuid}?public=true`,
-              )
-              : null;
+            const processData
+              = process === 'true'
+                ? await fetchData(
+                  `/v1/work/process?order_uuid=${order_uuid}?public=true`,
+                )
+                : null;
 
-        return {
-          ...orderItem,
-          ...(diagnosisData
-            ? { diagnosis: diagnosisData?.data }
-            : {}),
-          ...(processData ? { process: processData?.data } : {}),
-        };
-      }
-      catch (error) {
-        console.error(`Error enriching order ${order_uuid}:`, error);
-        // Return order without enriched data if API calls fail
-        return orderItem;
-      }
-    }),
+            return {
+              ...orderItem,
+              ...(diagnosisData
+                ? { diagnosis: diagnosisData?.data }
+                : {}),
+              ...(processData
+                ? { process: processData?.data }
+                : {}),
+            };
+          }
+          catch (error) {
+            console.error(`Error enriching order ${order_uuid}:`, error);
+            // Return order without enriched data if API calls fail
+            return orderItem;
+          }
+        })
+      : [],
   );
   enrichedOrders.sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
