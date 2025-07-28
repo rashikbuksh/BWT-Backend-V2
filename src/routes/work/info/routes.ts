@@ -136,6 +136,7 @@ export const getOrderDetailsByInfoUuid = createRoute({
     query: z.object({
       diagnosis: z.string().optional(),
       process: z.string().optional(),
+      is_update: z.string().optional(),
     }),
   },
   tags,

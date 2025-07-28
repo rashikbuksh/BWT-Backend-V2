@@ -314,7 +314,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
 export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUuidRoute> = async (c: any) => {
   const { info_uuid } = c.req.valid('param');
-  const { diagnosis, process } = c.req.valid('query');
+  const { diagnosis, process, is_update } = c.req.valid('query');
 
   const api = createApi(c);
 
@@ -347,15 +347,15 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
         const diagnosisData
             = diagnosis === 'true'
               ? await fetchData(
-                  `/v1/work/diagnosis-by-order/${order_uuid}`,
-                )
+                `/v1/work/diagnosis-by-order/${order_uuid}`,
+              )
               : null;
 
         const processData
             = process === 'true'
               ? await fetchData(
-                  `/v1/work/process?order_uuid=${order_uuid}`,
-                )
+                `/v1/work/process?order_uuid=${order_uuid}`,
+              )
               : null;
 
         return {
@@ -373,9 +373,18 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
       }
     }),
   );
-  enrichedOrders.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+
+  if (is_update === 'true') {
+    enrichedOrders.sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+  }
+  else {
+    enrichedOrders.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }
+
   const response = {
     ...info,
     // order_entry: order?.data || [],
