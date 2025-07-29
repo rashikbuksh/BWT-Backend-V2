@@ -172,6 +172,22 @@ export const getChallanEntryByChallan: AppRouteHandler<GetChallanEntryByChallanR
       is_transferred_for_qc: workOrder.is_transferred_for_qc,
       is_ready_for_delivery: workOrder.is_ready_for_delivery,
       bill_amount: PG_DECIMAL_TO_FLOAT(workOrder.bill_amount),
+      repairing_problems_uuid: workOrder.repairing_problems_uuid,
+      qc_problems_uuid: workOrder.qc_problems_uuid,
+      delivery_problems_uuid: workOrder.delivery_problems_uuid,
+      repairing_problem_statement: workOrder.repairing_problem_statement,
+      qc_problem_statement: workOrder.qc_problem_statement,
+      delivery_problem_statement: workOrder.delivery_problem_statement,
+      ready_for_delivery_date: workOrder.ready_for_delivery_date,
+      diagnosis_problems_uuid: workSchema.diagnosis.problems_uuid,
+      diagnosis_problem_statement: workSchema.diagnosis.problem_statement,
+      is_home_repair: workOrder.is_home_repair,
+      proposed_cost: PG_DECIMAL_TO_FLOAT(workOrder.proposed_cost),
+      is_challan_needed: workOrder.is_challan_needed,
+      image_1: workOrder.image_1,
+      image_2: workOrder.image_2,
+      image_3: workOrder.image_3,
+
     })
     .from(challan_entry)
     .leftJoin(
@@ -212,18 +228,47 @@ export const getChallanEntryByChallan: AppRouteHandler<GetChallanEntryByChallanR
       eq(workOrder.info_uuid, workSchema.info.uuid),
     )
     .leftJoin(user, eq(workSchema.info.user_uuid, user.uuid))
+    .leftJoin(
+      workSchema.diagnosis,
+      eq(workOrder.uuid, workSchema.diagnosis.order_uuid),
+    )
     .where(eq(challan_entry.challan_uuid, uuid));
 
   const data = await challanEntryPromise;
 
-  const problems_uuid = data.map(item => item.problems_uuid).flat();
+  const orderProblemsUUIDs = data
+    .map(item => Array.isArray(item.problems_uuid) ? item.problems_uuid : [])
+    .flat();
+  const diagnosisProblemsUUIDs = data
+    .map(item => Array.isArray(item.diagnosis_problems_uuid) ? item.diagnosis_problems_uuid : [])
+    .flat();
+  const repairingProblemsUUIDs = data
+    .map(item => Array.isArray(item.repairing_problems_uuid) ? item.repairing_problems_uuid : [])
+    .flat();
+  const qcProblemsUUIDs = data
+    .map(item => Array.isArray(item.qc_problems_uuid) ? item.qc_problems_uuid : [])
+    .flat();
+  const deliveryProblemsUUIDs = data
+    .map(item => Array.isArray(item.delivery_problems_uuid) ? item.delivery_problems_uuid : [])
+    .flat();
+
+  const allProblemsUUIDs = Array.from(
+    new Set([
+      ...orderProblemsUUIDs,
+      ...diagnosisProblemsUUIDs,
+      ...repairingProblemsUUIDs,
+      ...qcProblemsUUIDs,
+      ...deliveryProblemsUUIDs,
+    ]),
+  );
+
   const problems = await db
     .select({
-      uuid: workSchema.problem.uuid,
       name: workSchema.problem.name,
+      uuid: workSchema.problem.uuid,
     })
     .from(workSchema.problem)
-    .where(inArray(workSchema.problem.uuid, problems_uuid.filter((uuid): uuid is string => typeof uuid === 'string')));
+    .where(inArray(workSchema.problem.uuid, allProblemsUUIDs.filter((uuid): uuid is string => typeof uuid === 'string')));
 
   const problemsMap: Record<string, string> = problems.reduce((acc, problem) => {
     if (problem.uuid && problem.name) {
@@ -249,16 +294,33 @@ export const getChallanEntryByChallan: AppRouteHandler<GetChallanEntryByChallanR
   }, {} as Record<string, string>);
 
   type ChallanEntryWithExtras = typeof data[number] & {
-    problems_name?: string[];
+    order_problems_name?: string[];
+    diagnosis_problems_name?: string[];
+    repairing_problems_name?: string[];
+    qc_problems_name?: string[];
+    delivery_problems_name?: string[];
     accessories_name?: string[];
+    product_transfer?: any[];
   };
 
   (data as ChallanEntryWithExtras[]).forEach((item) => {
-    item.problems_name = (item.problems_uuid || []).map(
-      (uuid: string) => problemsMap[uuid],
+    item.order_problems_name = (item.problems_uuid || []).map(
+      uuid => problemsMap[uuid],
     );
+    item.diagnosis_problems_name = (
+      item.diagnosis_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    item.repairing_problems_name = (
+      item.repairing_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
+    item.qc_problems_name = (item.qc_problems_uuid || []).map(
+      uuid => problemsMap[uuid],
+    );
+    item.delivery_problems_name = (
+      item.delivery_problems_uuid || []
+    ).map(uuid => problemsMap[uuid]);
     item.accessories_name = (item.accessories || []).map(
-      (uuid: string) => accessoriesMap[uuid],
+      uuid => accessoriesMap[uuid],
     );
   });
 
