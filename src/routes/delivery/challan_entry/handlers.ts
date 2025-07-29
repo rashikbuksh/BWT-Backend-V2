@@ -248,22 +248,22 @@ export const getChallanEntryByChallan: AppRouteHandler<GetChallanEntryByChallanR
     return acc;
   }, {} as Record<string, string>);
 
-type ChallanEntryWithExtras = typeof data[number] & {
-  problems_name?: string[];
-  accessories_name?: string[];
-};
+  type ChallanEntryWithExtras = typeof data[number] & {
+    problems_name?: string[];
+    accessories_name?: string[];
+  };
 
-(data as ChallanEntryWithExtras[]).forEach((item) => {
-  item.problems_name = (item.problems_uuid || []).map(
-    (uuid: string) => problemsMap[uuid],
-  );
-  item.accessories_name = (item.accessories || []).map(
-    (uuid: string) => accessoriesMap[uuid],
-  );
-});
+  (data as ChallanEntryWithExtras[]).forEach((item) => {
+    item.problems_name = (item.problems_uuid || []).map(
+      (uuid: string) => problemsMap[uuid],
+    );
+    item.accessories_name = (item.accessories || []).map(
+      (uuid: string) => accessoriesMap[uuid],
+    );
+  });
 
-// if (!data || data.length === 0)
-//   return DataNotFound(c);
+  // if (!data || data.length === 0)
+  //   return DataNotFound(c);
 
-return c.json(data || [], HSCode.OK);
+  return c.json(data || [], HSCode.OK);
 };

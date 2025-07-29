@@ -200,24 +200,24 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     return acc;
   }, {} as Record<string, string>);
 
-type ProcessWithExtras = typeof processData[number] & {
-  problems_name?: string[];
-};
+  type ProcessWithExtras = typeof processData[number] & {
+    problems_name?: string[];
+  };
 
-(processData as ProcessWithExtras[]).forEach((process) => {
-  process.problems_name = (process.problems_uuid || []).map(
-    uuid => problemsMap[uuid],
-  );
-});
+  (processData as ProcessWithExtras[]).forEach((process) => {
+    process.problems_name = (process.problems_uuid || []).map(
+      uuid => problemsMap[uuid],
+    );
+  });
 
-const formattedData = processData.map(item => ({
-  uuid: item.uuid,
-  diagnosis_uuid: item.diagnosis_uuid,
-  section_uuid: item.section_uuid,
-  remarks: item.remarks,
-}));
+  const formattedData = processData.map(item => ({
+    uuid: item.uuid,
+    diagnosis_uuid: item.diagnosis_uuid,
+    section_uuid: item.section_uuid,
+    remarks: item.remarks,
+  }));
 
-const formattedDataWithId
+  const formattedDataWithId
     = resultIdData && resultIdData.length > 0
       ? {
           ...resultIdData[0],
@@ -227,9 +227,9 @@ const formattedDataWithId
           entry: formattedData,
         };
 
-const responseData = entry ? formattedDataWithId : processData;
+  const responseData = entry ? formattedDataWithId : processData;
 
-return c.json(responseData || [], HSCode.OK);
+  return c.json(responseData || [], HSCode.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
