@@ -241,7 +241,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       reference_user_uuid: info.reference_user_uuid,
       reference_user_name: reference_user.name,
       is_commission_amount: info.is_commission_amount,
-      commission_amount: info.commission_amount,
+      commission_amount: sql`COALESCE(info.commission_amount, 0)`,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -305,7 +305,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       reference_user_uuid: info.reference_user_uuid,
       reference_user_name: reference_user.name,
       is_commission_amount: info.is_commission_amount,
-      commission_amount: info.commission_amount,
+      commission_amount: sql`COALESCE(info.commission_amount, 0)`,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
