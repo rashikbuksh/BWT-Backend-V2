@@ -63,6 +63,11 @@ export const info = work.table('info', {
   branch_uuid: defaultUUID('branch_uuid').references(
     () => storeSchema.branch.uuid,
   ).default(sql`'wW4ofP5YSFmlLAH'`),
+  reference_user_uuid: defaultUUID('reference_user_uuid').references(
+    () => hrSchema.users.uuid,
+  ).default(sql`null`),
+  is_commission_amount: boolean('is_commission_amount').default(false), // it indicates the commission amount is Percentage otherwise it is fixed amount
+  commission_amount: PG_DECIMAL('commission_amount').default(sql`0`),
 });
 
 export const order = work.table('order', {

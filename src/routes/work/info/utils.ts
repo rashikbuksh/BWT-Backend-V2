@@ -25,6 +25,9 @@ export const insertSchema = createInsertSchema(
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     remarks: schema => schema.remarks.optional(),
+    reference_user_uuid: schema => schema.reference_user_uuid.length(15).optional(),
+    is_commission_amount: schema => schema.is_commission_amount.optional(),
+    commission_amount: z.number().optional().default(0),
   },
 ).required({
   uuid: true,
@@ -40,6 +43,9 @@ export const insertSchema = createInsertSchema(
   submitted_by: true,
   updated_at: true,
   remarks: true,
+  reference_user_uuid: true,
+  is_commission_amount: true,
+  commission_amount: true,
 }).omit({
   id: true,
 }).extend({

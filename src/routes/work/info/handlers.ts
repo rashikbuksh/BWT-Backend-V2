@@ -18,6 +18,7 @@ import type { CreateRoute, GetOneRoute, GetOrderDetailsByInfoUuidRoute, ListRout
 import { info, order, zone } from '../schema';
 
 const user = alias(hrSchema.users, 'user');
+const reference_user = alias(hrSchema.users, 'reference_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -237,6 +238,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         sql`COALESCE(delivered_count_tbl.delivered_count::float8, 0)`,
       branch_uuid: info.branch_uuid,
       branch_name: storeSchema.branch.name,
+      reference_user_uuid: info.reference_user_uuid,
+      reference_user_name: reference_user.name,
+      is_commission_amount: info.is_commission_amount,
+      commission_amount: info.commission_amount,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -250,7 +255,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       deliveredCountSubquery,
       eq(info.uuid, deliveredCountSubquery.info_uuid),
     )
-    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid));
+    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
+    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid));
 
   if (customer_uuid) {
     infoPromise.where(eq(info.user_uuid, customer_uuid));
@@ -296,12 +302,17 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       submitted_by: info.submitted_by,
       branch_uuid: info.branch_uuid,
       branch_name: storeSchema.branch.name,
+      reference_user_uuid: info.reference_user_uuid,
+      reference_user_name: reference_user.name,
+      is_commission_amount: info.is_commission_amount,
+      commission_amount: info.commission_amount,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
     .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
+    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
     .where(eq(info.uuid, uuid));
 
   const [data] = await infoPromise;
