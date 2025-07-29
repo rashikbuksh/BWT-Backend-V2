@@ -122,6 +122,10 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   value.pass = await HashPass(pass);
 
+  if (value.user_type === 'customer') {
+    value.can_access = '{"customer_profile":["read"]}';
+  }
+
   const [data] = await db.insert(users).values(value).returning({
     name: users.name,
   });

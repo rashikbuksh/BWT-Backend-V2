@@ -6,6 +6,7 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { nanoid } from '@/lib/nanoid';
+import { HashPass } from '@/middlewares/auth';
 import * as deliverySchema from '@/routes/delivery/schema';
 import * as hrSchema from '@/routes/hr/schema';
 import { users } from '@/routes/hr/schema';
@@ -44,7 +45,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       name,
       phone,
       user_type: 'customer',
-      pass: phone,
+      pass: await HashPass(phone),
       department_uuid,
       designation_uuid,
       email: `${formattedName + phone}@bwt.com`,
@@ -52,6 +53,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       created_at,
       business_type,
       where_they_find_us,
+      can_access: '{"customer_profile":["read"]}',
     });
   }
   if (submitted_by === 'customer') {
@@ -73,10 +75,11 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
         name,
         phone,
         user_type: 'customer',
-        pass: phone,
+        pass: await HashPass(phone),
         email: `${formattedName2 + phone}@bwt.com`,
         ext: '+880',
         created_at,
+        can_access: '{"customer_profile":["read"]}',
       });
     }
   }
@@ -114,7 +117,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       name,
       phone,
       user_type: 'customer',
-      pass: phone,
+      pass: await HashPass(phone),
       department_uuid,
       designation_uuid,
       email: `${formattedName + phone}@bwt.com`,
@@ -122,6 +125,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       created_at: updated_at,
       business_type,
       where_they_find_us,
+      can_access: '{"customer_profile":["read"]}',
     });
   }
 
