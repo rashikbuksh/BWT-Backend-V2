@@ -46,6 +46,11 @@ export const zone = work.table('zone', {
 });
 
 export const submittedByEnum = pgEnum('submitted_by', ['customer', 'employee']);
+export const orderInfoStatusEnum = pgEnum('order_info_status', [
+  'pending',
+  'rejected',
+  'accepted',
+]);
 
 export const info = work.table('info', {
   id: serial('id').notNull().unique(),
@@ -68,6 +73,10 @@ export const info = work.table('info', {
   ).default(sql`null`),
   is_commission_amount: boolean('is_commission_amount').default(false), // it indicates the commission amount is Percentage otherwise it is fixed amount
   commission_amount: PG_DECIMAL('commission_amount').default(sql`0`),
+  is_contact_with_customer: boolean('is_contact_with_customer').default(false),
+  customer_feedback: text('customer_feedback').default(sql`null`),
+  order_info_status: orderInfoStatusEnum('order_info_status').default('accepted'),
+
 });
 
 export const order = work.table('order', {

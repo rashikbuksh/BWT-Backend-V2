@@ -60,6 +60,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   if (submitted_by === 'customer') {
     const formattedName2 = name.toLowerCase().replace(/\s+/g, '');
 
+    value.order_info_status = 'pending';
+
     const existingUser = await db
       .select()
       .from(users)
@@ -249,6 +251,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       reference_user_name: reference_user.name,
       is_commission_amount: info.is_commission_amount,
       commission_amount: sql`COALESCE(info.commission_amount::float8, 0)`,
+      is_contact_with_customer: info.is_contact_with_customer,
+      customer_feedback: info.customer_feedback,
+      order_info_status: info.order_info_status,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -313,6 +318,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       reference_user_name: reference_user.name,
       is_commission_amount: info.is_commission_amount,
       commission_amount: sql`COALESCE(info.commission_amount::float8, 0)`,
+      is_contact_with_customer: info.is_contact_with_customer,
+      customer_feedback: info.customer_feedback,
+      order_info_status: info.order_info_status,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
