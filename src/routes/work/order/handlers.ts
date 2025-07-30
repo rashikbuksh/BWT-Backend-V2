@@ -368,7 +368,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const orderPromise = db
     .select({
       id: orderTable.id,
-      order_id: sql`CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000'))`,
+      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) END`,
       uuid: orderTable.uuid,
       info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
@@ -643,7 +643,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const orderPromise = db
     .select({
       id: orderTable.id,
-      order_id: sql`CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000'))`,
+      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) END`,
       uuid: orderTable.uuid,
       info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
@@ -917,7 +917,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   const orderPromise = db
     .select({
       id: orderTable.id,
-      order_id: sql`CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000'))`,
+      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) END`,
       uuid: orderTable.uuid,
       info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
