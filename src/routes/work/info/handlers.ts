@@ -53,7 +53,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       created_at,
       business_type,
       where_they_find_us,
-      can_access: '{"customer_profile":["read"]}',
+      can_access: '{"customer__customer_profile":["read"]}',
+      status: '1', // Set status to active for new customers
     });
   }
   if (submitted_by === 'customer') {
@@ -79,7 +80,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
         email: `${formattedName2 + phone}@bwt.com`,
         ext: '+880',
         created_at,
-        can_access: '{"customer_profile":["read"]}',
+        can_access: '{"customer__customer_profile":["read"]}',
+        status: '1', // Set status to active for new customers
       });
     }
   }
@@ -125,7 +127,8 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       created_at: updated_at,
       business_type,
       where_they_find_us,
-      can_access: '{"customer_profile":["read"]}',
+      can_access: '{"customer__customer_profile":["read"]}',
+      status: '1', // Set status to active for new customers
     });
   }
 
