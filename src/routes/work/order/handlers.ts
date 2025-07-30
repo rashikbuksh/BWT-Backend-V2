@@ -85,6 +85,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     uuid,
     created_at,
     created_by,
+    is_reclaimed,
+    reclaimed_order_uuid,
+
   } = formData;
 
   let imagePath_1 = null;
@@ -158,6 +161,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     uuid,
     created_at,
     created_by,
+    is_reclaimed,
+    reclaimed_order_uuid,
   };
 
   try {
@@ -416,6 +421,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       image_1: orderTable.image_1,
       image_2: orderTable.image_2,
       image_3: orderTable.image_3,
+      is_reclaimed: orderTable.is_reclaimed,
+      reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -688,6 +695,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       image_1: orderTable.image_1,
       image_2: orderTable.image_2,
       image_3: orderTable.image_3,
+      is_reclaimed: orderTable.is_reclaimed,
+      reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -962,6 +971,8 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       challan_no: sql`CONCAT('CH', TO_CHAR(${deliverySchema.challan.created_at}::timestamp, 'YY'), '-', TO_CHAR(${deliverySchema.challan.id}, 'FM0000'))`,
       challan_uuid: deliverySchema.challan.uuid,
       challan_type: deliverySchema.challan.challan_type,
+      is_reclaimed: orderTable.is_reclaimed,
+      reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))

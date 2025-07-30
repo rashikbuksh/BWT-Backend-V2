@@ -131,6 +131,11 @@ export const order = work.table('order', {
   image_1: text('image_1').default(sql`null`),
   image_2: text('image_2').default(sql`null`),
   image_3: text('image_3').default(sql`null`),
+  is_reclaimed: boolean('is_reclaimed').default(false),
+  reclaimed_order_uuid: defaultUUID('reclaimed_order_uuid').references(
+    (): any => order.uuid,
+  ).default(sql`null`),
+
 });
 export const statusEnum = pgEnum('status', [
   'pending',
