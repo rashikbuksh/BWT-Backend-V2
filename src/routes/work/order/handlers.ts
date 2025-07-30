@@ -425,7 +425,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
       reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id})`,
-      new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${eq(orderTable.is_reclaimed, true)})`,
+      // new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${eq(orderTable.is_reclaimed, true)} LIMIT 1)`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
