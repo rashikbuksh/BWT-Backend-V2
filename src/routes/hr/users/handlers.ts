@@ -64,9 +64,18 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
-  if (!data.status) {
+  // if (!data.status) {
+  //   return c.json(
+  //     { message: 'Account is disabled' },
+  //     HSCode.UNAUTHORIZED,
+  //   );
+  // }
+
+  // Check if the account is disabled
+
+  if (data.status === '0' || data.status === 'false' || data.status === null || !data.status) {
     return c.json(
-      { message: 'Account is disabled' },
+      createToast('error', 'Account is disabled. Please contact admin.'),
       HSCode.UNAUTHORIZED,
     );
   }
@@ -123,7 +132,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   value.pass = await HashPass(pass);
 
   if (value.user_type === 'customer') {
-    value.can_access = '{"customer_profile":["read"]}';
+    value.can_access = '{"customer__customer_profile":["read"]}';
+    value.status = 1; // Set status to active for customers
   }
 
   const [data] = await db.insert(users).values(value).returning({
