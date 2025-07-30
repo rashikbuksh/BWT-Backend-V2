@@ -424,7 +424,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
-      reclaimed_order_id: sql`CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
+      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -700,7 +700,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
-      reclaimed_order_id: sql`CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
+      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -978,7 +978,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       challan_type: deliverySchema.challan.challan_type,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
-      reclaimed_order_id: sql`CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
+      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
