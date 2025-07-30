@@ -20,6 +20,7 @@ import { accessory, diagnosis, info, order, problem } from '../schema';
 
 const user = alias(hrSchema.users, 'user');
 const orderTable = alias(order, 'work_order');
+const reclaimedOrderTable = alias(order, 'reclaimed_order');
 
 // Helper function to process array fields from form data
 function processArrayField(value: any): string[] {
@@ -423,6 +424,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
+      reclaimed_order_id: sql`CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -451,6 +453,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
+    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .orderBy(desc(orderTable.created_at));
 
   const filters = [];
@@ -697,6 +700,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
+      reclaimed_order_id: sql`CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -736,6 +740,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       ),
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
+    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .where(eq(orderTable.uuid, uuid));
 
   const data = await orderPromise;
@@ -973,6 +978,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       challan_type: deliverySchema.challan.challan_type,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
+      reclaimed_order_id: sql`CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -1012,6 +1018,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
+    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .where(eq(orderTable.info_uuid, info_uuid));
 
   const data = await orderPromise;
