@@ -84,6 +84,11 @@ export const insertSchema = createInsertSchema(
   is_home_repair: true,
   proposed_cost: true,
   is_challan_needed: true,
+  image_1: true,
+  image_2: true,
+  image_3: true,
+  is_reclaimed: true,
+  reclaimed_order_uuid: true,
 }).omit({
   id: true,
 });

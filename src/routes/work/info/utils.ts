@@ -46,6 +46,9 @@ export const insertSchema = createInsertSchema(
   reference_user_uuid: true,
   is_commission_amount: true,
   commission_amount: true,
+  is_contact_with_customer: true,
+  customer_feedback: true,
+  order_info_status: true,
 }).omit({
   id: true,
 }).extend({
