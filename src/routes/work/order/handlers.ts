@@ -368,11 +368,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const orderPromise = db
     .select({
       id: orderTable.id,
-      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) END`,
+      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', ${orderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', ${orderTable.id}) END`,
       uuid: orderTable.uuid,
       info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
-      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
       user_name: user.name,
       user_phone: user.phone,
       model_uuid: orderTable.model_uuid,
@@ -400,7 +400,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: orderTable.remarks,
       is_diagnosis_need: orderTable.is_diagnosis_need,
       quantity: orderTable.quantity,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       is_transferred_for_qc: orderTable.is_transferred_for_qc,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
@@ -424,7 +424,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
-      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
+      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id})`,
+      new_order_uuid: sql` SELECT ${orderTable.uuid} FROM ${orderTable} WHERE ${eq(orderTable.reclaimed_order_uuid, orderTable.uuid)} AND ${eq(orderTable.is_reclaimed, true)}`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -643,11 +644,11 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const orderPromise = db
     .select({
       id: orderTable.id,
-      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) END`,
+      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-',${orderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-',${orderTable.id}) END`,
       uuid: orderTable.uuid,
       info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
-      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
       user_name: user.name,
       user_phone: user.phone,
       model_uuid: orderTable.model_uuid,
@@ -675,7 +676,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       remarks: orderTable.remarks,
       is_diagnosis_need: orderTable.is_diagnosis_need,
       quantity: orderTable.quantity,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       is_transferred_for_qc: orderTable.is_transferred_for_qc,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
@@ -700,7 +701,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
-      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
+      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-',${reclaimedOrderTable.id})`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -917,11 +918,11 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   const orderPromise = db
     .select({
       id: orderTable.id,
-      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', TO_CHAR(${orderTable.id}, 'FM0000')) END`,
+      order_id: sql`CASE WHEN ${orderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', ${orderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${orderTable.created_at}, 'YY'), '-', ${orderTable.id}) END`,
       uuid: orderTable.uuid,
       info_uuid: orderTable.info_uuid,
       user_uuid: info.user_uuid,
-      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}::integer, 'FM0000'))`,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
       user_name: user.name,
       model_uuid: orderTable.model_uuid,
       model_name: storeSchema.model.name,
@@ -948,7 +949,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       remarks: orderTable.remarks,
       is_diagnosis_need: orderTable.is_diagnosis_need,
       quantity: orderTable.quantity,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       is_transferred_for_qc: orderTable.is_transferred_for_qc,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       is_delivery_complete: sql`COALESCE(${deliverySchema.challan.is_delivery_complete}, false)`,
@@ -973,12 +974,12 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       image_3: orderTable.image_3,
       status: diagnosis.status,
       status_update_date: diagnosis.status_update_date,
-      challan_no: sql`CONCAT('CH', TO_CHAR(${deliverySchema.challan.created_at}::timestamp, 'YY'), '-', TO_CHAR(${deliverySchema.challan.id}, 'FM0000'))`,
+      challan_no: sql`CONCAT('CH', TO_CHAR(${deliverySchema.challan.created_at}::timestamp, 'YY'), '-', ${deliverySchema.challan.id})`,
       challan_uuid: deliverySchema.challan.uuid,
       challan_type: deliverySchema.challan.challan_type,
       is_reclaimed: orderTable.is_reclaimed,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
-      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', TO_CHAR(${reclaimedOrderTable.id}, 'FM0000'))`,
+      reclaimed_order_id: sql`CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-',${reclaimedOrderTable.id})`,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
