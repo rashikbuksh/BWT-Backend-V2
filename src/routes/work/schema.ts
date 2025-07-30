@@ -50,6 +50,7 @@ export const orderInfoStatusEnum = pgEnum('order_info_status', [
   'pending',
   'rejected',
   'accepted',
+  'cancel',
 ]);
 
 export const info = work.table('info', {
