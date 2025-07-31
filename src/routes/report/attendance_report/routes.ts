@@ -15,6 +15,9 @@ export const getEmployeeAttendanceReport = createRoute({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
     }),
+    params: z.object({
+      employee_uuid: z.string(),
+    }),
   },
   responses: {
     [HSCode.OK]: jsonContent(
