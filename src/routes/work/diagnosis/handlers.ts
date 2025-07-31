@@ -270,8 +270,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   //   return DataNotFound(c);
 
   // Gather all unique UUIDs from both diagnosis.problems_uuid and order_problems_uuid
-  const diagnosisProblemsUUIDs = data.problems_uuid ? [data.problems_uuid].flat() : [];
-  const orderProblemsUUIDs = data.order_problems_uuid ? [data.order_problems_uuid].flat() : [];
+  const diagnosisProblemsUUIDs = data?.problems_uuid ? [data.problems_uuid].flat() : [];
+  const orderProblemsUUIDs = data?.order_problems_uuid ? [data.order_problems_uuid].flat() : [];
 
   const allProblemsUUIDs = Array.from(
     new Set([...diagnosisProblemsUUIDs, ...orderProblemsUUIDs]),
@@ -300,7 +300,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     order_problems_name?: string[];
   };
 
-  const diagnosisWithExtras = data as DiagnosisWithExtras;
+  const diagnosisWithExtras = (data || {}) as DiagnosisWithExtras;
 
   // diagnosis_problems_name
   if (
@@ -404,8 +404,8 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
   //   return DataNotFound(c);
 
   // Gather all unique UUIDs from both diagnosis.problems_uuid and order_problems_uuid
-  const diagnosisProblemsUUIDs = data.problems_uuid ? [data.problems_uuid].flat() : [];
-  const orderProblemsUUIDs = data.order_problems_uuid ? [data.order_problems_uuid].flat() : [];
+  const diagnosisProblemsUUIDs = data?.problems_uuid ? [data.problems_uuid].flat() : [];
+  const orderProblemsUUIDs = data?.order_problems_uuid ? [data.order_problems_uuid].flat() : [];
 
   const allProblemsUUIDs = Array.from(
     new Set([...diagnosisProblemsUUIDs, ...orderProblemsUUIDs]),
@@ -434,7 +434,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
     order_problems_name?: string[];
   };
 
-  const diagnosisWithExtras = data as DiagnosisWithExtras;
+  const diagnosisWithExtras = (data || {}) as DiagnosisWithExtras;
 
   // diagnosis_problems_name
   if (
