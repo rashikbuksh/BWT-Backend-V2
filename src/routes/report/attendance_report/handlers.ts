@@ -58,7 +58,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
 };
 // not completed
 export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttendanceReportRoute> = async (c: any) => {
-  // const { department_uuid } = c.req.valid('query');
+  const { department_uuid } = c.req.valid('query');
 
   const { from_date, to_date } = c.req.valid('query');
 
@@ -105,7 +105,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                     et.name AS employment_type_name,
                     COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
                     COALESCE((${to_date}::date - ${from_date}::date+ 1), 0) - (COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) + COALESCE(${total_general_holidays}::int, 0) + COALESCE(${total_special_holidays}::int, 0))::float8 AS absent_days,
-                    COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
+                    COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days
                 FROM hr.employee e
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                 LEFT JOIN hr.designation d ON e.designation_uuid = d.uuid
@@ -194,6 +194,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                         )
                         GROUP BY shift_group_uuid
             ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
+                WHERE e.department_uuid = ${department_uuid}
               `;
 
   const departmentAttendanceReportPromise = db.execute(query);

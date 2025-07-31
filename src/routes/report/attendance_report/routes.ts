@@ -45,7 +45,7 @@ export const getDepartmentAttendanceReport = createRoute({
   description: 'Get the attendance report for a department',
   request: {
     query: z.object({
-      department_uuid: z.string(),
+      department_uuid: z.string().optional(),
       from_date: z.string().optional(),
       to_date: z.string().optional(),
     }),
