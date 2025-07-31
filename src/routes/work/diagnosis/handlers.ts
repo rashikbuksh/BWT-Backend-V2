@@ -16,6 +16,7 @@ import { diagnosis, info, order, problem } from '../schema';
 
 const info_user = alias(users, 'info_user');
 const order_table = alias(order, 'order_table');
+const reclaimedOrderTable = alias(order, 'reclaimed_order_table');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -66,9 +67,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: diagnosis.uuid,
     id: diagnosis.id,
-    diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), '-', TO_CHAR(${diagnosis.id}, 'FM0000'))`,
+    diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), '-', ${diagnosis.id})`,
     order_uuid: diagnosis.order_uuid,
-    order_id: sql`CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', TO_CHAR(${order_table.id}, 'FM0000'))`,
+    order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
     engineer_uuid: diagnosis.engineer_uuid,
     problems_uuid: diagnosis.problems_uuid,
     problem_statement: diagnosis.problem_statement,
@@ -96,7 +97,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     user_uuid: info.user_uuid,
     user_name: info_user.name,
     user_phone: info_user.phone,
-    info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+    info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
     branch_uuid: warehouse.branch_uuid,
     branch_name: branch.name,
     order_problems_uuid: order_table.problems_uuid,
@@ -110,6 +111,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     model_uuid: order_table.model_uuid,
     model_name: model.name,
     quantity: PG_DECIMAL_TO_FLOAT(order_table.quantity),
+    reclaimed_order_uuid: order_table.reclaimed_order_uuid,
+    reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
   })
     .from(diagnosis)
     .leftJoin(users, eq(diagnosis.created_by, users.uuid))
@@ -123,6 +126,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(info_user, eq(info.user_uuid, info_user.uuid))
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
+    .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .where(eq(diagnosis.is_proceed_to_repair, false))
     .orderBy(desc(diagnosis.created_at));
 
@@ -205,9 +209,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: diagnosis.uuid,
       id: diagnosis.id,
-      diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), TO_CHAR(${diagnosis.id}, 'FM0000'))`,
+      diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), ${diagnosis.id})`,
       order_uuid: diagnosis.order_uuid,
-      order_id: sql`CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', TO_CHAR(${order_table.id}, 'FM0000'))`,
+      order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
       engineer_uuid: diagnosis.engineer_uuid,
       problems_uuid: diagnosis.problems_uuid,
       problem_statement: diagnosis.problem_statement,
@@ -235,7 +239,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       user_uuid: info.user_uuid,
       user_name: info_user.name,
       user_phone: info_user.phone,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       branch_uuid: warehouse.branch_uuid,
       branch_name: branch.name,
       order_problems_uuid: order_table.problems_uuid,
@@ -262,6 +266,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(info_user, eq(info.user_uuid, info_user.uuid))
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
+    .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .where(eq(diagnosis.uuid, uuid));
 
   const [data] = await resultPromise;
@@ -339,9 +344,9 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
     .select({
       uuid: diagnosis.uuid,
       id: diagnosis.id,
-      diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), TO_CHAR(${diagnosis.id}, 'FM0000'))`,
+      diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), ${diagnosis.id})`,
       order_uuid: diagnosis.order_uuid,
-      order_id: sql`CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', TO_CHAR(${order_table.id}, 'FM0000'))`,
+      order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
       engineer_uuid: diagnosis.engineer_uuid,
       problems_uuid: diagnosis.problems_uuid,
       problem_statement: diagnosis.problem_statement,
@@ -369,7 +374,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
       user_uuid: info.user_uuid,
       user_name: info_user.name,
       user_phone: info_user.phone,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       branch_uuid: warehouse.branch_uuid,
       branch_name: branch.name,
       order_problems_uuid: order_table.problems_uuid,
@@ -383,6 +388,8 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
       model_uuid: order_table.model_uuid,
       model_name: model.name,
       quantity: PG_DECIMAL_TO_FLOAT(order_table.quantity),
+      reclaimed_order_uuid: order_table.reclaimed_order_uuid,
+      reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
     })
     .from(diagnosis)
     .leftJoin(users, eq(diagnosis.created_by, users.uuid))
@@ -396,6 +403,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
     .leftJoin(info_user, eq(info.user_uuid, info_user.uuid))
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
+    .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .where(eq(diagnosis.order_uuid, order_uuid));
 
   const [data] = await resultPromise;
