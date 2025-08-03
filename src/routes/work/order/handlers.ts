@@ -356,6 +356,22 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
       problems_uuid: diagnosis.problems_uuid,
     });
 
+  // Fix: Check if orderData exists and has reclaimed_order_uuid before querying
+  if (orderData?.reclaimed_order_uuid) {
+    const reclaimedOrderExists = await db.select({
+      uuid: orderTable.uuid,
+      is_reclaimed: orderTable.is_reclaimed,
+    })
+      .from(orderTable)
+      .where(eq(orderTable.uuid, orderData.reclaimed_order_uuid));
+
+    if (reclaimedOrderExists.length > 0) {
+      await db.update(orderTable)
+        .set({ is_reclaimed: false })
+        .where(eq(orderTable.uuid, orderData.reclaimed_order_uuid));
+    }
+  }
+
   const [data] = await db.delete(order)
     .where(eq(order.uuid, uuid))
     .returning({
