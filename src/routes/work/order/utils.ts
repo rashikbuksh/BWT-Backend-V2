@@ -54,7 +54,6 @@ export const insertSchema = createInsertSchema(
   uuid: true,
   info_uuid: true,
   problem_statement: true,
-  created_by: true,
   created_at: true,
 }).partial({
   model_uuid: true,
@@ -89,6 +88,7 @@ export const insertSchema = createInsertSchema(
   image_3: true,
   is_reclaimed: true,
   reclaimed_order_uuid: true,
+  created_by: true,
 }).omit({
   id: true,
 });

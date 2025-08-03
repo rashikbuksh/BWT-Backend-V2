@@ -31,7 +31,6 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  created_by: true,
   created_at: true,
 }).partial({
   user_uuid: true,
@@ -49,6 +48,7 @@ export const insertSchema = createInsertSchema(
   is_contact_with_customer: true,
   customer_feedback: true,
   order_info_status: true,
+  created_by: true,
 }).omit({
   id: true,
 }).extend({
