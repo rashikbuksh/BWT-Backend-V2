@@ -455,8 +455,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
-    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .orderBy(desc(orderTable.created_at));
+    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid));
 
   const filters = [];
 
@@ -519,6 +518,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   if (filters.length > 0) {
     orderPromise.where(and(...filters));
+  }
+
+  // Apply ordering based on is_delivered parameter
+  if (is_delivered === 'true') {
+    orderPromise.orderBy(desc(orderTable.ready_for_delivery_date));
+  }
+  else {
+    orderPromise.orderBy(desc(orderTable.created_at));
   }
 
   const data = await orderPromise;
