@@ -76,7 +76,7 @@ export const info = work.table('info', {
   commission_amount: PG_DECIMAL('commission_amount').default(sql`0`),
   is_contact_with_customer: boolean('is_contact_with_customer').default(false),
   customer_feedback: text('customer_feedback').default(sql`null`),
-  order_info_status: orderInfoStatusEnum('order_info_status').default('accepted'),
+  order_info_status: orderInfoStatusEnum('order_info_status').default('pending'),
 
 });
 
