@@ -350,6 +350,12 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
       deleteFile(orderData.image_3);
   }
 
+  await db.delete(diagnosis)
+    .where(eq(diagnosis.order_uuid, uuid))
+    .returning({
+      problems_uuid: diagnosis.problems_uuid,
+    });
+
   const [data] = await db.delete(order)
     .where(eq(order.uuid, uuid))
     .returning({
