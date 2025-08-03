@@ -60,7 +60,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   if (submitted_by === 'customer') {
     const formattedName2 = name.toLowerCase().replace(/\s+/g, '');
 
-    value.order_info_status = 'pending';
+    //  value.order_info_status = 'pending';
 
     const existingUser = await db
       .select()
