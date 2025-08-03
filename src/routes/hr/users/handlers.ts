@@ -52,6 +52,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
       designation: designation.designation,
       department: department.department,
       employee_uuid: employee.uuid,
+      user_type: users.user_type,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -117,6 +118,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     department_name: data.department,
     designation_name: data.designation,
     employee_uuid: data.employee_uuid,
+    user_type: data.user_type,
   };
 
   const can_access = data.can_access;
