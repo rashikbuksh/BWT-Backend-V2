@@ -8,7 +8,7 @@ import db from '@/db';
 import type { LeaveBalanceReportRoute, LeaveHistoryReportRoute } from './routes';
 
 export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = async (c: any) => {
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date } = c.req.valid('query');
 
   const query = sql`
     SELECT
@@ -21,11 +21,30 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
         apply_leave.from_date as from_date,
         apply_leave.to_date as to_date,
         apply_leave.reason,
-        (apply_leave.to_date::date - apply_leave.from_date::date + 1) as days,
+        (apply_leave.to_date::date - apply_leave.from_date::date + 1) as total_days,
         employment_type.name as employment_type_name,
         leave_policy.uuid as leave_policy_uuid,
         leave_policy.name as leave_policy_name,
-        apply_leave.approval as approval
+        apply_leave.approval as approval,
+        ${from_date && to_date
+          ? sql`
+            CASE 
+                WHEN apply_leave.type = 'half' THEN
+                    (GREATEST(0, (LEAST(apply_leave.to_date::date, ${to_date}::date) 
+                    - GREATEST(apply_leave.from_date::date, ${from_date}::date) + 1)) * 0.5)::FLOAT
+                ELSE
+                    GREATEST(0, (LEAST(apply_leave.to_date::date, ${to_date}::date) 
+                    - GREATEST(apply_leave.from_date::date, ${from_date}::date) + 1))::FLOAT
+            END
+        `
+          : sql`
+            CASE 
+                WHEN apply_leave.type = 'half' THEN
+                    ((apply_leave.to_date::date - apply_leave.from_date::date + 1) * 0.5)::FLOAT
+                ELSE
+                    (apply_leave.to_date::date - apply_leave.from_date::date + 1)::FLOAT
+            END
+        `} as days
     FROM
         hr.apply_leave
     LEFT JOIN
@@ -40,6 +59,12 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
         hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
     WHERE 
         ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
+        ${from_date && to_date
+          ? sql`AND (
+            apply_leave.from_date::date <= ${to_date}::date
+            AND apply_leave.to_date::date >= ${from_date}::date
+        )`
+          : sql``}
   `;
 
   const data = await db.execute(query);
