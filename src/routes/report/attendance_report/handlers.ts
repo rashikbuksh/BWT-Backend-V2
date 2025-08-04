@@ -105,7 +105,9 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                     et.name AS employment_type_name,
                     COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
                     COALESCE((${to_date}::date - ${from_date}::date+ 1), 0) - (COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) + COALESCE(${total_general_holidays}::int, 0) + COALESCE(${total_special_holidays}::int, 0))::float8 AS absent_days,
-                    COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days
+                    COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
+                    COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
+                    COALESCE(attendance_summary.early_leaves, 0)::float8 AS early_leaves
                 FROM hr.employee e
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                 LEFT JOIN hr.designation d ON e.designation_uuid = d.uuid
@@ -116,7 +118,8 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                 SELECT 
                       pl.employee_uuid,
                       COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS present_days,
-                      COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS late_days
+                      COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS late_days,
+                      COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.early_exit_before, 'HH24:MI') THEN 1 END) AS early_leaves
                 FROM hr.punch_log pl
                 LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
                 LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
