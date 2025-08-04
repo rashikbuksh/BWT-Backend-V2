@@ -26,7 +26,13 @@ const isDev = env.NODE_ENV === 'development';
 const isVps = env.NODE_ENV === 'vps';
 
 // Serve static files from the 'uploads' directory
-app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
+
+let uploadPath = './uploads';
+if (isDev)
+  uploadPath = './src/uploads';
+if (isVps)
+  uploadPath = './dist/src/uploads';
+app.use('/uploads/*', serveStatic({ root: uploadPath }));
 
 app.use(`${basePath}/*`, cors({
   origin: ALLOWED_ROUTES,
