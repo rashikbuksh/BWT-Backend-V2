@@ -62,9 +62,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: purchase_return.uuid,
       id: purchase_return.id,
-      purchase_return_id: sql`CONCAT('SPR',TO_CHAR(${purchase_return.created_at}, 'YY'),' - ',TO_CHAR(${purchase_return.id}, 'FM0000'))`,
+      purchase_return_id: sql`CONCAT('SPR',TO_CHAR(${purchase_return.created_at}, 'YY'),' - ',${purchase_return.id})`,
       purchase_uuid: purchase_return.purchase_uuid,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',${purchase.id})`,
       created_by: purchase_return.created_by,
       created_by_name: users.name,
       created_at: purchase_return.created_at,
@@ -94,9 +94,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: purchase_return.uuid,
       id: purchase_return.id,
-      purchase_return_id: sql`CONCAT('SPR',TO_CHAR(${purchase_return.created_at}, 'YY'),' - ',TO_CHAR(${purchase_return.id}, 'FM0000'))`,
+      purchase_return_id: sql`CONCAT('SPR',TO_CHAR(${purchase_return.created_at}, 'YY'),' - ',${purchase_return.id})`,
       purchase_uuid: purchase_return.purchase_uuid,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',${purchase.id})`,
       created_by: purchase_return.created_by,
       created_by_name: users.name,
       created_at: purchase_return.created_at,

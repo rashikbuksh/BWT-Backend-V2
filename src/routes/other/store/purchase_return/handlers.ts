@@ -12,7 +12,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const purchaseReturnPromise = db
     .select({
       value: purchase_return.uuid,
-      label: sql`CONCAT('SPR',TO_CHAR(${purchase_return.created_at}, 'YY'),' - ',TO_CHAR(${purchase_return.id}, 'FM0000'))`,
+      label: sql`CONCAT('SPR',TO_CHAR(${purchase_return.created_at}, 'YY'),' - ',${purchase_return.id})`,
     })
     .from(purchase_return);
 

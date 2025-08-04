@@ -12,7 +12,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const internalTransferPromise = db
     .select({
       value: internal_transfer.uuid,
-      label: sql`CONCAT('SIT',TO_CHAR(${internal_transfer.created_at}, 'YY'),' - ',TO_CHAR(${internal_transfer.id}, 'FM0000'))`,
+      label: sql`CONCAT('SIT',TO_CHAR(${internal_transfer.created_at}, 'YY'),' - ', ${internal_transfer.id})`,
     })
     .from(internal_transfer);
 

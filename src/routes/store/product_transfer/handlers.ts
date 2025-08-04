@@ -64,7 +64,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const productTransferPromise = db
     .select({
       id: product_transfer.id,
-      product_transfer_id: sql`CONCAT('PT', TO_CHAR(${product_transfer.created_at}, 'YY'), '-', TO_CHAR(${product_transfer.id}, 'FM0000'))`,
+      product_transfer_id: sql`CONCAT('PT', TO_CHAR(${product_transfer.created_at}, 'YY'), '-', ${product_transfer.id})`,
       uuid: product_transfer.uuid,
       purchase_entry_uuid: product_transfer.purchase_entry_uuid,
       product_uuid: purchase_entry.product_uuid,
@@ -72,7 +72,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       warehouse_uuid: product_transfer.warehouse_uuid,
       warehouse_name: warehouse.name,
       order_uuid: product_transfer.order_uuid,
-      order_id: sql`CONCAT('WO', TO_CHAR(${workSchema.order.created_at}, 'YY'), '-', TO_CHAR(${workSchema.order.id}, 'FM0000'))`,
+      order_id: sql`CONCAT('WO', TO_CHAR(${workSchema.order.created_at}, 'YY'), '-', ${workSchema.order.id})`,
       quantity: PG_DECIMAL_TO_FLOAT(product_transfer.quantity),
       created_by: product_transfer.created_by,
       created_by_name: users.name,
@@ -80,7 +80,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_at: product_transfer.updated_at,
       remarks: product_transfer.remarks,
       info_uuid: workSchema.order.info_uuid,
-      info_id: sql`CONCAT ('WI', TO_CHAR(${workSchema.info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${workSchema.info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT ('WI', TO_CHAR(${workSchema.info.created_at}::timestamp, 'YY'), '-', ${workSchema.info.id})`,
       user_uuid: workSchema.info.user_uuid,
       user_name: user.name,
       max_quantity: sql`(CASE 
@@ -137,7 +137,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const productTransferPromise = db
     .select({
       id: product_transfer.id,
-      product_transfer_id: sql`CONCAT('PT', TO_CHAR(${product_transfer.created_at}, 'YY'), '-', TO_CHAR(${product_transfer.id}, 'FM0000'))`,
+      product_transfer_id: sql`CONCAT('PT', TO_CHAR(${product_transfer.created_at}, 'YY'), '-', ${product_transfer.id})`,
       uuid: product_transfer.uuid,
       purchase_entry_uuid: product_transfer.purchase_entry_uuid,
       product_uuid: purchase_entry.product_uuid,
@@ -145,7 +145,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       warehouse_uuid: product_transfer.warehouse_uuid,
       warehouse_name: warehouse.name,
       order_uuid: product_transfer.order_uuid,
-      order_id: sql`CONCAT('WO', TO_CHAR(${workSchema.order.created_at}, 'YY'), '-', TO_CHAR(${workSchema.order.id}, 'FM0000'))`,
+      order_id: sql`CONCAT('WO', TO_CHAR(${workSchema.order.created_at}, 'YY'), '-', ${workSchema.order.id})`,
       quantity: PG_DECIMAL_TO_FLOAT(product_transfer.quantity),
       created_by: product_transfer.created_by,
       created_by_name: users.name,
@@ -153,7 +153,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       updated_at: product_transfer.updated_at,
       remarks: product_transfer.remarks,
       info_uuid: workSchema.order.info_uuid,
-      info_id: sql`CONCAT ('WI', TO_CHAR(${workSchema.info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${workSchema.info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT ('WI', TO_CHAR(${workSchema.info.created_at}::timestamp, 'YY'), '-', ${workSchema.info.id})`,
       user_uuid: workSchema.info.user_uuid,
       user_name: user.name,
       max_quantity: sql`(CASE 
@@ -233,7 +233,7 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
       info_uuid: workSchema.order.info_uuid,
       info_id: sql`CONCAT ('WI', TO_CHAR(${
         workSchema.info.created_at
-      }::timestamp, 'YY'), '-', TO_CHAR(${workSchema.info.id}, 'FM0000'))`,
+      }::timestamp, 'YY'), '-', ${workSchema.info.id})`,
       user_uuid: workSchema.info.user_uuid,
       user_name: user.name,
       max_quantity: sql`(CASE 

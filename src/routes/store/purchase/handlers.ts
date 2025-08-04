@@ -62,7 +62,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: purchase.uuid,
       id: purchase.id,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',${purchase.id})`,
       vendor_uuid: purchase.vendor_uuid,
       vendor_name: vendor.name,
       branch_uuid: purchase.branch_uuid,
@@ -93,7 +93,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: purchase.uuid,
       id: purchase.id,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'),' - ',${purchase.id})`,
       vendor_uuid: purchase.vendor_uuid,
       vendor_name: vendor.name,
       branch_uuid: purchase.branch_uuid,

@@ -62,7 +62,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: purchase_entry.uuid,
       purchase_uuid: purchase_entry.purchase_uuid,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'), ' - ', TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'), ' - ', ${purchase.id})`,
       product_uuid: purchase_entry.product_uuid,
       product_name: product.name,
       serial_no: purchase_entry.serial_no,
@@ -111,7 +111,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: purchase_entry.uuid,
       purchase_uuid: purchase_entry.purchase_uuid,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'), ' - ', TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'), ' - ', ${purchase.id})`,
       product_uuid: purchase_entry.product_uuid,
       product_name: product.name,
       serial_no: purchase_entry.serial_no,
@@ -163,7 +163,7 @@ export const getPurchaseEntryByPurchaseUuid: AppRouteHandler<GetPurchaseEntryByP
     .select({
       uuid: purchase_entry.uuid,
       purchase_uuid: purchase_entry.purchase_uuid,
-      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'), ' - ', TO_CHAR(${purchase.id}, 'FM0000'))`,
+      purchase_id: sql`CONCAT('SP',TO_CHAR(${purchase.created_at}, 'YY'), ' - ', ${purchase.id})`,
       product_uuid: purchase_entry.product_uuid,
       product_name: product.name,
       serial_no: purchase_entry.serial_no,

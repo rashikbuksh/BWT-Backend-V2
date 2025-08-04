@@ -62,7 +62,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: stock.uuid,
       id: stock.id,
-      stock_id: sql`CONCAT('SS',TO_CHAR(${stock.created_at}, 'YY'),' - ',TO_CHAR(${stock.id}, 'FM0000'))`,
+      stock_id: sql`CONCAT('SS',TO_CHAR(${stock.created_at}, 'YY'),' - ',${stock.id})`,
       product_uuid: stock.product_uuid,
       product_name: product.name,
       warehouse_1: PG_DECIMAL_TO_FLOAT(stock.warehouse_1),
@@ -91,7 +91,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: stock.uuid,
       id: stock.id,
-      stock_id: sql`CONCAT('SS',TO_CHAR(${stock.created_at}, 'YY'),' - ',TO_CHAR(${stock.id}, 'FM0000'))`,
+      stock_id: sql`CONCAT('SS',TO_CHAR(${stock.created_at}, 'YY'),' - ',${stock.id})`,
       product_uuid: stock.product_uuid,
       product_name: product.name,
       warehouse_1: PG_DECIMAL_TO_FLOAT(stock.warehouse_1),

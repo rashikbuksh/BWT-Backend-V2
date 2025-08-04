@@ -60,7 +60,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: brand.uuid,
     id: brand.id,
-    brand_id: sql`CONCAT('SB',TO_CHAR(${brand.created_at}, 'YY'),' - ', TO_CHAR(${brand.id}, 'FM0000'))`,
+    brand_id: sql`CONCAT('SB',TO_CHAR(${brand.created_at}, 'YY'),' - ', ${brand.id})`,
     name: brand.name,
     created_by: brand.created_by,
     created_by_name: users.name,
@@ -82,7 +82,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: brand.uuid,
     id: brand.id,
-    brand_id: sql`CONCAT('SB',TO_CHAR(${brand.created_at}, 'YY'),' - ', TO_CHAR(${brand.id}, 'FM0000'))`,
+    brand_id: sql`CONCAT('SB',TO_CHAR(${brand.created_at}, 'YY'),' - ', ${brand.id})`,
     name: brand.name,
     created_by: brand.created_by,
     created_by_name: users.name,
