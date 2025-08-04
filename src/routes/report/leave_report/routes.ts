@@ -15,6 +15,8 @@ export const leaveHistoryReport = createRoute({
       employee_uuid: z.string().optional(),
       from_date: z.string().optional(),
       to_date: z.string().optional(),
+      category_uuid: z.string().optional(),
+      approval: z.string().optional(),
     }),
   },
   responses: {
