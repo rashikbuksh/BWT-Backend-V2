@@ -14,6 +14,7 @@ export const getEmployeeAttendanceReport = createRoute({
     query: z.object({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
+      month: z.string().optional(),
     }),
     params: z.object({
       employee_uuid: z.string(),

@@ -22,7 +22,10 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
         apply_leave.to_date as to_date,
         apply_leave.reason,
         (apply_leave.to_date::date - apply_leave.from_date::date + 1) as days,
-        employment_type.name as employment_type_name
+        employment_type.name as employment_type_name,
+        leave_policy.uuid as leave_policy_uuid,
+        leave_policy.name as leave_policy_name,
+        apply_leave.approval as approval
     FROM
         hr.apply_leave
     LEFT JOIN
@@ -31,6 +34,8 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
         hr.users ON employee.user_uuid = users.uuid
     LEFT JOIN
         hr.leave_category ON apply_leave.leave_category_uuid = leave_category.uuid
+    LEFT JOIN
+        hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
     LEFT JOIN 
         hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
     WHERE 
