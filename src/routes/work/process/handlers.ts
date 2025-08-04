@@ -74,7 +74,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   let processPromise = db
     .select({
       id: process.id,
-      process_id: sql`CONCAT('WP-', TO_CHAR(${process.created_at}, 'YY'), '-', TO_CHAR(${process.id}, 'FM0000'))`,
+      process_id: sql`CONCAT('WP-', TO_CHAR(${process.created_at}, 'YY'), '-', ${process.id})`,
       uuid: process.uuid,
       section_uuid: process.section_uuid,
       section_name: section.name,
@@ -166,11 +166,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   if (order_uuid) {
     const resultIdPromise = db
       .select({
-        order_id: sql`CONCAT('WO-', TO_CHAR(${order.created_at}, 'YY'), '-', TO_CHAR(${order.id}, 'FM0000'))`,
+        order_id: sql`CONCAT('WO-', TO_CHAR(${order.created_at}, 'YY'), '-', ${order.id})`,
         user_uuid: info.user_uuid,
         user_name: user.name,
-        info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
-        diagnosis_id: sql`CASE WHEN ${diagnosis.created_at} IS NULL OR ${diagnosis.id} IS NULL THEN NULL ELSE CONCAT('WD-', TO_CHAR(${diagnosis.created_at}, 'YY'), '-', TO_CHAR(${diagnosis.id}, 'FM0000')) END`,
+        info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
+        diagnosis_id: sql`CASE WHEN ${diagnosis.created_at} IS NULL OR ${diagnosis.id} IS NULL THEN NULL ELSE CONCAT('WD-', TO_CHAR(${diagnosis.created_at}, 'YY'), '-', ${diagnosis.id}) END`,
       })
       .from(order)
       .leftJoin(diagnosis, eq(order.uuid, diagnosis.order_uuid))
@@ -238,7 +238,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const processPromise = db
     .select({
       id: process.id,
-      process_id: sql`CONCAT('WP-', TO_CHAR(${process.created_at}, 'YY'), '-', TO_CHAR(${process.id}, 'FM0000'))`,
+      process_id: sql`CONCAT('WP-', TO_CHAR(${process.created_at}, 'YY'), '-', ${process.id})`,
       uuid: process.uuid,
       section_uuid: process.section_uuid,
       diagnosis_uuid: process.diagnosis_uuid,

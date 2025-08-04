@@ -18,12 +18,12 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
             'WO',
             TO_CHAR(${order.created_at}, 'YY'),
             ' - ',
-            TO_CHAR(${order.id}, 'FM0000'),
+            ${order.id},
             ' (',
             'WI',
             TO_CHAR(${info.created_at}, 'YY'),
             ' - ',
-            TO_CHAR(${info.id}, 'FM0000'),
+           ${info.id},
             ')' , ' - ' ,${users.name} ,' - ' ,${users.phone}
         )`,
     })

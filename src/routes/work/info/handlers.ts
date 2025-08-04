@@ -224,10 +224,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const infoPromise = db
     .select({
       id: info.id,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       uuid: info.uuid,
       user_uuid: info.user_uuid,
-      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}, 'FM0000'))`,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
       user_name: user.name,
       user_phone: user.phone,
       received_date: info.received_date,
@@ -296,10 +296,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const infoPromise = db
     .select({
       id: info.id,
-      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', TO_CHAR(${info.id}, 'FM0000'))`,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       uuid: info.uuid,
       user_uuid: info.user_uuid,
-      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', TO_CHAR(${user.id}, 'FM0000'))`,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
       user_name: user.name,
       user_phone: user.phone,
       received_date: info.received_date,

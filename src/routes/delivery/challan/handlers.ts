@@ -85,7 +85,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const challanPromise = db
     .select({
       id: challan.id,
-      challan_no: sql`CONCAT('CH', TO_CHAR(${challan.created_at}::timestamp, 'YY'), '-', TO_CHAR(${challan.id}, 'FM0000'))`,
+      challan_no: sql`CONCAT('CH', TO_CHAR(${challan.created_at}::timestamp, 'YY'), '-', ${challan.id})`,
       uuid: challan.uuid,
       customer_uuid: challan.customer_uuid,
       customer_name: customerUser.name,
@@ -131,7 +131,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const challanPromise = db
     .select({
       id: challan.id,
-      challan_no: sql`CONCAT('CH', TO_CHAR(${challan.created_at}::timestamp, 'YY'), '-', TO_CHAR(${challan.id}, 'FM0000'))`,
+      challan_no: sql`CONCAT('CH', TO_CHAR(${challan.created_at}::timestamp, 'YY'), '-', ${challan.id})`,
       uuid: challan.uuid,
       customer_uuid: challan.customer_uuid,
       customer_name: customerUser.name,

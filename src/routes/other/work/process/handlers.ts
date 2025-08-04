@@ -12,7 +12,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const processPromise = db
     .select({
       value: process.uuid,
-      label: sql`CONCAT('WP',TO_CHAR(${process.created_at}, 'YY'),' - ',TO_CHAR(${process.id}, 'FM0000'))`,
+      label: sql`CONCAT('WP',TO_CHAR(${process.created_at}, 'YY'),' - ', ${process.id})`,
     })
     .from(process);
 

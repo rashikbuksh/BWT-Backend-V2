@@ -72,7 +72,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                                     'SIT',
                                         TO_CHAR(${internal_transfer.created_at}, 'YY'),
                                         ' - ',
-                                        TO_CHAR(${internal_transfer.id}, 'FM0000')
+                                        ${internal_transfer.id}
                                     )`,
       purchase_entry_uuid: internal_transfer.purchase_entry_uuid,
       product_uuid: purchase_entry.product_uuid,
@@ -162,7 +162,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                 'SIT',
                 TO_CHAR(${internal_transfer.created_at}, 'YY'),
                 ' - ',
-                TO_CHAR(${internal_transfer.id}, 'FM0000')
+                ${internal_transfer.id}
             )`,
       purchase_entry_uuid: internal_transfer.purchase_entry_uuid,
       product_uuid: purchase_entry.product_uuid,
