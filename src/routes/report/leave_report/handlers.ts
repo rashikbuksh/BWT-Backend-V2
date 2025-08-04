@@ -8,7 +8,7 @@ import db from '@/db';
 import type { LeaveBalanceReportRoute, LeaveHistoryReportRoute } from './routes';
 
 export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = async (c: any) => {
-  const { employee_uuid, from_date, to_date } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date, category_uuid, approval } = c.req.valid('query');
 
   const query = sql`
     SELECT
@@ -65,6 +65,8 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
             AND apply_leave.to_date::date >= ${from_date}::date
         )`
           : sql``}
+        ${category_uuid ? sql`AND leave_category.uuid = ${category_uuid}` : sql``}
+        ${approval ? sql`AND apply_leave.approval = ${approval}` : sql``}
   `;
 
   const data = await db.execute(query);
