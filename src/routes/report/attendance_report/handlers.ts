@@ -38,9 +38,9 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
                             CONCAT(
                                 FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int, 
-                                ' hours ', 
+                                ' h ', 
                                 FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int, 
-                                ' mins'
+                                ' m'
                             )
                         ELSE NULL
                     END AS hours_worked,
