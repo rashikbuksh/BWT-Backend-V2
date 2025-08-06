@@ -23,7 +23,9 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   SELECT
                     ud.user_uuid,
                     ud.employee_name,
-                    s.name || ' (' || s.start_time || ' - ' || s.end_time || ')' AS shift_name,
+                    s.name AS shift_name,
+                    s.start_time,
+                    s.end_time,
                     s.late_time,
                     s.early_exit_before,
                     DATE(ud.punch_date) AS punch_date,
@@ -50,8 +52,11 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     user_uuid,
                     employee_name,
                     shift_name,
-                    late_time,
-                    early_exit_before,
+                    JSON_BUILD_OBJECT(
+                        'name', shift_name,
+                        'start_time', start_time,
+                        'end_time', end_time
+                    ) AS shift_details,
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
                         'punch_date', punch_date,
@@ -59,11 +64,13 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         'exit_time', exit_time,
                         'hours_worked', hours_worked,
                         'expected_hours', expected_hours,
-                        'status', status
+                        'status', status,
+                        'late_time', late_time,
+                        'early_exit_before', early_exit_before
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
-                GROUP BY user_uuid, employee_name, shift_name, late_time, early_exit_before
+                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time
                 ORDER BY employee_name;
               `;
 
@@ -71,17 +78,37 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
 
   const data = await employeeAttendanceReportPromise;
 
-  // const formattedData = data.rows.map((row: any) => ({
-  //   user_uuid: row.user_uuid,
-  //   employee_name: row.employee_name,
-  //   punch_date: row.punch_date,
-  //   entry_time: row.entry_time,
-  //   exit_time: row.exit_time,
-  //   hours_worked: Number.parseFloat(row.hours_worked),
-  //   expected_hours: Number.parseFloat(row.expected_hours),
-  // }));
+  // Format the data to structure attendance records with dates as keys
+  const formattedData = data.rows.map((row: any) => {
+    const attendanceByDate: any = {};
 
-  return c.json(data.rows || [], HSCode.OK);
+    // Convert attendance_records array to object with dates as keys
+    if (row.attendance_records && Array.isArray(row.attendance_records)) {
+      row.attendance_records.forEach((record: any) => {
+        if (record.punch_date) {
+          attendanceByDate[record.punch_date] = {
+            punch_date: record.punch_date,
+            entry_time: record.entry_time,
+            exit_time: record.exit_time,
+            hours_worked: record.hours_worked,
+            expected_hours: record.expected_hours,
+            status: record.status,
+            late_time: record.late_time,
+            early_exit_before: record.early_exit_before,
+          };
+        }
+      });
+    }
+
+    return {
+      user_uuid: row.user_uuid,
+      employee_name: row.employee_name,
+      shift_details: row.shift_details,
+      ...attendanceByDate,
+    };
+  });
+
+  return c.json(formattedData || [], HSCode.OK);
 };
 // not completed
 
