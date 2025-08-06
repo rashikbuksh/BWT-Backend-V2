@@ -31,9 +31,9 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
     LEFT JOIN
         hr.users ON employee.user_uuid = users.uuid
     LEFT JOIN
-        hr.department ON employee.department_uuid = department.uuid
+        hr.department ON users.department_uuid = department.uuid
     LEFT JOIN
-        hr.designation ON employee.designation_uuid = designation.uuid
+        hr.designation ON users.designation_uuid = designation.uuid
     LEFT JOIN 
         hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
     LEFT JOIN
@@ -116,9 +116,9 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
         LEFT JOIN 
             hr.users ON employee.user_uuid = users.uuid
         LEFT JOIN
-            hr.department ON employee.department_uuid = department.uuid
+            hr.department ON users.department_uuid = department.uuid
         LEFT JOIN
-            hr.designation ON employee.designation_uuid = designation.uuid
+            hr.designation ON users.designation_uuid = designation.uuid
         LEFT JOIN 
             hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
         LEFT JOIN
