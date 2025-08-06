@@ -110,17 +110,17 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                   employee_uuid,
                   leave_category_uuid,
                   SUM(
-                      CASE 
-                          WHEN type = 'full' THEN (${to_date}::date - ${from_date}::date + 1)
-                          WHEN type = 'half' THEN (${to_date}::date - ${from_date}::date + 1) * 0.5
-                          ELSE (${to_date}::date - ${from_date}::date + 1)
-                      END
-                  ) as total_days
+                        CASE 
+                            WHEN type = 'full' THEN (to_date::date - from_date::date + 1)
+                            WHEN type = 'half' THEN (to_date::date - from_date::date + 1) * 0.5
+                            ELSE (to_date::date - from_date::date + 1)
+                        END
+                    ) as total_days
               FROM
                   hr.apply_leave
               WHERE
                   approval = 'approved'
-                  ${from_date && to_date ? sql`AND from_date >= ${from_date}::date AND to_date <= ${to_date}::date` : sql``}
+               ${from_date && to_date ? sql`AND from_date >= ${from_date}::date AND to_date <= ${to_date}::date` : sql``}
               GROUP BY
                   employee_uuid, leave_category_uuid
           ) as apply_leave_sum ON employee.uuid = apply_leave_sum.employee_uuid AND leave_category.uuid = apply_leave_sum.leave_category_uuid
