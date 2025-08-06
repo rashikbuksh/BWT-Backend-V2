@@ -551,19 +551,6 @@ export const device_permission = hr.table('device_permission', {
   remarks: text('remarks').default(sql`null`),
 });
 
-// ? Punch Log
-export const punch_type = pgEnum('punch_type', ['face', 'fingerprint', 'rfid']);
-
-export const punch_log = hr.table('punch_log', {
-  uuid: uuid_primary,
-  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
-  device_list_uuid: defaultUUID('device_list_uuid').references(
-    () => device_list.uuid,
-  ),
-  punch_type: punch_type('punch_type').default('face'),
-  punch_time: DateTime('punch_time').notNull(),
-});
-
 // ? Manual Entry && ? Apply Leave
 export const approval_status_enum = pgEnum('approval_status_enum', [
   'pending',
@@ -595,6 +582,22 @@ export const manual_entry = hr.table('manual_entry', {
     () => device_list.uuid,
   ),
   approval: approval_status_enum('approval').default('pending'),
+});
+
+// ? Punch Log
+export const punch_type = pgEnum('punch_type', ['face', 'fingerprint', 'rfid', 'manual']);
+
+export const punch_log = hr.table('punch_log', {
+  uuid: uuid_primary,
+  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
+  device_list_uuid: defaultUUID('device_list_uuid').references(
+    () => device_list.uuid,
+  ),
+  punch_type: punch_type('punch_type').default('face'),
+  punch_time: DateTime('punch_time').notNull(),
+  manual_entry_uuid: defaultUUID('manual_entry_uuid').references(
+    () => manual_entry.uuid,
+  ).default(sql`null`),
 });
 
 // ? Apply Leave
