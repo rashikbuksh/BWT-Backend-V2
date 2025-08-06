@@ -46,9 +46,9 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     END AS hours_worked,
                     CONCAT(
                         FLOOR(EXTRACT(EPOCH FROM s.end_time - s.start_time) / 3600)::int, 
-                        ' hours ', 
+                        ' h ', 
                         FLOOR((EXTRACT(EPOCH FROM s.end_time - s.start_time) % 3600) / 60)::int, 
-                        ' mins'
+                        ' m'
                     ) AS expected_hours,
                     CASE
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
