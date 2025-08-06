@@ -63,7 +63,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
-                GROUP BY user_uuid, employee_name
+                GROUP BY user_uuid, employee_name, shift_name, late_time, early_exit_before
                 ORDER BY employee_name;
               `;
 
