@@ -49,6 +49,7 @@ export const absentSummaryReport = createRoute({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
       status: z.string().optional(),
+      department_uuid: z.string().optional(),
     }),
   },
   responses: {
