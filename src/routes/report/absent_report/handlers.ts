@@ -65,7 +65,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
 };
 
 export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = async (c: any) => {
-  const { employee_uuid, from_date, to_date } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date, status } = c.req.valid('query');
 
   const query = sql`
     WITH absence_summary AS (
@@ -149,7 +149,13 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
         LEFT JOIN 
             hr.roster ON shifts.uuid = roster.shifts_uuid AND sg_calendar.uuid = roster.shift_group_uuid
         WHERE 
-            employee.status = true
+           ${status === 'active'
+              ? sql`employee.is_resign = false AND employee.status = true`
+              : status === 'inactive'
+                ? sql`employee.is_resign = false AND employee.status = false`
+                : status === 'resigned'
+                  ? sql`employee.is_resign = true`
+                  : sql`employee.status = true`}
             AND employee.exclude_from_attendance = false
             ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
             -- Exclude off days based on shift group off_days
