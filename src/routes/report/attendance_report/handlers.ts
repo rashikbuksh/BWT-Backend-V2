@@ -77,8 +77,8 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     ) AS expected_hours,
                     CASE
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
-                      WHEN MIN(pl.punch_time) > s.late_time THEN 'Late'
-                      WHEN MAX(pl.punch_time) < s.early_exit_before THEN 'Early Exit'
+                      WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                      WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                       ELSE 'Present'
                     END as status
                   FROM hr.employee e
