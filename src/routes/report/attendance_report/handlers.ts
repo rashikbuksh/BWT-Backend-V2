@@ -45,6 +45,20 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         )
                         ELSE '0h 0m'
                     END AS late_hours,
+                    CASE WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN
+                                s.early_exit_before::time - MAX(pl.punch_time)::time
+                    END AS early_exit_time,
+                    CASE 
+                        WHEN MAX(pl.punch_time) IS NOT NULL 
+                            AND MAX(pl.punch_time)::time < s.early_exit_before::time 
+                                THEN CONCAT(
+                                    FLOOR(EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::int, 
+                                    'h ', 
+                                    FLOOR((EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) % 3600) / 60)::int, 
+                                    'm'
+                                )
+                        ELSE '0h 0m'
+                    END AS early_exit_hours,
                     CASE 
                         WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
                             CONCAT(
@@ -96,7 +110,9 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         'late_time', late_time,
                         'early_exit_before', early_exit_before,
                         'late_start_time', late_start_time,
-                        'late_hours', late_hours
+                        'late_hours', late_hours,
+                        'early_exit_time', early_exit_time,
+                        'early_exit_hours', early_exit_hours
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
@@ -127,6 +143,8 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
             early_exit_before: record.early_exit_before,
             late_start_time: record.late_start_time,
             late_hours: record.late_hours,
+            early_exit_time: record.early_exit_time,
+            early_exit_hours: record.early_exit_hours,
           };
         }
       });
