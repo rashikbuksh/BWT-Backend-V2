@@ -211,11 +211,17 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
   const { from_date, to_date } = c.req.valid('query');
 
   const SpecialHolidaysQuery = sql`
-                              SELECT
-                                  SUM(sh.to_date::date - sh.from_date::date + 1) -
-                                  SUM(CASE WHEN sh.to_date::date > ${from_date}::date THEN sh.to_date::date - ${from_date}::date + 1 ELSE 0 END + CASE WHEN sh.from_date::date < ${to_date}::date THEN ${to_date}::date - sh.from_date::date ELSE 0 END) AS total_special_holidays
-                              FROM hr.special_holidays sh
-                              WHERE (sh.to_date > ${from_date}::date OR sh.from_date < ${to_date}::date) AND ( sh.from_date < ${to_date}::date OR sh.to_date > ${from_date}::date)`;
+                                    SELECT
+                                        SUM(
+                                            CASE 
+                                                WHEN sh.from_date::date <= ${to_date}::date AND sh.to_date::date >= ${from_date}::date
+                                                THEN 
+                                                    LEAST(sh.to_date::date, ${to_date}::date) - GREATEST(sh.from_date::date, ${from_date}::date) + 1
+                                                ELSE 0
+                                            END
+                                        ) AS total_special_holidays
+                                    FROM hr.special_holidays sh
+                                    WHERE sh.from_date::date <= ${to_date}::date AND sh.to_date::date >= ${from_date}::date`;
 
   const generalHolidayQuery = sql`
                       SELECT
@@ -237,6 +243,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
           = specialHolidaysResult.rows[0]?.total_special_holidays || 0;
   const total_general_holidays
           = generalHolidaysResult.rows[0]?.total_off_days || 0;
+  console.log('total_special_holidays', total_special_holidays);
+  console.log('total_general_holidays', total_general_holidays);
 
   // Calculate total days in the date range
   // const totalDays = Math.ceil((new Date(to_date).getTime() - new Date(from_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
