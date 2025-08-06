@@ -360,50 +360,49 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                             GROUP BY al.employee_uuid
                 ) AS leave_summary ON e.uuid = leave_summary.employee_uuid
     LEFT JOIN (
-                        WITH params AS (
-                            SELECT 
-                                EXTRACT(year FROM ${from_date}::date) AS y, 
-                                EXTRACT(month FROM ${from_date}::date) AS m,
-                                make_date(EXTRACT(year FROM ${from_date}::date)::int, EXTRACT(month FROM ${from_date}::date)::int, 1) AS month_start,
-                                make_date(EXTRACT(year FROM ${to_date}::date)::int, EXTRACT(month FROM ${to_date}::date)::int, 1) AS month_end
-                        ),
-                        roster_periods AS (
+                WITH params AS (
+                                SELECT 
+                                    ${from_date}::date AS start_date,
+                                    ${to_date}::date AS end_date
+                            ),
+                            shift_group_periods AS (
+                                SELECT
+                                    sg.uuid as shift_group_uuid,
+                                    sg.effective_date,
+                                    sg.off_days::jsonb,
+                                    LEAD(sg.effective_date) OVER (PARTITION BY sg.uuid ORDER BY sg.effective_date) AS next_effective_date
+                                FROM hr.shift_group sg, params p
+                                WHERE sg.effective_date <= p.end_date
+                            ),
+                            date_ranges AS (
+                                SELECT
+                                    shift_group_uuid,
+                                    GREATEST(effective_date, (SELECT start_date FROM params)) AS period_start,
+                                    LEAST(
+                                        COALESCE(next_effective_date - INTERVAL '1 day', (SELECT end_date FROM params)),
+                                        (SELECT end_date FROM params)
+                                    ) AS period_end,
+                                    off_days
+                                FROM shift_group_periods
+                                WHERE GREATEST(effective_date, (SELECT start_date FROM params)) <= 
+                                    LEAST(COALESCE(next_effective_date - INTERVAL '1 day', (SELECT end_date FROM params)), (SELECT end_date FROM params))
+                            ),
+                            all_days AS (
+                                SELECT
+                                    dr.shift_group_uuid,
+                                    d::date AS day,
+                                    dr.off_days
+                                FROM date_ranges dr
+                                CROSS JOIN LATERAL generate_series(dr.period_start, dr.period_end, INTERVAL '1 day') AS d
+                            )
                             SELECT
                                 shift_group_uuid,
-                                effective_date,
-                                off_days::jsonb,
-                                LEAD(effective_date) OVER (PARTITION BY shift_group_uuid ORDER BY effective_date) AS next_effective_date
-                            FROM hr.roster
-                            WHERE EXTRACT(YEAR FROM effective_date) = (SELECT y FROM params)
-                            AND EXTRACT(MONTH FROM effective_date) = (SELECT m FROM params)
-                        ),
-                        date_ranges AS (
-                            SELECT
-                                shift_group_uuid,
-                                GREATEST(effective_date, (SELECT month_start FROM params)) AS period_start,
-                                LEAST(
-                                    COALESCE(next_effective_date - INTERVAL '1 day', (SELECT month_end FROM params)),
-                                    (SELECT month_end FROM params)
-                                ) AS period_end,
-                                off_days
-                            FROM roster_periods
-                        ),
-                        all_days AS (
-                            SELECT
-                                dr.shift_group_uuid,
-                                d::date AS day,
-                                dr.off_days
-                            FROM date_ranges dr
-                            CROSS JOIN LATERAL generate_series(dr.period_start, dr.period_end, INTERVAL '1 day') AS d
-                        )
-                        SELECT
-                            shift_group_uuid,
-                            COUNT(*) AS total_off_days
-                        FROM all_days
-                        WHERE lower(to_char(day, 'Dy')) = ANY (
-                            SELECT jsonb_array_elements_text(off_days)
-                        )
-                        GROUP BY shift_group_uuid
+                                COUNT(*) AS total_off_days
+                            FROM all_days
+                            WHERE lower(to_char(day, 'Dy')) = ANY (
+                                SELECT jsonb_array_elements_text(off_days)
+                            )
+                            GROUP BY shift_group_uuid
             ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
     LEFT JOIN 
             (
