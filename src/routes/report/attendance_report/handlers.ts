@@ -8,9 +8,7 @@ import db from '@/db';
 import type { GetDepartmentAttendanceReportRoute, GetEmployeeAttendanceReportRoute, GetMonthlyAttendanceReportRoute } from './routes';
 
 export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceReportRoute> = async (c: any) => {
-  const { employee_uuid } = c.req.valid('param');
-
-  const { from_date, to_date } = c.req.valid('query');
+  const { from_date, to_date, employee_uuid } = c.req.valid('query');
 
   const query = sql`
                 WITH date_series AS (
@@ -20,24 +18,40 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   SELECT u.uuid AS user_uuid, u.name AS employee_name, d.punch_date
                   FROM hr.users u
                   CROSS JOIN date_series d
+                ),
+                attendance_data AS (
+                  SELECT
+                    ud.user_uuid,
+                    ud.employee_name,
+                    DATE(ud.punch_date) AS punch_date,
+                    MIN(pl.punch_time) AS entry_time,
+                    MAX(pl.punch_time) AS exit_time,
+                    (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8 AS hours_worked,
+                    (EXTRACT(EPOCH FROM MAX(s.end_time) - MIN(s.start_time)) / 3600)::float8 AS expected_hours
+                  FROM hr.employee e
+                  LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
+                  LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
+                  LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+                  LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                  WHERE 
+                    ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date
                 )
                 SELECT
-                  ud.user_uuid,
-                  ud.employee_name,
-                  DATE(ud.punch_date) AS punch_date,
-                  MIN(pl.punch_time) AS entry_time,
-                  MAX(pl.punch_time) AS exit_time,
-                  (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8 AS hours_worked,
-                  (EXTRACT(EPOCH FROM MAX(s.end_time) - MIN(s.start_time)) / 3600)::float8 AS expected_hours
-                FROM hr.employee e
-                LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
-                LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
-                LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-                LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-                WHERE 
-                  e.uuid = ${employee_uuid}
-                GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date
-                ORDER BY ud.user_uuid, ud.punch_date;
+                  user_uuid,
+                  employee_name,
+                  JSON_AGG(
+                    JSON_BUILD_OBJECT(
+                      'punch_date', punch_date,
+                      'entry_time', entry_time,
+                      'exit_time', exit_time,
+                      'hours_worked', hours_worked,
+                      'expected_hours', expected_hours
+                    ) ORDER BY punch_date
+                  ) AS attendance_records
+                FROM attendance_data
+                GROUP BY user_uuid, employee_name
+                ORDER BY employee_name;
               `;
 
   const employeeAttendanceReportPromise = db.execute(query);
@@ -57,6 +71,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
   return c.json(data.rows || [], HSCode.OK);
 };
 // not completed
+
 export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttendanceReportRoute> = async (c: any) => {
   const { department_uuid } = c.req.valid('query');
 

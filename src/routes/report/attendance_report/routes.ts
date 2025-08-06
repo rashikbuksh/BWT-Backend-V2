@@ -6,7 +6,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 const tags = ['reports'];
 
 export const getEmployeeAttendanceReport = createRoute({
-  path: '/report/attendance-report/{employee_uuid}',
+  path: '/report/attendance-report',
   method: 'get',
   summary: 'Attendance Report',
   description: 'Get the attendance report for an employee',
@@ -15,9 +15,7 @@ export const getEmployeeAttendanceReport = createRoute({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
       month: z.string().optional(),
-    }),
-    params: z.object({
-      employee_uuid: z.string(),
+      employee_uuid: z.string().optional(),
     }),
   },
   responses: {
