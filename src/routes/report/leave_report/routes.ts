@@ -48,6 +48,8 @@ export const leaveBalanceReport = createRoute({
   request: {
     query: z.object({
       employee_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {

@@ -75,7 +75,7 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
 };
 
 export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = async (c: any) => {
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date } = c.req.valid('query');
 
   const query = sql`
     SELECT
@@ -110,9 +110,9 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                 leave_category_uuid,
                 SUM(
                     CASE 
-                        WHEN type = 'full' THEN (to_date::date - from_date::date + 1)
-                        WHEN type = 'half' THEN (to_date::date - from_date::date + 1) * 0.5
-                        ELSE (to_date::date - from_date::date + 1)
+                        WHEN type = 'full' THEN (${to_date}::date - ${from_date}::date + 1)
+                        WHEN type = 'half' THEN (${to_date}::date - ${from_date}::date + 1) * 0.5
+                        ELSE (${to_date}::date - ${from_date}::date + 1)
                     END
                 ) as total_days
             FROM
