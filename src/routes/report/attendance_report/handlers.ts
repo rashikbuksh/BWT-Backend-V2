@@ -176,17 +176,17 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                 LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
                 LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                 LEFT JOIN (
-                SELECT 
-                      pl.employee_uuid,
-                      COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS present_days,
-                      COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS late_days,
-                      COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.early_exit_before, 'HH24:MI') THEN 1 END) AS early_leaves
-                FROM hr.punch_log pl
-                LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
-                LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
-                WHERE pl.punch_time IS NOT NULL AND pl.punch_time >= ${from_date}::date AND pl.punch_time <= ${to_date}::date
-                GROUP BY pl.employee_uuid
+                            SELECT 
+                                pl.employee_uuid,
+                                COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS present_days,
+                                COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS late_days,
+                                COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.early_exit_before, 'HH24:MI') THEN 1 END) AS early_leaves
+                            FROM hr.punch_log pl
+                            LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+                            LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
+                            LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
+                            WHERE pl.punch_time IS NOT NULL AND pl.punch_time >= ${from_date}::date AND pl.punch_time <= ${to_date}::date
+                            GROUP BY pl.employee_uuid
                 ) AS attendance_summary ON e.uuid = attendance_summary.employee_uuid
                 LEFT JOIN (
                     SELECT
