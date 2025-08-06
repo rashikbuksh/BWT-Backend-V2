@@ -65,7 +65,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
 };
 
 export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = async (c: any) => {
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date } = c.req.valid('query');
 
   const query = sql`
     WITH absence_summary AS (
@@ -137,10 +137,10 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
         LEFT JOIN
             hr.workplace ON employee.workplace_uuid = workplace.uuid
         LEFT JOIN
-            -- Generate a calendar of working days for the current month
+            -- Generate a calendar of working days for the specified date range
             (SELECT generate_series(
-                DATE_TRUNC('month', CURRENT_DATE),
-                DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month' - INTERVAL '1 day',
+                ${from_date ? sql`${from_date}::date` : sql`CURRENT_DATE`},
+                ${to_date ? sql`${to_date}::date` : sql`CURRENT_DATE`},
                 '1 day'::interval
             )::date as date) as calendar_date ON TRUE
         LEFT JOIN
