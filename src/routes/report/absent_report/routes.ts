@@ -13,6 +13,8 @@ export const dailyAbsentReport = createRoute({
   request: {
     query: z.object({
       employee_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -44,6 +46,8 @@ export const absentSummaryReport = createRoute({
   request: {
     query: z.object({
       employee_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
