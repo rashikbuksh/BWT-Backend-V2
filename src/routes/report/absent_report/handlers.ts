@@ -104,26 +104,13 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
 
             -- Absent Dates (only dates without punch records and not on leave)
             json_agg(
-                DISTINCT CASE 
-                    WHEN punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL 
-                    THEN calendar_date.date 
-                    ELSE NULL 
-                END
-            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as absent_days,
-            json_agg(
-                CASE 
-                    WHEN punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL 
-                    THEN shifts.start_time::time
-                    ELSE NULL 
-                END
-            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as start_times,
-            json_agg(
-                CASE 
-                    WHEN punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL 
-                    THEN shifts.end_time::time
-                    ELSE NULL 
-                END
-            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as end_times
+                json_build_object(
+                    'date', calendar_date.date,
+                    'shift_name', shifts.name,
+                    'start_time', shifts.start_time,
+                    'end_time', shifts.end_time
+                )
+            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as absent_days
         FROM 
             hr.employee
         LEFT JOIN 
@@ -183,5 +170,23 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
 
   const data = await db.execute(query);
 
-  return c.json(data.rows, HSCode.OK);
+  // Post-process the data to remove duplicates and convert string numbers to actual numbers
+  const processedData = data.rows.map((row: any) => ({
+    ...row,
+    total_working_days: Number.parseInt(row.total_working_days) || 0,
+    days_present: Number.parseInt(row.days_present) || 0,
+    approved_leave_days: Number.parseFloat(row.approved_leave_days) || 0,
+    unauthorized_absent_days: Number.parseFloat(row.unauthorized_absent_days) || 0,
+    attendance_percentage: Number.parseFloat(row.attendance_percentage) || 0,
+    absence_percentage: Number.parseFloat(row.absence_percentage) || 0,
+    absent_days: row.absent_days
+      ? row.absent_days.filter((item: any, index: number, self: any[]) =>
+          index === self.findIndex((t: any) =>
+            t.date === item.date && t.shift_name === item.shift_name,
+          ),
+        )
+      : [],
+  }));
+
+  return c.json(processedData, HSCode.OK);
 };
