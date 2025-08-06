@@ -78,52 +78,74 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
   const { employee_uuid, from_date, to_date } = c.req.valid('query');
 
   const query = sql`
+    WITH leave_balance_data AS (
+      SELECT
+          employee.uuid as employee_uuid,
+          users.name as employee_name,
+          leave_policy.uuid as leave_policy_uuid,
+          leave_policy.name as leave_policy_name,
+          leave_category.uuid as leave_category_uuid,
+          leave_category.name as leave_category_name,
+          configuration_entry.maximum_number_of_allowed_leaves as allowed_leaves,
+          COALESCE(apply_leave_sum.total_days, 0) as used_days,
+          (configuration_entry.maximum_number_of_allowed_leaves - COALESCE(apply_leave_sum.total_days, 0)) as remaining_days,
+          employment_type.name as employment_type_name
+      FROM
+          hr.employee
+      LEFT JOIN
+          hr.users ON employee.user_uuid = users.uuid
+      LEFT JOIN
+          hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
+      LEFT JOIN
+          hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
+      LEFT JOIN 
+          hr.configuration ON configuration.leave_policy_uuid = leave_policy.uuid
+      LEFT JOIN 
+          hr.configuration_entry ON configuration.uuid = configuration_entry.configuration_uuid
+      LEFT JOIN 
+          hr.leave_category ON configuration_entry.leave_category_uuid = leave_category.uuid
+      LEFT JOIN
+          (
+              SELECT
+                  employee_uuid,
+                  leave_category_uuid,
+                  SUM(
+                      CASE 
+                          WHEN type = 'full' THEN (${to_date}::date - ${from_date}::date + 1)
+                          WHEN type = 'half' THEN (${to_date}::date - ${from_date}::date + 1) * 0.5
+                          ELSE (${to_date}::date - ${from_date}::date + 1)
+                      END
+                  ) as total_days
+              FROM
+                  hr.apply_leave
+              WHERE
+                  approval = 'approved'
+                  ${from_date && to_date ? sql`AND from_date >= ${from_date}::date AND to_date <= ${to_date}::date` : sql``}
+              GROUP BY
+                  employee_uuid, leave_category_uuid
+          ) as apply_leave_sum ON employee.uuid = apply_leave_sum.employee_uuid AND leave_category.uuid = apply_leave_sum.leave_category_uuid
+      WHERE 
+          ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
+          AND leave_category.uuid IS NOT NULL
+    )
     SELECT
-        employee.uuid as employee_uuid,
-        users.name as employee_name,
-        leave_policy.uuid as leave_policy_uuid,
-        leave_policy.name as leave_policy_name,
-        leave_category.uuid as leave_category_uuid,
-        leave_category.name as leave_category_name,
-        configuration_entry.maximum_number_of_allowed_leaves as allowed_leaves,
-        COALESCE(apply_leave_sum.total_days, 0) as used_days,
-        (configuration_entry.maximum_number_of_allowed_leaves - COALESCE(apply_leave_sum.total_days, 0)) as remaining_days,
-        employment_type.name as employment_type_name
-    FROM
-        hr.employee
-    LEFT JOIN
-        hr.users ON employee.user_uuid = users.uuid
-    LEFT JOIN
-        hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
-    LEFT JOIN
-        hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
-    LEFT JOIN 
-        hr.configuration ON configuration.leave_policy_uuid = leave_policy.uuid
-    LEFT JOIN 
-        hr.configuration_entry ON configuration.uuid = configuration_entry.configuration_uuid
-    LEFT JOIN 
-        hr.leave_category ON configuration_entry.leave_category_uuid = leave_category.uuid
-    LEFT JOIN
-        (
-            SELECT
-                employee_uuid,
-                leave_category_uuid,
-                SUM(
-                    CASE 
-                        WHEN type = 'full' THEN (${to_date}::date - ${from_date}::date + 1)
-                        WHEN type = 'half' THEN (${to_date}::date - ${from_date}::date + 1) * 0.5
-                        ELSE (${to_date}::date - ${from_date}::date + 1)
-                    END
-                ) as total_days
-            FROM
-                hr.apply_leave
-            GROUP BY
-                employee_uuid, leave_category_uuid
-        ) as apply_leave_sum ON employee.uuid = apply_leave_sum.employee_uuid AND leave_category.uuid = apply_leave_sum.leave_category_uuid
-    WHERE 
-        ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
-    ORDER BY
-        users.name
+        employee_uuid,
+        employee_name,
+        leave_policy_uuid,
+        leave_policy_name,
+        employment_type_name,
+        JSON_AGG(
+            JSON_BUILD_OBJECT(
+                'leave_category_uuid', leave_category_uuid,
+                'leave_category_name', leave_category_name,
+                'allowed_leaves', allowed_leaves::float8,
+                'used_days', used_days::float8,
+                'remaining_days', remaining_days::float8
+            ) ORDER BY leave_category_name
+        ) AS leave_categories
+    FROM leave_balance_data
+    GROUP BY employee_uuid, employee_name, leave_policy_uuid, leave_policy_name, employment_type_name
+    ORDER BY employee_name;
   `;
 
   const data = await db.execute(query);
