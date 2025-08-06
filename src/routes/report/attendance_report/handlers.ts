@@ -35,20 +35,31 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         MIN(pl.punch_time)::time - s.late_time::time
                     END AS late_start_time,
                     CASE 
+                        WHEN MIN(pl.punch_time) IS NOT NULL 
+                        AND MIN(pl.punch_time)::time > s.late_time::time 
+                        THEN CONCAT(
+                            FLOOR(EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::int, 
+                            'h ', 
+                            FLOOR((EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) % 3600) / 60)::int, 
+                            'm'
+                        )
+                        ELSE '0h 0m'
+                    END AS late_hours,
+                    CASE 
                         WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
                             CONCAT(
                                 FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int, 
-                                ' h ', 
+                                'h ', 
                                 FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int, 
-                                ' m'
+                                'm'
                             )
                         ELSE NULL
                     END AS hours_worked,
                     CONCAT(
                         FLOOR(EXTRACT(EPOCH FROM s.end_time - s.start_time) / 3600)::int, 
-                        ' h ', 
+                        'h ', 
                         FLOOR((EXTRACT(EPOCH FROM s.end_time - s.start_time) % 3600) / 60)::int, 
-                        ' m'
+                        'm'
                     ) AS expected_hours,
                     CASE
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
@@ -83,7 +94,9 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         'expected_hours', expected_hours,
                         'status', status,
                         'late_time', late_time,
-                        'early_exit_before', early_exit_before
+                        'early_exit_before', early_exit_before,
+                        'late_start_time', late_start_time,
+                        'late_hours', late_hours
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
@@ -112,6 +125,8 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
             status: record.status,
             late_time: record.late_time,
             early_exit_before: record.early_exit_before,
+            late_start_time: record.late_start_time,
+            late_hours: record.late_hours,
           };
         }
       });
