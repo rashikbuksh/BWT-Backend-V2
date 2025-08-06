@@ -31,8 +31,25 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     DATE(ud.punch_date) AS punch_date,
                     MIN(pl.punch_time) AS entry_time,
                     MAX(pl.punch_time) AS exit_time,
-                    (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8 AS hours_worked,
-                    (EXTRACT(EPOCH FROM MAX(s.end_time) - MIN(s.start_time)) / 3600)::float8 AS expected_hours,
+                    CASE WHEN MIN(pl.punch_time)::time - s.late_time::time > INTERVAL '0 seconds' THEN
+                        MIN(pl.punch_time)::time - s.late_time::time
+                    END AS late_start_time,
+                    CASE 
+                        WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
+                            CONCAT(
+                                FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int, 
+                                ' hours ', 
+                                FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int, 
+                                ' mins'
+                            )
+                        ELSE NULL
+                    END AS hours_worked,
+                    CONCAT(
+                        FLOOR(EXTRACT(EPOCH FROM s.end_time - s.start_time) / 3600)::int, 
+                        ' hours ', 
+                        FLOOR((EXTRACT(EPOCH FROM s.end_time - s.start_time) % 3600) / 60)::int, 
+                        ' mins'
+                    ) AS expected_hours,
                     CASE
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                       WHEN MIN(pl.punch_time) > s.late_time THEN 'Late'
