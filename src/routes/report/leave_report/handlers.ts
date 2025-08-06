@@ -13,7 +13,10 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
   const query = sql`
     SELECT
         employee.uuid as employee_uuid,
+        employee.employee_id as employee_id,
         users.name as employee_name,
+        designation.designation as employee_designation,
+        department.department as employee_department,
         leave_category.uuid as leave_category_uuid,
         leave_category.name as leave_category_name,
         apply_leave.year as year,
@@ -52,6 +55,10 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
     LEFT JOIN
         hr.users ON employee.user_uuid = users.uuid
     LEFT JOIN
+        hr.department ON users.department_uuid = department.uuid
+    LEFT JOIN
+        hr.designation ON users.designation_uuid = designation.uuid
+    LEFT JOIN
         hr.leave_category ON apply_leave.leave_category_uuid = leave_category.uuid
     LEFT JOIN
         hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
@@ -81,7 +88,10 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
     WITH leave_balance_data AS (
       SELECT
           employee.uuid as employee_uuid,
+          employee.employee_id as employee_id,
           users.name as employee_name,
+          department.department as employee_department,
+          designation.designation as employee_designation,
           leave_policy.uuid as leave_policy_uuid,
           leave_policy.name as leave_policy_name,
           leave_category.uuid as leave_category_uuid,
@@ -94,6 +104,10 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
           hr.employee
       LEFT JOIN
           hr.users ON employee.user_uuid = users.uuid
+      LEFT JOIN
+          hr.department ON users.department_uuid = department.uuid
+      LEFT JOIN
+          hr.designation ON users.designation_uuid = designation.uuid
       LEFT JOIN
           hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
       LEFT JOIN
@@ -130,7 +144,10 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
     )
     SELECT
         employee_uuid,
+        employee_id,
         employee_name,
+        employee_designation,
+        employee_department,
         leave_policy_uuid,
         leave_policy_name,
         employment_type_name,
@@ -144,7 +161,8 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
             ) ORDER BY leave_category_name
         ) AS leave_categories
     FROM leave_balance_data
-    GROUP BY employee_uuid, employee_name, leave_policy_uuid, leave_policy_name, employment_type_name
+    GROUP BY employee_uuid, employee_name, leave_policy_uuid, leave_policy_name, employment_type_name,
+        employee_id, employee_designation, employee_department
     ORDER BY employee_name;
   `;
 
