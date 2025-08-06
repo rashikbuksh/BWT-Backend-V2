@@ -23,11 +23,20 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   SELECT
                     ud.user_uuid,
                     ud.employee_name,
+                    s.name || ' (' || s.start_time || ' - ' || s.end_time || ')' AS shift_name,
+                    s.late_time,
+                    s.early_exit_before,
                     DATE(ud.punch_date) AS punch_date,
                     MIN(pl.punch_time) AS entry_time,
                     MAX(pl.punch_time) AS exit_time,
                     (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8 AS hours_worked,
-                    (EXTRACT(EPOCH FROM MAX(s.end_time) - MIN(s.start_time)) / 3600)::float8 AS expected_hours
+                    (EXTRACT(EPOCH FROM MAX(s.end_time) - MIN(s.start_time)) / 3600)::float8 AS expected_hours,
+                    CASE
+                      WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
+                      WHEN MIN(pl.punch_time) > s.late_time THEN 'Late'
+                      WHEN MAX(pl.punch_time) < s.early_exit_before THEN 'Early Exit'
+                      ELSE 'Present'
+                    END as status
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -38,17 +47,21 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date
                 )
                 SELECT
-                  user_uuid,
-                  employee_name,
-                  JSON_AGG(
-                    JSON_BUILD_OBJECT(
-                      'punch_date', punch_date,
-                      'entry_time', entry_time,
-                      'exit_time', exit_time,
-                      'hours_worked', hours_worked,
-                      'expected_hours', expected_hours
-                    ) ORDER BY punch_date
-                  ) AS attendance_records
+                    user_uuid,
+                    employee_name,
+                    shift_name,
+                    late_time,
+                    early_exit_before,
+                    JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                        'punch_date', punch_date,
+                        'entry_time', entry_time,
+                        'exit_time', exit_time,
+                        'hours_worked', hours_worked,
+                        'expected_hours', expected_hours,
+                        'status', status
+                        ) ORDER BY punch_date
+                    ) AS attendance_records
                 FROM attendance_data
                 GROUP BY user_uuid, employee_name
                 ORDER BY employee_name;
