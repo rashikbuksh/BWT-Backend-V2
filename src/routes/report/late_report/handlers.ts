@@ -223,15 +223,16 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
                   GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, me.type, me.approval, lm.name
                 ),
-                monthly_late AS (
-                    -- count all "Late" punches in the month of from_date
-                    SELECT COUNT(*) AS total_late
-                    FROM attendance_data ad
-                    WHERE ad.status = 'Late'
-                        AND date_trunc('month', ad.punch_date)
-                        = date_trunc('month', ${from_date}::date)
-                    )
-                SELECT
+                 monthly_late AS (
+                  -- total late days + sum of all late intervals in the month
+                  SELECT
+                    COUNT(*) AS total_late_days,
+                    SUM(EXTRACT(EPOCH FROM ad.late_start_time)) AS total_late_seconds
+                  FROM attendance_data ad
+                  WHERE ad.status = 'Late'
+                    AND date_trunc('month', ad.punch_date) = date_trunc('month', ${from_date}::date)
+                )
+                SELECT DISTINCT
                     uuid AS employee_uuid,
                     user_uuid AS employee_user_uuid,
                     employee_name,
@@ -250,7 +251,11 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     hours_worked,
                     punch_date AS date,
                     status,
-                    ml.total_late AS late_count
+                    ml.total_late_days AS late_count,
+                    CONCAT(
+                      FLOOR(ml.total_late_seconds/3600)::int, 'h ',
+                      FLOOR((ml.total_late_seconds%3600)/60)::int, 'm'
+                    ) AS total_late_hours
                 FROM attendance_data
                 CROSS JOIN monthly_late ml
                 WHERE status = 'Late'
