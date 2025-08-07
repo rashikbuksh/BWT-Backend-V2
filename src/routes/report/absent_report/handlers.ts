@@ -8,7 +8,7 @@ import db from '@/db';
 import type { AbsentSummaryReportRoute, DailyAbsentReportRoute } from './routes';
 
 export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async (c: any) => {
-  const { employee_uuid, from_date } = c.req.valid('query');
+  const { employee_uuid, from_date, status, department_uuid } = c.req.valid('query');
 
   const query = sql`
     SELECT
@@ -25,7 +25,40 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
         CASE 
             WHEN punch_log.employee_uuid IS NULL THEN 'Absent'
             ELSE 'Present'
-        END as attendance_status
+        END as attendance_status,
+
+    -- new: date of last absence (no punch & no approved leave)
+      (
+        SELECT MAX(DATE(pl2.punch_time))
+        FROM hr.punch_log pl2
+        LEFT JOIN hr.apply_leave al2 
+          ON pl2.employee_uuid = al2.employee_uuid 
+          AND al2.approval = 'approved'
+          AND DATE(pl2.punch_time) BETWEEN al2.from_date::date AND al2.to_date::date
+        WHERE pl2.employee_uuid = employee.uuid
+          AND al2.employee_uuid IS NULL
+      ) AS last_absent,
+
+      -- new: count of absent days in the last 30 calendar days
+      (
+        SELECT COUNT(*)
+        FROM (
+          SELECT generate_series(
+            CURRENT_DATE - INTERVAL '29 days',
+            CURRENT_DATE,
+            '1 day'
+          )::date AS d
+        ) AS days
+        LEFT JOIN hr.punch_log pl3 
+          ON pl3.employee_uuid = employee.uuid 
+          AND DATE(pl3.punch_time) = days.d
+        LEFT JOIN hr.apply_leave al3 
+          ON al3.employee_uuid = employee.uuid 
+          AND al3.approval = 'approved'
+          AND days.d BETWEEN al3.from_date::date AND al3.to_date::date
+        WHERE pl3.employee_uuid IS NULL 
+          AND al3.employee_uuid IS NULL
+      ) AS absent_last_30_days
     FROM
         hr.employee
     LEFT JOIN
@@ -50,7 +83,14 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
         AND apply_leave.approval = 'approved'
         AND ${from_date ? sql`${from_date} BETWEEN apply_leave.from_date::date AND apply_leave.to_date::date` : sql`CURRENT_DATE BETWEEN apply_leave.from_date::date AND apply_leave.to_date::date`}
     WHERE 
-        employee.status = true
+         ${status === 'active'
+            ? sql`employee.is_resign = false AND employee.status = true`
+            : status === 'inactive'
+              ? sql`employee.is_resign = false AND employee.status = false`
+              : status === 'resigned'
+                ? sql`employee.is_resign = true`
+                : sql`employee.status = true`}
+            AND ${department_uuid ? sql`users.department_uuid = ${department_uuid}` : sql`TRUE`}
         AND employee.exclude_from_attendance = false
         ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
         AND punch_log.employee_uuid IS NULL  -- Only absent employees
