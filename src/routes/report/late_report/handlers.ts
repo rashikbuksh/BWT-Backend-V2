@@ -24,6 +24,8 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                     ud.user_uuid,
                     e.employee_id AS employee_id,
                     ud.employee_name,
+                    d.department AS employee_department,
+                    des.designation AS employee_designation,
                     s.name AS shift_name,
                     s.start_time,
                     s.end_time,
@@ -84,12 +86,15 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                     END as status
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
+                  LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+                  LEFT JOIN hr.department d ON u.department_uuid = d.uuid
+                  LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                   LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
                   LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation
                 )
                SELECT
                     ad.punch_date AS date,
@@ -98,6 +103,8 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         JSON_BUILD_OBJECT(
                         'employee_id',ad.employee_id,
                         'employee_name', ad.employee_name,
+                        'employee_department', ad.employee_department,
+                        'employee_designation', ad.employee_designation,
                         'shift',         ad.shift_name,
                         'entry_time',    ad.entry_time,
                         'late_hours',    ad.late_hours
