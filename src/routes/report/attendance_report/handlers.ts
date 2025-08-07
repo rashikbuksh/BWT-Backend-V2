@@ -219,7 +219,8 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
     ), -- 3) your existing summary per employee
     summary_data AS
     (
-        SELECT e.uuid AS employee_uuid,
+        SELECT 
+            DISTINCT e.uuid AS employee_uuid,
             u.uuid AS user_uuid,
             u.name AS employee_name,
             d.uuid AS designation_uuid,
@@ -508,8 +509,10 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
   // Format the data to structure attendance records with dates as keys
   const formattedData = data.rows.map((row: any) => {
     const attendanceByDate: any = {};
-
+    let hours_worked_sum = 0;
+    let expected_hours_sum = 0;
     // Convert attendance_records array to object with dates as keys
+    // actual hours worked, expected hours, and other details
     if (row.attendance_records && Array.isArray(row.attendance_records)) {
       row.attendance_records.forEach((record: any) => {
         if (record.punch_date) {
@@ -522,6 +525,9 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             status: record.status,
             leave_reason: record.leave_reason,
           };
+          // Sum up hours worked and expected hours
+          hours_worked_sum += record.hours_worked || 0;
+          expected_hours_sum += record.expected_hours || 0;
         }
       });
     }
@@ -545,6 +551,9 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
       early_leaves: row.early_leaves,
       off_days: row.off_days,
       ...attendanceByDate,
+      total_hours_worked: hours_worked_sum,
+      total_expected_hours: expected_hours_sum,
+      total_hour_difference: expected_hours_sum - hours_worked_sum,
     };
   });
 
