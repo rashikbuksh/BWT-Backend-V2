@@ -333,7 +333,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             WHERE lower(to_char(DAY, 'Dy')) = lower(dname)
             GROUP BY shift_group_uuid
         ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
-        WHERE e.department_uuid = ${department_uuid}), 
+        WHERE u.department_uuid = ${department_uuid}), 
         -- 3a) expand each shift_group’s configured off_days into concrete dates
         sg_off_days AS
         (
@@ -531,8 +531,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
          
     FROM hr.employee e
     LEFT JOIN hr.users u ON e.user_uuid = u.uuid
-    LEFT JOIN hr.designation d ON e.designation_uuid = d.uuid
-    LEFT JOIN hr.department dep ON e.department_uuid = dep.uuid
+    LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
+    LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
     LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
     LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
     
