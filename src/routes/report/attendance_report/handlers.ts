@@ -245,27 +245,39 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
         LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
         LEFT JOIN
         (
-            SELECT pl.employee_uuid,
-                COUNT(CASE
-                        WHEN pl.punch_time IS NOT NULL
-                                AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1
-                    END) AS present_days,
-                COUNT(CASE
-                        WHEN pl.punch_time IS NOT NULL
-                                AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1
-                    END) AS late_days,
-                COUNT(CASE
-                        WHEN pl.punch_time IS NOT NULL
-                                AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.early_exit_before, 'HH24:MI') THEN 1
-                    END) AS early_leaves
-            FROM hr.punch_log pl
-            LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-            LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
-            LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
-            WHERE pl.punch_time IS NOT NULL
-                AND DATE(pl.punch_time) >= ${from_date}::date
-                AND DATE(pl.punch_time) <= ${to_date}::date
-            GROUP BY pl.employee_uuid
+            WITH daily_attendance AS (
+                SELECT 
+                    pl.employee_uuid,
+                    DATE(pl.punch_time) AS attendance_date,
+                    MIN(pl.punch_time) AS first_punch,
+                    MAX(pl.punch_time) AS last_punch,
+                    shifts.late_time,
+                    shifts.early_exit_before
+                FROM hr.punch_log pl
+                LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+                LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
+                LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
+                WHERE pl.punch_time IS NOT NULL
+                    AND DATE(pl.punch_time) >= ${from_date}::date
+                    AND DATE(pl.punch_time) <= ${to_date}::date
+                GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before
+            )
+            SELECT 
+                employee_uuid,
+                COUNT(CASE 
+                    WHEN TO_CHAR(first_punch, 'HH24:MI') < TO_CHAR(late_time, 'HH24:MI') 
+                    THEN 1 
+                END) AS present_days,
+                COUNT(CASE 
+                    WHEN TO_CHAR(first_punch, 'HH24:MI') >= TO_CHAR(late_time, 'HH24:MI') 
+                    THEN 1 
+                END) AS late_days,
+                COUNT(CASE 
+                    WHEN TO_CHAR(last_punch, 'HH24:MI') < TO_CHAR(early_exit_before, 'HH24:MI') 
+                    THEN 1 
+                END) AS early_leaves
+            FROM daily_attendance
+            GROUP BY employee_uuid
         ) AS attendance_summary ON e.uuid = attendance_summary.employee_uuid
         LEFT JOIN
             (
@@ -421,6 +433,13 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                                 (EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::float8
                     ELSE NULL
                 END AS early_exit_hours,
+                CASE 
+                    WHEN MIN(pl.punch_time) IS NOT NULL 
+                        AND MIN(pl.punch_time)::time > s.late_time::time 
+                        THEN 
+                            (EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::float8
+                    ELSE NULL
+                END AS late_hours,
                 (
                     EXTRACT(
                         EPOCH
@@ -479,6 +498,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                     'hours_worked', ad.hours_worked, 
                     'expected_hours', ad.expected_hours, 
                     'early_exit_hours', ad.early_exit_hours,
+                    'late_hours', ad.late_hours,
                     'status', ad.status, 
                     'leave_reason', ad.leave_reason
                 )
@@ -528,6 +548,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             hours_worked: record.hours_worked,
             expected_hours: record.expected_hours,
             early_exit_hours: record.early_exit_hours,
+            late_hours: record.late_hours,
             status: record.status,
             leave_reason: record.leave_reason,
           };
@@ -624,22 +645,34 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
     
     -- Attendance summary
     LEFT JOIN (
+      WITH daily_attendance AS (
+        SELECT 
+          pl.employee_uuid,
+          DATE(pl.punch_time) AS attendance_date,
+          MIN(pl.punch_time) AS first_punch,
+          MAX(pl.punch_time) AS last_punch,
+          s.late_time
+        FROM hr.punch_log pl
+        LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+        LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+        LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+        WHERE pl.punch_time IS NOT NULL 
+          AND pl.punch_time >= ${from_date}::date 
+          AND pl.punch_time <= ${to_date}::date
+        GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time
+      )
       SELECT 
-        pl.employee_uuid,
-        COUNT(CASE WHEN pl.punch_time IS NOT NULL 
-          AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(s.late_time, 'HH24:MI') 
-          THEN 1 END) AS present_days,
-        COUNT(CASE WHEN pl.punch_time IS NOT NULL 
-          AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(s.late_time, 'HH24:MI') 
-          THEN 1 END) AS late_days
-      FROM hr.punch_log pl
-      LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-      LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-      LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-      WHERE pl.punch_time IS NOT NULL 
-        AND pl.punch_time >= ${from_date}::date 
-        AND pl.punch_time <= ${to_date}::date
-      GROUP BY pl.employee_uuid
+        employee_uuid,
+        COUNT(CASE 
+          WHEN TO_CHAR(first_punch, 'HH24:MI') < TO_CHAR(late_time, 'HH24:MI') 
+          THEN 1 
+        END) AS present_days,
+        COUNT(CASE 
+          WHEN TO_CHAR(first_punch, 'HH24:MI') >= TO_CHAR(late_time, 'HH24:MI') 
+          THEN 1 
+        END) AS late_days
+      FROM daily_attendance
+      GROUP BY employee_uuid
     ) att_summary ON e.uuid = att_summary.employee_uuid
     
     -- Leave summary
