@@ -23,6 +23,7 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                   SELECT
                     ud.user_uuid,
                     e.employee_id AS employee_id,
+                    e.uuid AS employee_uuid,
                     ud.employee_name,
                     d.department AS employee_department,
                     des.designation AS employee_designation,
@@ -101,7 +102,8 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                     COUNT(*)  AS late_count,
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
-                        'employee_uuid', ad.user_uuid,
+                        'employee_user_uuid', ad.user_uuid,
+                        'employee_uuid', ad.employee_uuid,
                         'employee_id',ad.employee_id,
                         'employee_name', ad.employee_name,
                         'employee_department', ad.employee_department,
