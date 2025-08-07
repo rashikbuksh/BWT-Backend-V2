@@ -220,7 +220,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
     summary_data AS
     (
         SELECT 
-            DISTINCT e.uuid AS employee_uuid,
+            e.uuid AS employee_uuid,
             u.uuid AS user_uuid,
             u.name AS employee_name,
             d.uuid AS designation_uuid,
@@ -404,26 +404,22 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                 ds.punch_date,
                 MIN(pl.punch_time) AS entry_time,
                 MAX(pl.punch_time) AS exit_time,
-                CASE 
-                    WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
-                        CONCAT(
-                            CASE WHEN FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int > 0 THEN
-                                FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int || 'h '
-                            ELSE '' END,
-                            CASE WHEN FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int > 0 THEN
-                                FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int || 'm'
-                            ELSE '' END
-                        )
+                CASE
+                    WHEN MIN(pl.punch_time) IS NOT NULL
+                    AND MAX(pl.punch_time) IS NOT NULL THEN (
+                        EXTRACT(
+                            EPOCH
+                            FROM MAX(pl.punch_time) - MIN(pl.punch_time)
+                        ) / 3600
+                    )::float8
                     ELSE NULL
                 END AS hours_worked,
-                CONCAT(
-                    FLOOR(
-                        EXTRACT(EPOCH FROM s.end_time - s.start_time) / 3600
-                    )::int, 'h ', 
-                    FLOOR(
-                        (EXTRACT(EPOCH FROM s.end_time - s.start_time) % 3600) / 60
-                    )::int, 'm'
-                ) AS expected_hours,
+                (
+                    EXTRACT(
+                        EPOCH
+                        FROM s.end_time - s.start_time
+                    ) / 3600
+                )::float8 AS expected_hours,
                 CASE
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
@@ -553,7 +549,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
       ...attendanceByDate,
       total_hours_worked: hours_worked_sum,
       total_expected_hours: expected_hours_sum,
-      total_hour_difference: expected_hours_sum - hours_worked_sum,
+      total_hour_difference: (expected_hours_sum - hours_worked_sum) || 0,
     };
   });
 
