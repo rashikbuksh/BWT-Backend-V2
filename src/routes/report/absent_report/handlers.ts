@@ -90,7 +90,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
               : status === 'resigned'
                 ? sql`employee.is_resign = true`
                 : sql`employee.status = true`}
-            AND ${department_uuid ? sql`users.department_uuid = ${department_uuid}` : sql`TRUE`}
+         ${department_uuid !== 'undefined' && department_uuid ? sql`AND users.department_uuid = ${department_uuid}` : sql``}
         AND employee.exclude_from_attendance = false
         ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
         AND punch_log.employee_uuid IS NULL  -- Only absent employees
@@ -196,7 +196,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                 : status === 'resigned'
                   ? sql`employee.is_resign = true`
                   : sql`employee.status = true`}
-            AND ${department_uuid ? sql`users.department_uuid = ${department_uuid}` : sql`TRUE`}
+            ${department_uuid !== 'undefined' && department_uuid ? sql` AND users.department_uuid = ${department_uuid}` : sql``}
             AND employee.exclude_from_attendance = false
             ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
             -- Exclude off days based on shift group off_days
