@@ -414,6 +414,13 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                     )::float8
                     ELSE NULL
                 END AS hours_worked,
+                CASE 
+                    WHEN MAX(pl.punch_time) IS NOT NULL 
+                        AND MAX(pl.punch_time)::time < s.early_exit_before::time 
+                            THEN 
+                                (EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::float8
+                    ELSE NULL
+                END AS early_exit_hours,
                 (
                     EXTRACT(
                         EPOCH
@@ -471,6 +478,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                     'exit_time', ad.exit_time, 
                     'hours_worked', ad.hours_worked, 
                     'expected_hours', ad.expected_hours, 
+                    'early_exit_hours', ad.early_exit_hours,
                     'status', ad.status, 
                     'leave_reason', ad.leave_reason
                 )
@@ -507,6 +515,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
     const attendanceByDate: any = {};
     let hours_worked_sum = 0;
     let expected_hours_sum = 0;
+    let hours_worked_count = 0;
     // Convert attendance_records array to object with dates as keys
     // actual hours worked, expected hours, and other details
     if (row.attendance_records && Array.isArray(row.attendance_records)) {
@@ -518,12 +527,14 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             exit_time: record.exit_time,
             hours_worked: record.hours_worked,
             expected_hours: record.expected_hours,
+            early_exit_hours: record.early_exit_hours,
             status: record.status,
             leave_reason: record.leave_reason,
           };
           // Sum up hours worked and expected hours
           hours_worked_sum += record.hours_worked || 0;
           expected_hours_sum += record.expected_hours || 0;
+          hours_worked_count += 1;
         }
       });
     }
@@ -550,6 +561,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
       total_hours_worked: hours_worked_sum,
       total_expected_hours: expected_hours_sum,
       total_hour_difference: (expected_hours_sum - hours_worked_sum) || 0,
+      average_hours_worked: hours_worked_count > 0 ? (hours_worked_sum / hours_worked_count) : 0,
     };
   });
 
