@@ -223,14 +223,15 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
                   GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, me.type, me.approval, lm.name
                 ),
-                 monthly_late AS (
-                  -- total late days + sum of all late intervals in the month
-                  SELECT
-                    COUNT(*) AS total_late_days,
-                    SUM(EXTRACT(EPOCH FROM ad.late_start_time)) AS total_late_seconds
-                  FROM attendance_data ad
-                  WHERE ad.status = 'Late'
-                    AND date_trunc('month', ad.punch_date) = date_trunc('month', ${from_date}::date)
+                  monthly_late AS (
+                                SELECT
+                                    ad.uuid AS employee_uuid,
+                                    COUNT(*) AS total_late_days,
+                                    SUM(EXTRACT(EPOCH FROM ad.late_start_time)) AS total_late_seconds
+                                FROM attendance_data ad
+                                WHERE ad.status = 'Late'
+                                    AND date_trunc('month', ad.punch_date) = date_trunc('month', ${from_date}::date)
+                                GROUP BY ad.uuid
                 )
                 SELECT DISTINCT
                     uuid AS employee_uuid,
@@ -251,13 +252,14 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     hours_worked,
                     punch_date AS date,
                     status,
-                    ml.total_late_days AS late_count,
+                    COALESCE(ml.total_late_days, 0) AS monthly_late_count,
                     CONCAT(
                       FLOOR(ml.total_late_seconds/3600)::int, 'h ',
                       FLOOR((ml.total_late_seconds%3600)/60)::int, 'm'
                     ) AS total_late_hours
                 FROM attendance_data
-                CROSS JOIN monthly_late ml
+               LEFT JOIN monthly_late ml
+                    ON uuid = ml.employee_uuid
                 WHERE status = 'Late'
                 ORDER BY employee_name;
               `;
