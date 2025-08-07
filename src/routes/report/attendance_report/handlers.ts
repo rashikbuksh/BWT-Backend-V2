@@ -213,7 +213,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             e.shift_group_uuid
         FROM hr.employee e
         JOIN hr.users u ON e.user_uuid = u.uuid
-        WHERE e.department_uuid = ${department_uuid}
+        WHERE u.department_uuid = ${department_uuid}
     ), -- 3) your existing summary per employee
     summary_data AS
     (
