@@ -238,6 +238,8 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     user_uuid AS employee_user_uuid,
                     employee_name,
                     employee_id,
+                    employee_department,
+                    employee_designation,
                     shift_name,
                     start_time,
                     end_time,
