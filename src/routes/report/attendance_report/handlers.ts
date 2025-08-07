@@ -460,7 +460,9 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                 sp.is_special,
                 sod.is_offday,
                 al.employee_uuid,
-                al.reason
+                al.reason,
+                s.late_time,
+                s.early_exit_before
         ) 
     -- 5) final SELECT …
         SELECT 
