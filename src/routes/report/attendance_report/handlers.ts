@@ -262,8 +262,8 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
             LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
             WHERE pl.punch_time IS NOT NULL
-                AND pl.punch_time >= ${from_date}::date
-                AND pl.punch_time <= ${to_date}::date
+                AND DATE(pl.punch_time) >= ${from_date}::date
+                AND DATE(pl.punch_time) <= ${to_date}::date
             GROUP BY pl.employee_uuid
         ) AS attendance_summary ON e.uuid = attendance_summary.employee_uuid
         LEFT JOIN
@@ -415,16 +415,22 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                         )
                     ELSE NULL
                 END AS hours_worked,
-                CONCAT(FLOOR(EXTRACT(EPOCH
-                                    FROM s.end_time - s.start_time) / 3600)::int, 'h ', FLOOR((EXTRACT(EPOCH
-                                                                                                        FROM s.end_time - s.start_time) % 3600) / 60)::int, 'm') AS expected_hours,
+                CONCAT(
+                    FLOOR(
+                        EXTRACT(EPOCH FROM s.end_time - s.start_time) / 3600
+                    )::int, 'h ', 
+                    FLOOR(
+                        (EXTRACT(EPOCH FROM s.end_time - s.start_time) % 3600) / 60
+                    )::int, 'm'
+                ) AS expected_hours,
                 CASE
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
-                        OR sod.is_offday THEN 'off_day'
-                    WHEN al.employee_uuid IS NOT NULL THEN 'leave'
-                    WHEN MIN(pl.punch_time) IS NOT NULL THEN 'present'
-                    ELSE 'absent'
+                        OR sod.is_offday THEN 'Off Day'
+                    WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
+                    WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                    WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
+                    ELSE 'Present'
                 END AS status,
                 al.reason AS leave_reason
             FROM dept_employees de
