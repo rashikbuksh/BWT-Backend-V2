@@ -62,10 +62,12 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     CASE 
                         WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
                             CONCAT(
-                                FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int, 
-                                'h ', 
-                                FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int, 
-                                'm'
+                                CASE WHEN FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int > 0 THEN
+                                    FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int || 'h '
+                                ELSE '' END,
+                                CASE WHEN FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int > 0 THEN
+                                    FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int || 'm'
+                                ELSE '' END
                             )
                         ELSE NULL
                     END AS hours_worked,
@@ -401,9 +403,18 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                 ds.punch_date,
                 MIN(pl.punch_time) AS entry_time,
                 MAX(pl.punch_time) AS exit_time,
-                CONCAT(FLOOR(EXTRACT(EPOCH
-                                    FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int, 'h ', FLOOR((EXTRACT(EPOCH
-                                                                                                                        FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int, 'm') AS hours_worked,
+                CASE 
+                    WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
+                        CONCAT(
+                            CASE WHEN FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int > 0 THEN
+                                FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int || 'h '
+                            ELSE '' END,
+                            CASE WHEN FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int > 0 THEN
+                                FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int || 'm'
+                            ELSE '' END
+                        )
+                    ELSE NULL
+                END AS hours_worked,
                 CONCAT(FLOOR(EXTRACT(EPOCH
                                     FROM s.end_time - s.start_time) / 3600)::int, 'h ', FLOOR((EXTRACT(EPOCH
                                                                                                         FROM s.end_time - s.start_time) % 3600) / 60)::int, 'm') AS expected_hours,
@@ -450,7 +461,13 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             sd.*, 
             JSON_AGG(
                 JSON_BUILD_OBJECT(
-                    'punch_date', ad.punch_date, 'entry_time', ad.entry_time, 'exit_time', ad.exit_time, 'hours_worked', ad.hours_worked, 'expected_hours', ad.expected_hours, 'status', ad.status, 'leave_reason', ad.leave_reason
+                    'punch_date', ad.punch_date, 
+                    'entry_time', ad.entry_time, 
+                    'exit_time', ad.exit_time, 
+                    'hours_worked', ad.hours_worked, 
+                    'expected_hours', ad.expected_hours, 
+                    'status', ad.status, 
+                    'leave_reason', ad.leave_reason
                 )
                 ORDER BY ad.punch_date
             ) AS attendance_records
@@ -479,7 +496,51 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
 
   // Execute the simplified query
   const data = await db.execute(query);
-  return c.json(data.rows || [], HSCode.OK);
+
+  // Format the data to structure attendance records with dates as keys
+  const formattedData = data.rows.map((row: any) => {
+    const attendanceByDate: any = {};
+
+    // Convert attendance_records array to object with dates as keys
+    if (row.attendance_records && Array.isArray(row.attendance_records)) {
+      row.attendance_records.forEach((record: any) => {
+        if (record.punch_date) {
+          attendanceByDate[record.punch_date] = {
+            punch_date: record.punch_date,
+            entry_time: record.entry_time,
+            exit_time: record.exit_time,
+            hours_worked: record.hours_worked,
+            expected_hours: record.expected_hours,
+            status: record.status,
+            leave_reason: record.leave_reason,
+          };
+        }
+      });
+    }
+
+    return {
+      employee_uuid: row.employee_uuid,
+      user_uuid: row.user_uuid,
+      employee_name: row.employee_name,
+      designation_uuid: row.designation_uuid,
+      designation_name: row.designation_name,
+      department_uuid: row.department_uuid,
+      department_name: row.department_name,
+      workplace_uuid: row.workplace_uuid,
+      workplace_name: row.workplace_name,
+      employment_type_uuid: row.employment_type_uuid,
+      employment_type_name: row.employment_type_name,
+      present_days: row.present_days,
+      absent_days: row.absent_days,
+      leave_days: row.leave_days,
+      late_days: row.late_days,
+      early_leaves: row.early_leaves,
+      off_days: row.off_days,
+      ...attendanceByDate,
+    };
+  });
+
+  return c.json(formattedData || [], HSCode.OK);
 };
 
 export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
