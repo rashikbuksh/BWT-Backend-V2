@@ -138,11 +138,13 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                 ),
                 attendance_data AS (
                   SELECT
+                    e.uuid,
                     ud.user_uuid,
                     ud.employee_name,
                     e.employee_id AS employee_id,
                     d.department AS employee_department,
                     des.designation AS employee_designation,
+                    CASE WHEN e.line_manager_uuid IS NOT NULL THEN lm.name ELSE 'Not Set' END AS line_manager,
                     s.name AS shift_name,
                     s.start_time,
                     s.end_time,
@@ -200,46 +202,58 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                       WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                       WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                       ELSE 'Present'
-                    END as status
+                    END as status,
+                    CASE 
+                        WHEN me.type != 'late_application' 
+                            THEN 'Not Applied'
+                        ELSE 
+                            me.approval::text
+                    END AS late_application_status
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                   LEFT JOIN hr.department d ON u.department_uuid = d.uuid
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
+                  LEFT JOIN hr.users lm ON e.line_manager_uuid = lm.uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                   LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
                   LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                  LEFT JOIN hr.manual_entry me ON e.uuid = me.employee_uuid
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before
-                )
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, me.type, me.approval, lm.name
+                ),
+                monthly_late AS (
+                    -- count all "Late" punches in the month of from_date
+                    SELECT COUNT(*) AS total_late
+                    FROM attendance_data ad
+                    WHERE ad.status = 'Late'
+                        AND date_trunc('month', ad.punch_date)
+                        = date_trunc('month', ${from_date}::date)
+                    )
                 SELECT
-                    user_uuid,
+                    uuid AS employee_uuid,
+                    user_uuid AS employee_user_uuid,
                     employee_name,
+                    employee_id,
                     shift_name,
-                    JSON_BUILD_OBJECT(
-                        'name', shift_name,
-                        'start_time', start_time,
-                        'end_time', end_time
-                    ) AS shift_details,
-                    JSON_AGG(
-                        JSON_BUILD_OBJECT(
-                        'punch_date', punch_date,
-                        'entry_time', entry_time,
-                        'exit_time', exit_time,
-                        'hours_worked', hours_worked,
-                        'expected_hours', expected_hours,
-                        'status', status,
-                        'late_time', late_time,
-                        'early_exit_before', early_exit_before,
-                        'late_start_time', late_start_time,
-                        'late_hours', late_hours,
-                        'early_exit_time', early_exit_time,
-                        'early_exit_hours', early_exit_hours
-                        ) ORDER BY punch_date
-                    ) AS attendance_records
+                    start_time,
+                    end_time,
+                    entry_time::time,
+                    exit_time::time,
+                    early_exit_time,
+                    early_exit_hours,
+                    late_hours,
+                    late_start_time,
+                    late_application_status,
+                    expected_hours,
+                    hours_worked,
+                    punch_date AS date,
+                    status,
+                    ml.total_late AS late_count
                 FROM attendance_data
-                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time
+                CROSS JOIN monthly_late ml
+                WHERE status = 'Late'
                 ORDER BY employee_name;
               `;
 
