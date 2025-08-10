@@ -215,7 +215,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             e.shift_group_uuid
         FROM hr.employee e
         JOIN hr.users u ON e.user_uuid = u.uuid
-        WHERE u.department_uuid = ${department_uuid}
+        WHERE ${department_uuid ? sql`u.department_uuid = ${department_uuid}` : sql`TRUE`}
     ), -- 3) your existing summary per employee
     summary_data AS
     (
@@ -348,7 +348,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
             WHERE lower(to_char(DAY, 'Dy')) = lower(dname)
             GROUP BY shift_group_uuid
         ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
-        WHERE u.department_uuid = ${department_uuid}), 
+        WHERE ${department_uuid ? sql`u.department_uuid = ${department_uuid}` : sql`TRUE`}), 
         -- 3a) expand each shift_group’s configured off_days into concrete dates
         sg_off_days AS
         (
