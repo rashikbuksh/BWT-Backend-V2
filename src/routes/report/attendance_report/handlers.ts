@@ -35,48 +35,25 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         MIN(pl.punch_time)::time - s.late_time::time
                     END AS late_start_time,
                     CASE 
-                        WHEN MIN(pl.punch_time) IS NOT NULL 
+                      WHEN MIN(pl.punch_time) IS NOT NULL 
                         AND MIN(pl.punch_time)::time > s.late_time::time 
-                        THEN CONCAT(
-                            FLOOR(EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::int, 
-                            'h ', 
-                            FLOOR((EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) % 3600) / 60)::int, 
-                            'm'
-                        )
-                        ELSE '0h 0m'
+                      THEN (EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::float8
+                      ELSE NULL
                     END AS late_hours,
                     CASE WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN
                                 s.early_exit_before::time - MAX(pl.punch_time)::time
                     END AS early_exit_time,
                     CASE 
-                        WHEN MAX(pl.punch_time) IS NOT NULL 
-                            AND MAX(pl.punch_time)::time < s.early_exit_before::time 
-                                THEN CONCAT(
-                                    FLOOR(EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::int, 
-                                    'h ', 
-                                    FLOOR((EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) % 3600) / 60)::int, 
-                                    'm'
-                                )
-                        ELSE '0h 0m'
+                        WHEN MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN
+                            (EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::float8
+                        ELSE NULL
                     END AS early_exit_hours,
                     CASE 
                         WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
-                            CONCAT(
-                                CASE WHEN FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int > 0 THEN
-                                    FLOOR(EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::int || 'h '
-                                ELSE '' END,
-                                CASE WHEN FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int > 0 THEN
-                                    FLOOR((EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) % 3600) / 60)::int || 'm'
-                                ELSE '' END
-                            )
+                            (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8
                         ELSE NULL
                     END AS hours_worked,
-                    CONCAT(
-                        FLOOR(EXTRACT(EPOCH FROM s.end_time - s.start_time) / 3600)::int, 
-                        'h ', 
-                        FLOOR((EXTRACT(EPOCH FROM s.end_time - s.start_time) % 3600) / 60)::int, 
-                        'm'
-                    ) AS expected_hours,
+                   (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8 AS expected_hours,
                     CASE
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                       WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
