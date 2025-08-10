@@ -152,12 +152,12 @@ export const selectAllManualEntryWithPaginationFieldVisit = createRoute({
   request: {
     query: z.object({
       approval: z.string().optional(),
-      is_pagination: z.boolean().optional(),
+      is_pagination: z.string().optional(),
       field_name: z.string().optional(),
       field_value: z.string().optional(),
       q: z.string().optional(),
-      page: z.number().optional(),
-      limit: z.number().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
       sort: z.string().optional(),
       orderby: z.string().optional(),
     }),
