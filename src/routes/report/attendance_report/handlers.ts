@@ -654,24 +654,29 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           ${holidays.general}::float8 AS general_holidays,
                           ${holidays.special}::float8 AS special_holidays,
                           
-                          -- Calculate working days and hours
+                          -- Calculate working days
                           ((${to_date}::date - ${from_date}::date + 1) - 
                           (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
                             ${holidays.general} + ${holidays.special}))::float8 AS working_days,
                             
                           -- Calculate absent days
-                          GREATEST(0, (${to_date}::date - ${from_date}::date + 1) - 
-                          (COALESCE(att_summary.present_days, 0) + COALESCE(att_summary.late_days, 0) + 
-                            COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
-                            ${holidays.general} + ${holidays.special}))::float8 AS absent_days,
+                          GREATEST(0, 
+                              (((${to_date}::date - ${from_date}::date + 1) - 
+                                (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
+                                  ${holidays.general} + ${holidays.special}))
+                              - COALESCE(att_summary.present_days, 0) + COALESCE(att_summary.late_days, 0)
+                              )
+                            )::float8 AS absent_days,
                             
                           -- Additional metrics
                           COALESCE(late_app_summary.total_late_approved, 0)::float8 AS approved_lates,
                           COALESCE(field_visit_summary.total_field_visits_days, 0)::float8 AS field_visit_days,
                           COALESCE(late_hours_summary.total_late_hours, 0)::float8 AS total_late_hours,
                           
-                          -- Hour calculations
-                          ((COALESCE(att_summary.present_days, 0) + COALESCE(att_summary.late_days, 0)) * 8)::float8 AS working_hours,
+                          -- Calculate working hours
+                          ((COALESCE(att_summary.present_days, 0) + COALESCE(att_summary.late_days, 0)) * 8) - (late_hours_summary.total_late_hours::float8 + late_hours_summary.total_early_exit_hours::float8) AS working_hours,
+
+                          -- Expected hours calculation
                           (((${to_date}::date - ${from_date}::date + 1) - 
                             (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
                             ${holidays.general} + ${holidays.special})) * 8)::float8 AS expected_hours
@@ -825,12 +830,22 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                     THEN (EXTRACT(EPOCH FROM (t.first_punch::time - t.late_time::time)) / 3600)::float8
                                     ELSE 0
                                   END
-                                ) AS total_late_hours
+                                ) AS total_late_hours,
+                                COUNT(
+                                  CASE 
+                                    WHEN t.last_punch IS NOT NULL 
+                                      AND t.last_punch::time > t.early_exit_before::time
+                                    THEN 1
+                                    ELSE NULL
+                                  END
+                                ) AS total_early_exit_hours
                               FROM (
                                 SELECT 
                                   pl.employee_uuid,
                                   MIN(pl.punch_time) AS first_punch,
-                                  s.late_time
+                                  MAX(pl.punch_time) AS last_punch,
+                                  s.late_time,
+                                  s.early_exit_before
                                 FROM hr.punch_log pl
                                 LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
                                 LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
@@ -838,7 +853,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                 WHERE pl.punch_time IS NOT NULL 
                                   AND pl.punch_time >= ${from_date}::date 
                                   AND pl.punch_time <= ${to_date}::date
-                                GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time
+                                GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time, s.early_exit_before
                               ) t
                               GROUP BY t.employee_uuid
                             ) late_hours_summary ON e.uuid = late_hours_summary.employee_uuid
