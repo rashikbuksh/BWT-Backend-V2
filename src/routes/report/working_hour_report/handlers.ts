@@ -9,7 +9,7 @@ import { getHolidayCountsDateRange } from '@/lib/variables';
 import type { GetEmployeeWorkingHourReportRoute } from './routes';
 
 export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHourReportRoute> = async (c: any) => {
-  const { department_uuid, from_date, to_date } = c.req.valid('query');
+  const { department_uuid, from_date, to_date, status } = c.req.valid('query');
 
   const holidays = await getHolidayCountsDateRange(from_date, to_date);
 
@@ -164,7 +164,16 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             WHERE lower(to_char(DAY, 'Dy')) = lower(dname)
             GROUP BY shift_group_uuid
         ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
-        WHERE ${department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}), 
+        WHERE 
+            ${department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
+            ${status === 'active'
+              ? sql`employee.is_resign = false AND employee.status = true`
+              : status === 'inactive'
+                ? sql`employee.is_resign = false AND employee.status = false`
+                : status === 'resigned'
+                  ? sql`employee.is_resign = true`
+                  : sql`employee.status = true`}
+            ), 
         -- 3a) expand each shift_group’s configured off_days into concrete dates
         sg_off_days AS
         (
