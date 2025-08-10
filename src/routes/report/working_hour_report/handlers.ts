@@ -167,12 +167,12 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
         WHERE 
             ${department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
             ${status === 'active'
-              ? sql`employee.is_resign = false AND employee.status = true`
+              ? sql`e.is_resign = false AND e.status = true`
               : status === 'inactive'
-                ? sql`employee.is_resign = false AND employee.status = false`
+                ? sql`e.is_resign = false AND e.status = false`
                 : status === 'resigned'
-                  ? sql`employee.is_resign = true`
-                  : sql`employee.status = true`}
+                  ? sql`e.is_resign = true`
+                  : sql`e.status = true`}
             ), 
         -- 3a) expand each shift_group’s configured off_days into concrete dates
         sg_off_days AS
