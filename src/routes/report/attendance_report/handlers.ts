@@ -91,7 +91,13 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                             (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8
                         ELSE NULL
                     END AS hours_worked,
-                   (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8 AS expected_hours,
+                    CASE
+                        WHEN gh.date IS NOT NULL
+                          OR sp.is_special = 1
+                          OR sod.is_offday
+                          OR al.reason IS NOT NULL THEN 0
+                        ELSE (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8
+                    END AS expected_hours,
                     CASE
                         WHEN gh.date IS NOT NULL
                           OR sp.is_special = 1
@@ -471,12 +477,13 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             (EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::float8
                     ELSE NULL
                 END AS late_hours,
-                (
-                    EXTRACT(
-                        EPOCH
-                        FROM s.end_time - s.start_time
-                    ) / 3600
-                )::float8 AS expected_hours,
+                CASE
+                    WHEN gh.date IS NOT NULL
+                      OR sp.is_special = 1
+                      OR sod.is_offday
+                      OR al.reason IS NOT NULL THEN 0
+                    ELSE (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8
+                END AS expected_hours,
                 CASE
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
