@@ -458,8 +458,9 @@ export const getManualEntryDetailsByEmployee: AppRouteHandler<GetManualEntryByEm
 
   const [employee, manual_entry] = await Promise.all([
     fetchData('/v1/hr/employee'),
-    fetchData('/v1/hr/manual-entry/by'),
+    fetchData('/v1/hr/manual-entry/employee'),
   ]);
+
   const response = {
     ...employee,
     field_visit: manual_entry || [],

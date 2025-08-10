@@ -190,8 +190,8 @@ export const manualEntryByEmployee: AppRouteHandler<ManualEntryByEmployeeRoute> 
 
   const data = await manual_entryPromise;
 
-  if (!data)
-    return DataNotFound(c);
+  // if (!data)
+  //   return DataNotFound(c);
 
   return c.json(data || [], HSCode.OK);
 };
