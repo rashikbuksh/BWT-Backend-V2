@@ -96,7 +96,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         WHEN gh.date IS NOT NULL
                           OR sp.is_special = 1
                           OR sod.is_offday THEN 'Off Day'
-                        WHEN al.reason IS NOT NULL THEN CONCAT('Leave (', al.reason, ')')
+                        WHEN al.reason IS NOT NULL THEN 'Leave'
                         WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                         WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                         WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
@@ -481,7 +481,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
                         OR sod.is_offday THEN 'Off Day'
-                    WHEN al.reason IS NOT NULL THEN CONCAT('Leave (', al.reason, ')')
+                    WHEN al.reason IS NOT NULL THEN 'Leave'
                     WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                     WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                     WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
