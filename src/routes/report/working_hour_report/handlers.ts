@@ -166,7 +166,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
         ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
         WHERE 
             ${department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
-            ${status === 'active'
+            AND ${status === 'active'
               ? sql`e.is_resign = false AND e.status = true`
               : status === 'inactive'
                 ? sql`e.is_resign = false AND e.status = false`
