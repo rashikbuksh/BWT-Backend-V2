@@ -30,7 +30,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             e.shift_group_uuid
         FROM hr.employee e
         JOIN hr.users u ON e.user_uuid = u.uuid
-        WHERE ${department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
+        WHERE ${department_uuid !== 'undefined' && department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
     ), -- 3) your existing summary per employee
     summary_data AS
     (
@@ -165,7 +165,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             GROUP BY shift_group_uuid
         ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
         WHERE 
-            ${department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
+            ${department_uuid !== 'undefined' && department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
             AND ${status === 'active'
               ? sql`e.is_resign = false AND e.status = true`
               : status === 'inactive'
