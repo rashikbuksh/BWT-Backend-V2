@@ -44,7 +44,7 @@ export const fieldVisitReport: AppRouteHandler<FieldVisitReportRoute> = async (c
                 WHERE me.type = 'field_visit'
                 ${employee_uuid ? sql`AND me.employee_uuid = ${employee_uuid}` : sql``}
                 ${from_date ? sql`AND me.created_at::date >= ${from_date}::date AND me.created_at::date <= ${to_date}::date` : sql``}
-                ${approval ? sql`AND me.approval = ${approval}` : sql``}`;
+                ${approval !== 'undefined' && approval ? sql`AND me.approval = ${approval}` : sql``}`;
 
   const data = await db.execute(query);
 
