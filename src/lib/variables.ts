@@ -1,6 +1,8 @@
 import { asc, desc, or, sql } from 'drizzle-orm';
 import { char, decimal, timestamp } from 'drizzle-orm/pg-core';
 
+import db from '@/db';
+
 import type { ColumnProps } from './types';
 
 export function defaultUUID(column = 'uuid') {
@@ -152,4 +154,32 @@ export function constructSelectAllQuery(
   }
 
   return baseQuery;
+}
+
+export async function getHolidayCountsDateRange(from_date: string, to_date: string) {
+  const specialHolidaysQuery = sql`
+    SELECT COALESCE(SUM(
+      CASE 
+        WHEN sh.from_date::date <= ${to_date}::date AND sh.to_date::date >= ${from_date}::date
+        THEN LEAST(sh.to_date::date, ${to_date}::date) - GREATEST(sh.from_date::date, ${from_date}::date) + 1
+        ELSE 0
+      END
+    ), 0) AS total_special_holidays
+    FROM hr.special_holidays sh
+    WHERE sh.from_date::date <= ${to_date}::date AND sh.to_date::date >= ${from_date}::date`;
+
+  const generalHolidayQuery = sql`
+    SELECT COALESCE(COUNT(*), 0) AS total_general_holidays
+    FROM hr.general_holidays gh
+    WHERE gh.date >= ${from_date}::date AND gh.date <= ${to_date}::date`;
+
+  const [specialResult, generalResult] = await Promise.all([
+    db.execute(specialHolidaysQuery),
+    db.execute(generalHolidayQuery),
+  ]);
+
+  return {
+    special: specialResult.rows[0]?.total_special_holidays || 0,
+    general: generalResult.rows[0]?.total_general_holidays || 0,
+  };
 }
