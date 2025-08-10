@@ -16,6 +16,7 @@ export const fieldVisitReport = createRoute({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
       approval: z.string().optional(),
+      status: z.string().optional(),
     }),
   },
   responses: {

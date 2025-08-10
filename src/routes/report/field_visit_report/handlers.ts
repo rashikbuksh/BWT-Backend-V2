@@ -8,7 +8,7 @@ import db from '@/db';
 import type { FieldVisitReportRoute } from './routes';
 
 export const fieldVisitReport: AppRouteHandler<FieldVisitReportRoute> = async (c: any) => {
-  const { employee_uuid, from_date, to_date, approval } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date, approval, status } = c.req.valid('query');
 
   const query = sql`
                 SELECT
@@ -42,6 +42,13 @@ export const fieldVisitReport: AppRouteHandler<FieldVisitReportRoute> = async (c
                 LEFT JOIN hr.users secondApprover ON e.second_field_visit_approver_uuid = secondApprover.uuid
                 LEFT JOIN hr.users appliedBy ON me.created_by = appliedBy.uuid
                 WHERE me.type = 'field_visit'
+                 ${status === 'active'
+                    ? sql`AND e.is_resign = false AND e.status = true`
+                    : status === 'inactive'
+                      ? sql`AND e.is_resign = false AND e.status = false`
+                      : status === 'resigned'
+                        ? sql`AND e.is_resign = true`
+                        : sql`AND e.status = true`}
                 ${employee_uuid ? sql`AND me.employee_uuid = ${employee_uuid}` : sql``}
                 ${from_date ? sql`AND me.created_at::date >= ${from_date}::date AND me.created_at::date <= ${to_date}::date` : sql``}
                 ${approval !== 'undefined' && approval ? sql`AND me.approval = ${approval}` : sql``}`;
