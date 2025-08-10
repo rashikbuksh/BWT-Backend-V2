@@ -438,6 +438,12 @@ export const employee = hr.table('employee', {
   personal_phone: text('personal_phone').default(sql`null`),
   joining_amount: PG_DECIMAL('joining_amount').default(sql`0`),
   is_resign: boolean('is_resign').default(false),
+  first_field_visit_approver_uuid: defaultUUID('first_field_visit_approver_uuid')
+    .references(() => users.uuid)
+    .default(sql`null`),
+  second_field_visit_approver_uuid: defaultUUID('second_field_visit_approver_uuid')
+    .references(() => users.uuid)
+    .default(sql`null`),
 });
 
 // ? Employee Address
