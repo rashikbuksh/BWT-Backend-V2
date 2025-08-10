@@ -229,6 +229,9 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 de.user_uuid,
                 de.employee_name,
                 ds.punch_date,
+                s.name AS shift_name,
+                s.start_time,
+                s.end_time,
                 MIN(pl.punch_time) AS entry_time,
                 MAX(pl.punch_time) AS exit_time,
                 CASE
@@ -300,11 +303,19 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 al.employee_uuid,
                 al.reason,
                 s.late_time,
-                s.early_exit_before
+                s.early_exit_before,
+                s.name,
+                s.start_time,
+                s.end_time
         ) 
     -- 5) final SELECT …
         SELECT 
             sd.*, 
+            JSON_BUILD_OBJECT(
+                'name', ad.shift_name,
+                'start_time', ad.start_time,
+                'end_time', ad.end_time
+            ) AS shift_details,
             JSON_AGG(
                 JSON_BUILD_OBJECT(
                     'punch_date', ad.punch_date, 
@@ -339,7 +350,10 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             sd.leave_days,
             sd.late_days,
             sd.early_leaves,
-            sd.off_days
+            sd.off_days,
+            ad.shift_name,
+            ad.start_time,
+            ad.end_time
         `;
 
   // Execute the simplified query
