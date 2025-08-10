@@ -259,12 +259,17 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                             (EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::float8
                     ELSE 0
                 END AS late_hours,
-                (
-                    EXTRACT(
-                        EPOCH
-                        FROM s.end_time - s.start_time
-                    ) / 3600
-                )::float8 AS expected_hours,
+                CASE
+                    WHEN gh.date IS NOT NULL
+                        OR sp.is_special = 1
+                        OR sod.is_offday THEN 0
+                    ELSE (
+                        EXTRACT(
+                            EPOCH
+                            FROM s.end_time - s.start_time
+                        ) / 3600
+                    )::float8
+                END AS expected_hours,
                 CASE
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
