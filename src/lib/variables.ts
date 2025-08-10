@@ -1,8 +1,6 @@
 import { asc, desc, or, sql } from 'drizzle-orm';
 import { char, decimal, timestamp } from 'drizzle-orm/pg-core';
 
-import db from '@/db';
-
 import type { ColumnProps } from './types';
 
 export function defaultUUID(column = 'uuid') {
@@ -157,6 +155,8 @@ export function constructSelectAllQuery(
 }
 
 export async function getHolidayCountsDateRange(from_date: string, to_date: string) {
+  const db = (await import('@/db')).default;
+
   const specialHolidaysQuery = sql`
     SELECT COALESCE(SUM(
       CASE 
