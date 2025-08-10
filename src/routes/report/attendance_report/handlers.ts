@@ -815,28 +815,36 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                     ) field_visit_summary ON e.uuid = field_visit_summary.employee_uuid
                     
                     -- Late hours calculation
-                    LEFT JOIN (
-                      SELECT 
-                        pl.employee_uuid,
-                        SUM(
-                          CASE 
-                            WHEN pl.punch_time IS NOT NULL 
-                              AND TO_CHAR(pl.punch_time, 'HH24:MI') > TO_CHAR(s.start_time, 'HH24:MI')
-                            THEN EXTRACT(EPOCH FROM (pl.punch_time::time - s.start_time::time)) / 3600
-                            ELSE 0
-                          END
-                        )::float8 AS total_late_hours
-                      FROM hr.punch_log pl
-                      LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                      LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-                      LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-                      WHERE pl.punch_time IS NOT NULL 
-                        AND pl.punch_time >= ${from_date}::date 
-                        AND pl.punch_time <= ${to_date}::date
-                      GROUP BY pl.employee_uuid
-                    ) late_hours_summary ON e.uuid = late_hours_summary.employee_uuid
+                   LEFT JOIN (
+                              SELECT 
+                                t.employee_uuid,
+                                SUM(
+                                  CASE 
+                                    WHEN t.first_punch IS NOT NULL 
+                                      AND t.first_punch::time > t.late_time::time 
+                                    THEN (EXTRACT(EPOCH FROM (t.first_punch::time - t.late_time::time)) / 3600)::float8
+                                    ELSE 0
+                                  END
+                                ) AS total_late_hours
+                              FROM (
+                                SELECT 
+                                  pl.employee_uuid,
+                                  MIN(pl.punch_time) AS first_punch,
+                                  s.late_time
+                                FROM hr.punch_log pl
+                                LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+                                LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+                                LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                                WHERE pl.punch_time IS NOT NULL 
+                                  AND pl.punch_time >= ${from_date}::date 
+                                  AND pl.punch_time <= ${to_date}::date
+                                GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time
+                              ) t
+                              GROUP BY t.employee_uuid
+                            ) late_hours_summary ON e.uuid = late_hours_summary.employee_uuid
                   `;
 
   const data = await db.execute(query);
+
   return c.json(data.rows || [], HSCode.OK);
 };
