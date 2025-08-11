@@ -706,6 +706,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           COALESCE(late_app_summary.total_late_approved, 0)::float8 AS approved_lates,
                           COALESCE(field_visit_summary.total_field_visits_days, 0)::float8 AS field_visit_days,
                           COALESCE(late_hours_summary.total_late_hours, 0)::float8 AS total_late_hours,
+                          COALESCE(late_hours_summary.total_early_exit_hours, 0)::float8 AS total_early_exit_hours,
                           
                           -- Calculate working hours
                           ((COALESCE(att_summary.present_days, 0) + COALESCE(att_summary.late_days, 0)) * 8) - (late_hours_summary.total_late_hours::float8 + late_hours_summary.total_early_exit_hours::float8) AS working_hours,
@@ -883,15 +884,15 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                   ELSE 0
                                 END
                               ) AS total_late_hours,
-                              COUNT(
+                              SUM(
                                 CASE 
                                   WHEN gh.date IS NULL 
                                     AND sp.is_special IS NULL 
                                     AND sod.is_offday IS DISTINCT FROM TRUE 
                                     AND t.last_punch IS NOT NULL 
                                     AND t.last_punch::time > t.early_exit_before::time
-                                  THEN 1
-                                  ELSE NULL
+                                  THEN (EXTRACT(EPOCH FROM (t.last_punch::time - t.early_exit_before::time)) / 3600)::float8
+                                  ELSE 0
                                 END
                               ) AS total_early_exit_hours
                             FROM (
