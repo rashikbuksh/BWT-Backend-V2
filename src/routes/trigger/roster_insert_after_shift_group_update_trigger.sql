@@ -1,5 +1,6 @@
 CREATE OR REPLACE FUNCTION roster_insert_after_shift_group_update_function() RETURNS TRIGGER AS $$
 BEGIN
+    
     INSERT INTO hr.roster (
         shift_group_uuid, 
         shifts_uuid, 
@@ -23,8 +24,7 @@ BEGIN
         effective_date,
         off_days,
         created_by,
-        created_at,
-        updated_at
+        created_at
     ) VALUES (
         NEW.uuid,
         NEW.shifts_uuid,
