@@ -332,9 +332,12 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
         SELECT generate_series(${from_date}::date, ${to_date}::date, INTERVAL '1 day')::date AS punch_date
       ),
       user_dates AS (
-        SELECT u.uuid AS user_uuid, u.name AS employee_name, d.punch_date
+        SELECT 
+          u.uuid AS user_uuid, 
+          u.name AS employee_name, 
+          d.punch_date
         FROM hr.users u
-        CROSS JOIN date_series d
+        ${from_date && to_date ? sql`CROSS JOIN date_series d` : sql``}
       )
       SELECT
         ud.user_uuid,
