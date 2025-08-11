@@ -165,6 +165,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                       jsonb_build_object(
                         'shift_group_uuid', shift_group.uuid,
                         'shift_group_name', shift_group.name,
+                        'effective_date', roster.effective_date,
                         'off_days', roster.off_days,
                         'created_at', roster.created_at
                       )
