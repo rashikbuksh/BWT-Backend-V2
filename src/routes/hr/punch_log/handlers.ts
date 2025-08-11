@@ -264,7 +264,7 @@ export const selectEmployeePunchLogPerDayByEmployeeUuid: AppRouteHandler<SelectE
 export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployeeLateDayByEmployeeUuidRoute> = async (c: any) => {
   const { from_date, to_date } = c.req.valid('query');
 
-  const { employee_uuid } = c.req.valid('params');
+  const { employee_uuid } = c.req.valid('param');
   const fromDateYear = from_date ? new Date(from_date).getFullYear() : null;
   const fromDateMonth = from_date ? new Date(from_date).getMonth() + 1 : null;
   const toDateYear = to_date ? new Date(to_date).getFullYear() : null;
