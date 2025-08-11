@@ -207,6 +207,7 @@ export const selectAllApplyLeaveWithPagination: AppRouteHandler<SelectAllApplyLe
     leave_category_uuid,
     from_date,
     to_date,
+    year,
   } = c.req.valid('query');
 
   page = Number.parseInt(page, 10);
@@ -225,6 +226,8 @@ export const selectAllApplyLeaveWithPagination: AppRouteHandler<SelectAllApplyLe
     filters.push(eq(apply_leave.from_date, from_date));
   if (to_date)
     filters.push(eq(apply_leave.to_date, to_date));
+  if (year)
+    filters.push(eq(apply_leave.year, year));
 
   const resultPromise = db
     .select({

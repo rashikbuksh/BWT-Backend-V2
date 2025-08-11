@@ -141,6 +141,7 @@ export const selectAllApplyLeaveWithPagination = createRoute({
       to_date: z.string().optional(),
       sort: z.string().optional(),
       orderBy: z.string().optional(),
+      year: z.string().optional(),
     }),
   },
   tags,
