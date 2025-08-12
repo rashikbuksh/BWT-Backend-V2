@@ -120,23 +120,20 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
   const { employee_uuid, year, month } = c.req.valid('param');
 
   const specialHolidaysQuery = sql`
-                                  SELECT
-                                    SUM(sh.to_date::date - sh.from_date::date + 1) -
-                                    SUM(
-                                      CASE
-                                        WHEN sh.to_date::date > (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date
-                                          THEN sh.to_date::date - (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date
-                                        ELSE 0
-                                      END
-                                      +
-                                      CASE
-                                        WHEN sh.from_date::date < TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date
-                                          THEN TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date - sh.from_date::date
-                                        ELSE 0
-                                      END
-                                    ) AS total_special_holidays
-                                  FROM hr.special_holidays sh
-                                  WHERE
+                                SELECT
+                                  gs.generated_date::date AS holiday_date,
+                                  sh.name,
+                                  sh.from_date,
+                                  sh.to_date
+                                FROM hr.special_holidays sh
+                                JOIN LATERAL (
+                                  SELECT generate_series(
+                                    GREATEST(sh.from_date::date, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date),
+                                    LEAST(sh.to_date::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date),
+                                    INTERVAL '1 day'
+                                  ) AS generated_date
+                                ) gs ON TRUE
+                                WHERE
                                   (
                                     EXTRACT(YEAR FROM sh.to_date) > ${year}
                                     OR (EXTRACT(YEAR FROM sh.to_date) = ${year} AND EXTRACT(MONTH FROM sh.to_date) >= ${month})
@@ -145,7 +142,8 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                     EXTRACT(YEAR FROM sh.from_date) < ${year}
                                     OR (EXTRACT(YEAR FROM sh.from_date) = ${year} AND EXTRACT(MONTH FROM sh.from_date) <= ${month})
                                   )
-                              `;
+                                ORDER BY gs.generated_date
+`;
 
   const generalHolidayQuery = sql`
                                   SELECT
