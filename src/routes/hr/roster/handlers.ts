@@ -147,7 +147,8 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
 
   const generalHolidayQuery = sql`
                                   SELECT
-                                    gh.date
+                                    gh.date,
+                                    gh.name
                                   FROM 
                                     hr.general_holidays gh
                                   WHERE
