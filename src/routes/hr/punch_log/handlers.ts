@@ -364,11 +364,11 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
 
   const data = await punch_logPromise;
 
-  const response = [{
-    data: data?.rows,
-    // special_holidays: specialHolidaysResult?.rows,
-    // general_holidays: generalHolidaysResult?.rows,
-  }];
+  // const response = [{
+  //   data: data?.rows,
+  //   // special_holidays: specialHolidaysResult?.rows,
+  //   // general_holidays: generalHolidaysResult?.rows,
+  // }];
 
-  return c.json(response || [], HSCode.OK);
+  return c.json(data?.rows || [], HSCode.OK);
 };
