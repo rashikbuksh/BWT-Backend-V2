@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -62,6 +62,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
+  const { date } = c.req.valid('query');
+
   const salaryIncrementPromise = db
     .select({
       uuid: salary_entry.uuid,
@@ -88,6 +90,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(employee, eq(salary_entry.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
     .orderBy(desc(salary_entry.created_at));
+
+  if (date) {
+    const [year, month] = date.split('-').map(Number);
+    salaryIncrementPromise.where(
+      and(eq(salary_entry.year, year), eq(salary_entry.month, month)),
+    );
+  }
 
   const data = await salaryIncrementPromise;
 
