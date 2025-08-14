@@ -266,7 +266,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     COALESCE(${total_general_holidays}::int, 0) + 
                     COALESCE(${total_special_holidays}::int, 0)
                     )
-                , 0)::float8 AS total_days,
+                , 0)::float8 AS total_days_gg,
+                ${totalDays}::int AS total_days,
                 COALESCE(COALESCE(
                   employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0),
                   employee.joining_amount
