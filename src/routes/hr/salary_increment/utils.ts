@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -12,7 +13,7 @@ export const insertSchema = createInsertSchema(
   {
     uuid: schema => schema.uuid.length(15),
     employee_uuid: schema => schema.employee_uuid.length(15),
-    amount: schema => schema.amount,
+    amount: z.number().positive().optional(),
     effective_date: schema => schema.effective_date.regex(dateTimePattern, {
       message: 'effective_date must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
