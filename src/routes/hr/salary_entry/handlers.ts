@@ -78,6 +78,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: salary_entry.remarks,
       loan_amount: PG_DECIMAL_TO_FLOAT(salary_entry.loan_amount),
       advance_amount: PG_DECIMAL_TO_FLOAT(salary_entry.advance_amount),
+      year_month: sql`TO_CHAR(TO_TIMESTAMP(${salary_entry.year} || '-' || LPAD(${salary_entry.month}::text, 2, '0') || '-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS')`,
     })
     .from(salary_entry)
     .leftJoin(
@@ -112,6 +113,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       remarks: salary_entry.remarks,
       loan_amount: PG_DECIMAL_TO_FLOAT(salary_entry.loan_amount),
       advance_amount: PG_DECIMAL_TO_FLOAT(salary_entry.advance_amount),
+      year_month: sql`TO_CHAR(TO_TIMESTAMP(${salary_entry.year} || '-' || LPAD(${salary_entry.month}::text, 2, '0') || '-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS')`,
     })
     .from(salary_entry)
     .leftJoin(
