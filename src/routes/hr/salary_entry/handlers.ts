@@ -236,15 +236,14 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   0
                 )::float8 AS total_present_days,
                 
-                COALESCE(
-                    ${totalDays}::int 
-                    - (
-                    COALESCE(attendance_summary.present_days, 0) + 
-                    COALESCE(attendance_summary.late_days, 0) + 
-                    COALESCE(leave_summary.total_leave_days, 0) + 
-                    COALESCE(${total_general_holidays}::int, 0) + 
-                    COALESCE(${total_special_holidays}::int, 0)
-                    + COALESCE(off_days_summary.total_off_days, 0)
+               ${totalDays}::int -
+                    (
+                      COALESCE(attendance_summary.present_days, 0) + 
+                      COALESCE(attendance_summary.late_days, 0) + 
+                      COALESCE(leave_summary.total_leave_days, 0) + 
+                      COALESCE(${total_general_holidays}::int, 0) + 
+                      COALESCE(${total_special_holidays}::int, 0) +
+                      COALESCE(off_days_summary.total_off_days, 0)
                     )::float8 AS absent_days,
                 COALESCE(
                   COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) +
