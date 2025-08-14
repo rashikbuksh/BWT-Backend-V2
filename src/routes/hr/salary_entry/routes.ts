@@ -14,6 +14,11 @@ export const list = createRoute({
   path: '/hr/salary-entry',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      date: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
