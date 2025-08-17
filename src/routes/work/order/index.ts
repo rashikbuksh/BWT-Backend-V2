@@ -10,6 +10,8 @@ const router = createRouter()
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
   .openapi(routes.getDiagnosisDetailsByOrder, handlers.getDiagnosisDetailsByOrder)
-  .openapi(routes.getByInfo, handlers.getByInfo);
+  .openapi(routes.getByInfo, handlers.getByInfo)
+  .openapi(routes.createWithoutForm, handlers.createWithoutForm)
+  .openapi(routes.patchWithoutForm, handlers.patchWithoutForm);
 
 export default router;

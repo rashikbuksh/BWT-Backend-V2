@@ -1,5 +1,5 @@
 import * as HSCode from 'stoker/http-status-codes';
-import { jsonContent } from 'stoker/openapi/helpers';
+import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
 import { createErrorSchema } from 'stoker/openapi/schemas';
 
 import { notFoundSchema } from '@/lib/constants';
@@ -58,6 +58,28 @@ export const create = createRoute({
   },
 });
 
+export const createWithoutForm = createRoute({
+  path: '/work/order-without-form',
+  method: 'post',
+  request: {
+    body: jsonContentRequired(
+      insertSchema,
+      'The order to create',
+    ),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The created order',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(insertSchema),
+      'The validation error(s)',
+    ),
+  },
+});
+
 export const getOne = createRoute({
   path: '/work/order/{uuid}',
   method: 'get',
@@ -95,6 +117,34 @@ export const patch = createRoute({
         },
       },
     },
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The updated order',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'order not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(patchSchema)
+        .or(createErrorSchema(param.uuid)),
+      'The validation error(s)',
+    ),
+  },
+});
+
+export const patchWithoutForm = createRoute({
+  path: '/work/order-without-form/{uuid}',
+  method: 'patch',
+  request: {
+    params: param.uuid,
+    body: jsonContentRequired(
+      patchSchema,
+      'The order updates',
+    ),
   },
   tags,
   responses: {
@@ -200,3 +250,5 @@ export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetDiagnosisDetailsByOrderRoute = typeof getDiagnosisDetailsByOrder;
 export type GetByInfoRoute = typeof getByInfo;
+export type CreateWithoutFormRoute = typeof createWithoutForm;
+export type PatchWithoutFormRoute = typeof patchWithoutForm;

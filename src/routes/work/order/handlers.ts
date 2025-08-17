@@ -14,7 +14,7 @@ import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
 
-import type { CreateRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, CreateWithoutFormRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute, PatchWithoutFormRoute, RemoveRoute } from './routes';
 
 import { accessory, diagnosis, info, order, problem } from '../schema';
 
@@ -184,6 +184,16 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 };
 
+export const createWithoutForm: AppRouteHandler<CreateWithoutFormRoute> = async (c: any) => {
+  const value = c.req.valid('json');
+
+  const [data] = await db.insert(order).values(value).returning({
+    name: order.uuid,
+  });
+
+  return c.json(createToast('create', data.name), HSCode.OK);
+};
+
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
   // const updates = c.req.valid('json');
@@ -328,6 +338,26 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     });
     throw error;
   }
+};
+
+export const patchWithoutForm: AppRouteHandler<PatchWithoutFormRoute> = async (c: any) => {
+  const { uuid } = c.req.valid('param');
+  const updates = c.req.valid('json');
+
+  if (Object.keys(updates).length === 0)
+    return ObjectNotFound(c);
+
+  const [data] = await db.update(order)
+    .set(updates)
+    .where(eq(order.uuid, uuid))
+    .returning({
+      name: order.uuid,
+    });
+
+  if (!data)
+    return DataNotFound(c);
+
+  return c.json(createToast('update', data.name), HSCode.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
