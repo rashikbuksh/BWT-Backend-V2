@@ -184,8 +184,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     model_uuid: defaultIfEmpty(finalModelUuid, null),
     serial_no: defaultIfEmpty(serial_no, null),
     quantity: defaultIfEmpty(quantity, 0),
-    problems_uuid: defaultIfEmpty(processedProblemsUuid, []),
-    accessories: defaultIfEmpty(processedAccessories, []),
+    problems_uuid: processedProblemsUuid,
+    accessories: processedAccessories,
     is_diagnosis_need: defaultIfEmpty(is_diagnosis_need, false),
     warehouse_uuid: defaultIfEmpty(warehouse_uuid, null),
     rack_uuid: defaultIfEmpty(rack_uuid, null),
@@ -367,6 +367,41 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       finalModelUuid = newModel.uuid;
     }
   }
+
+  function defaultIfEmpty(val: any, def: any) {
+    return val === '' ? def : val;
+  }
+
+  formData.model_uuid = defaultIfEmpty(formData.model_uuid, null);
+  formData.serial_no = defaultIfEmpty(formData.serial_no, null);
+  formData.quantity = defaultIfEmpty(formData.quantity, 0);
+  formData.problems_uuid = defaultIfEmpty(formData.problems_uuid, []);
+  formData.accessories = defaultIfEmpty(formData.accessories, []);
+  formData.is_diagnosis_need = defaultIfEmpty(formData.is_diagnosis_need, false);
+  formData.warehouse_uuid = defaultIfEmpty(formData.warehouse_uuid, null);
+  formData.rack_uuid = defaultIfEmpty(formData.rack_uuid, null);
+  formData.floor_uuid = defaultIfEmpty(formData.floor_uuid, null);
+  formData.box_uuid = defaultIfEmpty(formData.box_uuid, null);
+  formData.updated_at = defaultIfEmpty(formData.updated_at, null);
+  formData.remarks = defaultIfEmpty(formData.remarks, null);
+  formData.is_transferred_for_qc = defaultIfEmpty(formData.is_transferred_for_qc, false);
+  formData.is_ready_for_delivery = defaultIfEmpty(formData.is_ready_for_delivery, false);
+  formData.brand_uuid = defaultIfEmpty(formData.brand_uuid, null);
+  formData.is_proceed_to_repair = defaultIfEmpty(formData.is_proceed_to_repair, false);
+  formData.repairing_problems_uuid = defaultIfEmpty(formData.repairing_problems_uuid, []);
+  formData.qc_problems_uuid = defaultIfEmpty(formData.qc_problems_uuid, []);
+  formData.delivery_problems_uuid = defaultIfEmpty(formData.delivery_problems_uuid, []);
+  formData.repairing_problem_statement = defaultIfEmpty(formData.repairing_problem_statement, null);
+  formData.qc_problem_statement = defaultIfEmpty(formData.qc_problem_statement, null);
+  formData.delivery_problem_statement = defaultIfEmpty(formData.delivery_problem_statement, null);
+  formData.ready_for_delivery_date = defaultIfEmpty(formData.ready_for_delivery_date, null);
+  formData.bill_amount = defaultIfEmpty(formData.bill_amount, 0);
+  formData.is_home_repair = defaultIfEmpty(formData.is_home_repair, false);
+  formData.proposed_cost = defaultIfEmpty(formData.proposed_cost, 0);
+  formData.is_challan_needed = defaultIfEmpty(formData.is_challan_needed, false);
+  formData.is_reclaimed = defaultIfEmpty(formData.is_reclaimed, false);
+  formData.reclaimed_order_uuid = defaultIfEmpty(formData.reclaimed_order_uuid, null);
+  formData.created_by = defaultIfEmpty(formData.created_by, null);
 
   console.warn(formData, 'Final formData before update');
 
