@@ -712,7 +712,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
       branch_uuid: storeSchema.warehouse.branch_uuid,
       branch_name: storeSchema.branch.name,
-      is_delivery_complete: deliverySchema.challan.is_delivery_complete,
+      is_delivery_complete: sql`CASE WHEN ${deliverySchema.challan.is_delivery_complete} IS NULL THEN false ELSE ${deliverySchema.challan.is_delivery_complete} END`,
       repairing_problems_uuid: orderTable.repairing_problems_uuid,
       qc_problems_uuid: orderTable.qc_problems_uuid,
       delivery_problems_uuid: orderTable.delivery_problems_uuid,
