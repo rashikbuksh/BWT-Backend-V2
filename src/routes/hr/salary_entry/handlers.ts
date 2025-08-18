@@ -167,8 +167,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
   // console.log(`Total days in month: ${totalDays}`);
   const date = new Date(year, month - 1, 1); // JS months are 0-based
   date.setMonth(date.getMonth() - 1);
-  const prevMonth = date.getMonth() + 1; // back to 1-based
-  const prevYear = date.getFullYear();
+  // const prevMonth = date.getMonth() + 1; // back to 1-based
+  // const prevYear = date.getFullYear();
 
   // console.log(prevMonth, prevYear);
 
@@ -235,10 +235,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 COALESCE(attendance_summary.present_days, 0)::float8 AS present_days,
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
                 COALESCE(leave_summary.total_leave_days, 0)::float8 AS total_leave_days,
-                COALESCE(
-                  employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0),
-                  employee.joining_amount
-                )::float8 AS total_salary,
+                (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0))::float8 AS total_salary,
                 COALESCE(off_days_summary.total_off_days, 0)::float8 AS week_days,
                 COALESCE(${total_general_holidays}, 0)::float8 AS total_general_holidays,
                 COALESCE(${total_special_holidays}, 0)::float8 AS total_special_holidays,
@@ -260,58 +257,26 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                       COALESCE(${total_special_holidays}::int, 0) +
                       COALESCE(off_days_summary.total_off_days, 0)
                     )::float8 AS absent_days,
-                COALESCE(
-                  COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) +
-                  COALESCE(off_days_summary.total_off_days, 0) + COALESCE(${total_general_holidays}, 0) + COALESCE(${total_special_holidays}, 0) + COALESCE(
-                    (
-                      (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date 
-                      - (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD'))::date
-                      + 1
-                    ), 0
-                    )
-                    - (
-                    COALESCE(attendance_summary.present_days, 0) + 
-                    COALESCE(attendance_summary.late_days, 0) + 
-                    COALESCE(leave_summary.total_leave_days, 0) + 
-                    COALESCE(${total_general_holidays}::int, 0) + 
-                    COALESCE(${total_special_holidays}::int, 0)
-                    )
-                , 0)::float8 AS total_days_gg,
                 ${totalDays}::int AS total_days,
-                COALESCE(COALESCE(
-                  employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0),
-                  employee.joining_amount
-                ) / ${totalDays}, 0)::float8 AS daily_salary,
-                COALESCE(
-                  (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / ${totalDays}) *
-                  (
-                    COALESCE(attendance_summary.present_days, 0)
-                    + COALESCE(off_days_summary.total_off_days, 0)
-                    + COALESCE(leave_summary.total_leave_days, 0)
-                    + COALESCE(${total_general_holidays}, 0)
-                    + COALESCE(${total_special_holidays}, 0)
-                  )
-                , 0)::float8 AS gross_salary,
-                COALESCE(salary_entry_summary.advance_amount, 0)::float8 AS advance_amount,
-                COALESCE(salary_entry_summary.loan_amount, 0)::float8 AS loan_amount,
-                COALESCE(
-                  salary_entry_summary.advance_amount + salary_entry_summary.loan_amount, 0
-                )::float8 AS total_advance_salary,
+               COALESCE((employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / ${totalDays}, 0)::float8 AS daily_salary,
+               COALESCE(
+                        (
+                          (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / ${totalDays}
+                          *
+                          (
+                            COALESCE(attendance_summary.present_days, 0)
+                            + COALESCE(off_days_summary.total_off_days, 0)
+                            + COALESCE(leave_summary.total_leave_days, 0)
+                            + COALESCE(${total_general_holidays}, 0)
+                            + COALESCE(${total_special_holidays}, 0)
+                          )
+                        ),
+                        0
+                )::float8 AS gross_salary,
                 COALESCE(
                     FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) * 
-                    (COALESCE(
-                      employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0),
-                      employee.joining_amount
-                    ) / ${totalDays})
+                    (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / ${totalDays}
                   , 0)::float8 AS late_salary_deduction,
-                (
-                  COALESCE(salary_entry_summary.advance_amount, 0)
-                  + COALESCE(salary_entry_summary.loan_amount, 0)
-                  + COALESCE(
-                    COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount)
-                    / ${totalDays} * (COALESCE(attendance_summary.late_days, 0)), 0
-                  )
-                )::float8 AS total_deduction,
                 (
                   COALESCE(
                     (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / ${totalDays}) *
@@ -324,18 +289,13 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     )
                   , 0)
                   -
-                  (
-                    COALESCE(salary_entry_summary.advance_amount, 0)
-                    + COALESCE(salary_entry_summary.loan_amount, 0)
-                    + COALESCE(
-                      FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) *
-                      (COALESCE(
-                        employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0),
-                        employee.joining_amount
-                      ) / ${totalDays})
-                    , 0)
-                  )
-                )::float8 AS net_payable
+                  COALESCE(
+                    FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) *
+                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / ${totalDays})
+                  , 0)
+                )::float8 AS net_payable,
+                COALESCE(loan_summary.total_loan_amount, 0)::float8 AS total_loan_amount,
+                COALESCE(loan_entry_summary.total_paid_loan_amount, 0)::float8 AS total_paid_loan_amount
             FROM  hr.employee
             LEFT JOIN hr.users employeeUser
               ON employee.user_uuid = employeeUser.uuid
@@ -454,18 +414,29 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                           GROUP BY shift_group_uuid
             ) AS off_days_summary
               ON employee.shift_group_uuid = off_days_summary.shift_group_uuid
+            LEFT JOIN 
+                (
+                  SELECT 
+                    l.employee_uuid,
+                    SUM(l.amount) AS total_loan_amount
+                  FROM hr.loan l
+                  WHERE EXTRACT(YEAR FROM l.date) <= ${year}
+                    AND EXTRACT(MONTH FROM l.date) <= ${month}
+                  GROUP BY employee_uuid
+                ) AS loan_summary
+            ON employee.uuid = loan_summary.employee_uuid
             LEFT JOIN
               (
                 SELECT 
-                  se.advance_amount::float8,
-                  se.loan_amount::float8,
-                  se.uuid AS salary_entry_uuid,
-                  se.employee_uuid AS salary_entry_employee_uuid
-                FROM hr.salary_entry se
-                WHERE se.month = ${prevMonth}
-                  AND se.year = ${prevYear}
-              ) AS salary_entry_summary
-            ON employee.uuid = salary_entry_summary.salary_entry_employee_uuid
+                  l.employee_uuid,
+                  SUM(le.amount) AS total_paid_loan_amount
+                FROM hr.loan_entry le
+                LEFT JOIN hr.loan l ON le.loan_uuid = l.uuid
+                WHERE EXTRACT(YEAR FROM le.date) <= ${year}
+                  AND EXTRACT(MONTH FROM le.date) <= ${month}
+                GROUP BY l.employee_uuid
+              ) AS loan_entry_summary
+            ON employee.uuid = loan_entry_summary.employee_uuid
             WHERE employee.status = true 
             ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
             ORDER BY employee.created_at DESC`;
