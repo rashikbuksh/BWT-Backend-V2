@@ -17,11 +17,26 @@ const createdByUser = alias(users, 'createdByUser');
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
-  const [data] = await db.insert(salary_entry).values(value).returning({
+  // Support single object or array of objects
+  const values = Array.isArray(value) ? value : [value];
+
+  if (values.length === 0) {
+    return c.json(createToast('error', 'No data provided'), HSCode.BAD_REQUEST);
+  }
+
+  const data = await db.insert(salary_entry).values(values).returning({
     name: salary_entry.uuid,
   });
 
-  return c.json(createToast('create', data.name), HSCode.OK);
+  // Return array of created UUIDs for bulk, or single for single
+  const names = data.map(d => d.name);
+  return c.json(
+    createToast(
+      'create',
+      values.length === 1 ? names[0] : names.join(', '),
+    ),
+    HSCode.OK,
+  );
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
