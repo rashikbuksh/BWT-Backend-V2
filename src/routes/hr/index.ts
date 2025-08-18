@@ -15,6 +15,8 @@ import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
+import loan from './loan';
+import loan_entry from './loan_entry';
 import manual_entry from './manual_entry';
 import policy_and_notice from './policy_and_notice';
 import punch_log from './punch_log';
@@ -60,4 +62,6 @@ export default [
   salary_occasional,
   salary_increment,
   salary_entry,
+  loan,
+  loan_entry,
 ];

@@ -697,4 +697,40 @@ export const salary_entry = hr.table('salary_entry', {
   advance_amount: PG_DECIMAL('advance_amount').default(sql`0`),
 });
 
+// ? loan
+export const loan_type_enum = pgEnum('loan_type_enum', [
+  'salary_advance',
+  'other',
+]);
+
+export const loan = hr.table('loan', {
+  uuid: uuid_primary,
+  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
+  type: loan_type_enum('type').default('salary_advance'),
+  amount: PG_DECIMAL('amount').notNull(),
+  date: DateTime('date').notNull(),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const loan_entry_type_enum = pgEnum('loan_entry_type_enum', [
+  'partial',
+  'full',
+]);
+
+// ? loan entry
+export const loan_entry = hr.table('loan_entry', {
+  uuid: uuid_primary,
+  loan_uuid: defaultUUID('loan_uuid').references(() => loan.uuid),
+  type: loan_entry_type_enum('type').default('partial'),
+  amount: PG_DECIMAL('amount').notNull(),
+  date: DateTime('date').notNull(),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default hr;
