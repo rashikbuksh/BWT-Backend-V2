@@ -6,9 +6,10 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
+import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetLoanEntryDetailsRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { employee, loan, users } from '../schema';
 
@@ -124,4 +125,33 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
+};
+
+export const getLoanEntryDetails: AppRouteHandler<GetLoanEntryDetailsRoute> = async (c: any) => {
+  const { loan_uuid } = c.req.valid('param');
+
+  const api = createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`${endpoint}/${loan_uuid}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  const [loan, loan_entry] = await Promise.all([
+    fetchData('/v1/hr/loan'),
+    fetchData('/v1/hr/loan-entry/by'),
+  ]);
+  const response = {
+    ...loan,
+    loan_entry: loan_entry || [],
+  };
+
+  return c.json(response, HSCode.OK);
 };
