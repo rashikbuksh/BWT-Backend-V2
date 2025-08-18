@@ -32,18 +32,18 @@ export const create = createRoute({
   method: 'post',
   request: {
     body: jsonContentRequired(
-      insertSchema,
-      'The salary-entry to create',
+      z.union([insertSchema, z.array(insertSchema)]),
+      'The salary-entry or entries to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      selectSchema,
-      'The created salary-entry',
+      z.union([selectSchema, z.array(selectSchema)]),
+      'The created salary-entry or entries',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(insertSchema),
+      createErrorSchema(z.union([insertSchema, z.array(insertSchema)])),
       'The validation error(s)',
     ),
   },
