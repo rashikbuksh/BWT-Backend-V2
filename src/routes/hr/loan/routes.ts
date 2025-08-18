@@ -122,8 +122,34 @@ export const remove = createRoute({
   },
 });
 
+export const getLoanEntryDetails = createRoute({
+  path: '/hr/loan-entry-details/by/{loan_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      loan_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The loan entry details',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'loan not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetLoanEntryDetailsRoute = typeof getLoanEntryDetails;
