@@ -30,10 +30,10 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
   const [data] = await db.insert(product).values(value).returning({
-    name: product.title,
+    name: product.uuid,
   });
 
-  return c.json(createToast('create', data.name ?? ''), HSCode.OK);
+  return c.json(createToast('create', data.name), HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
@@ -47,13 +47,13 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     .set(updates)
     .where(eq(product.uuid, uuid))
     .returning({
-      name: product.title,
+      name: product.uuid,
     });
 
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('update', data.name ?? ''), HSCode.OK);
+  return c.json(createToast('update', data.name), HSCode.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
@@ -62,13 +62,13 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const [data] = await db.delete(product)
     .where(eq(product.uuid, uuid))
     .returning({
-      name: product.title,
+      name: product.uuid,
     });
 
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('delete', data.name ?? ''), HSCode.OK);
+  return c.json(createToast('delete', data.name), HSCode.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
