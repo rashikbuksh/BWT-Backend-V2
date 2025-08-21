@@ -31,8 +31,8 @@ app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src
 app.use(`${basePath}/*`, cors({
   origin: (origin) => {
     if (!origin)
-      return false;
-    return ALLOWED_ROUTES.includes(origin);
+      return null;
+    return ALLOWED_ROUTES.includes(origin) ? origin : null;
   },
   maxAge: 600,
   credentials: true,
