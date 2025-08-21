@@ -14,7 +14,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   let purchaseEntryPromise = db
     .select({
       value: purchase_entry.uuid,
-      label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no})`,
+      label: sql`CONCAT( ${product.title}, ' - ', ${purchase_entry.serial_no})`,
       // warehouse_uuid: purchase_entry.warehouse_uuid,
       // warehouse_name: warehouse.name,
     })
@@ -94,7 +94,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       purchaseEntryPromise = db
         .select({
           value: purchase_entry.uuid,
-          label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no})`,
+          label: sql`CONCAT( ${product.title}, ' - ', ${purchase_entry.serial_no})`,
           warehouse_uuid: sql`COALESCE(transfer_warehouse.uuid, ${purchase_entry.warehouse_uuid})`,
           warehouse_name: sql`COALESCE(transfer_warehouse.name, ${warehouse.name})`,
         })
