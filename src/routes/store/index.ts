@@ -7,7 +7,7 @@ import group from './group';
 import internal_transfer from './internal_transfer';
 import model from './model';
 import product from './product';
-import product_attr from './product_attr';
+import product_attributes from './product_attributes';
 import product_transfer from './product_transfer';
 import purchase from './purchase';
 import purchase_entry from './purchase_entry';
@@ -39,5 +39,5 @@ export default [
   vendor,
   warehouse,
   floor,
-  product_attr,
+  product_attributes,
 ];

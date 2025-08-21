@@ -2,13 +2,13 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { dateTimePattern } from '@/utils';
 
-import { product_attr } from '../schema';
+import { product_attributes } from '../schema';
 
 //* crud
-export const selectSchema = createSelectSchema(product_attr);
+export const selectSchema = createSelectSchema(product_attributes);
 
 export const insertSchema = createInsertSchema(
-  product_attr,
+  product_attributes,
   {
     uuid: schema => schema.uuid.length(15),
     name: schema => schema.name.min(1),
