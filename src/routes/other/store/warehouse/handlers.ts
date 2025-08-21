@@ -47,23 +47,23 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     // filters.push(eq(purchase_entry.product_uuid, product_uuid));
 
     // Filter based on assigned warehouse and product stock for warehouse_1 to warehouse_12
-    filters.push(
-      sql`CASE 
-        WHEN ${warehouse.assigned} = 'warehouse_1' THEN ${product.warehouse_1} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_2' THEN ${product.warehouse_2} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_3' THEN ${product.warehouse_3} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_4' THEN ${product.warehouse_4} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_5' THEN ${product.warehouse_5} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_6' THEN ${product.warehouse_6} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_7' THEN ${product.warehouse_7} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_8' THEN ${product.warehouse_8} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_9' THEN ${product.warehouse_9} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_10' THEN ${product.warehouse_10} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_11' THEN ${product.warehouse_11} > 0
-        WHEN ${warehouse.assigned} = 'warehouse_12' THEN ${product.warehouse_12} > 0
-        ELSE TRUE
-      END`,
-    );
+    // filters.push(
+    //   sql`CASE
+    //     WHEN ${warehouse.assigned} = 'warehouse_1' THEN ${product.warehouse_1} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_2' THEN ${product.warehouse_2} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_3' THEN ${product.warehouse_3} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_4' THEN ${product.warehouse_4} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_5' THEN ${product.warehouse_5} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_6' THEN ${product.warehouse_6} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_7' THEN ${product.warehouse_7} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_8' THEN ${product.warehouse_8} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_9' THEN ${product.warehouse_9} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_10' THEN ${product.warehouse_10} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_11' THEN ${product.warehouse_11} > 0
+    //     WHEN ${warehouse.assigned} = 'warehouse_12' THEN ${product.warehouse_12} > 0
+    //     ELSE TRUE
+    //   END`,
+    // );
   }
   if (filters.length > 0) {
     warehousePromise = (warehousePromise as any).where(and(...filters));

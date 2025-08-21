@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.attributes'];
+const tags = ['store.product_attributes'];
 
 export const list = createRoute({
-  path: '/store/attributes',
+  path: '/store/product-attributes',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of attributes',
+      'The list of product_attributes',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/store/attributes',
+  path: '/store/product-attributes',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The attributes to create',
+      'The product_attributes to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created attributes',
+      'The created product_attributes',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/attributes/{uuid}',
+  path: '/store/product-attributes/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested attributes',
+      'The requested product_attributes',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'attributes not found',
+      'product_attributes not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/attributes/{uuid}',
+  path: '/store/product-attributes/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The attributes updates',
+      'The product_attributes updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated attributes',
+      'The updated product_attributes',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'attributes not found',
+      'product_attributes not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/attributes/{uuid}',
+  path: '/store/product-attributes/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'attributes deleted',
+      description: 'product_attributes deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'attributes not found',
+      'product_attributes not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),

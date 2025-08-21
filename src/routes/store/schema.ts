@@ -93,7 +93,7 @@ export const product = store.table('product', {
   // name: text('name').notNull(),
   warranty_days: integer('warranty_days').default(sql`null`),
   service_warranty_days: integer('service_warranty_days').notNull(),
-  //  type: typeEnum('type'),
+  // type: typeEnum('type'),
   // is_maintaining_stock: boolean('is_maintaining_stock').default(false),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
@@ -153,7 +153,7 @@ export const product_image = store.table('product_image', {
   remarks: text('remarks').default(sql`null`),
 });
 
-export const attributes = store.table('attributes', {
+export const product_attributes = store.table('product_attributes', {
   uuid: uuid_primary,
   name: text('name').notNull(),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
@@ -179,7 +179,7 @@ export const product_specification = store.table('product_specification', {
 export const product_variant_values_entry = store.table('product_variant_values_entry', {
   uuid: uuid_primary,
   product_variant_uuid: defaultUUID('product_variant_uuid').references(() => product_variant.uuid),
-  attributes_uuid: defaultUUID('attributes_uuid').references(() => attributes.uuid),
+  product_attributes_uuid: defaultUUID('product_attributes_uuid').references(() => product_attributes.uuid),
   value: text('value').notNull(),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
