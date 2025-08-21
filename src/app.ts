@@ -32,7 +32,16 @@ app.use(`${basePath}/*`, cors({
   origin: '*',
   maxAge: 600,
   credentials: true,
+  // Add custom headers for private network access
+  exposeHeaders: ['Access-Control-Allow-Private-Network'],
+  // Hono's cors does not support custom response headers directly, so add a middleware after
 }));
+
+// Add Access-Control-Allow-Private-Network header for browsers that require it
+app.use(`${basePath}/*`, async (c, next) => {
+  await next();
+  c.res.headers.set('Access-Control-Allow-Private-Network', 'true');
+});
 
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
