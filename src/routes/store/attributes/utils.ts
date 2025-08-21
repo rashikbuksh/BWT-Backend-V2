@@ -2,17 +2,16 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { dateTimePattern } from '@/utils';
 
-import { category } from '../schema';
+import { attributes } from '../schema';
 
 //* crud
-export const selectSchema = createSelectSchema(category);
+export const selectSchema = createSelectSchema(attributes);
 
 export const insertSchema = createInsertSchema(
-  category,
+  attributes,
   {
     uuid: schema => schema.uuid.length(15),
     name: schema => schema.name.min(1),
-    // group_uuid: schema => schema.group_uuid.length(15),
     created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
@@ -25,7 +24,6 @@ export const insertSchema = createInsertSchema(
 ).required({
   uuid: true,
   name: true,
-  // group_uuid: true,
   created_by: true,
   created_at: true,
 }).partial({

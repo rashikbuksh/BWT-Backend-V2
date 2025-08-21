@@ -30,7 +30,7 @@ export const group = store.table('group', {
 });
 export const category = store.table('category', {
   uuid: uuid_primary,
-  group_uuid: defaultUUID('group_uuid').references(() => group.uuid),
+  // group_uuid: defaultUUID('group_uuid').references(() => group.uuid),
   name: text('name').notNull(),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
@@ -89,16 +89,38 @@ export const product = store.table('product', {
   uuid: uuid_primary,
   category_uuid: defaultUUID('category_uuid').references(() => category.uuid),
   model_uuid: defaultUUID('model_uuid').references(() => model.uuid),
-  size_uuid: defaultUUID('size_uuid').references(() => size.uuid),
-  name: text('name').notNull(),
+  // size_uuid: defaultUUID('size_uuid').references(() => size.uuid),
+  // name: text('name').notNull(),
   warranty_days: integer('warranty_days').default(sql`null`),
   service_warranty_days: integer('service_warranty_days').notNull(),
-  type: typeEnum('type'),
-  is_maintaining_stock: boolean('is_maintaining_stock').default(false),
+  //  type: typeEnum('type'),
+  // is_maintaining_stock: boolean('is_maintaining_stock').default(false),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  // warehouse_1: PG_DECIMAL('warehouse_1').default(sql`0`),
+  // warehouse_2: PG_DECIMAL('warehouse_2').default(sql`0`),
+  // warehouse_3: PG_DECIMAL('warehouse_3').default(sql`0`),
+  // warehouse_4: PG_DECIMAL('warehouse_4').default(sql`0`),
+  // warehouse_5: PG_DECIMAL('warehouse_5').default(sql`0`),
+  // warehouse_6: PG_DECIMAL('warehouse_6').default(sql`0`),
+  // warehouse_7: PG_DECIMAL('warehouse_7').default(sql`0`),
+  // warehouse_8: PG_DECIMAL('warehouse_8').default(sql`0`),
+  // warehouse_9: PG_DECIMAL('warehouse_9').default(sql`0`),
+  // warehouse_10: PG_DECIMAL('warehouse_10').default(sql`0`),
+  // warehouse_11: PG_DECIMAL('warehouse_11').default(sql`0`),
+  // warehouse_12: PG_DECIMAL('warehouse_12').default(sql`0`),
+  title: text('title').default(sql`null`),
+  specifications_description: text('specifications_description').default(sql`null`),
+  core_maintenance_description: text('core_maintenance_description').default(sql`null`),
+});
+
+export const product_variant = store.table('product_variant', {
+  uuid: uuid_primary,
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+  selling_price: PG_DECIMAL('selling_price').notNull(),
+  discount: PG_DECIMAL('discount').default(sql`0`),
   warehouse_1: PG_DECIMAL('warehouse_1').default(sql`0`),
   warehouse_2: PG_DECIMAL('warehouse_2').default(sql`0`),
   warehouse_3: PG_DECIMAL('warehouse_3').default(sql`0`),
@@ -111,6 +133,75 @@ export const product = store.table('product', {
   warehouse_10: PG_DECIMAL('warehouse_10').default(sql`0`),
   warehouse_11: PG_DECIMAL('warehouse_11').default(sql`0`),
   warehouse_12: PG_DECIMAL('warehouse_12').default(sql`0`),
+  selling_warehouse: PG_DECIMAL('selling_warehouse').default(sql`0`),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const product_image = store.table('product_image', {
+  uuid: uuid_primary,
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+
+  image: text('image_url').notNull(),
+  is_main: boolean('is_main').default(false),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const attributes = store.table('attributes', {
+  uuid: uuid_primary,
+  name: text('name').notNull(),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const product_specification = store.table('product_specification', {
+  uuid: uuid_primary,
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+  label: text('label').notNull(),
+  value: text('value').notNull(),
+  index: integer('index').notNull(),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const product_variant_values_entry = store.table('product_variant_values_entry', {
+  uuid: uuid_primary,
+  product_variant_uuid: defaultUUID('product_variant_uuid').references(() => product_variant.uuid),
+  attributes_uuid: defaultUUID('attributes_uuid').references(() => attributes.uuid),
+  value: text('value').notNull(),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const review = store.table('review', {
+  uuid: uuid_primary,
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
+  email: text('email').default(sql`null`),
+  name: text('name').default(sql`null`),
+  comment: text('comment').notNull(),
+  rating: integer('rating').notNull(),
+  is_verified: boolean('is_verified').default(false),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
 });
 
 export const branch = store.table('branch', {
@@ -295,6 +386,70 @@ export const product_transfer = store.table('product_transfer', {
   purchase_entry_uuid: defaultUUID('purchase_entry_uuid').references(
     () => purchase_entry.uuid,
   ),
+});
+
+export const bill_info = store.table('bill_info', {
+  uuid: uuid_primary,
+  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
+  name: text('name').default(sql`null`),
+  phone: text('phone').default(sql`null`),
+  address: text('address').default(sql`null`),
+  city: text('city').default(sql`null`),
+  district: text('district').default(sql`null`),
+  note: text('note').default(sql`null`),
+  is_ship_different: boolean('is_ship_different').default(false),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const order_statusEnum = pgEnum('order_status', [
+  'pending',
+  'processing',
+  'completed',
+  'cancelled',
+]);
+
+export const ordered = store.table('ordered', {
+  uuid: uuid_primary,
+  bill_info_uuid: defaultUUID('bill_info_uuid').references(
+    () => bill_info.uuid,
+  ),
+  product_variant_uuid: defaultUUID('product_variant_uuid').references(
+    () => product_variant.uuid,
+  ),
+  quantity: PG_DECIMAL('quantity').notNull(),
+  selling_price: PG_DECIMAL('selling_price').notNull(),
+  is_paid: boolean('is_paid').default(false),
+  order_status: order_statusEnum('order_status').default('pending'),
+  product_serial: text('product_serial').default(sql`null`),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const ship_address = store.table('ship_address', {
+  uuid: uuid_primary,
+  bill_info_uuid: defaultUUID('bill_info_uuid').references(
+    () => bill_info.uuid,
+  ),
+  name: text('name').default(sql`null`),
+  company_name: text('company_name').default(sql`null`),
+  phone: text('phone').default(sql`null`),
+  address: text('address').default(sql`null`),
+  city: text('city').default(sql`null`),
+  district: text('district').default(sql`null`),
+  zip: text('zip').default(sql`null`),
+  note: text('note').default(sql`null`),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
 });
 
 export default store;

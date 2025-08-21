@@ -1,3 +1,4 @@
+import attributes from './attributes';
 import box from './box';
 import branch from './branch';
 import brand from './brand';
@@ -38,4 +39,5 @@ export default [
   vendor,
   warehouse,
   floor,
+  attributes,
 ];
