@@ -73,4 +73,5 @@ export const ALLOWED_ROUTES: string[] = [
   'http://103.147.163.46:4070',
   'http://192.168.10.58:4076',
   'http://103.147.163.46:4076',
+  'https://synap-erp-starter.vercel.app',
 ];
