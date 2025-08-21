@@ -1,4 +1,3 @@
-import attributes from './attributes';
 import box from './box';
 import branch from './branch';
 import brand from './brand';
@@ -8,6 +7,7 @@ import group from './group';
 import internal_transfer from './internal_transfer';
 import model from './model';
 import product from './product';
+import product_attr from './product_attr';
 import product_transfer from './product_transfer';
 import purchase from './purchase';
 import purchase_entry from './purchase_entry';
@@ -39,5 +39,5 @@ export default [
   vendor,
   warehouse,
   floor,
-  attributes,
+  product_attr,
 ];

@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "cross-env NODE_ENV=test vitest",
-    "build": "tsc && tsc-alias",
+    "build": "node --max-old-space-size=6144 node_modules/.bin/tsc && tsc-alias",
     "prepare": "husky",
     "precommit": "lint-staged --allow-empty",
     "db-generate": "drizzle-kit generate",
