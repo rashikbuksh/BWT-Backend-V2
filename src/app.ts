@@ -29,11 +29,7 @@ const isVps = env.NODE_ENV === 'vps';
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
 app.use(`${basePath}/*`, cors({
-  origin: (origin) => {
-    if (!origin)
-      return null;
-    return ALLOWED_ROUTES.includes(origin) ? origin : null;
-  },
+  origin: ALLOWED_ROUTES,
   maxAge: 600,
   credentials: true,
 }));
