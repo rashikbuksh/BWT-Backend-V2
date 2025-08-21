@@ -4,7 +4,7 @@ import { cors } from 'hono/cors';
 
 import configureOpenAPI from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
-import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
+import { isPublicRoute, VerifyToken } from '@/middlewares/auth';
 import routes from '@/routes/index.route';
 import { serveStatic } from '@hono/node-server/serve-static';
 
@@ -29,7 +29,7 @@ const isVps = env.NODE_ENV === 'vps';
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
 app.use(`${basePath}/*`, cors({
-  origin: ALLOWED_ROUTES,
+  origin: '*',
   maxAge: 600,
   credentials: true,
 }));
