@@ -144,7 +144,7 @@ export const product_variant = store.table('product_variant', {
 export const product_image = store.table('product_image', {
   uuid: uuid_primary,
   product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
-
+  variant_uuid: defaultUUID('variant_uuid').references(() => product_variant.uuid).default(sql`null`),
   image: text('image_url').notNull(),
   is_main: boolean('is_main').default(false),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
