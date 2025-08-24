@@ -170,79 +170,80 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     specifications_description: product.specifications_description,
     care_maintenance_description: product.care_maintenance_description,
     product_variant: sql`COALESCE(ARRAY(
-  (SELECT json_build_object(
-        'uuid', pv.uuid,
-        'product_uuid', pv.product_uuid,
-        'selling_price', pv.selling_price::float8,
-        'discount', pv.discount::float8,
-        'warehouse_1', pv.warehouse_1::float8,
-        'warehouse_2', pv.warehouse_2::float8,
-        'warehouse_3', pv.warehouse_3::float8,
-        'warehouse_4', pv.warehouse_4::float8,
-        'warehouse_5', pv.warehouse_5::float8,
-        'warehouse_6', pv.warehouse_6::float8,
-        'warehouse_7', pv.warehouse_7::float8,
-        'warehouse_8', pv.warehouse_8::float8,
-        'warehouse_9', pv.warehouse_9::float8,
-        'warehouse_10', pv.warehouse_10::float8,
-        'warehouse_11', pv.warehouse_11::float8,
-        'warehouse_12', pv.warehouse_12::float8,
-        'selling_warehouse', pv.selling_warehouse::float8,
-        'created_by', pv.created_by,
-        'created_at', pv.created_at,
-        'updated_at', pv.updated_at,
-        'updated_by', pv.updated_by,
-        'remarks', pv.remarks,
-        'product_variant_values_entry', (
-          (SELECT jsonb_agg(json_build_object(
-            'uuid', pvve.uuid,
-            'product_variant_uuid', pvve.product_variant_uuid,
-            'product_attributes_uuid', pvve.product_attributes_uuid,
-            'product_attributes_name', pa.name,
-            'value', pvve.value,
-            'created_by', pvve.created_by,
-            'created_at', pvve.created_at,
-            'updated_by', pvve.updated_by,
-            'updated_at', pvve.updated_at,
-            'remarks', pvve.remarks
-          ))
-          FROM store.product_variant_values_entry pvve
-          LEFT JOIN store.product_attributes pa ON pvve.product_attributes_uuid = pa.uuid
-          WHERE pvve.product_variant_uuid = pv.uuid
-  ))
+    SELECT json_build_object(
+      'uuid', pv.uuid,
+      'product_uuid', pv.product_uuid,
+      'selling_price', pv.selling_price::float8,
+      'discount', pv.discount::float8,
+      'warehouse_1', pv.warehouse_1::float8,
+      'warehouse_2', pv.warehouse_2::float8,
+      'warehouse_3', pv.warehouse_3::float8,
+      'warehouse_4', pv.warehouse_4::float8,
+      'warehouse_5', pv.warehouse_5::float8,
+      'warehouse_6', pv.warehouse_6::float8,
+      'warehouse_7', pv.warehouse_7::float8,
+      'warehouse_8', pv.warehouse_8::float8,
+      'warehouse_9', pv.warehouse_9::float8,
+      'warehouse_10', pv.warehouse_10::float8,
+      'warehouse_11', pv.warehouse_11::float8,
+      'warehouse_12', pv.warehouse_12::float8,
+      'selling_warehouse', pv.selling_warehouse::float8,
+      'created_by', pv.created_by,
+      'created_at', pv.created_at,
+      'updated_at', pv.updated_at,
+      'updated_by', pv.updated_by,
+      'remarks', pv.remarks,
+      'product_variant_values_entry', (
+        COALESCE((SELECT jsonb_agg(json_build_object(
+          'uuid', pvve.uuid,
+          'product_variant_uuid', pvve.product_variant_uuid,
+          'product_attributes_uuid', pvve.product_attributes_uuid,
+          'product_attributes_name', pa.name,
+          'value', pvve.value,
+          'created_by', pvve.created_by,
+          'created_at', pvve.created_at,
+          'updated_by', pvve.updated_by,
+          'updated_at', pvve.updated_at,
+          'remarks', pvve.remarks
+        ))
+        FROM store.product_variant_values_entry pvve
+        LEFT JOIN store.product_attributes pa ON pvve.product_attributes_uuid = pa.uuid
+        WHERE pvve.product_variant_uuid = pv.uuid), '[]'::jsonb)
       )
-      FROM store.product_variant pv
-      WHERE pv.product_uuid = product.uuid
-    ))`,
+    )
+    FROM store.product_variant pv
+    WHERE pv.product_uuid = product.uuid
+  ))`,
     product_specification: sql`
-  (SELECT jsonb_agg(json_build_object(
-        'uuid', ps.uuid,
-        'product_uuid', ps.product_uuid,
-        'name', ps.name,
-        'value', ps.value,
-        'created_by', ps.created_by,
-        'created_at', ps.created_at,
-        'updated_by', ps.updated_by,
-        'updated_at', ps.updated_at,
-        'remarks', ps.remarks
-      ))
-      FROM store.product_specification ps
-      WHERE ps.product_uuid = product.uuid
-  )`,
+    (SELECT jsonb_agg(json_build_object(
+      'uuid', ps.uuid,
+      'product_uuid', ps.product_uuid,
+      'label', ps.label,
+      'value', ps.value,
+      'created_by', ps.created_by,
+      'created_at', ps.created_at,
+      'updated_by', ps.updated_by,
+      'updated_at', ps.updated_at,
+      'remarks', ps.remarks
+    ))
+    FROM store.product_specification ps
+    WHERE ps.product_uuid = product.uuid
+    )`,
     product_image: sql`
-  (SELECT jsonb_agg(json_build_object(
-        'uuid', pi.uuid,
-        'product_uuid', pi.product_uuid,
-        'url', pi.url,
-        'created_by', pi.created_by,
-        'created_at', pi.created_at,
-        'updated_by', pi.updated_by,
-        'updated_at', pi.updated_at,
-        'remarks', pi.remarks
-      ))
-      FROM store.product_image pi
-      WHERE pi.product_uuid = product.uuid
-  )`,
+    (SELECT jsonb_agg(json_build_object(
+      'uuid', pi.uuid,
+      'product_uuid', pi.product_uuid,
+      'variant_uuid', pi.variant_uuid,
+      'image', pi.image_url,
+      'is_main', pi.is_main,
+      'created_by', pi.created_by,
+      'created_at', pi.created_at,
+      'updated_at', pi.updated_at,
+      'remarks', pi.remarks
+    ))
+    FROM store.product_image pi
+    WHERE pi.product_uuid = product.uuid
+    )`,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
