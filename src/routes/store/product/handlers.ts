@@ -215,35 +215,47 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     WHERE pv.product_uuid = product.uuid
   ))`,
     product_specification: sql`
-    COALESCE((SELECT jsonb_agg(json_build_object(
-      'uuid', ps.uuid,
-      'product_uuid', ps.product_uuid,
-      'label', ps.label,
-      'value', ps.value,
-      'created_by', ps.created_by,
-      'created_at', ps.created_at,
-      'updated_by', ps.updated_by,
-      'updated_at', ps.updated_at,
-      'remarks', ps.remarks
-    ))
-    FROM store.product_specification ps
-    WHERE ps.product_uuid = product.uuid
-    ), '[]'::jsonb)`,
+    (
+        SELECT json_agg(row_to_json(t))
+        FROM (
+          SELECT (
+          ps.uuid,
+          ps.product_uuid,
+          ps.label,
+          ps.value,
+          ps.created_by,
+          ps.created_at,
+          ps.updated_by,
+          ps.updated_at,
+          ps.remarks,
+          ps.index
+        )
+      FROM store.product_specification ps
+      WHERE ps.product_uuid = ${product.uuid}
+      ORDER BY ps.index ASC
+        ) t
+    ) as product_specification
+    `,
     product_image: sql`
-    COALESCE((SELECT jsonb_agg(json_build_object(
-      'uuid', pi.uuid,
-      'product_uuid', pi.product_uuid,
-      'variant_uuid', pi.variant_uuid,
-      'image', pi.image_url,
-      'is_main', pi.is_main,
-      'created_by', pi.created_by,
-      'created_at', pi.created_at,
-      'updated_at', pi.updated_at,
-      'remarks', pi.remarks
-    ))
-    FROM store.product_image pi
-    WHERE pi.product_uuid = product.uuid
-    ), '[]'::jsonb)
+    (
+        SELECT json_agg(row_to_json(t))
+        FROM (
+          SELECT 
+            pi.uuid,
+            pi.product_uuid,
+            pi.variant_uuid,
+            pi.image_url,
+            pi.is_main,
+            pi.created_by,
+            pi.created_at,
+            pi.updated_at,
+            pi.remarks
+          FROM store.product_image pi
+          LEFT JOIN hr.users ON pi.created_by = users.uuid
+          WHERE pi.product_uuid = ${product.uuid}
+          ORDER BY pi.created_at ASC
+        ) t
+      ) as product_image
     `,
   })
     .from(product)
