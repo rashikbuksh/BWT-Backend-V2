@@ -113,7 +113,7 @@ export const product = store.table('product', {
   // warehouse_12: PG_DECIMAL('warehouse_12').default(sql`0`),
   title: text('title').default(sql`null`),
   specifications_description: text('specifications_description').default(sql`null`),
-  core_maintenance_description: text('core_maintenance_description').default(sql`null`),
+  care_maintenance_description: text('care_maintenance_description').default(sql`null`),
 });
 
 export const product_variant = store.table('product_variant', {

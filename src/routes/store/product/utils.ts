@@ -51,8 +51,6 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
   title: true,
-  specifications_description: true,
-  core_maintenance_description: true,
 }).partial({
   warranty_days: true,
   // is_maintaining_stock: true,
@@ -70,6 +68,8 @@ export const insertSchema = createInsertSchema(
   // warehouse_10: true,
   // warehouse_11: true,
   // warehouse_12: true,
+  specifications_description: true,
+  care_maintenance_description: true,
 });
 
 export const patchSchema = insertSchema.partial();
