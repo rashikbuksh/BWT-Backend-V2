@@ -37,13 +37,14 @@ export const insertSchema = createInsertSchema(
     warehouse_11: z.number().optional(),
     warehouse_12: z.number().optional(),
     selling_warehouse: z.number().optional(),
+    index: z.number(),
   },
 ).required({
   uuid: true,
   product_uuid: true,
   created_by: true,
   created_at: true,
-
+  index: true,
 }).partial({
   updated_by: true,
   updated_at: true,

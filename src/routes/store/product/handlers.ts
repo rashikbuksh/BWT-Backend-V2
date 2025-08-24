@@ -198,7 +198,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           'uuid', pvve.uuid,
           'product_variant_uuid', pvve.product_variant_uuid,
           'attribute_uuid', pvve.attribute_uuid,
-          'product_attributes_name', pa.name,
+          'attribute_name', pa.name,
           'value', pvve.value,
           'created_by', pvve.created_by,
           'created_at', pvve.created_at,
@@ -248,11 +248,12 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             pi.created_by,
             pi.created_at,
             pi.updated_at,
-            pi.remarks
+            pi.remarks,
+            pi.index
           FROM store.product_image pi
           LEFT JOIN hr.users ON pi.created_by = users.uuid
           WHERE pi.product_uuid = ${product.uuid}
-          ORDER BY pi.created_at ASC
+          ORDER BY pi.index ASC
         ) t
       ) as product_image
     `,

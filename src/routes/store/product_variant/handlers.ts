@@ -77,6 +77,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const productVariantPromise = db
     .select({
+      index: product_variant.index,
       uuid: product_variant.uuid,
       product_uuid: product_variant.product_uuid,
       title: product.title,
@@ -154,6 +155,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
   const resultPromise = db.select({
+    index: product_variant.index,
     uuid: product_variant.uuid,
     product_uuid: product_variant.product_uuid,
     product_title: product.title,
