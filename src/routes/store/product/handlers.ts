@@ -193,6 +193,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       'updated_at', pv.updated_at,
       'updated_by', pv.updated_by,
       'remarks', pv.remarks,
+      'index', pv.index,
       'product_variant_values_entry', (
         COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,
@@ -212,7 +213,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       )
     )
     FROM store.product_variant pv
-    WHERE pv.product_uuid = product.uuid
+    WHERE pv.product_uuid = ${product.uuid}
+    ORDER BY pv.index ASC
   ))`,
     product_specification: sql`
     (
@@ -248,12 +250,11 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             pi.created_by,
             pi.created_at,
             pi.updated_at,
-            pi.remarks,
-            pi.index
+            pi.remarks
           FROM store.product_image pi
           LEFT JOIN hr.users ON pi.created_by = users.uuid
           WHERE pi.product_uuid = ${product.uuid}
-          ORDER BY pi.index ASC
+          ORDER BY pi.created_at ASC
         ) t
       ) as product_image
     `,
