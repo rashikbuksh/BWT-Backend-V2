@@ -9,6 +9,7 @@ import model from './model';
 import product from './product';
 import product_attributes from './product_attributes';
 import product_transfer from './product_transfer';
+import product_variant from './product_variant';
 import purchase from './purchase';
 import purchase_entry from './purchase_entry';
 import purchase_return from './purchase_return';
@@ -40,4 +41,5 @@ export default [
   warehouse,
   floor,
   product_attributes,
+  product_variant,
 ];
