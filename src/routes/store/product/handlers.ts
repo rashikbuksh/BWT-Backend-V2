@@ -215,7 +215,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     WHERE pv.product_uuid = product.uuid
   ))`,
     product_specification: sql`
-    (SELECT jsonb_agg(json_build_object(
+    COALESCE((SELECT jsonb_agg(json_build_object(
       'uuid', ps.uuid,
       'product_uuid', ps.product_uuid,
       'label', ps.label,
@@ -228,9 +228,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     ))
     FROM store.product_specification ps
     WHERE ps.product_uuid = product.uuid
-    )`,
+    ), '[]'::jsonb)`,
     product_image: sql`
-    (SELECT jsonb_agg(json_build_object(
+    COALESCE((SELECT jsonb_agg(json_build_object(
       'uuid', pi.uuid,
       'product_uuid', pi.product_uuid,
       'variant_uuid', pi.variant_uuid,
@@ -243,7 +243,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     ))
     FROM store.product_image pi
     WHERE pi.product_uuid = product.uuid
-    )`,
+    ), '[]'::jsonb)
+    `,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
