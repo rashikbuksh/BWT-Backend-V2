@@ -170,7 +170,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     specifications_description: product.specifications_description,
     care_maintenance_description: product.care_maintenance_description,
     product_variant: sql`COALESCE(ARRAY(
-      SELECT json_build_object(
+  (SELECT json_build_object(
         'uuid', pv.uuid,
         'product_uuid', pv.product_uuid,
         'selling_price', pv.selling_price::float8,
@@ -194,7 +194,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         'updated_by', pv.updated_by,
         'remarks', pv.remarks,
         'product_variant_values_entry', (
-          SELECT jsonb_agg(json_build_object(
+          (SELECT jsonb_agg(json_build_object(
             'uuid', pvve.uuid,
             'product_variant_uuid', pvve.product_variant_uuid,
             'product_attributes_uuid', pvve.product_attributes_uuid,
@@ -209,13 +209,13 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           FROM store.product_variant_values_entry pvve
           LEFT JOIN store.product_attributes pa ON pvve.product_attributes_uuid = pa.uuid
           WHERE pvve.product_variant_uuid = pv.uuid
-        )
+  ))
       )
       FROM store.product_variant pv
       WHERE pv.product_uuid = product.uuid
     ))`,
     product_specification: sql`
-      SELECT jsonb_agg(json_build_object(
+  (SELECT jsonb_agg(json_build_object(
         'uuid', ps.uuid,
         'product_uuid', ps.product_uuid,
         'name', ps.name,
@@ -228,9 +228,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       ))
       FROM store.product_specification ps
       WHERE ps.product_uuid = product.uuid
-    `,
+  )`,
     product_image: sql`
-      SELECT jsonb_agg(json_build_object(
+  (SELECT jsonb_agg(json_build_object(
         'uuid', pi.uuid,
         'product_uuid', pi.product_uuid,
         'url', pi.url,
@@ -242,7 +242,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       ))
       FROM store.product_image pi
       WHERE pi.product_uuid = product.uuid
-    `,
+  )`,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
