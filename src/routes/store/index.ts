@@ -11,6 +11,7 @@ import product_attributes from './product_attributes';
 import product_specification from './product_specification';
 import product_transfer from './product_transfer';
 import product_variant from './product_variant';
+import product_variant_values_entry from './product_variant_values_entry';
 import purchase from './purchase';
 import purchase_entry from './purchase_entry';
 import purchase_return from './purchase_return';
@@ -44,4 +45,5 @@ export default [
   product_attributes,
   product_variant,
   product_specification,
+  product_variant_values_entry,
 ];
