@@ -254,8 +254,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const [data] = await resultPromise;
 
-  // if (!data)
-  //   return DataNotFound(c);
+  if (data) {
+    if (data.product_specification == null)
+      data.product_specification = [];
+    if (data.product_image == null)
+      data.product_image = [];
+    if (data.product_variant == null)
+      data.product_variant = [];
+  }
 
   return c.json(data || {}, HSCode.OK);
 };
