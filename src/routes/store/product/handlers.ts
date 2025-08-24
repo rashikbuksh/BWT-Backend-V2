@@ -216,9 +216,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   ))`,
     product_specification: sql`
     (
-        SELECT json_agg(row_to_json(t))
-        FROM (
-          SELECT (
+      SELECT json_agg(row_to_json(t))
+      FROM (
+        SELECT
           ps.uuid,
           ps.product_uuid,
           ps.label,
@@ -229,12 +229,11 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           ps.updated_at,
           ps.remarks,
           ps.index
-        )
-      FROM store.product_specification ps
-      WHERE ps.product_uuid = ${product.uuid}
-      ORDER BY ps.index ASC
-        ) t
-    ) as product_specification
+        FROM store.product_specification ps
+        WHERE ps.product_uuid = ${product.uuid}
+        ORDER BY ps.index ASC
+      ) t
+    )
     `,
     product_image: sql`
     (
@@ -244,7 +243,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             pi.uuid,
             pi.product_uuid,
             pi.variant_uuid,
-            pi.image_url,
+            pi.image,
             pi.is_main,
             pi.created_by,
             pi.created_at,
