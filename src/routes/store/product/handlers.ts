@@ -197,7 +197,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,
           'product_variant_uuid', pvve.product_variant_uuid,
-          'product_attributes_uuid', pvve.product_attributes_uuid,
+          'attribute_uuid', pvve.attribute_uuid,
           'product_attributes_name', pa.name,
           'value', pvve.value,
           'created_by', pvve.created_by,
@@ -207,7 +207,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           'remarks', pvve.remarks
         ))
         FROM store.product_variant_values_entry pvve
-        LEFT JOIN store.product_attributes pa ON pvve.product_attributes_uuid = pa.uuid
+        LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
         WHERE pvve.product_variant_uuid = pv.uuid), '[]'::jsonb)
       )
     )

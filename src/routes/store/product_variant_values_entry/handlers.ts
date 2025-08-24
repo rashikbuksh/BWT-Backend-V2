@@ -65,7 +65,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: product_variant_values_entry.uuid,
       product_variant_uuid: product_variant_values_entry.product_variant_uuid,
-      product_attributes_uuid: product_variant_values_entry.product_attributes_uuid,
+      attribute_uuid: product_variant_values_entry.attribute_uuid,
       value: product_variant_values_entry.value,
       created_by: product_variant_values_entry.created_by,
       created_by_name: createdByUser.name,
@@ -77,7 +77,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     })
     .from(product_variant_values_entry)
     .leftJoin(product_variant, eq(product_variant_values_entry.product_variant_uuid, product_variant.uuid))
-    .leftJoin(product_attributes, eq(product_variant_values_entry.product_attributes_uuid, product_attributes.uuid))
+    .leftJoin(product_attributes, eq(product_variant_values_entry.attribute_uuid, product_attributes.uuid))
     .leftJoin(createdByUser, eq(product_variant_values_entry.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(product_variant_values_entry.updated_by, updatedByUser.uuid))
     .orderBy(desc(product_variant_values_entry.created_at));
@@ -93,7 +93,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: product_variant_values_entry.uuid,
     product_variant_uuid: product_variant_values_entry.product_variant_uuid,
-    product_attributes_uuid: product_variant_values_entry.product_attributes_uuid,
+    attribute_uuid: product_variant_values_entry.attribute_uuid,
     value: product_variant_values_entry.value,
     created_by: product_variant_values_entry.created_by,
     created_by_name: users.name,
@@ -105,7 +105,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   })
     .from(product_variant_values_entry)
     .leftJoin(product_variant, eq(product_variant_values_entry.product_variant_uuid, product_variant.uuid))
-    .leftJoin(product_attributes, eq(product_variant_values_entry.product_attributes_uuid, product_attributes.uuid))
+    .leftJoin(product_attributes, eq(product_variant_values_entry.attribute_uuid, product_attributes.uuid))
     .leftJoin(createdByUser, eq(product_variant_values_entry.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(product_variant_values_entry.updated_by, updatedByUser.uuid))
     .where(eq(product_variant_values_entry.uuid, uuid));
