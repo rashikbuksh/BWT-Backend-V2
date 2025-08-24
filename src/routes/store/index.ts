@@ -8,6 +8,7 @@ import internal_transfer from './internal_transfer';
 import model from './model';
 import product from './product';
 import product_attributes from './product_attributes';
+import product_image from './product_image';
 import product_specification from './product_specification';
 import product_transfer from './product_transfer';
 import product_variant from './product_variant';
@@ -46,4 +47,5 @@ export default [
   product_variant,
   product_specification,
   product_variant_values_entry,
+  product_image,
 ];
