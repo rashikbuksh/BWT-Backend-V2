@@ -18,6 +18,7 @@ import purchase_entry from './purchase_entry';
 import purchase_return from './purchase_return';
 import purchase_return_entry from './purchase_return_entry';
 import rack from './rack';
+import review from './review';
 import size from './size';
 import stock from './stock';
 import vendor from './vendor';
@@ -48,4 +49,5 @@ export default [
   product_specification,
   product_variant_values_entry,
   product_image,
+  review,
 ];
