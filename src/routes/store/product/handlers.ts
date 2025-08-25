@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { category, model, product } from '../schema';
+import { category, model, product, product_image } from '../schema';
 
 // const warehouse1 = alias(warehouse, 'warehouse_1');
 // const warehouse2 = alias(warehouse, 'warehouse_2');
@@ -89,6 +89,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: product.remarks,
       specifications_description: product.specifications_description,
       care_maintenance_description: product.care_maintenance_description,
+      image: sql`(CASE WHEN ${product_image.is_main} IS TRUE THEN ${product_image.image} ELSE NULL END)`,
       // warehouse_1: PG_DECIMAL_TO_FLOAT(product.warehouse_1),
       // warehouse_2: PG_DECIMAL_TO_FLOAT(product.warehouse_2),
       // warehouse_3: PG_DECIMAL_TO_FLOAT(product.warehouse_3),
@@ -129,7 +130,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
     .leftJoin(model, eq(product.model_uuid, model.uuid))
-    // .leftJoin(size, eq(product.size_uuid, size.uuid))
+    .leftJoin(product_image, eq(product_image.product_uuid, product.uuid))
     .leftJoin(users, eq(product.created_by, users.uuid))
     // .leftJoin(warehouse1, eq(warehouse1.assigned, 'warehouse_1'))
     // .leftJoin(warehouse2, eq(warehouse2.assigned, 'warehouse_2'))
