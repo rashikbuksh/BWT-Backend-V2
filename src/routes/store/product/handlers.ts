@@ -77,25 +77,15 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       specifications_description: product.specifications_description,
       care_maintenance_description: product.care_maintenance_description,
       image: sql`(SELECT pi.image FROM store.product_image pi WHERE pi.product_uuid = ${product.uuid} AND pi.is_main = TRUE LIMIT 1)`,
-      price_range: sql`(
-        SELECT pr.price_range
-        FROM (
-          SELECT
-            pv.product_uuid,
-            CASE
-              WHEN MIN(pv.selling_price::float8) IS NULL THEN NULL
-              WHEN MIN(pv.selling_price::float8) = MAX(pv.selling_price::float8)
-                THEN TO_CHAR(MIN(pv.selling_price::float8), 'FM999999999.00')
-              ELSE
-                TO_CHAR(MIN(pv.selling_price::float8), 'FM999999999.00')
-                || ' - ' ||
-                TO_CHAR(MAX(pv.selling_price::float8), 'FM999999999.00')
-            END AS price_range
-          FROM store.product_variant pv
-          GROUP BY pv.product_uuid
-        ) pr
-        WHERE pr.product_uuid = ${product.uuid}
-        LIMIT 1
+      low_price: sql`(
+        SELECT MIN(pv.selling_price::float8)
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
+      )`,
+      high_price: sql`(
+        SELECT MAX(pv.selling_price::float8)
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
       )`,
     })
     .from(product)
