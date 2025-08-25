@@ -87,6 +87,20 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         FROM store.product_variant pv
         WHERE pv.product_uuid = ${product.uuid}
       )`,
+      low_price_discount: sql`(
+        SELECT pv.discount::float8
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
+        ORDER BY pv.selling_price::float8 ASC NULLS LAST
+        LIMIT 1
+      )`,
+      high_price_discount: sql`(
+        SELECT pv.discount::float8
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
+        ORDER BY pv.selling_price::float8 DESC NULLS LAST
+        LIMIT 1
+      )`,
     })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
