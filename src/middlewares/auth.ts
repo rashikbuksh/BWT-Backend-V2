@@ -54,6 +54,7 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     { url: '/v1/work/order-by-info', method: 'GET' }, // ! public route need to add
     { url: '/v1/work/diagnosis-by-order', method: 'GET' }, // ! public route need to add
     { url: '/v1/work/process', method: 'GET' }, // ! public route need to add
+    { url: '/v1/store/product', method: 'GET' },
   ];
 
   // Check for api-docs routes
