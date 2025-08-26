@@ -199,6 +199,21 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         WHERE pvve.product_variant_uuid = ${product_variant.uuid}
         ), '[]'::jsonb)
     )`,
+    product_image: sql`(
+     COALESCE((SELECT jsonb_agg(json_build_object(
+          'uuid', pi.uuid,
+          'product_uuid', pi.product_uuid,
+          'image', pi.image,
+          'is_main', pi.is_main,
+          'created_by', pi.created_by,
+          'created_at', pi.created_at,
+          'updated_at', pi.updated_at,
+          'remarks', pi.remarks
+        ))
+        FROM store.product_image pi
+        WHERE pi.product_uuid = ${product_variant.product_uuid}
+        ), '[]'::jsonb)
+    )`,
   })
     .from(product_variant)
     .leftJoin(product, eq(product_variant.product_uuid, product.uuid))
