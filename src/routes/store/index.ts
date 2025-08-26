@@ -7,6 +7,7 @@ import floor from './floor';
 import group from './group';
 import internal_transfer from './internal_transfer';
 import model from './model';
+import ordered from './ordered';
 import product from './product';
 import product_attributes from './product_attributes';
 import product_image from './product_image';
@@ -54,4 +55,5 @@ export default [
   review,
   bill_info,
   ship_address,
+  ordered,
 ];
