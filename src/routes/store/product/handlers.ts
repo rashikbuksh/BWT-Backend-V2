@@ -76,6 +76,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: product.remarks,
       specifications_description: product.specifications_description,
       care_maintenance_description: product.care_maintenance_description,
+      attribute_list: product.attribute_list,
       image: sql`(SELECT pi.image FROM store.product_image pi WHERE pi.product_uuid = ${product.uuid} AND pi.is_main = TRUE LIMIT 1)`,
       low_price: sql`(
         SELECT MIN(pv.selling_price::float8)
@@ -132,6 +133,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     remarks: product.remarks,
     specifications_description: product.specifications_description,
     care_maintenance_description: product.care_maintenance_description,
+    attribute_list: product.attribute_list,
     product_variant: sql`COALESCE(ARRAY(
     SELECT json_build_object(
       'uuid', pv.uuid,

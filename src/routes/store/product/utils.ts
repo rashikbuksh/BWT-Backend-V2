@@ -70,6 +70,7 @@ export const insertSchema = createInsertSchema(
   // warehouse_12: true,
   specifications_description: true,
   care_maintenance_description: true,
+  attribute_list: true,
 });
 
 export const patchSchema = insertSchema.partial();
