@@ -207,7 +207,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           'is_main', pi.is_main,
           'created_by', pi.created_by,
           'created_at', pi.created_at,
-          'updated_by', pi.updated_by,
           'updated_at', pi.updated_at,
           'remarks', pi.remarks
         ))
