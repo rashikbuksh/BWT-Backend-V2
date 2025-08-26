@@ -1,3 +1,4 @@
+import bill_info from './bill_info';
 import box from './box';
 import branch from './branch';
 import brand from './brand';
@@ -19,6 +20,7 @@ import purchase_return from './purchase_return';
 import purchase_return_entry from './purchase_return_entry';
 import rack from './rack';
 import review from './review';
+import ship_address from './ship_address';
 import size from './size';
 import stock from './stock';
 import vendor from './vendor';
@@ -50,4 +52,6 @@ export default [
   product_variant_values_entry,
   product_image,
   review,
+  bill_info,
+  ship_address,
 ];
