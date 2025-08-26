@@ -114,6 +114,7 @@ export const product = store.table('product', {
   title: text('title').default(sql`null`),
   specifications_description: text('specifications_description').default(sql`null`),
   care_maintenance_description: text('care_maintenance_description').default(sql`null`),
+  attribute_list: text('attribute_list').array().default([]),
 });
 
 export const product_variant = store.table('product_variant', {
