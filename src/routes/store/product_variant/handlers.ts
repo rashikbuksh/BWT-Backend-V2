@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -84,7 +84,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       selling_price: PG_DECIMAL_TO_FLOAT(product_variant.selling_price),
       discount: PG_DECIMAL_TO_FLOAT(product_variant.discount),
       created_by: product_variant.created_by,
-      created_by_name: users.name,
+      created_by_name: createdByUser.name,
       created_at: product_variant.created_at,
       updated_by: product_variant.updated_by,
       updated_by_name: updatedByUser.name,
@@ -162,7 +162,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     selling_price: PG_DECIMAL_TO_FLOAT(product_variant.selling_price),
     discount: PG_DECIMAL_TO_FLOAT(product_variant.discount),
     created_by: product_variant.created_by,
-    created_by_name: users.name,
+    created_by_name: createdByUser.name,
     created_at: product_variant.created_at,
     updated_by: product_variant.updated_by,
     updated_by_name: updatedByUser.name,
@@ -181,6 +181,24 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     warehouse_11: PG_DECIMAL_TO_FLOAT(product_variant.warehouse_11),
     warehouse_12: PG_DECIMAL_TO_FLOAT(product_variant.warehouse_12),
     selling_warehouse: PG_DECIMAL_TO_FLOAT(product_variant.selling_warehouse),
+    product_variant_values_entry: sql`(
+     COALESCE((SELECT jsonb_agg(json_build_object(
+          'uuid', pvve.uuid,
+          'product_variant_uuid', pvve.product_variant_uuid,
+          'attribute_uuid', pvve.attribute_uuid,
+          'attribute_name', pa.name,
+          'value', pvve.value,
+          'created_by', pvve.created_by,
+          'created_at', pvve.created_at,
+          'updated_by', pvve.updated_by,
+          'updated_at', pvve.updated_at,
+          'remarks', pvve.remarks
+        ))
+        FROM store.product_variant_values_entry pvve
+        LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+        WHERE pvve.product_variant_uuid = ${product_variant.uuid}
+        ), '[]'::jsonb)
+    )`,
   })
     .from(product_variant)
     .leftJoin(product, eq(product_variant.product_uuid, product.uuid))
