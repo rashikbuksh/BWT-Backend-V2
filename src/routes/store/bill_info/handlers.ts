@@ -122,6 +122,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 };
 
 export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsRoute> = async (c: any) => {
+  const { bill_info_uuid } = c.req.valid('query');
+
   const bill_infoPromise = db
     .select({
       uuid: bill_info.uuid,
@@ -198,6 +200,10 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
     .from(bill_info)
     .leftJoin(users, eq(bill_info.created_by, users.uuid))
     .orderBy(desc(bill_info.created_at));
+
+  if (bill_info_uuid) {
+    bill_infoPromise.where(eq(bill_info.uuid, bill_info_uuid));
+  }
 
   const data = await bill_infoPromise;
 
