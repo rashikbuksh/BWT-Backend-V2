@@ -40,8 +40,7 @@ export const insertSchema = createInsertSchema(
   updated_by: true,
   remarks: true,
   email: true,
-  is_cod: true,
-  is_bkash: true,
+  payment_method: true,
 });
 
 export const patchSchema = insertSchema.partial();
