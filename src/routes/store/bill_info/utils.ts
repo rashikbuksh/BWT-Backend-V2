@@ -39,6 +39,9 @@ export const insertSchema = createInsertSchema(
   updated_at: true,
   updated_by: true,
   remarks: true,
+  email: true,
+  is_cod: true,
+  is_bkash: true,
 });
 
 export const patchSchema = insertSchema.partial();

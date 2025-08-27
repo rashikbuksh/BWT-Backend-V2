@@ -389,6 +389,9 @@ export const bill_info = store.table('bill_info', {
   updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  email: text('email').default(sql`null`),
+  is_cod: boolean('is_cod').default(true),
+  is_bkash: boolean('is_bkash').default(false),
 });
 
 export const order_statusEnum = pgEnum('order_status', [
