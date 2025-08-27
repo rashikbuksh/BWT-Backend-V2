@@ -374,6 +374,11 @@ export const product_transfer = store.table('product_transfer', {
   ),
 });
 
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'cod',
+  'bkash',
+]);
+
 export const bill_info = store.table('bill_info', {
   uuid: uuid_primary,
   user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
@@ -390,8 +395,7 @@ export const bill_info = store.table('bill_info', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
   email: text('email').default(sql`null`),
-  is_cod: boolean('is_cod').default(true),
-  is_bkash: boolean('is_bkash').default(false),
+  payment_method: paymentMethodEnum('payment_method').default('cod'),
 });
 
 export const order_statusEnum = pgEnum('order_status', [
