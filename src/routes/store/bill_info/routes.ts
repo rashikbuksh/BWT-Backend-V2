@@ -117,8 +117,44 @@ export const remove = createRoute({
   },
 });
 
+export const billInfoWithOrderDetails = createRoute({
+  path: '/store/bill-info-with-order-details',
+  method: 'get',
+  request: {
+    query: z.object({
+      // uuid: z.string().uuid(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        uuid: z.string().uuid(),
+        order_details: z.array(
+          z.object({
+            uuid: z.string().uuid(),
+            product_name: z.string(),
+            quantity: z.number().int(),
+            price: z.number().min(0),
+          }),
+        ),
+      }),
+      'The requested bill-info with order details',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'bill-info not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type BillInfoWithOrderDetailsRoute = typeof billInfoWithOrderDetails;

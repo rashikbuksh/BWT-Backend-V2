@@ -1,13 +1,13 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { BillInfoWithOrderDetailsRoute, CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { bill_info } from '../schema';
 
@@ -119,4 +119,87 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   //   return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
+};
+
+export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsRoute> = async (c: any) => {
+  const bill_infoPromise = db
+    .select({
+      uuid: bill_info.uuid,
+      user_uuid: bill_info.user_uuid,
+      name: bill_info.name,
+      phone: bill_info.phone,
+      address: bill_info.address,
+      city: bill_info.city,
+      district: bill_info.district,
+      note: bill_info.note,
+      is_ship_different: bill_info.is_ship_different,
+      created_by: bill_info.created_by,
+      created_by_name: users.name,
+      created_at: bill_info.created_at,
+      updated_by: bill_info.updated_by,
+      updated_at: bill_info.updated_at,
+      remarks: bill_info.remarks,
+      email: bill_info.email,
+      payment_method: bill_info.payment_method,
+      order_details: sql`(
+        SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)
+        FROM (
+          SELECT
+            o.uuid,
+            o.product_variant_uuid,
+            o.quantity,
+            o.selling_price::float8,
+            pv.product_uuid,
+            pv.selling_price::float8 AS variant_selling_price,
+            pv.discount::float8,
+            pv.warehouse_1::float8,
+            pv.warehouse_2::float8,
+            pv.warehouse_3::float8,
+            pv.warehouse_4::float8,
+            pv.warehouse_5::float8,
+            pv.warehouse_6::float8,
+            pv.warehouse_7::float8,
+            pv.warehouse_8::float8,
+            pv.warehouse_9::float8,
+            pv.warehouse_10::float8,
+            pv.warehouse_11::float8,
+            pv.warehouse_12::float8,
+            pv.selling_warehouse::float8,
+            pv.created_by AS variant_created_by,
+            pv.created_at AS variant_created_at,
+            pv.updated_at AS variant_updated_at,
+            pv.updated_by AS variant_updated_by,
+            pv.remarks AS variant_remarks,
+            pv.index AS variant_index,
+            (
+              SELECT COALESCE(jsonb_agg(json_build_object(
+                'uuid', pvve.uuid,
+                'product_variant_uuid', pvve.product_variant_uuid,
+                'attribute_uuid', pvve.attribute_uuid,
+                'attribute_name', pa.name,
+                'value', pvve.value,
+                'created_by', pvve.created_by,
+                'created_at', pvve.created_at,
+                'updated_by', pvve.updated_by,
+                'updated_at', pvve.updated_at,
+                'remarks', pvve.remarks
+              )), '[]'::jsonb)
+              FROM store.product_variant_values_entry pvve
+              LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+              WHERE pvve.product_variant_uuid = pv.uuid
+            ) AS product_variant_values_entry
+          FROM store.ordered o
+          LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
+          WHERE o.bill_info_uuid = ${bill_info.uuid}
+          ORDER BY pv.index ASC
+        ) t
+      )`,
+    })
+    .from(bill_info)
+    .leftJoin(users, eq(bill_info.created_by, users.uuid))
+    .orderBy(desc(bill_info.created_at));
+
+  const data = await bill_infoPromise;
+
+  return c.json(data, HSCode.OK);
 };
