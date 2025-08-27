@@ -31,7 +31,6 @@ export const insertSchema = createInsertSchema(
   uuid: true,
   bill_info_uuid: true,
   product_variant_uuid: true,
-  created_by: true,
   created_at: true,
 }).partial({
   updated_by: true,
@@ -42,6 +41,7 @@ export const insertSchema = createInsertSchema(
   is_paid: true,
   order_status: true,
   product_serial: true,
+  created_by: true,
 });
 
 export const patchSchema = insertSchema.partial();

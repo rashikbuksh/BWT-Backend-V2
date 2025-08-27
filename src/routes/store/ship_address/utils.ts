@@ -25,7 +25,6 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  created_by: true,
   created_at: true,
 }).partial({
   bill_info_uuid: true,
@@ -40,6 +39,7 @@ export const insertSchema = createInsertSchema(
   updated_at: true,
   updated_by: true,
   remarks: true,
+  created_by: true,
 });
 
 export const patchSchema = insertSchema.partial();

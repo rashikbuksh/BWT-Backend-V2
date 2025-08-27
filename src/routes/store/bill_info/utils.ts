@@ -25,7 +25,6 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  created_by: true,
   created_at: true,
 }).partial({
   user_uuid: true,
@@ -41,6 +40,7 @@ export const insertSchema = createInsertSchema(
   remarks: true,
   email: true,
   payment_method: true,
+  created_by: true,
 });
 
 export const patchSchema = insertSchema.partial();
