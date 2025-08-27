@@ -122,7 +122,7 @@ export const billInfoWithOrderDetails = createRoute({
   method: 'get',
   request: {
     query: z.object({
-      // uuid: z.string().uuid(),
+      bill_info_uuid: z.string().uuid(),
     }),
   },
   tags,
