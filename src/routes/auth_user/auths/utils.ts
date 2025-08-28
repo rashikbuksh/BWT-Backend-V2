@@ -26,15 +26,14 @@ export const selectSchema = createSelectSchema(user);
 export const insertSchema = createInsertSchema(
   user,
   {
-    uuid: schema => schema.uuid,
     name: schema => schema.name,
     email: schema => schema.email,
   },
 ).required({
-  uuid: true,
   name: true,
   email: true,
 }).partial({
+  uuid: true,
   image: true,
   createdAt: true,
   updatedAt: true,

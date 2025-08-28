@@ -1,6 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 
 import { auth } from '@/lib/auth';
+import { nanoid } from '@/lib/nanoid';
 // import { ComparePass, CreateToken, HashPass, isHashedPassword } from '@/middlewares/auth';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -52,6 +53,8 @@ export const signIn: AppRouteHandler<SignInRoute> = async (c: any) => {
 export const signUp: AppRouteHandler<SignUpRoute> = async (c: any) => {
   try {
     const body = await c.req.json();
+
+    body.uuid = nanoid();
 
     // Forward request headers (include cookies) to the auth API so session-based endpoints work
     const forwardedHeaders: Record<string, string> = Object.fromEntries((c.req.headers as Headers).entries());
