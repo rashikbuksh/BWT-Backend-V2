@@ -1,16 +1,16 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-// import { z } from 'zod';
 // import { dateTimePattern } from '@/utils';
 import { user } from '../schema';
 
 //* crud
 export const selectSchema = createSelectSchema(user);
 
-// export const loginSchema = z.object({
-//   email: z.string().email(),
-//   pass: z.string().min(4).max(50),
-// });
+export const signInSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
 
 // export const signinOutputSchema = z.object({
 //   payload: z.object({

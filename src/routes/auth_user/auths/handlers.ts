@@ -18,13 +18,13 @@ export const signIn: AppRouteHandler<SignInRoute> = async (c: any) => {
     const body = await c.req.json();
 
     // Forward request headers (include cookies) to the auth API so session-based endpoints work
-    const forwardedHeaders: Record<string, string> = Object.fromEntries((c.req.headers as Headers).entries());
-    // Ensure cookie header is present (some runtimes differ in header casing)
-    forwardedHeaders.cookie = forwardedHeaders.cookie || forwardedHeaders.Cookie || c.req.header('cookie') || c.req.header('Cookie') || '';
+    // const forwardedHeaders: Record<string, string> = Object.fromEntries((c.req.headers as Headers).entries());
+    // // Ensure cookie header is present (some runtimes differ in header casing)
+    // forwardedHeaders.cookie = forwardedHeaders.cookie || forwardedHeaders.Cookie || c.req.header('cookie') || c.req.header('Cookie') || '';
 
     const result = await auth.api.signInEmail({
       body,
-      headers: forwardedHeaders,
+      // headers: forwardedHeaders,
     });
 
     return c.json(result);
@@ -136,30 +136,30 @@ export const changePassword: AppRouteHandler<ChangePasswordRoute> = async (c: an
 
     // Prefer a runtime-provided headers() helper when available (e.g. some serverless runtimes).
     // Fallback to the request headers from the Hono context.
-    let forwardedHeaders: Record<string, string> = {};
+    // let forwardedHeaders: Record<string, string> = {};
 
-    const maybeHeadersFn = (globalThis as any).headers;
-    if (typeof maybeHeadersFn === 'function') {
-      const h = await maybeHeadersFn();
-      forwardedHeaders = h instanceof Headers
-        ? Object.fromEntries(h.entries())
-        : (typeof h === 'object' && h !== null ? { ...(h as Record<string, string>) } : {});
-    }
-    else {
-      forwardedHeaders = Object.fromEntries((c.req.headers as Headers).entries());
-    }
+    // const maybeHeadersFn = (globalThis as any).headers;
+    // if (typeof maybeHeadersFn === 'function') {
+    //   const h = await maybeHeadersFn();
+    //   forwardedHeaders = h instanceof Headers
+    //     ? Object.fromEntries(h.entries())
+    //     : (typeof h === 'object' && h !== null ? { ...(h as Record<string, string>) } : {});
+    // }
+    // else {
+    //   forwardedHeaders = Object.fromEntries((c.req.headers as Headers).entries());
+    // }
 
-    // Ensure cookie header is present (some runtimes differ in header casing)
-    forwardedHeaders.cookie = forwardedHeaders.cookie
-      || forwardedHeaders.Cookie
-      || c.req.header('cookie')
-      || c.req.header('Cookie')
-      || '';
+    // // Ensure cookie header is present (some runtimes differ in header casing)
+    // forwardedHeaders.cookie = forwardedHeaders.cookie
+    //   || forwardedHeaders.Cookie
+    //   || c.req.header('cookie')
+    //   || c.req.header('Cookie')
+    //   || '';
 
     const result = await auth.api.changePassword({
       body,
       // This endpoint requires session cookies.
-      headers: forwardedHeaders,
+      // headers: forwardedHeaders,
     });
 
     return c.json(result);
