@@ -1,9 +1,9 @@
-import { boolean, pgSchema, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgSchema, text, timestamp } from 'drizzle-orm/pg-core';
 
 const auth_user = pgSchema('auth_user');
 
 export const user = auth_user.table('user', {
-  id: serial('id').primaryKey(),
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified')
