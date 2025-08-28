@@ -208,7 +208,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
             sa.name,
             sa.bill_info_uuid,
             sa.company_name,
-            sa.phone.
+            sa.phone,
             sa.address,
             sa.city,
             sa.district,
