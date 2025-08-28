@@ -234,7 +234,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
     bill_infoPromise.where(eq(bill_info.uuid, bill_info_uuid));
   }
 
-  const data = await bill_infoPromise;
+  const [data] = await bill_infoPromise;
 
   return c.json(data, HSCode.OK);
 };
