@@ -191,8 +191,8 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
         ) t
       )`,
       ship_address: sql`
-        (
-        SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)
+      (
+        SELECT COALESCE(row_to_json(t), '{}'::json)
         FROM (
           SELECT
             sa.uuid,
@@ -213,6 +213,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
           FROM store.ship_address sa
           WHERE sa.bill_info_uuid = ${bill_info.uuid}
           ORDER BY sa.name ASC
+          LIMIT 1
         ) t
       )
       `,
