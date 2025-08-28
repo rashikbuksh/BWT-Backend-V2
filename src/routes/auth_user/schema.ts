@@ -1,9 +1,13 @@
-import { boolean, pgSchema, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgSchema, text, timestamp } from 'drizzle-orm/pg-core';
+
+import {
+  uuid_primary,
+} from '@/lib/variables';
 
 const auth_user = pgSchema('auth_user');
 
 export const user = auth_user.table('user', {
-  id: serial('id').primaryKey(),
+  uuid: uuid_primary,
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified')
@@ -19,7 +23,7 @@ export const user = auth_user.table('user', {
 });
 
 export const session = auth_user.table('session', {
-  id: text('id').primaryKey(),
+  uuid: uuid_primary,
   expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
   createdAt: timestamp('created_at').notNull(),
@@ -28,16 +32,16 @@ export const session = auth_user.table('session', {
   userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+    .references(() => user.uuid, { onDelete: 'cascade' }),
 });
 
 export const account = auth_user.table('account', {
-  id: text('id').primaryKey(),
+  uuid: uuid_primary,
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
   userId: text('user_id')
     .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+    .references(() => user.uuid, { onDelete: 'cascade' }),
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
@@ -50,7 +54,7 @@ export const account = auth_user.table('account', {
 });
 
 export const verification = auth_user.table('verification', {
-  id: text('id').primaryKey(),
+  uuid: uuid_primary,
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
