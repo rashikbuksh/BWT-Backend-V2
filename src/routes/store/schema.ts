@@ -380,6 +380,13 @@ export const paymentMethodEnum = pgEnum('payment_method', [
   'bkash',
 ]);
 
+export const order_statusEnum = pgEnum('order_status', [
+  'pending',
+  'processing',
+  'completed',
+  'cancelled',
+]);
+
 export const bill_info_sequence = store.sequence('bill_info_sequence', DEFAULT_SEQUENCE);
 
 export const bill_info = store.table('bill_info', {
@@ -401,14 +408,8 @@ export const bill_info = store.table('bill_info', {
   email: text('email').default(sql`null`),
   payment_method: paymentMethodEnum('payment_method').default('cod'),
   is_paid: boolean('is_paid').default(false),
+  bill_status: order_statusEnum('bill_status').default('pending'),
 });
-
-export const order_statusEnum = pgEnum('order_status', [
-  'pending',
-  'processing',
-  'completed',
-  'cancelled',
-]);
 
 export const ordered = store.table('ordered', {
   uuid: uuid_primary,
