@@ -14,6 +14,7 @@ import {
   PG_DECIMAL,
   uuid_primary,
 } from '@/lib/variables';
+import { DEFAULT_SEQUENCE } from '@/utils/db';
 
 import * as hrSchema from '../hr/schema';
 import * as workSchema from '../work/schema';
@@ -379,7 +380,10 @@ export const paymentMethodEnum = pgEnum('payment_method', [
   'bkash',
 ]);
 
+export const bill_info_sequence = store.sequence('bill_info_sequence', DEFAULT_SEQUENCE);
+
 export const bill_info = store.table('bill_info', {
+  id: integer('id').default(sql`nextval('bill_info_sequence')`),
   uuid: uuid_primary,
   user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
   name: text('name').default(sql`null`),

@@ -59,6 +59,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const bill_infoPromise = db
     .select({
+      id: bill_info.id,
+      bill_id: sql`CONCAT('BI', TO_CHAR(${bill_info.created_at}::timestamp, 'YY'), '-', ${bill_info.id})`,
       uuid: bill_info.uuid,
       user_uuid: bill_info.user_uuid,
       name: bill_info.name,
@@ -92,6 +94,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const bill_infoPromise = db
     .select({
+      id: bill_info.id,
+      bill_id: sql`CONCAT('BI', TO_CHAR(${bill_info.created_at}::timestamp, 'YY'), '-', ${bill_info.id})`,
       uuid: bill_info.uuid,
       user_uuid: bill_info.user_uuid,
       name: bill_info.name,
@@ -128,6 +132,8 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
 
   const bill_infoPromise = db
     .select({
+      id: bill_info.id,
+      bill_id: sql`CONCAT('BI', TO_CHAR(${bill_info.created_at}::timestamp, 'YY'), '-', ${bill_info.id})`,
       uuid: bill_info.uuid,
       user_uuid: bill_info.user_uuid,
       name: bill_info.name,

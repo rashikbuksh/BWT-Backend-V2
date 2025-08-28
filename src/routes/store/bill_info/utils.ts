@@ -42,6 +42,8 @@ export const insertSchema = createInsertSchema(
   payment_method: true,
   created_by: true,
   is_paid: true,
+}).omit({
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();
