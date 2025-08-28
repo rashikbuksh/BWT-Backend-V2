@@ -1,7 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
 import { auth } from '@/lib/auth';
-import { nanoid } from '@/lib/nanoid';
 // import { ComparePass, CreateToken, HashPass, isHashedPassword } from '@/middlewares/auth';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -54,15 +53,19 @@ export const signUp: AppRouteHandler<SignUpRoute> = async (c: any) => {
   try {
     const body = await c.req.json();
 
-    body.uuid = nanoid();
+    // body.uuid = nanoid();
 
-    // Forward request headers (include cookies) to the auth API so session-based endpoints work
-    const forwardedHeaders: Record<string, string> = Object.fromEntries((c.req.headers as Headers).entries());
-    forwardedHeaders.cookie = forwardedHeaders.cookie || forwardedHeaders.Cookie || c.req.header('cookie') || c.req.header('Cookie') || '';
+    // console.log('Generated UUID:', body.uuid);
+
+    // console.log('SignUp Body:', body);
+
+    // // Forward request headers (include cookies) to the auth API so session-based endpoints work
+    // const forwardedHeaders: Record<string, string> = Object.fromEntries((c.req.headers as Headers).entries());
+    // forwardedHeaders.cookie = forwardedHeaders.cookie || forwardedHeaders.Cookie || c.req.header('cookie') || c.req.header('Cookie') || '';
 
     const result = await auth.api.signUpEmail({
       body,
-      headers: forwardedHeaders,
+      // headers: forwardedHeaders,
     });
 
     return c.json(result);

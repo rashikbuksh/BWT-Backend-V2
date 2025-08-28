@@ -33,10 +33,11 @@ export const insertSchema = createInsertSchema(
   name: true,
   email: true,
 }).partial({
-  uuid: true,
   image: true,
   createdAt: true,
   updatedAt: true,
+}).omit({
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();
