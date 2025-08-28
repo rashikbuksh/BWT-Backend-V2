@@ -42,6 +42,7 @@ export const insertSchema = createInsertSchema(
   payment_method: true,
   created_by: true,
   is_paid: true,
+  bill_status: true,
 }).omit({
   id: true,
 });

@@ -79,6 +79,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       email: bill_info.email,
       payment_method: bill_info.payment_method,
       is_paid: bill_info.is_paid,
+      bill_status: bill_info.bill_status,
     })
     .from(bill_info)
     .leftJoin(users, eq(bill_info.created_by, users.uuid))
@@ -114,6 +115,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       email: bill_info.email,
       payment_method: bill_info.payment_method,
       is_paid: bill_info.is_paid,
+      bill_status: bill_info.bill_status,
     })
     .from(bill_info)
     .leftJoin(users, eq(bill_info.created_by, users.uuid))
@@ -152,6 +154,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
       email: bill_info.email,
       payment_method: bill_info.payment_method,
       is_paid: bill_info.is_paid,
+      bill_status: bill_info.bill_status,
       order_details: sql`(
         SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)
         FROM (
