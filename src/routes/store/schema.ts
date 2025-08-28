@@ -396,6 +396,7 @@ export const bill_info = store.table('bill_info', {
   remarks: text('remarks').default(sql`null`),
   email: text('email').default(sql`null`),
   payment_method: paymentMethodEnum('payment_method').default('cod'),
+  is_paid: boolean('is_paid').default(false),
 });
 
 export const order_statusEnum = pgEnum('order_status', [

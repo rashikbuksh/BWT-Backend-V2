@@ -143,6 +143,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
       remarks: bill_info.remarks,
       email: bill_info.email,
       payment_method: bill_info.payment_method,
+      is_paid: bill_info.is_paid,
       order_details: sql`(
         SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)
         FROM (
@@ -152,6 +153,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
             o.quantity,
             o.selling_price::float8,
             pv.product_uuid,
+            p.title AS product_title,
             pv.selling_price::float8 AS variant_selling_price,
             pv.discount::float8,
             pv.warehouse_1::float8,
@@ -192,10 +194,37 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
             ) AS product_variant_values_entry
           FROM store.ordered o
           LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
+          LEFT JOIN store.product p ON pv.product_uuid = p.uuid
           WHERE o.bill_info_uuid = ${bill_info.uuid}
           ORDER BY pv.index ASC
         ) t
       )`,
+      ship_address: sql`
+        (
+        SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)
+        FROM (
+          SELECT
+            sa.uuid,
+            sa.name,
+            sa.bill_info_uuid,
+            sa.company_name,
+            sa.phone.
+            sa.address,
+            sa.city,
+            sa.district,
+            sa.zip,
+            sa.note,
+            sa.created_by,
+            sa.created_at,
+            sa.updated_at,
+            sa.updated_by,
+            sa.remarks
+          FROM store.ship_address sa
+          WHERE sa.bill_info_uuid = ${bill_info.uuid}
+          ORDER BY sa.name ASC
+        ) t
+      )
+      `,
     })
     .from(bill_info)
     .leftJoin(users, eq(bill_info.created_by, users.uuid))

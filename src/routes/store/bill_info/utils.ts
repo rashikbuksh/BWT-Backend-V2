@@ -41,6 +41,7 @@ export const insertSchema = createInsertSchema(
   email: true,
   payment_method: true,
   created_by: true,
+  is_paid: true,
 });
 
 export const patchSchema = insertSchema.partial();
