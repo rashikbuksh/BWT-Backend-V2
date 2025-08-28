@@ -14,15 +14,16 @@ expand(config({
 const logLevel = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
 
 const EnvSchema = z.object({
-  SERVER_URL: z.string().default('http://localhost:3005'),
+  SERVER_URL: z.string().default('http://localhost:3010'),
   PRODUCTION_URL: z.string().default('http://103.147.163.46:5090'),
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(9999),
-  LOG_LEVEL: z.enum(logLevel),
-  DATABASE_URL: z.string().url(),
-  // DATABASE_AUTH_TOKEN: z.string().optional(),
-  PRIVATE_KEY: z.string(),
-  SALT: z.coerce.number(),
+  LOG_LEVEL: z.enum(logLevel).default('silent'),
+  DATABASE_URL: z.string().url().default('postgres://postgres:PG0987654321@localhost:5432/bwt'),
+  PRIVATE_KEY: z.string().default('12'),
+  SALT: z.coerce.number().default(14),
+  BETTER_AUTH_SECRET: z.string().default('knUkEDOYJMlBBCdh8lQ2q0tteBh5g7PT'),
+  BETTER_AUTH_URL: z.string().url().default('http://localhost:3010'),
 });
 
 export type env = z.infer<typeof EnvSchema>;

@@ -9,6 +9,7 @@ import routes from '@/routes/index.route';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
+import { auth } from './lib/auth';
 
 const app = createApp();
 
@@ -22,6 +23,7 @@ app.use('*', bodyLimit({
 
 // ! don't put a trailing slash
 export const basePath = '/v1';
+export const basePath2 = '/v2';
 const isDev = env.NODE_ENV === 'development';
 const isVps = env.NODE_ENV === 'vps';
 
@@ -34,6 +36,12 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
+app.use(`${basePath2}/*`, cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
+
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
     if (isPublicRoute(c.req.path, c.req.method))
@@ -41,10 +49,19 @@ if (!isDev) {
 
     return bearerAuth({ verifyToken: VerifyToken })(c, next);
   });
+  // app.use(`${basePath2}/*`, async (c, next) => {
+  //   if (isPublicRoute(c.req.path, c.req.method))
+  //     return next();
+
+  //   return auth({ verifyToken: VerifyToken })(c, next);
+  // });
+
+  app.on(['POST', 'GET'], `${basePath2}/api/auth/**`, c => auth.handler(c.req.raw));
 }
 
 routes.forEach((route) => {
   app.route(basePath, route);
+  app.route(`${basePath2}/api/auth/`, route);
 });
 
 export default app;

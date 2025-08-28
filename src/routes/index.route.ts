@@ -1,3 +1,4 @@
+import auth_user from './auth_user';
 import delivery from './delivery';
 import hr from './hr';
 import other from './other';
@@ -14,6 +15,7 @@ const routes = [
   ...work,
   ...other,
   ...publicRoute,
+  ...auth_user,
 ] as const;
 
 export default routes;
