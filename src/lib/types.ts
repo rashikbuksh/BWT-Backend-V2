@@ -10,7 +10,7 @@ export interface AppBindings {
 
 export type AppOpenAPI = OpenAPIHono<{ AppBindings: AppBindings; Variables: AuthType }>;
 
-export type AppRouteHandler<R extends RouteConfig> = RouteHandler<R, AppBindings>;
+export type AppRouteHandler<R extends RouteConfig> = RouteHandler<R, { AppBindings: AppBindings; Variables: AuthType }>;
 
 export interface ColumnProps {
   default: string;
