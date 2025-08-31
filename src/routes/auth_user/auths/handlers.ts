@@ -123,11 +123,12 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
     // }
 
     // Ensure cookie header is present (some runtimes differ in header casing)
-    // forwardedHeaders.cookie = forwardedHeaders.cookie
-    //   || forwardedHeaders.Cookie
-    //   || c.req.header('cookie')
-    //   || c.req.header('Cookie')
-    //   || '';
+    forwardedHeaders.cookie = forwardedHeaders.cookie
+      || forwardedHeaders.Cookie
+      || c.req.header('cookie')
+      || c.req.header('Cookie')
+      || (forwardedHeaders.session ? `session=${forwardedHeaders.session}` : '')
+      || '';
 
     const result = await auth.api.signOut({
       // This endpoint requires session cookies.
