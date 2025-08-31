@@ -98,32 +98,36 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
     // Fallback to the request headers from the Hono context.
     let forwardedHeaders: Record<string, string> = {};
 
-    const maybeHeadersFn = (globalThis as any).headers;
-    if (typeof maybeHeadersFn === 'function') {
-      const h = await maybeHeadersFn();
-      forwardedHeaders = h instanceof Headers
-        ? Object.fromEntries(h.entries())
-        : (typeof h === 'object' && h !== null ? { ...(h as Record<string, string>) } : {});
-    }
-    else {
-      if (c.req.headers && typeof (c.req.headers as any).entries === 'function') {
-        forwardedHeaders = Object.fromEntries((c.req.headers as any).entries());
-      }
-      else if (typeof c.req.header === 'function') {
-        // fallback: try to get cookies at least
-        forwardedHeaders.cookie = c.req.header('cookie') || c.req.header('Cookie') || '';
-      }
-      else {
-        forwardedHeaders = {};
-      }
-    }
+    forwardedHeaders = c.req.raw.headers;
+
+    console.log('Forwarded Headers:', forwardedHeaders);
+
+    // const maybeHeadersFn = (globalThis as any).headers;
+    // if (typeof maybeHeadersFn === 'function') {
+    //   const h = await maybeHeadersFn();
+    //   forwardedHeaders = h instanceof Headers
+    //     ? Object.fromEntries(h.entries())
+    //     : (typeof h === 'object' && h !== null ? { ...(h as Record<string, string>) } : {});
+    // }
+    // else {
+    //   if (c.req.headers && typeof (c.req.headers as any).entries === 'function') {
+    //     forwardedHeaders = Object.fromEntries((c.req.headers as any).entries());
+    //   }
+    //   else if (typeof c.req.header === 'function') {
+    //     // fallback: try to get cookies at least
+    //     forwardedHeaders.cookie = c.req.header('cookie') || c.req.header('Cookie') || '';
+    //   }
+    //   else {
+    //     forwardedHeaders = {};
+    //   }
+    // }
 
     // Ensure cookie header is present (some runtimes differ in header casing)
-    forwardedHeaders.cookie = forwardedHeaders.cookie
-      || forwardedHeaders.Cookie
-      || c.req.header('cookie')
-      || c.req.header('Cookie')
-      || '';
+    // forwardedHeaders.cookie = forwardedHeaders.cookie
+    //   || forwardedHeaders.Cookie
+    //   || c.req.header('cookie')
+    //   || c.req.header('Cookie')
+    //   || '';
 
     const result = await auth.api.signOut({
       // This endpoint requires session cookies.

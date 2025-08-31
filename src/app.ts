@@ -55,13 +55,18 @@ if (!isDev) {
 
   //   return auth({ verifyToken: VerifyToken })(c, next);
   // });
-
-  app.on(['POST', 'GET'], `${basePath2}/api/auth/**`, c => auth.handler(c.req.raw));
 }
+
+const authRoute = app.on(['POST', 'GET'], `api/auth/**`, c => auth.handler(c.req.raw));
+
+const allRoutes = [authRoute, ...routes];
 
 routes.forEach((route) => {
   app.route(basePath, route);
-  app.route(`${basePath2}/api/auth/`, route);
+});
+
+allRoutes.forEach((route) => {
+  app.route(basePath2, route);
 });
 
 export default app;
