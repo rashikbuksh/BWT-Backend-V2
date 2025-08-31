@@ -66,7 +66,7 @@ routes.forEach((route) => {
 });
 
 allRoutes.forEach((route) => {
-  app.route(`${basePath2}/api/auth/**`, route);
+  app.route(`${basePath2}/api/auth`, route);
 });
 
 export default app;
