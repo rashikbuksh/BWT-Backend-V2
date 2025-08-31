@@ -106,7 +106,16 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
         : (typeof h === 'object' && h !== null ? { ...(h as Record<string, string>) } : {});
     }
     else {
-      forwardedHeaders = Object.fromEntries((c.req.headers as Headers).entries());
+      if (c.req.headers && typeof (c.req.headers as any).entries === 'function') {
+        forwardedHeaders = Object.fromEntries((c.req.headers as any).entries());
+      }
+      else if (typeof c.req.header === 'function') {
+        // fallback: try to get cookies at least
+        forwardedHeaders.cookie = c.req.header('cookie') || c.req.header('Cookie') || '';
+      }
+      else {
+        forwardedHeaders = {};
+      }
     }
 
     // Ensure cookie header is present (some runtimes differ in header casing)
