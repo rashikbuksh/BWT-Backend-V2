@@ -127,7 +127,7 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
       || forwardedHeaders.Cookie
       || c.req.header('cookie')
       || c.req.header('Cookie')
-      || (forwardedHeaders.session ? `session=${forwardedHeaders.session}` : '')
+      || (forwardedHeaders.session ? forwardedHeaders.session : '')
       || '';
 
     const result = await auth.api.signOut({
