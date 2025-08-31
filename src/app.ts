@@ -57,7 +57,7 @@ if (!isDev) {
   // });
 }
 
-const authRoute = app.on(['POST', 'GET'], c => auth.handler(c.req.raw));
+const authRoute = app.on(['POST', 'GET'], `/**`, c => auth.handler(c.req.raw));
 
 const allRoutes = [authRoute, ...routes];
 
