@@ -96,35 +96,40 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
   try {
     // Prefer a runtime-provided headers() helper when available (e.g. some serverless runtimes).
     // Fallback to the request headers from the Hono context.
-    let forwardedHeaders: Record<string, string> = {};
+    // let forwardedHeaders: Record<string, string> = {};
 
-    forwardedHeaders = c.req.raw.headers;
+    const session = auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
 
-    console.log('Forwarded Headers:', forwardedHeaders);
+    // forwardedHeaders = c.req.raw.headers;
 
-    let sessionValue = '';
-    // Try to extract session from Headers object (if present)
-    if (typeof (forwardedHeaders as any).get === 'function') {
-      sessionValue = (forwardedHeaders as any).get('session') || '';
-    }
-    else if (typeof forwardedHeaders.session === 'string') {
-      sessionValue = forwardedHeaders.session;
-    }
-    else if (typeof forwardedHeaders.session === 'string') {
-      sessionValue = forwardedHeaders.session;
-    }
+    // let sessionValue = '';
+    // // Try to extract session from Headers object (if present)
+    // if (typeof (forwardedHeaders as any).get === 'function') {
+    //   sessionValue = (forwardedHeaders as any).get('session') || '';
+    // }
+    // else if (typeof forwardedHeaders.session === 'string') {
+    //   sessionValue = forwardedHeaders.session;
+    // }
+    // else if (typeof forwardedHeaders.session === 'string') {
+    //   sessionValue = forwardedHeaders.session;
+    // }
 
-    forwardedHeaders.cookie = forwardedHeaders.cookie
-      || forwardedHeaders.Cookie
-      || c.req.header('cookie')
-      || c.req.header('Cookie')
-      || (sessionValue ? `bwt__session=${sessionValue}` : '')
-      || '';
-    console.log('Final cookie header for signOut:', forwardedHeaders.cookie);
+    // get header value from session
+    const sessionValue = session ? `bwt__session=${session}` : '';
+
+    // forwardedHeaders.cookie = forwardedHeaders.cookie
+    //   || forwardedHeaders.Cookie
+    //   || c.req.header('cookie')
+    //   || c.req.header('Cookie')
+    //   || (session ? `bwt__session=${session}` : '')
+    //   || '';
+    console.log('Final cookie header for signOut:', sessionValue);
 
     const result = await auth.api.signOut({
       // This endpoint requires session cookies.
-      headers: forwardedHeaders,
+      headers: c.req.raw.headers,
     });
 
     return c.json(result);
