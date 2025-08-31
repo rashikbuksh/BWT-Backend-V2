@@ -57,7 +57,7 @@ if (!isDev) {
   // });
 }
 
-const authRoute = app.on(['POST', 'GET'], `api/auth/**`, c => auth.handler(c.req.raw));
+const authRoute = app.on(['POST', 'GET'], c => auth.handler(c.req.raw));
 
 const allRoutes = [authRoute, ...routes];
 
@@ -66,7 +66,7 @@ routes.forEach((route) => {
 });
 
 allRoutes.forEach((route) => {
-  app.route(basePath2, route);
+  app.route(`${basePath2}/api/auth/**`, route);
 });
 
 export default app;
