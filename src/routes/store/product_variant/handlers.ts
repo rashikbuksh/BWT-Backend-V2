@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { product, product_variant, warehouse } from '../schema';
+import { product, product_variant, product_variant_values_entry, warehouse } from '../schema';
 
 const warehouse1 = alias(warehouse, 'warehouse_1');
 const warehouse2 = alias(warehouse, 'warehouse_2');
@@ -62,6 +62,16 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
+  // product_variant_values_entry delete
+  const productVariantValuesEntryDelete = await db.delete(product_variant_values_entry)
+    .where(eq(product_variant_values_entry.product_variant_uuid, uuid))
+    .returning(
+      {
+        name: product_variant_values_entry.uuid,
+      },
+    );
+
+  // product_variant delete
   const [data] = await db.delete(product_variant)
     .where(eq(product_variant.uuid, uuid))
     .returning({
@@ -71,7 +81,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('delete', data.name), HSCode.OK);
+  return c.json(createToast('delete', `${data.name} - Variant Value: ${productVariantValuesEntryDelete.length}`), HSCode.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
