@@ -104,11 +104,15 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
 
     let sessionValue = '';
     if (typeof forwardedHeaders.get === 'function') {
-      // Node.js Headers object
+      // Headers object
       sessionValue = forwardedHeaders.get('session') || '';
     }
     else if (typeof forwardedHeaders.session === 'string') {
-      // plain object
+      // plain object, dot notation
+      sessionValue = forwardedHeaders.session;
+    }
+    else if (typeof forwardedHeaders.session === 'string') {
+      // plain object, bracket notation
       sessionValue = forwardedHeaders.session;
     }
 
