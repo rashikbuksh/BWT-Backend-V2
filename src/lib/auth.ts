@@ -18,7 +18,7 @@ export const auth = betterAuth({
   // },
 
   advanced: {
-    cookiePrefix: 'bwt',
+    cookiePrefix: '',
     // cookies: {
     //   session_token: {
     //     name: 'custom_session_token',
