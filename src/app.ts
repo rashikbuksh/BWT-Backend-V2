@@ -8,8 +8,8 @@ import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
 import routes from '@/routes/index.route';
 import { serveStatic } from '@hono/node-server/serve-static';
 
+import auth_router from './auth_router';
 import env from './env';
-import { auth } from './lib/auth';
 
 const app = createApp();
 
@@ -57,9 +57,7 @@ if (!isDev) {
   // });
 }
 
-const authRoute = app.on(['POST', 'GET'], `/**`, c => auth.handler(c.req.raw));
-
-const allRoutes = [authRoute, ...routes];
+const allRoutes = [auth_router, ...routes] as const;
 
 routes.forEach((route) => {
   app.route(basePath, route);
