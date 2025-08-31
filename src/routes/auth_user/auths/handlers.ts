@@ -102,33 +102,23 @@ export const signOut: AppRouteHandler<SignOutRoute> = async (c: any) => {
 
     console.log('Forwarded Headers:', forwardedHeaders);
 
-    // const maybeHeadersFn = (globalThis as any).headers;
-    // if (typeof maybeHeadersFn === 'function') {
-    //   const h = await maybeHeadersFn();
-    //   forwardedHeaders = h instanceof Headers
-    //     ? Object.fromEntries(h.entries())
-    //     : (typeof h === 'object' && h !== null ? { ...(h as Record<string, string>) } : {});
-    // }
-    // else {
-    //   if (c.req.headers && typeof (c.req.headers as any).entries === 'function') {
-    //     forwardedHeaders = Object.fromEntries((c.req.headers as any).entries());
-    //   }
-    //   else if (typeof c.req.header === 'function') {
-    //     // fallback: try to get cookies at least
-    //     forwardedHeaders.cookie = c.req.header('cookie') || c.req.header('Cookie') || '';
-    //   }
-    //   else {
-    //     forwardedHeaders = {};
-    //   }
-    // }
+    let sessionValue = '';
+    if (typeof forwardedHeaders.get === 'function') {
+      // Node.js Headers object
+      sessionValue = forwardedHeaders.get('session') || '';
+    }
+    else if (typeof forwardedHeaders.session === 'string') {
+      // plain object
+      sessionValue = forwardedHeaders.session;
+    }
 
-    // Ensure cookie header is present (some runtimes differ in header casing)
     forwardedHeaders.cookie = forwardedHeaders.cookie
       || forwardedHeaders.Cookie
       || c.req.header('cookie')
       || c.req.header('Cookie')
-      || (forwardedHeaders.session ? `bwt__session=${forwardedHeaders.session}` : '')
+      || (sessionValue ? `bwt__session=${sessionValue}` : '')
       || '';
+    console.log('Final cookie header for signOut:', forwardedHeaders.cookie);
 
     const result = await auth.api.signOut({
       // This endpoint requires session cookies.
