@@ -8,7 +8,7 @@ import { selectSchema } from '../auths/utils';
 const tags = ['auth_users.session'];
 
 export const list = createRoute({
-  path: '/auth-user/get-session',
+  path: '/get-session',
   method: 'get',
   tags,
   responses: {
