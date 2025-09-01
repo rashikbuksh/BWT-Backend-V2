@@ -47,7 +47,14 @@ if (!isDev) {
 
 // const allRoutes = [auth_router, ...routes] as const;
 
-app.on(['POST', 'GET'], `/api/auth/**`, c => auth.handler(c.req.raw));
+app.use('/api/auth/*', cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
+
+app.options('/api/auth/**', c => c.text('ok'));
+app.on(['POST', 'GET'], '/api/auth/**', c => auth.handler(c.req.raw));
 
 routes.forEach((route) => {
   app.route(basePath, route);
