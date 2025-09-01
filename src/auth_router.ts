@@ -11,8 +11,6 @@ const router = new Hono<{ AppBindings: AppBindings; Variables: AuthType }>({
   strict: false,
 });
 
-router.on(['POST', 'GET'], '/auth/*', (c) => {
-  return auth.handler(c.req.raw);
-});
+router.on(['POST', 'GET'], '/api/auth/**', c => auth.handler(c.req.raw));
 
 export default router;

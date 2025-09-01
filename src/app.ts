@@ -8,8 +8,8 @@ import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
 import routes from '@/routes/index.route';
 import { serveStatic } from '@hono/node-server/serve-static';
 
-import auth_router from './auth_router';
 import env from './env';
+import { auth } from './lib/auth';
 
 const app = createApp();
 
@@ -36,12 +36,6 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
-app.use(`${basePath2}/*`, cors({
-  origin: ALLOWED_ROUTES,
-  maxAge: 600,
-  credentials: true,
-}));
-
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
     if (isPublicRoute(c.req.path, c.req.method))
@@ -49,22 +43,14 @@ if (!isDev) {
 
     return bearerAuth({ verifyToken: VerifyToken })(c, next);
   });
-  // app.use(`${basePath2}/*`, async (c, next) => {
-  //   if (isPublicRoute(c.req.path, c.req.method))
-  //     return next();
-
-  //   return auth({ verifyToken: VerifyToken })(c, next);
-  // });
 }
 
-const allRoutes = [auth_router, ...routes] as const;
+// const allRoutes = [auth_router, ...routes] as const;
+
+app.on(['POST', 'GET'], `/api/auth/**`, c => auth.handler(c.req.raw));
 
 routes.forEach((route) => {
   app.route(basePath, route);
-});
-
-allRoutes.forEach((route) => {
-  app.route(`${basePath2}/api/auth`, route);
 });
 
 export default app;
