@@ -53,8 +53,7 @@ app.use('/api/auth/*', cors({
   credentials: true,
 }));
 
-app.options('/api/auth/**', c => c.text('ok'));
-app.on(['POST', 'GET'], '/api/auth/**', c => auth.handler(c.req.raw));
+app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
 routes.forEach((route) => {
   app.route(basePath, route);
