@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import configureOpenAPI from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
+import routes from '@/routes/index.route';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -54,8 +55,8 @@ app.use('/api/auth/*', cors({
 
 app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
-// routes.forEach((route) => {
-//   app.route(basePath, route);
-// });
+routes.forEach((route) => {
+  app.route(basePath, route);
+});
 
 export default app;
