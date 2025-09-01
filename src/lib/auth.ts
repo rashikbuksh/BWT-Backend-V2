@@ -18,17 +18,17 @@ export const auth = betterAuth({
   //   },
   // },
 
-  advanced: {
-    cookiePrefix: 'bwt_', // default is 'ba_'
-    // cookies: {
-    //   session_token: {
-    //     name: 'custom_session_token',
-    //     attributes: {
+  // advanced: {
+  //   cookiePrefix: 'bwt_', // default is 'ba_'
+  //   // cookies: {
+  //   //   session_token: {
+  //   //     name: 'custom_session_token',
+  //   //     attributes: {
 
-    //     },
-    //   },
-    // },
-  },
+  //   //     },
+  //   //   },
+  //   // },
+  // },
   plugins: [openAPI()],
 });
 
