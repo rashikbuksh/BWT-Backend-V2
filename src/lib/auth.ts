@@ -25,8 +25,8 @@ export const auth = betterAuth({
     },
     defaultCookieAttributes: {
       sameSite: 'lax',
-      secure: false,
-      // httpOnly: true,
+      // secure: true,
+      httpOnly: true,
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     },
