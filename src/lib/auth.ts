@@ -19,7 +19,10 @@ export const auth = betterAuth({
   //   },
   // },
   advanced: {
-    crossSubDomainCookies: { enabled: true },
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: '103.112.53.75', // your domain here
+    },
     defaultCookieAttributes: {
       sameSite: 'lax',
       // secure: true,
