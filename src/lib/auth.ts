@@ -17,18 +17,16 @@ export const auth = betterAuth({
   //     clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
   //   },
   // },
-
-  // advanced: {
-  //   cookiePrefix: 'bwt_', // default is 'ba_'
-  //   // cookies: {
-  //   //   session_token: {
-  //   //     name: 'custom_session_token',
-  //   //     attributes: {
-
-  //   //     },
-  //   //   },
-  //   // },
-  // },
+  advanced: {
+    crossSubDomainCookies: { enabled: true },
+    defaultCookieAttributes: {
+      sameSite: 'none',
+      // secure: true,
+      // httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    },
+  },
   plugins: [openAPI()],
 });
 
