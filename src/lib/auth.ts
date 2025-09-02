@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { openAPI } from 'better-auth/plugins';
 
 import db from '@/db'; // your drizzle instance
+import { ALLOWED_ROUTES } from '@/middlewares/auth';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -28,6 +29,9 @@ export const auth = betterAuth({
     },
   },
   plugins: [openAPI()],
+  trustedOrigins: [
+    ...ALLOWED_ROUTES,
+  ],
 });
 
 export interface AuthType {
