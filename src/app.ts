@@ -2,11 +2,11 @@ import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 
-import { auth } from '@/lib/auth';
+// import { auth } from '@/lib/auth';
 import configureOpenAPI from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
-// import authRouter from '@/routes/auth_user/index';
+import authRouter from '@/routes/auth_user/index';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -52,14 +52,13 @@ if (!isDev) {
   });
 }
 
-// Register better-auth via mount so Hono strips the '/api/auth' prefix
-// and the auth handler receives paths like '/sign-in/email'.
-app.mount('/api/auth', (req: Request) => {
-  return auth.handler(req);
-});
+const allRouter = [authRouter, ...routes];
 
-routes.forEach((route) => {
-  app.route(basePath, route); // e.g., /v1/...
+// Register better-auth wildcard handler for /api/auth/**
+// app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
+
+allRouter.forEach((route) => {
+  app.route(basePath, route);
 });
 
 export default app;
