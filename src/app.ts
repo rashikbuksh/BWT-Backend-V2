@@ -57,18 +57,28 @@ app.use(`/api/auth/*`, cors({
 }));
 
 // Register better-auth wildcard handler for /api/auth/**
-app.on(['POST'], '/api/auth/sign-in/email', c => c.text('test hit', 200));
-app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', async (c) => {
-  // Call better-auth with the raw Request and proxy back its Response
-  const res = await auth.handler(c.req.raw as Request);
+// Specific debug forward for sign-in to confirm request reaches better-auth
+// app.on(['POST'], '/api/auth/sign-in/email', async (c) => {
+//   console.log('DEBUG: /api/auth/sign-in/email hit', { path: c.req.path, method: c.req.method, url: c.req.raw.url });
+//   const res = await auth.handler(c.req.raw as Request);
 
-  // Copy headers from the upstream response
+//   const headers: Record<string, string> = {};
+//   res.headers.forEach((value, key) => {
+//     headers[key] = value;
+//   });
+
+//   const body = await res.arrayBuffer();
+//   return new Response(body, { status: res.status, headers });
+// });
+
+// Register better-auth wildcard handler for /api/auth/**
+app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', async (c) => {
+  console.log('DEBUG: wildcard /api/auth/** hit', { path: c.req.path, method: c.req.method });
+  const res = await auth.handler(c.req.raw as Request);
   const headers: Record<string, string> = {};
   res.headers.forEach((value, key) => {
     headers[key] = value;
   });
-
-  // Read body as ArrayBuffer and return a new Response so Hono can send it
   const body = await res.arrayBuffer();
   return new Response(body, { status: res.status, headers });
 });
