@@ -45,7 +45,7 @@ app.use(`/api/auth/*`, cors({
 
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
-    if (isPublicRoute(c.req.path, c.req.method))
+    if (isPublicRoute(c.req.path, c.req.method) || c.req.path.startsWith('/api/auth/'))
       return next();
 
     return bearerAuth({ verifyToken: VerifyToken })(c, next);
