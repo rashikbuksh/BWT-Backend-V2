@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { openAPI } from 'better-auth/plugins';
+// import { openAPI } from 'better-auth/plugins';
 
 import db from '@/db'; // your drizzle instance
 import { ALLOWED_ROUTES } from '@/middlewares/auth';
@@ -31,7 +31,7 @@ export const auth = betterAuth({
       maxAge: 60 * 60 * 24 * 7, // 7 days
     },
   },
-  plugins: [openAPI()],
+  // plugins: [openAPI()],
   trustedOrigins: [
     ...ALLOWED_ROUTES,
   ],
