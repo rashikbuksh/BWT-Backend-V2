@@ -19,6 +19,7 @@ import type { CreateRoute, CreateWithoutFormRoute, GetByInfoRoute, GetDiagnosisD
 import { accessory, diagnosis, info, order, problem } from '../schema';
 
 const user = alias(hrSchema.users, 'user');
+const engineerUser = alias(hrSchema.users, 'engineer_user');
 const orderTable = alias(order, 'work_order');
 const reclaimedOrderTable = alias(order, 'reclaimed_order');
 
@@ -569,6 +570,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       engineer_uuid: orderTable.engineer_uuid,
+      engineer_name: engineerUser.name,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -598,7 +600,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
     .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .leftJoin(deliverySchema.challan_entry, eq(deliverySchema.challan_entry.order_uuid, orderTable.uuid));
+    .leftJoin(deliverySchema.challan_entry, eq(deliverySchema.challan_entry.order_uuid, orderTable.uuid))
+    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid));
 
   const filters = [];
 
@@ -858,6 +861,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       engineer_uuid: orderTable.engineer_uuid,
+      engineer_name: engineerUser.name,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -898,6 +902,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
     .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
+    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid))
     .where(eq(orderTable.uuid, uuid));
 
   const data = await orderPromise;
@@ -1139,6 +1144,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       engineer_uuid: orderTable.engineer_uuid,
+      engineer_name: engineerUser.name,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -1179,6 +1185,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
     .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
+    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid))
     .where(eq(orderTable.info_uuid, info_uuid));
 
   const data = await orderPromise;
