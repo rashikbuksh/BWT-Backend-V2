@@ -59,7 +59,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest } = c.req.valid('query');
+  const { latest, categories } = c.req.valid('query');
   const productPromise = db
     .select({
       uuid: product.uuid,
@@ -115,6 +115,20 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   if (latest) {
     const latestNumber = Number(latest) || 0;
     return c.json(data.slice(0, latestNumber) || [], HSCode.OK);
+  }
+
+  if (categories) {
+    const categoryList = (categories as string)
+      .split(',')
+      .map((cat: string) => cat.trim().toLowerCase())
+      .filter(Boolean);
+
+    const filteredData = data.filter((item) => {
+      const name = (item.category_name ?? '').toString().toLowerCase();
+      return name && categoryList.includes(name);
+    });
+
+    return c.json(filteredData || [], HSCode.OK);
   }
 
   return c.json(data || [], HSCode.OK);
