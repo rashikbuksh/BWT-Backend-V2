@@ -111,11 +111,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .orderBy(desc(product.created_at));
 
   const data = await productPromise;
-
-  if (latest) {
-    const latestNumber = Number(latest) || 0;
-    return c.json(data.slice(0, latestNumber) || [], HSCode.OK);
-  }
+  let result = data;
 
   if (categories) {
     const categoryList = (categories as string)
@@ -123,15 +119,20 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       .map((cat: string) => cat.trim().toLowerCase())
       .filter(Boolean);
 
-    const filteredData = data.filter((item) => {
+    result = result.filter((item) => {
       const name = (item.category_name ?? '').toString().toLowerCase();
       return name && categoryList.includes(name);
     });
-
-    return c.json(filteredData || [], HSCode.OK);
   }
 
-  return c.json(data || [], HSCode.OK);
+  if (latest) {
+    const latestNumber = Number(latest) || 0;
+    if (latestNumber > 0) {
+      result = result.slice(0, latestNumber);
+    }
+  }
+
+  return c.json(result || [], HSCode.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
