@@ -14,6 +14,11 @@ export const list = createRoute({
   path: '/store/product',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      latest: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),

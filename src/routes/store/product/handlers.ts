@@ -59,6 +59,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { latest } = c.req.valid('query');
   const productPromise = db
     .select({
       uuid: product.uuid,
@@ -110,6 +111,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .orderBy(desc(product.created_at));
 
   const data = await productPromise;
+
+  if (latest) {
+    const latestNumber = Number(latest) || 0;
+    return c.json(data.slice(0, latestNumber) || [], HSCode.OK);
+  }
 
   return c.json(data || [], HSCode.OK);
 };
