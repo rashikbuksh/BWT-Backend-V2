@@ -144,6 +144,7 @@ export const order = work.table('order', {
   engineer_uuid: defaultUUID('engineer_uuid').references(
     () => hrSchema.users.uuid,
   ).default(sql`null`),
+  advance_pay: PG_DECIMAL('advance_pay').default(sql`0`),
 
 });
 export const statusEnum = pgEnum('status', [

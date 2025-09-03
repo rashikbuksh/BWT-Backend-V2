@@ -50,6 +50,7 @@ export const insertSchema = createInsertSchema(
     proposed_cost: z.number().default(0),
     is_challan_needed: schema => schema.is_challan_needed.default(false),
     engineer_uuid: schema => schema.engineer_uuid.length(15).optional(),
+    advance_pay: z.number().optional().default(0),
   },
 ).required({
   uuid: true,
@@ -91,6 +92,7 @@ export const insertSchema = createInsertSchema(
   reclaimed_order_uuid: true,
   created_by: true,
   engineer_uuid: true,
+  advance_pay: true,
 }).omit({
   id: true,
 });
