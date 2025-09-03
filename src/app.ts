@@ -50,6 +50,12 @@ routes.forEach((route) => {
   app.route(basePath, route); // e.g., /v1/...
 });
 
+app.use(`/api/auth/*`, cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
+
 // Register better-auth wildcard handler for /api/auth/**
 app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
