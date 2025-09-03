@@ -596,7 +596,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
-    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid));
+    .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
+    .leftJoin(deliverySchema.challan_entry, eq(deliverySchema.challan_entry.order_uuid, orderTable.uuid));
 
   const filters = [];
 
@@ -610,7 +611,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   if (is_delivered === 'true') {
-    filters.push(eq(orderTable.is_ready_for_delivery, true));
+    filters.push(
+      and(eq(orderTable.is_ready_for_delivery, true), sql`${deliverySchema.challan_entry.uuid} IS NULL`),
+    );
   }
 
   if (work_in_hand === 'true') {
