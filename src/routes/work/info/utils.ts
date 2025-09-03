@@ -28,6 +28,7 @@ export const insertSchema = createInsertSchema(
     reference_user_uuid: schema => schema.reference_user_uuid.length(15).optional(),
     is_commission_amount: schema => schema.is_commission_amount.optional(),
     commission_amount: z.number().optional().default(0),
+    received_by: schema => schema.received_by.length(15).optional(),
   },
 ).required({
   uuid: true,
@@ -49,6 +50,8 @@ export const insertSchema = createInsertSchema(
   customer_feedback: true,
   order_info_status: true,
   created_by: true,
+  order_type: true,
+  received_by: true,
 }).omit({
   id: true,
 }).extend({
