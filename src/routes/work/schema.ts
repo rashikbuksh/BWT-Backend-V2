@@ -83,7 +83,7 @@ export const info = work.table('info', {
   customer_feedback: text('customer_feedback').default(sql`null`),
   order_info_status: orderInfoStatusEnum('order_info_status').default('pending'),
   order_type: orderTypeEnum('order_type').default('normal'),
-
+  received_by: defaultUUID('received_by').references(() => hrSchema.users.uuid).default(sql`null`),
 });
 
 export const order = work.table('order', {

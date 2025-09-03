@@ -20,6 +20,7 @@ import { info, order, zone } from '../schema';
 
 const user = alias(hrSchema.users, 'user');
 const reference_user = alias(hrSchema.users, 'reference_user');
+const receivedByUser = alias(hrSchema.users, 'received_by_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -256,6 +257,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order_info_status: info.order_info_status,
       user_email: user.email,
       order_type: info.order_type,
+      received_by: info.received_by,
+      received_by_name: receivedByUser.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -270,7 +273,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(info.uuid, deliveredCountSubquery.info_uuid),
     )
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
-    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid));
+    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid));
 
   if (customer_uuid) {
     infoPromise.where(eq(info.user_uuid, customer_uuid));
@@ -325,6 +329,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       order_info_status: info.order_info_status,
       user_email: user.email,
       order_type: info.order_type,
+      received_by: info.received_by,
+      received_by_name: receivedByUser.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -332,6 +338,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
     .where(eq(info.uuid, uuid));
 
   const [data] = await infoPromise;

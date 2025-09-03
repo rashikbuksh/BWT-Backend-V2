@@ -49,6 +49,7 @@ export const insertSchema = createInsertSchema(
     is_home_repair: schema => schema.is_home_repair.default(false),
     proposed_cost: z.number().default(0),
     is_challan_needed: schema => schema.is_challan_needed.default(false),
+    engineer_uuid: schema => schema.engineer_uuid.length(15).optional(),
   },
 ).required({
   uuid: true,
@@ -89,6 +90,7 @@ export const insertSchema = createInsertSchema(
   is_reclaimed: true,
   reclaimed_order_uuid: true,
   created_by: true,
+  engineer_uuid: true,
 }).omit({
   id: true,
 });
