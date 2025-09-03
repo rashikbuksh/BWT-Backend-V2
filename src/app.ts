@@ -9,6 +9,7 @@ import authRouter from '@/routes/auth_user/index';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
+import routes from './routes/index.route';
 
 const app = createApp();
 
@@ -44,9 +45,9 @@ if (!isDev) {
   });
 }
 
-// routes.forEach((route) => {
-//   app.route(basePath, route);
-// });
+routes.forEach((route) => {
+  app.route(basePath, route);
+});
 
 // app.use('/api/auth/*', cors({
 //   origin: ALLOWED_ROUTES,
