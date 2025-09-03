@@ -5,7 +5,7 @@ import { cors } from 'hono/cors';
 import configureOpenAPI from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
-import authRouter from '@/routes/auth_user/index';
+// import authRouter from '@/routes/auth_user/index';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -45,10 +45,11 @@ if (!isDev) {
   });
 }
 
-const allRoutes = [authRouter, ...routes];
-
-allRoutes.forEach((route) => {
-  app.route(basePath, route);
+routes.forEach((route) => {
+  app.route(basePath, route); // e.g., /v1/...
 });
+
+// Register better-auth wildcard handler for /api/auth/**
+app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
 export default app;
