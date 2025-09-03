@@ -413,7 +413,7 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
 
   if (is_update === 'true') {
     enrichedOrders.sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      (a, b) => Number(a.id) - Number(b.id),
     );
   }
   else {
