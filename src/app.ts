@@ -57,6 +57,7 @@ app.use(`/api/auth/*`, cors({
 }));
 
 // Register better-auth wildcard handler for /api/auth/**
+app.on(['POST'], '/api/auth/sign-in/email', c => c.text('test hit', 200));
 app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
 export default app;
