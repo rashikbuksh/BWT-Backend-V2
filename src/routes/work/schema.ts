@@ -52,6 +52,11 @@ export const orderInfoStatusEnum = pgEnum('order_info_status', [
   'accepted',
   'cancel',
 ]);
+export const orderTypeEnum = pgEnum('order_type', [
+  'normal',
+  'priority',
+  'due',
+]);
 
 export const info = work.table('info', {
   id: serial('id').notNull().unique(),
@@ -77,6 +82,7 @@ export const info = work.table('info', {
   is_contact_with_customer: boolean('is_contact_with_customer').default(false),
   customer_feedback: text('customer_feedback').default(sql`null`),
   order_info_status: orderInfoStatusEnum('order_info_status').default('pending'),
+  order_type: orderTypeEnum('order_type').default('normal'),
 
 });
 
@@ -134,6 +140,9 @@ export const order = work.table('order', {
   is_reclaimed: boolean('is_reclaimed').default(false),
   reclaimed_order_uuid: defaultUUID('reclaimed_order_uuid').references(
     (): any => order.uuid,
+  ).default(sql`null`),
+  engineer_uuid: defaultUUID('engineer_uuid').references(
+    () => hrSchema.users.uuid,
   ).default(sql`null`),
 
 });
