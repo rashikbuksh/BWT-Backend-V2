@@ -46,6 +46,7 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     { url: '/v1/public', method: 'GET' },
     { url: '/v1/other/store/model/value/label', method: 'GET' },
     { url: '/v1/other/store/brand/value/label', method: 'GET' },
+    { url: '/v1/other/store/category/value/label', method: 'GET' },
     { url: '/v1/work/info', method: 'POST' },
     { url: '/v1/work/order', method: 'POST' },
     { url: '/v1/uploads', method: 'GET' },
