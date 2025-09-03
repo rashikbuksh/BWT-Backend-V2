@@ -18,7 +18,7 @@ export const list = createRoute({
     query: z.object({
       status: z.string().optional(),
       user_type: z.string().optional(),
-      department: z.string().optional(),
+      department_name: z.string().optional(),
     }),
   },
   responses: {
