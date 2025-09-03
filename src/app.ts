@@ -58,6 +58,19 @@ app.use(`/api/auth/*`, cors({
 
 // Register better-auth wildcard handler for /api/auth/**
 app.on(['POST'], '/api/auth/sign-in/email', c => c.text('test hit', 200));
-app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
+app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', async (c) => {
+  // Call better-auth with the raw Request and proxy back its Response
+  const res = await auth.handler(c.req.raw as Request);
+
+  // Copy headers from the upstream response
+  const headers: Record<string, string> = {};
+  res.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  // Read body as ArrayBuffer and return a new Response so Hono can send it
+  const body = await res.arrayBuffer();
+  return new Response(body, { status: res.status, headers });
+});
 
 export default app;
