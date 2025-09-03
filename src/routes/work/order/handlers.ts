@@ -571,6 +571,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       engineer_uuid: orderTable.engineer_uuid,
       engineer_name: engineerUser.name,
+      advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -862,6 +863,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       engineer_uuid: orderTable.engineer_uuid,
       engineer_name: engineerUser.name,
+      advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -1145,6 +1147,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       engineer_uuid: orderTable.engineer_uuid,
       engineer_name: engineerUser.name,
+      advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
