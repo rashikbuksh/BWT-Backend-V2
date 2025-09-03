@@ -204,7 +204,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { status, user_type } = c.req.valid('query');
+  const { status, user_type, department } = c.req.valid('query');
   const userPromise = db
     .select({
       uuid: users.uuid,
@@ -242,6 +242,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   if (user_type) {
     filters.push(eq(users.user_type, user_type));
+  }
+  if (department) {
+    filters.push(eq(department.department, department));
   }
   if (filters.length > 0) {
     userPromise.where(and(...filters));

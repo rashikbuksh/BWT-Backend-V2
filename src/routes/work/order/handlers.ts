@@ -568,6 +568,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
+      engineer_uuid: orderTable.engineer_uuid,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -856,6 +857,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
+      engineer_uuid: orderTable.engineer_uuid,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -1136,6 +1138,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
       new_order_id: sql`(SELECT CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
+      engineer_uuid: orderTable.engineer_uuid,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
