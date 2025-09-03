@@ -99,6 +99,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     qc_problem_statement,
     delivery_problem_statement,
     ready_for_delivery_date,
+    engineer_uuid,
+    advance_pay,
 
   } = formData;
 
@@ -219,6 +221,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     uuid,
     info_uuid,
     problem_statement,
+    engineer_uuid: defaultIfEmpty(engineer_uuid, null),
+    advance_pay: defaultIfEmpty(advance_pay, 0),
   };
 
   try {
@@ -310,11 +314,13 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     quantity,
     proposed_cost,
     bill_amount,
+    advance_pay,
   } = formData;
 
   formData.quantity = quantity || 0;
   formData.proposed_cost = proposed_cost || 0;
   formData.bill_amount = bill_amount || 0;
+  formData.advance_pay = advance_pay || 0;
 
   // Process arrays using raw form data if available
   if (formData) {
@@ -403,6 +409,8 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.is_reclaimed = defaultIfEmpty(formData.is_reclaimed, false);
   formData.reclaimed_order_uuid = defaultIfEmpty(formData.reclaimed_order_uuid, null);
   formData.created_by = defaultIfEmpty(formData.created_by, null);
+  formData.engineer_uuid = defaultIfEmpty(formData.engineer_uuid, null);
+  formData.advance_pay = defaultIfEmpty(formData.advance_pay, 0);
 
   console.warn(formData, 'Final formData before update');
 
