@@ -17,6 +17,7 @@ export const list = createRoute({
   request: {
     query: z.object({
       latest: z.string().optional(),
+      categories: z.string().optional(),
     }),
   },
   responses: {
