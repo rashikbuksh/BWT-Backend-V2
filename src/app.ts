@@ -49,11 +49,11 @@ routes.forEach((route) => {
   app.route(basePath, route);
 });
 
-// app.use('/api/auth/*', cors({
-//   origin: ALLOWED_ROUTES,
-//   maxAge: 600,
-//   credentials: true,
-// }));
+app.use('/api/auth/*', cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
 
 app.route('/', authRouter);
 
