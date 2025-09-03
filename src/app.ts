@@ -2,6 +2,7 @@ import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 
+import { auth } from '@/lib/auth';
 import configureOpenAPI from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
