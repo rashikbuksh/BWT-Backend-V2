@@ -52,8 +52,11 @@ if (!isDev) {
   });
 }
 
-// Register better-auth wildcard handler for /api/auth/**
-app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
+// Register better-auth via mount so Hono strips the '/api/auth' prefix
+// and the auth handler receives paths like '/sign-in/email'.
+app.mount('/api/auth', (req: Request) => {
+  return auth.handler(req);
+});
 
 routes.forEach((route) => {
   app.route(basePath, route); // e.g., /v1/...
