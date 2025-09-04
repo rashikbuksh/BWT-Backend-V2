@@ -44,7 +44,7 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
-app2.use(`${basePath2}/api/auth/*`, cors({
+app2.use(`/api/auth/*`, cors({
   origin: ALLOWED_ROUTES,
   maxAge: 600,
   credentials: true,
