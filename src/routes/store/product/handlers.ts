@@ -60,6 +60,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const { latest, categories, low_price, high_price, sorting } = c.req.valid('query');
+
   const productPromise = db
     .select({
       uuid: product.uuid,
@@ -110,16 +111,17 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(users, eq(product.created_by, users.uuid));
 
   if (low_price && high_price) {
-    const lowPriceNumber = Number(low_price) || 0;
-    const highPriceNumber = Number(high_price) || 0;
-    if (lowPriceNumber > 0) {
-      productPromise.where(sql`(
-        SELECT 
-              MIN(pv.selling_price::float8) as low_price
-              MAX(pv.selling_price::float8) as high_price
-        FROM store.product_variant pv
-        WHERE pv.product_uuid = ${product.uuid} AND pv.selling_price::float8 >= ${lowPriceNumber} AND pv.selling_price::float8 <= ${highPriceNumber}
-      ) IS NOT NULL`);
+    const minPrice = Number(low_price);
+    const maxPrice = Number(high_price);
+    if (Number.isFinite(minPrice) && Number.isFinite(maxPrice)) {
+      productPromise.where(sql`
+        EXISTS (
+          SELECT 1
+          FROM store.product_variant pv
+          WHERE pv.product_uuid = ${product.uuid}
+            AND pv.selling_price::float8 BETWEEN ${minPrice} AND ${maxPrice}
+        )
+      `);
     }
   }
 
