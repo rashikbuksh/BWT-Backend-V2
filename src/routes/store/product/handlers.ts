@@ -172,15 +172,28 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     }
   }
 
+  // Build pagination info and slice when requested
+  const totalRecords = result.length;
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+  const totalPages = Math.ceil(totalRecords / limitNumber) || 0;
+
+  const pagination = {
+    total_record: totalRecords,
+    current_page: pageNumber,
+    total_page: totalPages,
+    next_page: pageNumber + 1 > totalPages ? null : pageNumber + 1,
+    prev_page: pageNumber - 1 <= 0 ? null : pageNumber - 1,
+  };
+
   if (is_pagination === 'true') {
-    const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 10;
     const startIndex = (pageNumber - 1) * limitNumber;
     const endIndex = startIndex + limitNumber;
     result = result.slice(startIndex, endIndex);
+    return c.json({ pagination, data: result }, HSCode.OK);
   }
 
-  return c.json(result || [], HSCode.OK);
+  return c.json({ data: result }, HSCode.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
