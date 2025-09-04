@@ -190,7 +190,9 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { customer_uuid, status, order_type } = c.req.valid('query');
+  const { customer_uuid, status, orderType } = c.req.valid('query');
+
+  console.log('orderType:', orderType);
 
   const orderCountSubquery = db
     .select({
@@ -290,8 +292,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     );
   }
 
-  if (order_type) {
-    infoPromise.where(eq(info.order_type, order_type));
+  if (orderType !== 'undefined' && orderType !== null) {
+    infoPromise.where(eq(info.order_type, orderType));
   }
 
   const data = await infoPromise;
