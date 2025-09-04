@@ -2,11 +2,11 @@ import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 
-// import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import configureOpenAPI from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
-import authRouter from '@/routes/auth_user/index';
+// import authRouter from '@/routes/auth_user/index';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -62,11 +62,11 @@ if (!isDev) {
 // const allRouter = [authRouter, ...routes];
 
 // Register better-auth wildcard handler for /api/auth/**
-// app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
+app2.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
-app2.route(basePath2, authRouter);
+// app2.route(basePath2, authRouter);
 
-app.route('/', app2);
+app.route(basePath2, app2);
 
 routes.forEach((route) => {
   app.route(basePath, route);
