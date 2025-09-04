@@ -29,7 +29,6 @@ export const insertSchema = createInsertSchema(
     remarks: schema => schema.remarks.optional(),
   },
 ).required({
-  id: true,
   uuid: true,
   created_by: true,
   created_at: true,
@@ -51,6 +50,7 @@ export const insertSchema = createInsertSchema(
   box_uuid: true,
   updated_at: true,
   remarks: true,
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();
