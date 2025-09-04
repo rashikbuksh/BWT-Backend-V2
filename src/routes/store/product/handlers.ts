@@ -59,7 +59,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories, low_price, high_price, lowToHigh, highToLow, aToz, zToa } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, sorting } = c.req.valid('query');
   const productPromise = db
     .select({
       uuid: product.uuid,
@@ -130,28 +130,28 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       ) <= ${highPriceNumber}`);
     }
   }
-  if (lowToHigh) {
+  if (sorting === 'lowToHigh') {
     productPromise.orderBy(asc(sql`(
       SELECT MIN(pv.selling_price::float8)
       FROM store.product_variant pv
       WHERE pv.product_uuid = ${product.uuid}
     )`));
   }
-  if (highToLow) {
+  if (sorting === 'highToLow') {
     productPromise.orderBy(desc(sql`(
       SELECT MAX(pv.selling_price::float8)
       FROM store.product_variant pv
       WHERE pv.product_uuid = ${product.uuid}
     )`));
   }
-  if (aToz) {
+  if (sorting === 'aToz') {
     productPromise.orderBy(asc(product.title));
   }
-  if (zToa) {
+  if (sorting === 'zToa') {
     productPromise.orderBy(desc(product.title));
   }
 
-  if (!lowToHigh && !highToLow && !aToz && !zToa) {
+  if (!sorting) {
     productPromise.orderBy(desc(product.created_at));
   }
 
