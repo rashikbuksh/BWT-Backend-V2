@@ -20,10 +20,7 @@ export const list = createRoute({
       categories: z.string().optional(),
       low_price: z.string().optional(),
       high_price: z.string().optional(),
-      lowToHigh: z.string().optional(),
-      highToLow: z.string().optional(),
-      aToz: z.string().optional(),
-      zToa: z.string().optional(),
+      sorting: z.string().optional(),
     }),
   },
   responses: {
