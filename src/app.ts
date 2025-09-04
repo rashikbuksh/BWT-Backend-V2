@@ -37,7 +37,7 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
-app.use(`/api/auth/*`, cors({
+app.use(`${basePath2}/api/auth/*`, cors({
   origin: ALLOWED_ROUTES,
   maxAge: 600,
   credentials: true,
@@ -45,19 +45,21 @@ app.use(`/api/auth/*`, cors({
 
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
-    if (isPublicRoute(c.req.path, c.req.method) || c.req.path.startsWith('/v1/api/auth/'))
+    if (isPublicRoute(c.req.path, c.req.method) || c.req.path.startsWith('/v2/api/auth/'))
       return next();
 
     return bearerAuth({ verifyToken: VerifyToken })(c, next);
   });
 }
 
-const allRouter = [authRouter, ...routes];
+// const allRouter = [authRouter, ...routes];
 
 // Register better-auth wildcard handler for /api/auth/**
 // app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
-allRouter.forEach((route) => {
+app.route(basePath2, authRouter);
+
+routes.forEach((route) => {
   app.route(basePath, route);
 });
 
