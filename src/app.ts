@@ -14,10 +14,17 @@ import routes from './routes/index.route';
 
 const app = createApp();
 
+const app2 = createApp();
+
 configureOpenAPI(app);
 
 // Apply 50 MB limit to all routes
 app.use('*', bodyLimit({
+  maxSize: 50 * 1024 * 1024, // 50 MB
+  onError: c => c.text('File too large Greater Than 50 MB', 413),
+}));
+
+app2.use('*', bodyLimit({
   maxSize: 50 * 1024 * 1024, // 50 MB
   onError: c => c.text('File too large Greater Than 50 MB', 413),
 }));
@@ -37,7 +44,7 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
-app.use(`${basePath2}/api/auth/*`, cors({
+app2.use(`${basePath2}/api/auth/*`, cors({
   origin: ALLOWED_ROUTES,
   maxAge: 600,
   credentials: true,
@@ -57,7 +64,9 @@ if (!isDev) {
 // Register better-auth wildcard handler for /api/auth/**
 // app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
 
-app.route(basePath2, authRouter);
+app2.route(basePath2, authRouter);
+
+app.route('/', app2);
 
 routes.forEach((route) => {
   app.route(basePath, route);
