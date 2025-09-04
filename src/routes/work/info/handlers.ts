@@ -192,7 +192,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const { customer_uuid, status, orderType } = c.req.valid('query');
 
-  console.log('orderType:', orderType);
+  // console.log('orderType:', orderType);
 
   const orderCountSubquery = db
     .select({
