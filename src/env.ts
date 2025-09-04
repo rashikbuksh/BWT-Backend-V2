@@ -22,6 +22,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url().default('postgres://postgres:PG0987654321@localhost:5432/bwt'),
   PRIVATE_KEY: z.string().default('12'),
   SALT: z.coerce.number().default(14),
+  BETTER_AUTH_PORT: z.coerce.number().default(3006),
   BETTER_AUTH_SECRET: z.string().default('knUkEDOYJMlBBCdh8lQ2q0tteBh5g7PT'),
   BETTER_AUTH_URL: z.string().url().default('http://localhost:3010'),
 });

@@ -3,12 +3,16 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { openAPI } from 'better-auth/plugins';
 
 import db from '@/db'; // your drizzle instance
+import env from '@/env';
 import { ALLOWED_ROUTES } from '@/middlewares/auth';
+
+const isVps = env.NODE_ENV === 'vps';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg', // or "mysql", "sqlite"
   }),
+  baseURL: isVps ? env.PRODUCTION_URL : env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
   },
@@ -21,15 +25,20 @@ export const auth = betterAuth({
   advanced: {
     crossSubDomainCookies: {
       enabled: true,
-      // domain: '103.147.163.46', // your domain here
     },
-    defaultCookieAttributes: {
-      sameSite: 'lax',
-      // secure: true,
-      httpOnly: true,
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    },
+    defaultCookieAttributes: isVps
+      ? {
+          sameSite: 'none',
+          secure: true,
+          httpOnly: true,
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+        }
+      : {
+          sameSite: 'lax',
+          secure: false,
+          httpOnly: true,
+        },
   },
   plugins: [openAPI()],
   trustedOrigins: ALLOWED_ROUTES,

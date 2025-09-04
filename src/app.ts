@@ -66,10 +66,9 @@ app2.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw)
 
 // app2.route(basePath2, authRouter);
 
-app.route(basePath2, app2);
-
 routes.forEach((route) => {
   app.route(basePath, route);
 });
 
 export default app;
+export { app2 };
