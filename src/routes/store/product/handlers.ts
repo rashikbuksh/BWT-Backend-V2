@@ -193,7 +193,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     return c.json({ pagination, data: result }, HSCode.OK);
   }
 
-  return c.json({ data: result }, HSCode.OK);
+  return c.json(result || [], HSCode.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
