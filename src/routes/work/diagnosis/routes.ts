@@ -122,7 +122,7 @@ export const getByOrder = createRoute({
   method: 'get',
   request: {
     params: z.object({
-      order_uuid: z.string(),
+      order_uuid: z.string().length(15),
     }),
     query: z.object({
       public: z.string().optional(),

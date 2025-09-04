@@ -16,7 +16,7 @@ export const list = createRoute({
   tags,
   request: {
     query: z.object({
-      order_uuid: z.string().optional(),
+      order_uuid: z.string().length(15).optional(),
       entry: z.string().optional(),
       info_uuid: z.string().optional(),
       public: z.string().optional(),
