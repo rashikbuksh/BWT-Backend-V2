@@ -18,6 +18,12 @@ export const list = createRoute({
     query: z.object({
       latest: z.string().optional(),
       categories: z.string().optional(),
+      low_price: z.string().optional(),
+      high_price: z.string().optional(),
+      lowToHigh: z.string().optional(),
+      highToLow: z.string().optional(),
+      aToz: z.string().optional(),
+      zToa: z.string().optional(),
     }),
   },
   responses: {
