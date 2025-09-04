@@ -191,7 +191,7 @@ export const getDiagnosisDetailsByOrder = createRoute({
   method: 'get',
   request: {
     params: z.object({
-      order_uuid: z.string(),
+      order_uuid: z.string().length(15),
     }),
   },
   tags,
