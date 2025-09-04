@@ -144,10 +144,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       WHERE pv.product_uuid = ${product.uuid}
     )`));
   }
-  if (sorting === 'aToz') {
+  if (sorting === 'asc') {
     productPromise.orderBy(asc(product.title));
   }
-  if (sorting === 'zToa') {
+  if (sorting === 'desc') {
     productPromise.orderBy(desc(product.title));
   }
 
