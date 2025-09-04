@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 // import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -59,7 +59,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, lowToHigh, highToLow, aToz, zToa } = c.req.valid('query');
   const productPromise = db
     .select({
       uuid: product.uuid,
@@ -107,8 +107,53 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
     .leftJoin(model, eq(product.model_uuid, model.uuid))
-    .leftJoin(users, eq(product.created_by, users.uuid))
-    .orderBy(desc(product.created_at));
+    .leftJoin(users, eq(product.created_by, users.uuid));
+
+  if (low_price) {
+    const lowPriceNumber = Number(low_price) || 0;
+    if (lowPriceNumber > 0) {
+      productPromise.where(sql`(
+        SELECT MIN(pv.selling_price::float8)
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
+      ) >= ${lowPriceNumber}`);
+    }
+  }
+
+  if (high_price) {
+    const highPriceNumber = Number(high_price) || 0;
+    if (highPriceNumber > 0) {
+      productPromise.where(sql`(
+        SELECT MAX(pv.selling_price::float8)
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
+      ) <= ${highPriceNumber}`);
+    }
+  }
+  if (lowToHigh) {
+    productPromise.orderBy(asc(sql`(
+      SELECT MIN(pv.selling_price::float8)
+      FROM store.product_variant pv
+      WHERE pv.product_uuid = ${product.uuid}
+    )`));
+  }
+  if (highToLow) {
+    productPromise.orderBy(desc(sql`(
+      SELECT MAX(pv.selling_price::float8)
+      FROM store.product_variant pv
+      WHERE pv.product_uuid = ${product.uuid}
+    )`));
+  }
+  if (aToz) {
+    productPromise.orderBy(asc(product.title));
+  }
+  if (zToa) {
+    productPromise.orderBy(desc(product.title));
+  }
+
+  if (!lowToHigh && !highToLow && !aToz && !zToa) {
+    productPromise.orderBy(desc(product.created_at));
+  }
 
   const data = await productPromise;
   let result = data;
