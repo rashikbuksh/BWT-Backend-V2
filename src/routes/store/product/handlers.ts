@@ -59,7 +59,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories, low_price, high_price, sorting } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination } = c.req.valid('query');
 
   const productPromise = db
     .select({
@@ -170,6 +170,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     if (latestNumber > 0) {
       result = result.slice(0, latestNumber);
     }
+  }
+
+  if (is_pagination === 'true') {
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const startIndex = (pageNumber - 1) * limitNumber;
+    const endIndex = startIndex + limitNumber;
+    result = result.slice(startIndex, endIndex);
   }
 
   return c.json(result || [], HSCode.OK);

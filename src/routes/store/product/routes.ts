@@ -21,6 +21,9 @@ export const list = createRoute({
       low_price: z.string().optional(),
       high_price: z.string().optional(),
       sorting: z.string().optional(),
+      is_pagination: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
     }),
   },
   responses: {
