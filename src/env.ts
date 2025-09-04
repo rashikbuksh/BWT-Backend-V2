@@ -25,6 +25,8 @@ const EnvSchema = z.object({
   BETTER_AUTH_PORT: z.coerce.number().default(3006),
   BETTER_AUTH_SECRET: z.string().default('knUkEDOYJMlBBCdh8lQ2q0tteBh5g7PT'),
   BETTER_AUTH_URL: z.string().url().default('http://localhost:3010'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 export type env = z.infer<typeof EnvSchema>;

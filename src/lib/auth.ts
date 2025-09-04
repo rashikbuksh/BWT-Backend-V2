@@ -1,10 +1,11 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { openAPI } from 'better-auth/plugins';
+import { admin, openAPI } from 'better-auth/plugins';
 
 import db from '@/db'; // your drizzle instance
 import env from '@/env';
 import { ALLOWED_ROUTES } from '@/middlewares/auth';
+import { sso } from '@better-auth/sso';
 
 const isVps = env.NODE_ENV === 'vps';
 
@@ -16,12 +17,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  // socialProviders: {
-  //   github: {
-  //     clientId: process.env.GITHUB_CLIENT_ID as string,
-  //     clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-  //   },
-  // },
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID as string,
+      clientSecret: env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
   advanced: {
     crossSubDomainCookies: {
       enabled: true,
@@ -40,7 +41,11 @@ export const auth = betterAuth({
           httpOnly: true,
         },
   },
-  plugins: [openAPI()],
+  plugins: [
+    openAPI(),
+    sso(),
+    admin(),
+  ],
   trustedOrigins: ALLOWED_ROUTES,
 });
 
