@@ -109,27 +109,20 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(model, eq(product.model_uuid, model.uuid))
     .leftJoin(users, eq(product.created_by, users.uuid));
 
-  if (low_price) {
+  if (low_price && high_price) {
     const lowPriceNumber = Number(low_price) || 0;
+    const highPriceNumber = Number(high_price) || 0;
     if (lowPriceNumber > 0) {
       productPromise.where(sql`(
-        SELECT MIN(pv.selling_price::float8)
+        SELECT 
+              MIN(pv.selling_price::float8) as low_price
+              MAX(pv.selling_price::float8) as high_price
         FROM store.product_variant pv
-        WHERE pv.product_uuid = ${product.uuid}
-      ) >= ${lowPriceNumber}`);
+        WHERE pv.product_uuid = ${product.uuid} AND pv.selling_price::float8 >= ${lowPriceNumber} AND pv.selling_price::float8 <= ${highPriceNumber}
+      ) IS NOT NULL`);
     }
   }
 
-  if (high_price) {
-    const highPriceNumber = Number(high_price) || 0;
-    if (highPriceNumber > 0) {
-      productPromise.where(sql`(
-        SELECT MAX(pv.selling_price::float8)
-        FROM store.product_variant pv
-        WHERE pv.product_uuid = ${product.uuid}
-      ) <= ${highPriceNumber}`);
-    }
-  }
   if (sorting === 'lowToHigh') {
     productPromise.orderBy(asc(sql`(
       SELECT MIN(pv.selling_price::float8)
