@@ -353,6 +353,22 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       order_type: info.order_type,
       received_by: info.received_by,
       received_by_name: receivedByUser.name,
+      products: sql`(
+                SELECT COALESCE(
+                  json_agg(json_build_object(
+                    'order_uuid', o.uuid,
+                    'serial_no', o.serial_no, 
+                    'model_uuid', o.model_uuid,
+                    'model_name', m.name,
+                    'brand_uuid', m.brand_uuid,
+                    'brand_name', b.name 
+                  )), '[]'::json
+                )
+                FROM work.order o
+                LEFT JOIN store.model m ON o.model_uuid = m.uuid
+                LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
+                WHERE o.info_uuid = ${info.uuid}
+              )`,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
