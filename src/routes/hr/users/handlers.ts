@@ -228,7 +228,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       rating: users.rating,
       price: users.price,
       auth_user_id: users.auth_user_id,
-      street_address: users.street_address,
+      address: users.address,
       city: users.city,
       district: users.district,
     })
@@ -286,7 +286,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       rating: users.rating,
       price: users.price,
       auth_user_id: users.auth_user_id,
-      street_address: users.street_address,
+      address: users.address,
       city: users.city,
       district: users.district,
     })
@@ -490,7 +490,7 @@ export const getUserByAuthUserId: AppRouteHandler<GetUserByAuthUserIdRoute> = as
       rating: users.rating,
       price: users.price,
       auth_user_id: users.auth_user_id,
-      street_address: users.street_address,
+      address: users.address,
       city: users.city,
       district: users.district,
     })
