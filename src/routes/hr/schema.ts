@@ -16,6 +16,7 @@ import {
   PG_DECIMAL,
   uuid_primary,
 } from '@/lib/variables';
+import * as authUsers from '@/routes/auth_user/schema';
 
 const hr = pgSchema('hr');
 
@@ -45,6 +46,7 @@ export const userTypeEnum = pgEnum('user_type', [
   'employee',
   'customer',
   'vendor',
+  'web',
 ]);
 export const businessTypeEnum = pgEnum('business_type', [
   'individual',
@@ -70,13 +72,13 @@ export const users = hr.table('users', {
   pass: text('pass').notNull(),
   designation_uuid: defaultUUID('designation_uuid').references(
     () => designation.uuid,
-  ),
+  ).default(sql`null`),
   department_uuid: defaultUUID('department_uuid').references(
     () => department.uuid,
-  ),
+  ).default(sql`null`),
   can_access: text('can_access').default('{"profile":["read"]}'),
   ext: text('ext').default(sql`null`),
-  phone: text('phone').notNull().unique(),
+  phone: text('phone').default(sql`null`),
   created_at: text('created_at').notNull(),
   updated_at: text('updated_at').default(sql`null`),
   status: text('status').default(sql`0`),
@@ -87,6 +89,7 @@ export const users = hr.table('users', {
   where_they_find_us: whereTheyFindUsEnum('where_they_find_us').default('none'),
   rating: integer('rating').default(5),
   price: integer('price').default(5),
+  auth_user_id: text('auth_user_id').references(() => authUsers.user.id).default(sql`null`),
 });
 
 export const policy_and_notice = hr.table('policy_and_notice', {

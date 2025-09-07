@@ -29,14 +29,15 @@ export const insertSchema = createInsertSchema(
   {
     uuid: schema => schema.uuid.length(15),
     pass: schema => schema.pass.min(4).max(50),
-    designation_uuid: schema => schema.designation_uuid.length(15),
-    department_uuid: schema => schema.department_uuid.length(15),
+    designation_uuid: schema => schema.designation_uuid.length(15).optional(),
+    department_uuid: schema => schema.department_uuid.length(15).optional(),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     updated_at: schema => schema.updated_at.regex(dateTimePattern, {
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
+    auth_user_id: schema => schema.auth_user_id.optional(),
   },
 ).required({
   uuid: true,
@@ -58,6 +59,7 @@ export const insertSchema = createInsertSchema(
   price: true,
   updated_at: true,
   remarks: true,
+  auth_user_id: true,
 }).omit({
   id: true,
 });
