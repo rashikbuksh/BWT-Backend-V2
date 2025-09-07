@@ -90,6 +90,9 @@ export const users = hr.table('users', {
   rating: integer('rating').default(5),
   price: integer('price').default(5),
   auth_user_id: text('auth_user_id').references(() => authUsers.user.id).default(sql`null`),
+  street_address: text('street_address').default(sql`null`),
+  city: text('city').default(sql`null`),
+  district: text('district').default(sql`null`),
 });
 
 export const policy_and_notice = hr.table('policy_and_notice', {

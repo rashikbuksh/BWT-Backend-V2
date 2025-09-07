@@ -60,6 +60,9 @@ export const insertSchema = createInsertSchema(
   updated_at: true,
   remarks: true,
   auth_user_id: true,
+  street_address: true,
+  city: true,
+  district: true,
 }).omit({
   id: true,
 });

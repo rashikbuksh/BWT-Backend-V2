@@ -15,6 +15,7 @@ const router = createRouter()
   .openapi(routes.patchUserStatus, handlers.patchUserStatus)
   .openapi(routes.patchUserPassword, handlers.patchUserPassword)
   .openapi(routes.patchRatingPrice, handlers.patchRatingPrice)
-  .openapi(routes.loginUser, handlers.loginUser);
+  .openapi(routes.loginUser, handlers.loginUser)
+  .openapi(routes.getUserByAuthUserId, handlers.getUserByAuthUserId);
 
 export default router;
