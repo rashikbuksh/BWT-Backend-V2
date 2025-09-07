@@ -261,7 +261,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order_type: info.order_type,
       received_by: info.received_by,
       received_by_name: receivedByUser.name,
-      product: sql`(
+      products: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
                     'order_uuid', o.uuid,
