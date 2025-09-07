@@ -17,14 +17,14 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       label: sql`CONCAT(
             'WO',
             TO_CHAR(${order.created_at}, 'YY'),
-            ' - ',
+            '-',
             ${order.id},
             ' (',
             'WI',
             TO_CHAR(${info.created_at}, 'YY'),
-            ' - ',
+            '-',
            ${info.id},
-            ')' , ' - ' ,${users.name} ,' - ' ,${users.phone}
+            ')' , '-' ,${users.name} ,'-' ,${users.phone}
         )`,
     })
     .from(order)
