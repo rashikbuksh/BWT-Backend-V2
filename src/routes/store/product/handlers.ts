@@ -218,6 +218,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     care_maintenance_description: product.care_maintenance_description,
     attribute_list: product.attribute_list,
     is_published: product.is_published,
+    is_order_exist: sql`EXISTS (SELECT 1 FROM store.ordered oi LEFT JOIN store.product_variant pv ON oi.product_variant_uuid = pv.uuid WHERE pv.product_uuid = ${product.uuid})`,
     product_variant: sql`COALESCE(ARRAY(
     SELECT json_build_object(
       'uuid', pv.uuid,
