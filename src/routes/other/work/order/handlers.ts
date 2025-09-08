@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -35,7 +35,8 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .leftJoin(
       users,
       eq(info.user_uuid, users.uuid),
-    );
+    )
+    .orderBy(desc(order.id));
 
   const filters = [];
 
