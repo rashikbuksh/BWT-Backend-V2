@@ -7,6 +7,6 @@ import * as handlers from './handlers';
 
 const router = createRouter()
   .on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw))
-  .on('GET', '/auth/user/:auth_user_id', handlers.getUserByAuthUserId);
+  .on('GET', '/api/auth/auth/user/:auth_user_id', handlers.getUserByAuthUserId);
 
 export default router;
