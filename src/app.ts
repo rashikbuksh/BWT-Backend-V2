@@ -1,5 +1,3 @@
-import type { AuthType } from '@/lib/auth';
-
 import { Hono } from 'hono';
 import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
@@ -17,7 +15,7 @@ import routes from './routes/index.route';
 
 const app = createApp();
 
-const app2 = new Hono<{ Variables: AuthType }>();
+const app2 = new Hono();
 
 configureOpenAPI(app);
 
@@ -47,11 +45,17 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
-app2.use(`/api/auth/*`, cors({
-  origin: ALLOWED_ROUTES,
-  maxAge: 600,
-  credentials: true,
-}));
+app2.use(
+  '/api/auth/*', // or replace with "*" to enable cors for all routes
+  cors({
+    origin: ALLOWED_ROUTES,
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    exposeHeaders: ['Content-Length'],
+    maxAge: 600,
+    credentials: true,
+  }),
+);
 
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
