@@ -1,17 +1,16 @@
-import type { AppRouteHandler } from '@/lib/types';
+// import type { AppRouteHandler } from '@/lib/types';
 
 import { eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 
-import type {
-  GetUserByAuthUserIdRoute,
-} from './routes';
-
+// import type {
+//   GetUserByAuthUserIdRoute,
+// } from './routes';
 import { department, designation, users } from '../hr/schema';
 
-export const getUserByAuthUserId: AppRouteHandler<GetUserByAuthUserIdRoute> = async (c: any) => {
+export async function getUserByAuthUserId(c: any) {
   const { auth_user_id } = c.req.valid('param');
 
   const userPromise = db
@@ -48,4 +47,4 @@ export const getUserByAuthUserId: AppRouteHandler<GetUserByAuthUserIdRoute> = as
   const [data] = await userPromise;
 
   return c.json(data || null, HSCode.OK);
-};
+}

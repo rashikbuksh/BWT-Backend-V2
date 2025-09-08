@@ -1,12 +1,15 @@
+import type { AuthType } from '@/lib/auth';
+
+import { Hono } from 'hono';
 import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 
 import { auth } from '@/lib/auth';
-import configureOpenAPI from '@/lib/configure_open_api';
+import { configureOpenAPI } from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
-// import authRouter from '@/routes/auth_user/index';
+import authRouter from '@/routes/auth_user/index';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -14,7 +17,7 @@ import routes from './routes/index.route';
 
 const app = createApp();
 
-const app2 = createApp();
+const app2 = new Hono<{ Variables: AuthType }>();
 
 configureOpenAPI(app);
 
@@ -52,17 +55,20 @@ app2.use(`/api/auth/*`, cors({
 
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
-    if (isPublicRoute(c.req.path, c.req.method) || c.req.path.startsWith('/v2/api/auth/'))
+    if (
+      isPublicRoute(c.req.path, c.req.method)
+    ) {
       return next();
-
+    }
     return bearerAuth({ verifyToken: VerifyToken })(c, next);
   });
 }
 
 // const allRouter = [authRouter, ...routes];
 
-// Register better-auth wildcard handler for /api/auth/**
-app2.on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw));
+app2
+  .on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw))
+  .route('/', authRouter);
 
 // app2.route(basePath2, authRouter);
 
