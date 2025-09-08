@@ -104,6 +104,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         ORDER BY pv.selling_price::float8 DESC NULLS LAST
         LIMIT 1
       )`,
+      is_published: product.is_published,
     })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
@@ -216,6 +217,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     specifications_description: product.specifications_description,
     care_maintenance_description: product.care_maintenance_description,
     attribute_list: product.attribute_list,
+    is_published: product.is_published,
     product_variant: sql`COALESCE(ARRAY(
     SELECT json_build_object(
       'uuid', pv.uuid,
