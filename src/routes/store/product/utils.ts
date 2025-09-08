@@ -71,6 +71,7 @@ export const insertSchema = createInsertSchema(
   specifications_description: true,
   care_maintenance_description: true,
   attribute_list: true,
+  is_published: true,
 });
 
 export const patchSchema = insertSchema.partial();
