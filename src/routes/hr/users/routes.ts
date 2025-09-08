@@ -337,22 +337,22 @@ export const loginUser = createRoute({
   },
 });
 
-export const getUserByAuthUserId = createRoute({
-  path: '/hr/user/auth-user/{auth_user_id}',
-  method: 'get',
-  tags,
-  request: {
-    params: z.object({
-      auth_user_id: z.string(),
-    }),
-  },
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
-      'The list of auth users',
-    ),
-  },
-});
+// export const getUserByAuthUserId = createRoute({
+//   path: '/hr/user/auth-user/{auth_user_id}',
+//   method: 'get',
+//   tags,
+//   request: {
+//     params: z.object({
+//       auth_user_id: z.string(),
+//     }),
+//   },
+//   responses: {
+//     [HSCode.OK]: jsonContent(
+//       z.array(selectSchema),
+//       'The list of auth users',
+//     ),
+//   },
+// });
 
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
@@ -366,4 +366,4 @@ export type PatchUserStatusRoute = typeof patchUserStatus;
 export type PatchUserPasswordRoute = typeof patchUserPassword;
 export type PatchRatingPriceRoute = typeof patchRatingPrice;
 export type LoginRoute = typeof loginUser;
-export type GetUserByAuthUserIdRoute = typeof getUserByAuthUserId;
+// export type GetUserByAuthUserIdRoute = typeof getUserByAuthUserId;
