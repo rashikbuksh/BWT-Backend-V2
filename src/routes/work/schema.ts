@@ -16,6 +16,7 @@ import {
 } from '@/lib/variables';
 
 import * as hrSchema from '../hr/schema';
+import { whereTheyFindUsEnum } from '../hr/schema';
 import * as storeSchema from '../store/schema';
 
 const work = pgSchema('work');
@@ -58,6 +59,13 @@ export const orderTypeEnum = pgEnum('order_type', [
   'due',
 ]);
 
+export const serviceTypeEnum = pgEnum('service_type', [
+  'monitor',
+  'display',
+  'all_in_one',
+  'accessories',
+]);
+
 export const info = work.table('info', {
   id: serial('id').notNull().unique(),
   uuid: uuid_primary,
@@ -84,6 +92,11 @@ export const info = work.table('info', {
   order_info_status: orderInfoStatusEnum('order_info_status').default('pending'),
   order_type: orderTypeEnum('order_type').default('normal'),
   received_by: defaultUUID('received_by').references(() => hrSchema.users.uuid).default(sql`null`),
+  name: text('name').default(sql`null`),
+  phone: text('phone').default(sql`null`),
+  where_they_find_us: whereTheyFindUsEnum('where_they_find_us').default('none'),
+  is_fronted_user: boolean('is_fronted_user').default(false),
+  service_type: serviceTypeEnum('service_type').default('monitor'),
 });
 
 export const order = work.table('order', {
