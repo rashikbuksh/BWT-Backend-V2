@@ -36,6 +36,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     business_type,
     where_they_find_us,
     submitted_by,
+    is_fronted_user,
   } = value;
 
   let userUuid = user_uuid;
@@ -89,7 +90,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
-  const [data] = await db.insert(info).values({ ...value, user_uuid: userUuid }).returning({
+  const [data] = await db.insert(info).values(
+    is_fronted_user ? { ...value } : { ...value, user_uuid: userUuid },
+  ).returning({
     name: info.uuid,
   });
 

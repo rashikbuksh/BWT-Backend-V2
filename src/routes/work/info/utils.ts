@@ -52,6 +52,11 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   order_type: true,
   received_by: true,
+  is_fronted_user: true,
+  name: true,
+  phone: true,
+  where_they_find_us: true,
+  service_type: true,
 }).omit({
   id: true,
 }).extend({
