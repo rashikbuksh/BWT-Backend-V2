@@ -17,7 +17,7 @@ const app = createApp();
 const app2 = createApp();
 
 configureOpenAPI(app);
-configureOpenAPI(app2, '/api/reference');
+configureOpenAPI(app2, '/api/reference', '/api/doc');
 
 // Apply 50 MB limit to all routes
 app.use('*', bodyLimit({

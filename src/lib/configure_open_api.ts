@@ -7,8 +7,8 @@ import packageJSON from '../../package.json' with { type: 'json' };
 
 const isVPS = env.NODE_ENV === 'vps';
 
-export function configureOpenAPI(app: AppOpenAPI, openapiPath = '/reference') {
-  app.doc('/doc', {
+export function configureOpenAPI(app: AppOpenAPI, openapiPath = '/reference', docPath = '/doc') {
+  app.doc(docPath, {
     openapi: '3.0.0',
     info: {
       title: packageJSON.name,
@@ -27,7 +27,7 @@ export function configureOpenAPI(app: AppOpenAPI, openapiPath = '/reference') {
   app.get(
     `${openapiPath}`,
     apiReference({
-      url: '/doc',
+      url: `${docPath}`,
       theme: 'kepler',
       pageTitle: packageJSON.name,
       layout: 'modern', // modern, classic
