@@ -71,8 +71,8 @@ if (!isDev) {
 // const allRouter = [authRouter, ...routes];
 
 app2
-  .on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw))
   .route('/', authRouter)
+  .on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw))
   .get('/', c => c.json({ status: 'ok', message: 'Auth Service is running' }));
 
 // app2.route(basePath2, authRouter);
