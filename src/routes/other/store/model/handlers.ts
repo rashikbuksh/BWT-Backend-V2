@@ -14,6 +14,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .select({
       value: model.uuid,
       label: is_brand === 'false' ? model.name : sql`CONCAT(${model.name}, '(', ${brand.name}, ')')`,
+      brand_uuid: model.brand_uuid,
     })
     .from(model)
     .leftJoin(
