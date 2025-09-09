@@ -9,8 +9,8 @@ import * as routes from './routes';
 // import auths from './auths';
 export const authRouter = new OpenAPIHono<{ Variables: AuthType }>();
 
-// Exception: bypass betterAuth for /api/auth/reference
-authRouter.all('/api/auth/*', (c, next) => {
+// Exception: bypass betterAuth for /auth/reference
+authRouter.all('/auth/*', (c, next) => {
   if (c.req.path === '/api/auth/reference') {
     return next();
   }

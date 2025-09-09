@@ -72,7 +72,7 @@ if (!isDev) {
 
 app2
   .on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw))
-  .route('/', authRouter)
+  .route('/api', authRouter)
   .get('/', c => c.json({ status: 'ok', message: 'Auth Service is running' }));
 
 // app2.route(basePath2, authRouter);
