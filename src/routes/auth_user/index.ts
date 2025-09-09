@@ -1,29 +1,28 @@
 import type { AuthType } from '@/lib/auth';
 
-import { Hono } from 'hono';
-
-// import { createRouter } from '@/lib/create_app';
 import { betterAuth } from '@/middlewares/better_auth';
+import { OpenAPIHono } from '@hono/zod-openapi';
 
 import * as handlers from './handlers';
+import * as routes from './routes';
 
 // import auths from './auths';
-
-export const authRouter = new Hono<{ Variables: AuthType }>();
+export const authRouter = new OpenAPIHono<{ Variables: AuthType }>();
 
 // Exception: bypass betterAuth for /api/auth/reference
-authRouter.use((c, next) => {
+authRouter.all('/api/auth/*', (c, next) => {
   if (c.req.path === '/api/auth/reference') {
     return next();
   }
   return betterAuth(c, next);
 });
 
-authRouter.get('/api/auth/auth/user/:auth_user_id', async (c) => {
+authRouter.openapi(routes.getUserByAuthUserId, async (c) => {
   const user = c.get('user');
-  if (!user)
-    return c.json({ error: 'Unauthorized' }, 401);
-
+  if (!user) {
+    // Return a notFound response or a response matching the expected error type
+    return c.notFound();
+  }
   return handlers.getUserByAuthUserId(c);
 });
 
