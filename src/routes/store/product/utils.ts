@@ -72,6 +72,7 @@ export const insertSchema = createInsertSchema(
   care_maintenance_description: true,
   attribute_list: true,
   is_published: true,
+  extra_information: true,
 });
 
 export const patchSchema = insertSchema.partial();
