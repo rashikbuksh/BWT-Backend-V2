@@ -1,4 +1,3 @@
-import { Hono } from 'hono';
 import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
@@ -15,9 +14,10 @@ import routes from './routes/index.route';
 
 const app = createApp();
 
-const app2 = new Hono();
+const app2 = createApp();
 
 configureOpenAPI(app);
+configureOpenAPI(app2);
 
 // Apply 50 MB limit to all routes
 app.use('*', bodyLimit({
