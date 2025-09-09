@@ -5,6 +5,8 @@ import type { AppOpenAPI } from './types';
 
 import packageJSON from '../../package.json' with { type: 'json' };
 
+const isVPS = env.NODE_ENV === 'vps';
+
 export function configureOpenAPI(app: AppOpenAPI) {
   app.doc('/doc', {
     openapi: '3.0.0',
@@ -16,6 +18,7 @@ export function configureOpenAPI(app: AppOpenAPI) {
     },
     servers: [
       { url: env.SERVER_URL, description: 'Dev' },
+      { url: isVPS ? env.BETTER_AUTH_URL : `${env.BETTER_AUTH_URL}/v2`, description: 'Better Auth Dev' },
       { url: env.PRODUCTION_URL, description: 'Prod' },
     ],
 
