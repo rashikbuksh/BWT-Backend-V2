@@ -18,7 +18,7 @@ export function configureOpenAPI(app: AppOpenAPI, openapiPath = '/reference') {
     },
     servers: [
       { url: env.SERVER_URL, description: 'Dev' },
-      { url: isVPS ? `${env.BETTER_AUTH_URL}/v2` : env.BETTER_AUTH_URL, description: 'Better Auth Dev' },
+      { url: isVPS ? env.BETTER_AUTH_PRODUCTION_URL : env.BETTER_AUTH_URL, description: 'Better Auth Dev' },
       { url: env.PRODUCTION_URL, description: 'Prod' },
     ],
 

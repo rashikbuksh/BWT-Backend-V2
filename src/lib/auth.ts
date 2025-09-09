@@ -13,7 +13,7 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg', // or "mysql", "sqlite"
   }),
-  baseURL: isVps ? env.PRODUCTION_URL : env.BETTER_AUTH_URL,
+  baseURL: isVps ? env.BETTER_AUTH_PRODUCTION_URL : env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
   },
