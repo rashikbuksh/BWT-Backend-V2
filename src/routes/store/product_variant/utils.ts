@@ -62,6 +62,9 @@ export const insertSchema = createInsertSchema(
   warehouse_11: true,
   warehouse_12: true,
   selling_warehouse: true,
+  selling_price: true,
+  discount: true,
+  discount_unit: true,
 });
 
 export const patchSchema = insertSchema.partial();

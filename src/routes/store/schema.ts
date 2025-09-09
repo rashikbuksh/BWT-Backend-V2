@@ -104,6 +104,8 @@ export const product = store.table('product', {
   extra_information: text('extra_information').default(sql`null`),
 });
 
+export const discountUnitEnum = pgEnum('discount_unit', ['bdt', 'percentage']);
+
 export const product_variant = store.table('product_variant', {
   uuid: uuid_primary,
   product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
@@ -128,6 +130,7 @@ export const product_variant = store.table('product_variant', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
   index: integer('index').notNull(),
+  discount_unit: discountUnitEnum('discount_unit').default('bdt'),
 });
 
 export const product_image = store.table('product_image', {

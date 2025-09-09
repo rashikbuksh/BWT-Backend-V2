@@ -246,6 +246,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       'updated_by', pv.updated_by,
       'remarks', pv.remarks,
       'index', pv.index,
+      'discount_unit', pv.discount_unit,
       'product_variant_values_entry', (
         COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,
