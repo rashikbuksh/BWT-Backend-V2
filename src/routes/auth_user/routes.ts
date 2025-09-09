@@ -8,7 +8,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 const tags = ['auth_user.user'];
 
 export const getUserByAuthUserId = createRoute({
-  path: '/user-auth/{auth_user_id}',
+  path: '/auth/user-auth/{auth_user_id}',
   method: 'get',
   tags,
   request: {
