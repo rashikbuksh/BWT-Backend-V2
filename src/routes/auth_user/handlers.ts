@@ -46,11 +46,9 @@ export async function getUserByAuthUserId(c: any) {
 
   const [data] = await userPromise;
 
-  console.log('User Data:', data);
-
   if (!data) {
     return c.json({ message: 'User not found' }, HSCode.NOT_FOUND);
   }
 
-  return c.json(data || null, HSCode.OK);
+  return c.json(data, HSCode.OK);
 }
