@@ -152,9 +152,27 @@ export const billInfoWithOrderDetails = createRoute({
   },
 });
 
+export const billInfoByUserUuid = createRoute({
+  path: '/store/bill-info/by-user/{user_uuid}',
+  method: 'get',
+  tags,
+  request: {
+    params: z.object({
+      user_uuid: z.string().uuid(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of bill-info by user uuid',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type BillInfoWithOrderDetailsRoute = typeof billInfoWithOrderDetails;
+export type BillInfoByUserUuidRoute = typeof billInfoByUserUuid;

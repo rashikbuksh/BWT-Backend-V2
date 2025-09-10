@@ -9,6 +9,7 @@ const router = createRouter()
   .openapi(routes.getOne, handlers.getOne)
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
-  .openapi(routes.billInfoWithOrderDetails, handlers.billInfoWithOrderDetails);
+  .openapi(routes.billInfoWithOrderDetails, handlers.billInfoWithOrderDetails)
+  .openapi(routes.billInfoByUserUuid, handlers.billInfoByUserUuid);
 
 export default router;

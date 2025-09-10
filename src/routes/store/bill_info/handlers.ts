@@ -7,7 +7,7 @@ import db from '@/db';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { BillInfoWithOrderDetailsRoute, CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { BillInfoByUserUuidRoute, BillInfoWithOrderDetailsRoute, CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { bill_info } from '../schema';
 
@@ -236,6 +236,43 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
   }
 
   const [data] = await bill_infoPromise;
+
+  return c.json(data, HSCode.OK);
+};
+
+export const billInfoByUserUuid: AppRouteHandler<BillInfoByUserUuidRoute> = async (c: any) => {
+  const { user_uuid } = c.req.valid('param');
+
+  const bill_infoPromise = db
+    .select({
+      id: bill_info.id,
+      bill_id: sql`CONCAT('BI', TO_CHAR(${bill_info.created_at}::timestamp, 'YY'), '-', ${bill_info.id})`,
+      uuid: bill_info.uuid,
+      user_uuid: bill_info.user_uuid,
+      name: bill_info.name,
+      phone: bill_info.phone,
+      address: bill_info.address,
+      city: bill_info.city,
+      district: bill_info.district,
+      note: bill_info.note,
+      is_ship_different: bill_info.is_ship_different,
+      created_by: bill_info.created_by,
+      created_by_name: users.name,
+      created_at: bill_info.created_at,
+      updated_by: bill_info.updated_by,
+      updated_at: bill_info.updated_at,
+      remarks: bill_info.remarks,
+      email: bill_info.email,
+      payment_method: bill_info.payment_method,
+      is_paid: bill_info.is_paid,
+      bill_status: bill_info.bill_status,
+    })
+    .from(bill_info)
+    .leftJoin(users, eq(bill_info.created_by, users.uuid))
+    .where(eq(bill_info.user_uuid, user_uuid))
+    .orderBy(desc(bill_info.created_at));
+
+  const data = await bill_infoPromise;
 
   return c.json(data, HSCode.OK);
 };
