@@ -2,11 +2,9 @@ import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 
-import { auth } from '@/lib/auth';
 import { configureOpenAPI } from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
-import authRouter from '@/routes/auth_user/index';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -14,18 +12,10 @@ import routes from './routes/index.route';
 
 const app = createApp();
 
-const app2 = createApp();
-
 configureOpenAPI(app);
-configureOpenAPI(app2, '/api/reference', '/api/doc');
 
 // Apply 50 MB limit to all routes
 app.use('*', bodyLimit({
-  maxSize: 50 * 1024 * 1024, // 50 MB
-  onError: c => c.text('File too large Greater Than 50 MB', 413),
-}));
-
-app2.use('*', bodyLimit({
   maxSize: 50 * 1024 * 1024, // 50 MB
   onError: c => c.text('File too large Greater Than 50 MB', 413),
 }));
@@ -45,18 +35,6 @@ app.use(`${basePath}/*`, cors({
   credentials: true,
 }));
 
-app2.use(
-  '/api/auth/*', // or replace with "*" to enable cors for all routes
-  cors({
-    origin: ALLOWED_ROUTES,
-    allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['POST', 'GET', 'OPTIONS'],
-    exposeHeaders: ['Content-Length'],
-    maxAge: 600,
-    credentials: true,
-  }),
-);
-
 if (!isDev) {
   app.use(`${basePath}/*`, async (c, next) => {
     if (
@@ -70,11 +48,6 @@ if (!isDev) {
 
 // const allRouter = [authRouter, ...routes];
 
-app2
-  .route('/', authRouter)
-  .on(['POST', 'GET', 'OPTIONS'], '/api/auth/**', c => auth.handler(c.req.raw))
-  .get('/', c => c.json({ status: 'ok', message: 'Auth Service is running' }));
-
 // app2.route(basePath2, authRouter);
 
 routes.forEach((route) => {
@@ -82,4 +55,3 @@ routes.forEach((route) => {
 });
 
 export default app;
-export { app2 };

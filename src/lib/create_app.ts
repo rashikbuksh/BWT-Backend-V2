@@ -4,11 +4,10 @@ import { defaultHook } from 'stoker/openapi';
 import { pinoLogger } from '@/middlewares/pino_logger';
 import { OpenAPIHono } from '@hono/zod-openapi';
 
-import type { AuthType } from './auth';
 import type { AppBindings, AppOpenAPI } from './types';
 
 export function createRouter() {
-  return new OpenAPIHono<{ AppBindings: AppBindings; Variables: AuthType }>({
+  return new OpenAPIHono<AppBindings>({
     strict: false,
     defaultHook,
   });

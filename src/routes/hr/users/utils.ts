@@ -37,7 +37,6 @@ export const insertSchema = createInsertSchema(
     updated_at: schema => schema.updated_at.regex(dateTimePattern, {
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
-    auth_user_id: schema => schema.auth_user_id.optional(),
   },
 ).required({
   uuid: true,
@@ -59,7 +58,6 @@ export const insertSchema = createInsertSchema(
   price: true,
   updated_at: true,
   remarks: true,
-  auth_user_id: true,
   address: true,
   city: true,
   district: true,
