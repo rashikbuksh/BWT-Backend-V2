@@ -24,7 +24,7 @@ authRouter.openapi(routes.getUserByAuthUserId, async (c) => {
     return c.notFound();
   }
 
-  const response = handlers.getUserByAuthUserId(c);
+  const response = await handlers.getUserByAuthUserId(c);
   console.log('Response FROM HANDLER: ', response);
   return response;
 });
