@@ -1,7 +1,7 @@
 // import type { AppRouteHandler } from '@/lib/types';
 
 import { eq } from 'drizzle-orm';
-import * as HSCode from 'stoker/http-status-codes';
+// import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 
@@ -47,8 +47,8 @@ export async function getUserByAuthUserId(c: any) {
   const [data] = await userPromise;
 
   if (!data) {
-    return c.json({ message: 'User not found' }, HSCode.NOT_FOUND);
+    return null;
   }
 
-  return c.json(data, HSCode.OK);
+  return data;
 }

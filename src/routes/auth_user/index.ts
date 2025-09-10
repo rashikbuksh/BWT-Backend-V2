@@ -1,5 +1,7 @@
 import type { AuthType } from '@/lib/auth';
 
+import * as HSCode from 'stoker/http-status-codes';
+
 import { betterAuth } from '@/middlewares/better_auth';
 import { OpenAPIHono } from '@hono/zod-openapi';
 
@@ -17,16 +19,25 @@ authRouter.all('/auth/*', (c, next) => {
   return betterAuth(c, next);
 });
 
-authRouter.openapi(routes.getUserByAuthUserId, async (c) => {
+authRouter.openapi(routes.getUserByAuthUserId, (c: any) => {
   const user = c.get('user');
   if (!user) {
-    // Return a notFound response or a response matching the expected error type
-    return c.notFound();
+    // Return a notFound TypedResponse
+    return c.json({ message: 'Unauthorized' }, HSCode.UNAUTHORIZED);
   }
 
-  const response = await handlers.getUserByAuthUserId(c);
+  // Ensure the handler returns the expected TypedResponse type
+  const response = handlers.getUserByAuthUserId(c);
+
   console.log('Response FROM HANDLER: ', response);
-  return response;
+
+  if (!response) {
+    // Return a TypedResponse for not found
+    return c.json({ message: 'data not found' }, HSCode.NOT_FOUND);
+  }
+
+  // Return as TypedResponse with correct status and format
+  return c.json(response, HSCode.OK);
 });
 
 export default authRouter;
