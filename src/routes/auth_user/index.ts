@@ -23,7 +23,10 @@ authRouter.openapi(routes.getUserByAuthUserId, async (c) => {
     // Return a notFound response or a response matching the expected error type
     return c.notFound();
   }
-  return handlers.getUserByAuthUserId(c);
+
+  const response = handlers.getUserByAuthUserId(c);
+  console.log('Response FROM HANDLER: ', response);
+  return response;
 });
 
 export default authRouter;
