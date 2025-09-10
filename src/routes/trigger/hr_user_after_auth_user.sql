@@ -1,3 +1,10 @@
+-- NOT NEEDED ANYMORE
+
+-- DROP TRIGGER IF EXISTS after_auth_user_insert ON auth_user.user;
+-- DROP FUNCTION IF EXISTS hr.user_insert_after_auth_user_insert;
+-- DROP TRIGGER IF EXISTS after_auth_user_delete ON auth_user.user;
+-- DROP FUNCTION IF EXISTS hr.user_delete_after_auth_user_delete;
+
 CREATE OR REPLACE FUNCTION hr.user_insert_after_auth_user_insert()
 RETURNS TRIGGER AS $$
 DECLARE uuid VARCHAR;
@@ -61,3 +68,6 @@ CREATE OR REPLACE TRIGGER after_auth_user_delete
 AFTER DELETE ON auth_user.user
 FOR EACH ROW
 EXECUTE FUNCTION hr.user_delete_after_auth_user_delete();
+
+
+

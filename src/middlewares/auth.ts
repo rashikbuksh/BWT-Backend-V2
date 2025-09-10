@@ -42,6 +42,7 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
 
   const publicUrls: PublicUrlProps[] = [
     { url: '/v1/hr/user/login', method: 'POST' },
+    { url: '/v1/hr/user', method: 'POST' },
     { url: '/v1/hr/employee-login', method: 'POST' },
     { url: '/v1/public', method: 'GET' },
     { url: '/v1/other/store/model/value/label', method: 'GET' },
