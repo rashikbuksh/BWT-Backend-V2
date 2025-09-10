@@ -266,6 +266,75 @@ export const billInfoByUserUuid: AppRouteHandler<BillInfoByUserUuidRoute> = asyn
       payment_method: bill_info.payment_method,
       is_paid: bill_info.is_paid,
       bill_status: bill_info.bill_status,
+      ordered: sql`(
+        SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json)
+        FROM (
+          SELECT
+            o.uuid,
+            o.product_variant_uuid,
+            o.quantity,
+            o.selling_price::float8,
+            o.order_status,
+            pv.product_uuid,
+            p.title AS product_title,
+            pv.selling_price::float8 AS variant_selling_price,
+            pv.discount::float8,
+            pv.selling_warehouse::float8,
+            pv.created_by AS variant_created_by,
+            pv.created_at AS variant_created_at,
+            pv.updated_at AS variant_updated_at,
+            pv.updated_by AS variant_updated_by,
+            pv.remarks AS variant_remarks,
+            pv.index AS variant_index,
+            (
+              SELECT COALESCE(jsonb_agg(json_build_object(
+                'uuid', pvve.uuid,
+                'product_variant_uuid', pvve.product_variant_uuid,
+                'attribute_uuid', pvve.attribute_uuid,
+                'attribute_name', pa.name,
+                'value', pvve.value,
+                'created_by', pvve.created_by,
+                'created_at', pvve.created_at,
+                'updated_by', pvve.updated_by,
+                'updated_at', pvve.updated_at,
+                'remarks', pvve.remarks
+              )), '[]'::jsonb)
+              FROM store.product_variant_values_entry pvve
+              LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+              WHERE pvve.product_variant_uuid = pv.uuid
+            ) AS product_variant_values_entry
+          FROM store.ordered o
+          LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
+          LEFT JOIN store.product p ON pv.product_uuid = p.uuid
+          WHERE o.bill_info_uuid = ${bill_info.uuid}
+          ORDER BY pv.index ASC
+        ) t
+      )`,
+      ship_address: sql`(
+        SELECT COALESCE(row_to_json(t), '{}'::json)
+        FROM (
+          SELECT
+            sa.uuid,
+            sa.name,
+            sa.bill_info_uuid,
+            sa.company_name,
+            sa.phone,
+            sa.address,
+            sa.city,
+            sa.district,
+            sa.zip,
+            sa.note,
+            sa.created_by,
+            sa.created_at,
+            sa.updated_at,
+            sa.updated_by,
+            sa.remarks
+          FROM store.ship_address sa
+          WHERE sa.bill_info_uuid = ${bill_info.uuid}
+          ORDER BY sa.name ASC
+          LIMIT 1
+        ) t
+      )`,
     })
     .from(bill_info)
     .leftJoin(users, eq(bill_info.created_by, users.uuid))
