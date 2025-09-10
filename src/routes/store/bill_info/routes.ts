@@ -158,7 +158,7 @@ export const billInfoByUserUuid = createRoute({
   tags,
   request: {
     params: z.object({
-      user_uuid: z.string().uuid(),
+      user_uuid: z.string(),
     }),
   },
   responses: {
