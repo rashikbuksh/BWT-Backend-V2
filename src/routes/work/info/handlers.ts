@@ -487,6 +487,7 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
       email: user.email,
       address: user.address,
       where_they_find_us: user.where_they_find_us,
+      service_type: info.service_type,
       product_entry: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
@@ -514,10 +515,10 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
     .where(eq(info.user_uuid, user_uuid));
 
-  const [data] = await infoPromise;
+  const data = await infoPromise;
 
   // if (!data)
   //   return DataNotFound(c);
 
-  return c.json(data || {}, HSCode.OK);
+  return c.json(data || [], HSCode.OK);
 };
