@@ -482,33 +482,12 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
       uuid: info.uuid,
       user_uuid: info.user_uuid,
       user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
-      user_name: user.name,
-      user_phone: user.phone,
-      received_date: info.received_date,
-      is_product_received: info.is_product_received,
-      created_by: info.created_by,
-      created_by_name: hrSchema.users.name,
-      created_at: info.created_at,
-      updated_at: info.updated_at,
-      remarks: info.remarks,
-      location: info.location,
-      zone_uuid: info.zone_uuid,
-      zone_name: zone.name,
-      submitted_by: info.submitted_by,
-      branch_uuid: info.branch_uuid,
-      branch_name: storeSchema.branch.name,
-      reference_user_uuid: info.reference_user_uuid,
-      reference_user_name: reference_user.name,
-      is_commission_amount: info.is_commission_amount,
-      commission_amount: sql`COALESCE(info.commission_amount::float8, 0)`,
-      is_contact_with_customer: info.is_contact_with_customer,
-      customer_feedback: info.customer_feedback,
-      order_info_status: info.order_info_status,
-      user_email: user.email,
-      order_type: info.order_type,
-      received_by: info.received_by,
-      received_by_name: receivedByUser.name,
-      products: sql`(
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      address: user.address,
+      where_they_find_us: user.where_they_find_us,
+      product_entry: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
                     'order_uuid', o.uuid,
@@ -516,7 +495,12 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
                     'model_uuid', o.model_uuid,
                     'model_name', m.name,
                     'brand_uuid', m.brand_uuid,
-                    'brand_name', b.name 
+                    'brand_name', b.name,
+                    'problem_statement', o.problem_statement,
+                    'image_1', o.image_1,
+                    'image_2', o.image_2,
+                    'image_3', o.image_3
+
                   )), '[]'::json
                 )
                 FROM work.order o
@@ -528,10 +512,6 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
-    .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
-    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
-    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
-    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
     .where(eq(info.user_uuid, user_uuid));
 
   const [data] = await infoPromise;
