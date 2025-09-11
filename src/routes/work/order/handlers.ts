@@ -463,11 +463,18 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 
   // get order image name
 
-  const orderData = await db.query.order.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const orderData = await db
+    .select({
+      uuid: order.uuid,
+      image_1: order.image_1,
+      image_2: order.image_2,
+      image_3: order.image_3,
+      reclaimed_order_uuid: order.reclaimed_order_uuid,
+    })
+    .from(order)
+    .where(eq(order.uuid, uuid))
+    .limit(1)
+    .then(rows => rows[0]);
 
   if (orderData && (orderData.image_1 || orderData.image_2 || orderData.image_3)) {
     if (orderData.image_1)
