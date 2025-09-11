@@ -171,6 +171,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { user_uuid } = c.req.valid('query');
+
   const orderPromise = db.select({
     uuid: order.uuid,
     user_uuid: order.user_uuid,
@@ -191,12 +193,16 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     updated_by_name: updatedByUser.name,
     updated_at: order.updated_at,
     remarks: order.remarks,
+    status: order.status,
   })
     .from(order)
     .leftJoin(hrSchema.users, eq(order.user_uuid, hrSchema.users.uuid))
     .leftJoin(createdByUser, eq(order.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(order.updated_by, updatedByUser.uuid))
     .orderBy(desc(order.created_at));
+
+  if (user_uuid)
+    orderPromise.where(eq(order.user_uuid, user_uuid));
 
   const data = await orderPromise;
 
@@ -226,6 +232,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     updated_by_name: updatedByUser.name,
     updated_at: order.updated_at,
     remarks: order.remarks,
+    status: order.status,
   })
     .from(order)
     .leftJoin(hrSchema.users, eq(order.user_uuid, hrSchema.users.uuid))

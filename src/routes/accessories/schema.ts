@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  pgEnum,
   pgSchema,
   serial,
   text,
@@ -16,6 +17,13 @@ import * as hrSchema from '../hr/schema';
 
 const accessories = pgSchema('accessories');
 
+export const accessoriesOrderStatus = pgEnum('accessories_order_status', [
+  'pending',
+  'rejected',
+  'accepted',
+  'cancel',
+]);
+
 export const order = accessories.table('order', {
   id: serial('id').notNull().unique(),
   uuid: uuid_primary,
@@ -30,6 +38,7 @@ export const order = accessories.table('order', {
   updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  status: accessoriesOrderStatus('status').notNull().default('pending'),
 
 });
 
