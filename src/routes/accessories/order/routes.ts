@@ -14,15 +14,11 @@ export const list = createRoute({
   path: '/accessories/order',
   method: 'get',
   tags,
-  // request: {
-  //   query: z.object({
-  //     qc: z.string().optional(),
-  //     is_delivered: z.string().optional(),
-  //     work_in_hand: z.string().optional(),
-  //     customer_uuid: z.string().optional(),
-  //     is_repair: z.string().optional(),
-  //   }),
-  // },
+  request: {
+    query: z.object({
+      user_uuid: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
