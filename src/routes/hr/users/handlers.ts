@@ -119,6 +119,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     designation_name: data.designation,
     employee_uuid: data.employee_uuid,
     user_type: data.user_type,
+    phone: data.phone,
   };
 
   const can_access = data.can_access;
