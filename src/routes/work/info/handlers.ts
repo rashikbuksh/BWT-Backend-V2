@@ -488,6 +488,7 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
       address: user.address,
       where_they_find_us: user.where_they_find_us,
       service_type: info.service_type,
+      created_at: info.created_at,
       product_entry: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
