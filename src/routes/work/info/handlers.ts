@@ -14,7 +14,7 @@ import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, GetOrderDetailsByInfoUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetOneByUserUuidRoute, GetOneRoute, GetOrderDetailsByInfoUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { info, order, zone } from '../schema';
 
@@ -470,4 +470,74 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
   };
 
   return c.json(response, HSCode.OK);
+};
+
+export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c: any) => {
+  const { user_uuid } = c.req.valid('param');
+
+  const infoPromise = db
+    .select({
+      id: info.id,
+      info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
+      uuid: info.uuid,
+      user_uuid: info.user_uuid,
+      user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
+      user_name: user.name,
+      user_phone: user.phone,
+      received_date: info.received_date,
+      is_product_received: info.is_product_received,
+      created_by: info.created_by,
+      created_by_name: hrSchema.users.name,
+      created_at: info.created_at,
+      updated_at: info.updated_at,
+      remarks: info.remarks,
+      location: info.location,
+      zone_uuid: info.zone_uuid,
+      zone_name: zone.name,
+      submitted_by: info.submitted_by,
+      branch_uuid: info.branch_uuid,
+      branch_name: storeSchema.branch.name,
+      reference_user_uuid: info.reference_user_uuid,
+      reference_user_name: reference_user.name,
+      is_commission_amount: info.is_commission_amount,
+      commission_amount: sql`COALESCE(info.commission_amount::float8, 0)`,
+      is_contact_with_customer: info.is_contact_with_customer,
+      customer_feedback: info.customer_feedback,
+      order_info_status: info.order_info_status,
+      user_email: user.email,
+      order_type: info.order_type,
+      received_by: info.received_by,
+      received_by_name: receivedByUser.name,
+      products: sql`(
+                SELECT COALESCE(
+                  json_agg(json_build_object(
+                    'order_uuid', o.uuid,
+                    'serial_no', o.serial_no, 
+                    'model_uuid', o.model_uuid,
+                    'model_name', m.name,
+                    'brand_uuid', m.brand_uuid,
+                    'brand_name', b.name 
+                  )), '[]'::json
+                )
+                FROM work.order o
+                LEFT JOIN store.model m ON o.model_uuid = m.uuid
+                LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
+                WHERE o.info_uuid = ${info.uuid}
+              )`,
+    })
+    .from(info)
+    .leftJoin(user, eq(info.user_uuid, user.uuid))
+    .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
+    .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
+    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
+    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
+    .where(eq(info.user_uuid, user_uuid));
+
+  const [data] = await infoPromise;
+
+  // if (!data)
+  //   return DataNotFound(c);
+
+  return c.json(data || {}, HSCode.OK);
 };
