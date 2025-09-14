@@ -1,5 +1,5 @@
 import * as HSCode from 'stoker/http-status-codes';
-import { jsonContent } from 'stoker/openapi/helpers';
+import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
 import { createErrorSchema } from 'stoker/openapi/schemas';
 
 import { notFoundSchema } from '@/lib/constants';
@@ -110,6 +110,34 @@ export const patch = createRoute({
   },
 });
 
+export const patchWithoutForm = createRoute({
+  path: '/store/accessories-without-form/{uuid}',
+  method: 'patch',
+  request: {
+    params: param.uuid,
+    body: jsonContentRequired(
+      patchSchema,
+      'The order updates',
+    ),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The updated order',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'order not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(patchSchema)
+        .or(createErrorSchema(param.uuid)),
+      'The validation error(s)',
+    ),
+  },
+});
+
 export const remove = createRoute({
   path: '/store/accessories/{uuid}',
   method: 'delete',
@@ -136,4 +164,5 @@ export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
+export type PatchWithoutFormRoute = typeof patchWithoutForm;
 export type RemoveRoute = typeof remove;
