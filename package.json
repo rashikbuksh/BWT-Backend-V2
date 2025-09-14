@@ -33,7 +33,7 @@
     "drizzle-zod": "^0.5.1",
     "hono": "^4.7.9",
     "hono-pino": "^0.8.0",
-    "local-file-upload": "^1.1.0",
+    "local-file-upload": "^1.0.2",
     "nanoid": "^5.1.5",
     "pg": "^8.16.0",
     "pino": "^9.6.0",
