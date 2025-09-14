@@ -62,6 +62,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { product_uuid } = c.req.valid('query');
+
   const reviewPromise = db
     .select({
       uuid: review.uuid,
@@ -86,6 +88,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(updatedByUser, eq(review.updated_by, updatedByUser.uuid))
     .leftJoin(product, eq(review.product_uuid, product.uuid))
     .orderBy(desc(review.created_at));
+
+  if (product_uuid) {
+    reviewPromise.where(
+      eq(review.product_uuid, product_uuid),
+    );
+  }
 
   const data = await reviewPromise;
 
