@@ -1,3 +1,4 @@
+import accessories from './accessories';
 import bill_info from './bill_info';
 import box from './box';
 import branch from './branch';
@@ -56,4 +57,5 @@ export default [
   bill_info,
   ship_address,
   ordered,
+  accessories,
 ];

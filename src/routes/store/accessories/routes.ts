@@ -8,10 +8,10 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['accessories.order'];
+const tags = ['store.accessories'];
 
 export const list = createRoute({
-  path: '/accessories/order',
+  path: '/store/accessories',
   method: 'get',
   tags,
   request: {
@@ -22,13 +22,13 @@ export const list = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of order',
+      'The list of accessories',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/accessories/order',
+  path: '/store/accessories',
   method: 'post',
   request: {
     body: {
@@ -45,7 +45,7 @@ export const create = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created order',
+      'The created accessories',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -55,7 +55,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/accessories/order/{uuid}',
+  path: '/store/accessories/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -64,11 +64,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested order',
+      'The requested accessories',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'order not found',
+      'accessories not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -78,7 +78,7 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/accessories/order/{uuid}',
+  path: '/store/accessories/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
@@ -96,11 +96,11 @@ export const patch = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated order',
+      'The updated accessories',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'order not found',
+      'accessories not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -111,7 +111,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/accessories/order/{uuid}',
+  path: '/store/accessories/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -119,11 +119,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'order deleted',
+      description: 'accessories deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'order not found',
+      'accessories not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),

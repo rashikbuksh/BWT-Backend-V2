@@ -456,4 +456,29 @@ export const ship_address = store.table('ship_address', {
   remarks: text('remarks').default(sql`null`),
 });
 
+export const accessoriesStatus = pgEnum('accessories_status', [
+  'pending',
+  'rejected',
+  'accepted',
+  'cancel',
+]);
+
+export const accessories = store.table('accessories', {
+  id: serial('id').notNull().unique(),
+  uuid: uuid_primary,
+  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid).notNull(),
+  quantity: PG_DECIMAL('quantity').notNull(),
+  description: text('description').default(sql`null`),
+  image_1: text('image_1').default(sql`null`),
+  image_2: text('image_2').default(sql`null`),
+  image_3: text('image_3').default(sql`null`),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+  status: accessoriesStatus('status').notNull().default('pending'),
+
+});
+
 export default store;
