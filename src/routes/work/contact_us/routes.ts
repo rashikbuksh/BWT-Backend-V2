@@ -45,10 +45,12 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/work/contact-us/{uuid}',
+  path: '/work/contact-us/{id}',
   method: 'get',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
   },
   tags,
   responses: {
@@ -68,10 +70,12 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/work/contact-us/{uuid}',
+  path: '/work/contact-us/{id}',
   method: 'patch',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
     body: jsonContentRequired(
       patchSchema,
       'The contact us entry updates',
@@ -96,10 +100,12 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/work/contact-us/{uuid}',
+  path: '/work/contact-us/{id}',
   method: 'delete',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
   },
   tags,
   responses: {
