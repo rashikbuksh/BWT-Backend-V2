@@ -1,4 +1,3 @@
-import accessories from './accessories';
 import delivery from './delivery';
 import hr from './hr';
 import other from './other';
@@ -15,7 +14,6 @@ const routes = [
   ...work,
   ...other,
   ...publicRoute,
-  ...accessories,
 ] as const;
 
 export default routes;
