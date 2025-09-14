@@ -60,6 +60,8 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     { url: '/v1/store/bill-info', method: 'POST' },
     { url: '/v1/store/ship-address', method: 'POST' },
     { url: '/v1/store/ordered', method: 'POST' },
+    { url: '/v1/store/review', method: 'POST' },
+    { url: '/v1/work/contact-us', method: 'POST' },
   ];
 
   // Check for api-docs routes
