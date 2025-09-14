@@ -14,6 +14,11 @@ export const list = createRoute({
   path: '/store/review',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      product_uuid: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
