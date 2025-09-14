@@ -180,22 +180,6 @@ export const product_variant_values_entry = store.table('product_variant_values_
   remarks: text('remarks').default(sql`null`),
 });
 
-export const review = store.table('review', {
-  uuid: uuid_primary,
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
-  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
-  email: text('email').default(sql`null`),
-  name: text('name').default(sql`null`),
-  comment: text('comment').notNull(),
-  rating: integer('rating').notNull(),
-  is_verified: boolean('is_verified').default(false),
-  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
-  created_at: DateTime('created_at').notNull(),
-  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
-  updated_at: DateTime('updated_at').default(sql`null`),
-  remarks: text('remarks').default(sql`null`),
-});
-
 export const branch = store.table('branch', {
   uuid: uuid_primary,
   name: text('name').notNull(),
@@ -479,6 +463,24 @@ export const accessories = store.table('accessories', {
   remarks: text('remarks').default(sql`null`),
   status: accessoriesStatus('status').notNull().default('pending'),
 
+});
+
+export const review = store.table('review', {
+  uuid: uuid_primary,
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
+  email: text('email').default(sql`null`),
+  name: text('name').default(sql`null`),
+  comment: text('comment').notNull(),
+  rating: integer('rating').notNull(),
+  is_verified: boolean('is_verified').default(false),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+  info_uuid: defaultUUID('info_uuid').references(() => workSchema.info.uuid).default(sql`null`),
+  accessories_uuid: defaultUUID('accessories_uuid').references(() => accessories.uuid).default(sql`null`),
 });
 
 export default store;
