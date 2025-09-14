@@ -23,7 +23,6 @@ export const insertSchema = createInsertSchema(
     remarks: schema => schema.remarks.optional(),
   },
 ).required({
-  id: true,
   subject: true,
   message: true,
   created_at: true,
@@ -33,6 +32,8 @@ export const insertSchema = createInsertSchema(
   phone: true,
   user_uuid: true,
   remarks: true,
+}).omit({
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();
