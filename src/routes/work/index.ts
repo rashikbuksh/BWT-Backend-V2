@@ -1,5 +1,6 @@
 import accessory from './accessory';
 import chat from './chat';
+import contact_us from './contact_us';
 import diagnosis from './diagnosis';
 import info from './info';
 import order from './order';
@@ -18,4 +19,5 @@ export default [
   section,
   zone,
   chat,
+  contact_us,
 ];
