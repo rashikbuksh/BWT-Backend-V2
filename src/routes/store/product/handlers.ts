@@ -232,6 +232,16 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     is_order_exist: sql`EXISTS (SELECT 1 FROM store.ordered oi LEFT JOIN store.product_variant pv ON oi.product_variant_uuid = pv.uuid WHERE pv.product_uuid = ${product.uuid})`,
     extra_information: product.extra_information,
     refurbished: product.refurbished,
+    total_review: sql`(
+        SELECT COUNT(*)::int
+        FROM store.review r
+        WHERE r.product_uuid = ${product.uuid}
+      )`,
+    average_rating: sql`(
+        SELECT COALESCE(ROUND(AVG(r.rating)::numeric, 1)::float8, 0)
+        FROM store.review r
+        WHERE r.product_uuid = ${product.uuid}
+      )`,
     product_variant: sql`COALESCE(ARRAY(
     SELECT json_build_object(
       'uuid', pv.uuid,
