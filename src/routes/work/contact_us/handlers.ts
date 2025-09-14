@@ -59,8 +59,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const resultPromise = db.select({
     id: contact_us.id,
-    first_name: contact_us.first_name,
-    last_name: contact_us.last_name,
+    name: contact_us.name,
+    email: contact_us.email,
     phone: contact_us.phone,
     subject: contact_us.subject,
     message: contact_us.message,
@@ -83,8 +83,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const resultPromise = db.select({
     id: contact_us.id,
-    first_name: contact_us.first_name,
-    last_name: contact_us.last_name,
+    name: contact_us.name,
+    email: contact_us.email,
     phone: contact_us.phone,
     subject: contact_us.subject,
     message: contact_us.message,

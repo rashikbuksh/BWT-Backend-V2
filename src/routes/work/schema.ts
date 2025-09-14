@@ -262,14 +262,14 @@ export const chat = work.table('chat', {
 
 export const contact_us = work.table('contact_us', {
   id: serial('id').notNull().unique(),
-  first_name: text('first_name').default(sql`null`),
-  last_name: text('last_name').default(sql`null`),
   phone: text('phone').default(sql`null`),
   subject: text('subject').notNull(),
   message: text('message').notNull(),
   created_at: DateTime('created_at').notNull(),
   remarks: text('remarks').default(sql`null`),
   user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid).default(sql`null`),
+  name: text('name').default(sql`null`),
+  email: text('email').default(sql`null`),
 });
 
 export default work;
