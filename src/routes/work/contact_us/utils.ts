@@ -11,9 +11,9 @@ export const insertSchema = createInsertSchema(
   contact_us,
   {
     id: schema => schema.id,
-    first_name: schema => schema.first_name.optional(),
-    last_name: schema => schema.last_name.optional(),
+    name: schema => schema.name.min(1).max(100).optional(),
     phone: schema => schema.phone.optional(),
+    email: schema => schema.email.email().optional(),
     subject: schema => schema.subject.min(1),
     message: schema => schema.message.min(1),
     user_uuid: schema => schema.user_uuid.optional(),
@@ -28,8 +28,8 @@ export const insertSchema = createInsertSchema(
   message: true,
   created_at: true,
 }).partial({
-  first_name: true,
-  last_name: true,
+  name: true,
+  email: true,
   phone: true,
   user_uuid: true,
   remarks: true,
