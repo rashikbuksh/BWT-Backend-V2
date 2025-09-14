@@ -3,13 +3,13 @@ import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
-import { order } from '../schema';
+import { accessories } from '../schema';
 
 //* crud
-export const selectSchema = createSelectSchema(order);
+export const selectSchema = createSelectSchema(accessories);
 
 export const insertSchema = createInsertSchema(
-  order,
+  accessories,
   {
     uuid: schema => schema.uuid.length(15),
     user_uuid: schema => schema.user_uuid.length(15),
