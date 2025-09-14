@@ -10,7 +10,7 @@ import * as hrSchema from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, PatchWithoutFormRoute, RemoveRoute } from './routes';
 
 import { accessories } from '../schema';
 
@@ -138,6 +138,26 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
   return c.json(createToast('update', data.name ?? ''), HSCode.OK);
+};
+
+export const patchWithoutForm: AppRouteHandler<PatchWithoutFormRoute> = async (c: any) => {
+  const { uuid } = c.req.valid('param');
+  const updates = c.req.valid('json');
+
+  if (Object.keys(updates).length === 0)
+    return ObjectNotFound(c);
+
+  const [data] = await db.update(accessories)
+    .set(updates)
+    .where(eq(accessories.uuid, uuid))
+    .returning({
+      name: accessories.uuid,
+    });
+
+  if (!data)
+    return DataNotFound(c);
+
+  return c.json(createToast('update', data.name), HSCode.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
