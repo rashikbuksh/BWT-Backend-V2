@@ -73,6 +73,7 @@ export const insertSchema = createInsertSchema(
   attribute_list: true,
   is_published: true,
   extra_information: true,
+  refurbished: true,
 });
 
 export const patchSchema = insertSchema.partial();
