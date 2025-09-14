@@ -68,6 +68,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: review.uuid,
       product_uuid: review.product_uuid,
+      product_title: product.title,
       user_uuid: review.user_uuid,
       email: review.email,
       name: review.name,
@@ -107,6 +108,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: review.uuid,
       product_uuid: review.product_uuid,
+      product_title: product.title,
       user_uuid: review.user_uuid,
       email: review.email,
       name: review.name,
