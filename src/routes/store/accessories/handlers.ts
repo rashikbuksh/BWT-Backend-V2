@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -174,6 +174,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const { user_uuid } = c.req.valid('query');
 
   const accessoriesPromise = db.select({
+    id: accessories.id,
+    accessories_id: sql`CONCAT('AI', TO_CHAR(${accessories.created_at}::timestamp, 'YY'), '-', ${accessories.id})`,
     uuid: accessories.uuid,
     user_uuid: accessories.user_uuid,
     name: hrSchema.users.name,
@@ -213,6 +215,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
   const accessoriesPromise = db.select({
+    id: accessories.id,
+    accessories_id: sql`CONCAT('AI', TO_CHAR(${accessories.created_at}::timestamp, 'YY'), '-', ${accessories.id})`,
     uuid: accessories.uuid,
     user_uuid: accessories.user_uuid,
     name: hrSchema.users.name,
