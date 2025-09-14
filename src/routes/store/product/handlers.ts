@@ -313,6 +313,31 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         ) t
       ) as product_image
     `,
+    review: sql`(
+      SELECT json_agg(row_to_json(t))
+      FROM (
+        SELECT
+          r.uuid,
+          r.product_uuid,
+          r.user_uuid,
+          r.email,
+          r.name,
+          r.comment,
+          r.rating,
+          r.created_by,
+          r.created_at,
+          r.updated_by,
+          r.updated_at,
+          r.remarks,
+          r.info_uuid,
+          r.accessories_uuid,
+          u.name AS created_by_name
+        FROM store.review r
+        LEFT JOIN hr.users u ON r.created_by = u.uuid
+        WHERE r.product_uuid = ${product.uuid}
+        ORDER BY r.created_at DESC
+      ) t
+    )`,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
