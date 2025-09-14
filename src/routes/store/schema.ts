@@ -85,6 +85,7 @@ export const vendor = store.table('vendor', {
 });
 
 export const typeEnum = pgEnum('type', ['inventory', 'service']);
+export const refurbishedEnum = pgEnum('refurbished', ['yes', 'no']);
 
 export const product = store.table('product', {
   uuid: uuid_primary,
@@ -102,6 +103,7 @@ export const product = store.table('product', {
   attribute_list: text('attribute_list').array().default([]),
   is_published: boolean('is_published').default(false),
   extra_information: text('extra_information').default(sql`null`),
+  refurbished: refurbishedEnum('refurbished').default('no'),
 });
 
 export const discountUnitEnum = pgEnum('discount_unit', ['bdt', 'percentage']);
