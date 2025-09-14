@@ -5,7 +5,7 @@ import { asc, desc, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-// import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -107,16 +107,16 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         LIMIT 1
       )`,
       is_published: product.is_published,
-      total_review: sql`(
+      total_review: PG_DECIMAL_TO_FLOAT(sql`(
         SELECT COUNT(*)
         FROM store.review r
         WHERE r.product_uuid = ${product.uuid}
-      )`,
-      average_rating: sql`(
+      )`),
+      average_rating: PG_DECIMAL_TO_FLOAT(sql`(
         SELECT ROUND(AVG(r.rating)::numeric, 1)
         FROM store.review r
         WHERE r.product_uuid = ${product.uuid}
-      )`,
+      )`),
     })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
