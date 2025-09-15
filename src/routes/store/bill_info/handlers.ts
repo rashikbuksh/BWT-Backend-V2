@@ -167,6 +167,7 @@ export const billInfoWithOrderDetails: AppRouteHandler<BillInfoWithOrderDetailsR
             pv.product_uuid,
             p.title AS product_title,
             pv.discount::float8,
+            pv.discount_unit,
             pv.selling_warehouse::float8,
             pv.created_by AS variant_created_by,
             pv.created_at AS variant_created_at,
