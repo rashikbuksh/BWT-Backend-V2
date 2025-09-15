@@ -162,7 +162,10 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     );
   }
 
-  if (type) {
+  if (type === 'customer' || type === 'web') {
+    filters.push(sql`LOWER(CAST(${hrSchema.users.user_type} AS TEXT)) IN ('customer', 'web')`);
+  }
+  else if (type) {
     filters.push(eq(sql`LOWER(CAST(${hrSchema.users.user_type} AS TEXT))`, type.toLowerCase()));
   }
 
@@ -210,13 +213,14 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .select({
       value: hrSchema.users.uuid,
       label:
-        type === 'customer'
-          ? sql`CONCAT(${hrSchema.users.name}, '-', ${hrSchema.users.phone})`
+        type === 'customer' || type === 'web'
+          ? sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone})`
           : hrSchema.users.name,
-      ...(type === 'customer' && {
+      ...((type === 'customer' || type === 'web') && {
         zone_uuid: sql`MAX(${workSchema.info.zone_uuid})`,
         zone_name: sql`MAX(${workSchema.zone.name})`,
         location: sql`MAX(${workSchema.info.location})`,
+        user_type: sql`MAX(${hrSchema.users.user_type})`,
       }),
     })
     .from(hrSchema.users)
