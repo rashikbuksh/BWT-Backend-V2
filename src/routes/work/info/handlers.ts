@@ -562,11 +562,9 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
         throw error;
       });
 
-  const order = await Promise.all([
-    infoUuids.map(uuid => fetchData(`/v1/work/order-by-info/${uuid}`)),
-  ]);
+  const [order] = await Promise.all(infoUuids.map(uuid => fetchData(`/v1/work/order-by-info/${uuid}`)));
 
-  const orderData = order.flat();
+  const orderData = Array.isArray(order) ? order.flat() : [];
 
   const enrichedOrders = await Promise.all(
     orderData.length > 0
