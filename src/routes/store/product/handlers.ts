@@ -79,7 +79,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       care_maintenance_description: product.care_maintenance_description,
       attribute_list: product.attribute_list,
       refurbished: product.refurbished,
-      image: sql`(SELECT pi.image FROM store.product_image pi WHERE pi.product_uuid = ${product.uuid} AND pi.is_main = TRUE LIMIT 1)`,
+      image: sql`(
+        SELECT pi.image 
+        FROM store.product_image pi 
+        WHERE pi.product_uuid = ${product.uuid} 
+        GROUP BY pi.image, pi.is_main
+        HAVING CASE WHEN COUNT(pi.is_main = TRUE) > 0 THEN pi.is_main = TRUE END
+        LIMIT 1
+      )`,
       extra_information: product.extra_information,
       low_price: sql`(
         SELECT MIN(pv.selling_price::float8)
