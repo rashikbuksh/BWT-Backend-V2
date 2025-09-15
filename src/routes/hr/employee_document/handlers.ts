@@ -5,8 +5,9 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { handleImagePatch } from '@/lib/variables';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
-import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
+import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetByEmployeeUuidRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
@@ -54,23 +55,14 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
   const formData = await c.req.parseBody();
 
-  if (formData.file && typeof formData.file === 'object') {
-    // get employeeDocument file name
-    const employeeDocumentData = await db.query.employee_document.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
+  // Image Or File Handling
+  const employeeDocumentData = await db.query.employee_document.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
 
-    if (employeeDocumentData && employeeDocumentData.file && typeof formData.file === 'object') {
-      const filePath = await updateFile(formData.file, employeeDocumentData.file, 'public/employee-document');
-      formData.file = filePath;
-    }
-    else if (typeof formData.file === 'object') {
-      const filePath = await insertFile(formData.file, 'public/employee-document');
-      formData.file = filePath;
-    }
-  }
+  formData.file = await handleImagePatch(formData.file, employeeDocumentData?.file ?? undefined, 'public/employee-document');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);

@@ -5,10 +5,10 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
+import { handleImagePatch, PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import * as hrSchema from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
-import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
+import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, PatchWithoutFormRoute, RemoveRoute } from './routes';
 
@@ -78,57 +78,21 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
   const formData = await c.req.parseBody();
-  // updates includes documents then do it else exclude it
-  if (formData.image_1 && typeof formData.image_1 === 'object') {
-    // get order image name
-    const accessoriesData = await db.query.accessories.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
-    if (accessoriesData && accessoriesData.image_1 && typeof formData.image_1 === 'object') {
-      const imagePath = await updateFile(formData.image_1, accessoriesData.image_1, 'store/accessories');
-      formData.image_1 = imagePath;
-    }
-    else if (typeof formData.image_1 === 'object') {
-      const imagePath = await insertFile(formData.image_1, 'store/accessories');
-      formData.image_1 = imagePath;
-    }
-  }
-  if (formData.image_2 && typeof formData.image_2 === 'object') {
-    // get order image name
-    const accessoriesData = await db.query.accessories.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
-    if (accessoriesData && accessoriesData.image_2) {
-      const imagePath = await updateFile(formData.image_2, accessoriesData.image_2, 'store/accessories');
-      formData.image_2 = imagePath;
-    }
-    else {
-      const imagePath = await insertFile(formData.image_2, 'store/accessories');
-      formData.image_2 = imagePath;
-    }
-  }
-  if (formData.image_3 && typeof formData.image_3 === 'object') {
-    // get order image name
-    const accessoriesData = await db.query.accessories.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
-    if (accessoriesData && accessoriesData.image_3) {
-      const imagePath = await updateFile(formData.image_3, accessoriesData.image_3, 'store/accessories');
-      formData.image_3 = imagePath;
-    }
-    else {
-      const imagePath = await insertFile(formData.image_3, 'store/accessories');
-      formData.image_3 = imagePath;
-    }
-  }
+
+  // Image Or File Handling
+  const accessoriesData = await db.query.accessories.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
+
+  formData.image_1 = await handleImagePatch(formData.image_1, accessoriesData?.image_1 ?? undefined, 'store/accessories');
+  formData.image_2 = await handleImagePatch(formData.image_2, accessoriesData?.image_2 ?? undefined, 'store/accessories');
+  formData.image_3 = await handleImagePatch(formData.image_3, accessoriesData?.image_3 ?? undefined, 'store/accessories');
+
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
+
   const [data] = await db.update(accessories)
     .set(formData)
     .where(eq(accessories.uuid, uuid))

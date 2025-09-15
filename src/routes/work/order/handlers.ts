@@ -6,13 +6,13 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { nanoid } from '@/lib/nanoid';
-import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
+import { handleImagePatch, PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import * as deliverySchema from '@/routes/delivery/schema';
 import * as hrSchema from '@/routes/hr/schema';
 import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
-import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
+import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, CreateWithoutFormRoute, GetByInfoRoute, GetDiagnosisDetailsByOrderRoute, GetOneRoute, ListRoute, PatchRoute, PatchWithoutFormRoute, RemoveRoute } from './routes';
 
@@ -259,44 +259,16 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
   const formData = await c.req.parseBody();
 
-  // updates includes image then do it else exclude it
-  if ((formData.image_1 && typeof formData.image_1 === 'object')
-    || (formData.image_2 && typeof formData.image_2 === 'object')
-    || (formData.image_3 && typeof formData.image_3 === 'object')) {
-    // get user image name
-    const userData = await db.query.order.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
+  // Image Or File Handling
+  const userData = await db.query.order.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
 
-    if (userData && userData.image_1 && typeof formData.image_1 === 'object') {
-      const imagePath = await updateFile(formData.image_1, userData.image_1, 'work/order');
-      formData.image_1 = imagePath;
-    }
-    else if (typeof formData.image_1 === 'object') {
-      const imagePath = await insertFile(formData.image_1, 'work/order');
-      formData.image_1 = imagePath;
-    }
-
-    if (userData && userData.image_2 && typeof formData.image_2 === 'object') {
-      const imagePath = await updateFile(formData.image_2, userData.image_2, 'work/order');
-      formData.image_2 = imagePath;
-    }
-    else if (typeof formData.image_2 === 'object') {
-      const imagePath = await insertFile(formData.image_2, 'work/order');
-      formData.image_2 = imagePath;
-    }
-
-    if (userData && userData.image_3 && typeof formData.image_3 === 'object') {
-      const imagePath = await updateFile(formData.image_3, userData.image_3, 'work/order');
-      formData.image_3 = imagePath;
-    }
-    else if (typeof formData.image_3 === 'object') {
-      const imagePath = await insertFile(formData.image_3, 'work/order');
-      formData.image_3 = imagePath;
-    }
-  }
+  formData.image_1 = await handleImagePatch(formData.image_1, userData?.image_1 ?? undefined, 'work/order');
+  formData.image_2 = await handleImagePatch(formData.image_2, userData?.image_2 ?? undefined, 'work/order');
+  formData.image_3 = await handleImagePatch(formData.image_3, userData?.image_3 ?? undefined, 'work/order');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);

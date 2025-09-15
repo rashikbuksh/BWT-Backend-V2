@@ -5,8 +5,9 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { handleImagePatch } from '@/lib/variables';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
-import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
+import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute, SelectAllApplyLeaveWithPaginationRoute } from './routes';
 
@@ -53,24 +54,14 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
   const formData = await c.req.parseBody();
 
-  // updates includes image then do it else exclude it
-  if (formData.file && typeof formData.file === 'object') {
-    // get applyLeave file name
-    const applyLeaveData = await db.query.apply_leave.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
+  // Image Or File Handling
+  const applyLeaveData = await db.query.apply_leave.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
 
-    if (applyLeaveData && applyLeaveData.file && typeof formData.file === 'object') {
-      const filePath = await updateFile(formData.file, applyLeaveData.file, 'public/apply-leave');
-      formData.file = filePath;
-    }
-    else if (typeof formData.file === 'object') {
-      const filePath = await insertFile(formData.file, 'public/apply-leave');
-      formData.file = filePath;
-    }
-  }
+  formData.file = await handleImagePatch(formData.file, applyLeaveData?.file ?? undefined, 'public/apply-leave');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);

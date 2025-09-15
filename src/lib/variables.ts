@@ -1,6 +1,8 @@
 import { asc, desc, or, sql } from 'drizzle-orm';
 import { char, decimal, timestamp } from 'drizzle-orm/pg-core';
 
+import { insertFile, updateFile } from '@/utils/upload_file';
+
 import type { ColumnProps } from './types';
 
 export function defaultUUID(column = 'uuid') {
@@ -182,4 +184,14 @@ export async function getHolidayCountsDateRange(from_date: string, to_date: stri
     special: specialResult.rows[0]?.total_special_holidays || 0,
     general: generalResult.rows[0]?.total_general_holidays || 0,
   };
+}
+
+export async function handleImagePatch(newImage: any, oldImagePath: string | undefined, folder: string) {
+  if (oldImagePath && typeof newImage === 'object') {
+    return await updateFile(newImage, oldImagePath, folder);
+  }
+  if (typeof newImage === 'object') {
+    return await insertFile(newImage, folder);
+  }
+  return oldImagePath;
 }

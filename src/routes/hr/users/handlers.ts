@@ -1,7 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 import type { JWTPayload } from 'hono/utils/jwt/types';
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -53,6 +53,11 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
       department: department.department,
       employee_uuid: employee.uuid,
       user_type: users.user_type,
+      where_they_find_us: users.where_they_find_us,
+      address: users.address,
+      city: users.city,
+      district: users.district,
+      location: sql`${users.address} || ', ' || ${users.city} || ', ' || ${users.district}`,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -120,6 +125,11 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     employee_uuid: data.employee_uuid,
     user_type: data.user_type,
     phone: data.phone,
+    where_they_find_us: data.where_they_find_us,
+    address: data.address,
+    city: data.city,
+    district: data.district,
+    location: data.location,
   };
 
   const can_access = data.can_access;

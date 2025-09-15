@@ -4,8 +4,9 @@ import { eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { handleImagePatch } from '@/lib/variables';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
-import { deleteFile, insertFile, updateFile } from '@/utils/upload_file';
+import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
@@ -44,24 +45,14 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
   const formData = await c.req.parseBody();
 
-  // updates includes documents then do it else exclude it
-  if (formData.image && typeof formData.image === 'object') {
-    // get newsEntry documents name
-    const productImageData = await db.query.product_image.findFirst({
-      where(fields, operators) {
-        return operators.eq(fields.uuid, uuid);
-      },
-    });
+  // Image Or File Handling
+  const productImageData = await db.query.product_image.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.uuid, uuid);
+    },
+  });
 
-    if (productImageData && productImageData.image && typeof formData.image === 'object') {
-      const imagePath = await updateFile(formData.image, productImageData.image, 'public/product-image');
-      formData.image = imagePath;
-    }
-    else if (typeof formData.image === 'object') {
-      const imagePath = await insertFile(formData.image, 'public/product-image');
-      formData.image = imagePath;
-    }
-  }
+  formData.image = await handleImagePatch(formData.image, productImageData?.image ?? undefined, 'public/product-image');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
