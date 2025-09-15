@@ -12,7 +12,7 @@ export const insertSchema = createInsertSchema(
   {
     uuid: schema => schema.uuid.length(15),
     name: schema => schema.name.min(1),
-    created_by: schema => schema.created_by.length(15),
+    created_by: schema => schema.created_by.length(15).optional(),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),

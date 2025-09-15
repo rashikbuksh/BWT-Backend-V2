@@ -510,6 +510,7 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
       order_type: info.order_type,
       received_by: info.received_by,
       received_by_name: receivedByUser.name,
+      service_type: info.service_type,
       product_entry: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
@@ -564,7 +565,9 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
 
   const [order] = await Promise.all(infoUuids.map(uuid => fetchData(`/v1/work/order-by-info/${uuid}`)));
 
-  const orderData = Array.isArray(order) ? order.flat() : [];
+  const orderData = Array.isArray(order) ? order : [];
+
+  // console.log('Order Data:', orderData);
 
   const enrichedOrders = await Promise.all(
     orderData.length > 0
