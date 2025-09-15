@@ -95,12 +95,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         )`,
       extra_information: product.extra_information,
       low_price: sql`(
-        SELECT MIN(pv.selling_price::float8 - CASE WHEN pv.discount_unit = 'percentage' THEN (100 - pv.discount::float8) / 100 ELSE pv.discount::float8 END)
+        SELECT MIN(pv.selling_price::float8 - CASE WHEN pv.discount_unit = 'percentage' THEN (pv.selling_price::float8 * pv.discount::float8) / 100 ELSE pv.discount::float8 END)
         FROM store.product_variant pv
         WHERE pv.product_uuid = ${product.uuid}
       )`,
       high_price: sql`(
-        SELECT MAX(pv.selling_price::float8 - CASE WHEN pv.discount_unit = 'percentage' THEN (100 - pv.discount::float8) / 100 ELSE pv.discount::float8 END)
+        SELECT MAX(pv.selling_price::float8 - CASE WHEN pv.discount_unit = 'percentage' THEN (pv.selling_price::float8 * pv.discount::float8) / 100 ELSE pv.discount::float8 END)
         FROM store.product_variant pv
         WHERE pv.product_uuid = ${product.uuid}
       )`,
