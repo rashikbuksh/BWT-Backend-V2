@@ -91,4 +91,5 @@ export const ALLOWED_ROUTES: string[] = [
   'https://synap-erp-starter.vercel.app',
   'http://localhost:4000',
   'http://103.147.163.46:5095',
+  'https://bwt-frontend.fortunezip.com',
 ];
