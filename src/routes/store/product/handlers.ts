@@ -58,7 +58,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published } = c.req.valid('query');
 
   const productPromise = db
     .select({
@@ -95,12 +95,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         )`,
       extra_information: product.extra_information,
       low_price: sql`(
-        SELECT MIN(pv.selling_price::float8)
+        SELECT MIN(pv.selling_price::float8 * CASE WHEN pv.discount_unit = 'percentage' THEN (100 - pv.discount::float8) / 100 ELSE pv.discount::float8 END)
         FROM store.product_variant pv
         WHERE pv.product_uuid = ${product.uuid}
       )`,
       high_price: sql`(
-        SELECT MAX(pv.selling_price::float8)
+        SELECT MAX(pv.selling_price::float8 * CASE WHEN pv.discount_unit = 'percentage' THEN (100 - pv.discount::float8) / 100 ELSE pv.discount::float8 END)
         FROM store.product_variant pv
         WHERE pv.product_uuid = ${product.uuid}
       )`,
@@ -134,6 +134,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(category, eq(product.category_uuid, category.uuid))
     .leftJoin(model, eq(product.model_uuid, model.uuid))
     .leftJoin(users, eq(product.created_by, users.uuid));
+
+  if (is_published === 'true') {
+    productPromise.where(eq(product.is_published, true));
+  }
 
   if (low_price && high_price) {
     const minPrice = Number(low_price);
