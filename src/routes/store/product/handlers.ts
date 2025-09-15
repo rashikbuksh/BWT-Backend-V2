@@ -58,7 +58,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published, refurbished } = c.req.valid('query');
 
   const productPromise = db
     .select({
@@ -139,6 +139,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     productPromise.where(eq(product.is_published, true));
   }
 
+  if (refurbished) {
+    productPromise.where(eq(product.refurbished, refurbished));
+  }
+
   if (low_price && high_price) {
     const minPrice = Number(low_price);
     const maxPrice = Number(high_price);
@@ -168,6 +172,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       WHERE pv.product_uuid = ${product.uuid}
     )`));
   }
+
   if (sorting === 'asc') {
     productPromise.orderBy(asc(product.title));
   }
