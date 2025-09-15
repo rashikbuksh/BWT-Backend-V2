@@ -475,7 +475,7 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
 export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c: any) => {
   const { user_uuid } = c.req.valid('param');
 
-  const { diagnosis, process } = c.req.valid('query');
+  // const { diagnosis, process } = c.req.valid('query');
 
   const infoPromise = db
     .select({
@@ -545,81 +545,79 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
 
   const data = await infoPromise;
 
-  // extract info.uuid from data
+  // // extract info.uuid from data
 
-  const infoUuids = data.map(item => item.uuid);
+  // const infoUuids = data.map(item => item.uuid);
 
-  const api = createApi(c);
+  // const api = createApi(c);
 
-  const fetchData = async (endpoint: string) =>
-    await api
-      .get(`${endpoint}`)
-      .then(response => response.data)
-      .catch((error) => {
-        console.error(
-          `Error fetching data from ${endpoint}:`,
-          error.message,
-        );
-        throw error;
-      });
+  // const fetchData = async (endpoint: string) =>
+  //   await api
+  //     .get(`${endpoint}`)
+  //     .then(response => response.data)
+  //     .catch((error) => {
+  //       console.error(
+  //         `Error fetching data from ${endpoint}:`,
+  //         error.message,
+  //       );
+  //       throw error;
+  //     });
 
-  const [order] = await Promise.all(infoUuids.map(uuid => fetchData(`/v1/work/order-by-info/${uuid}`)));
+  // const [order] = await Promise.all(infoUuids.map(uuid => fetchData(`/v1/work/order-by-info/${uuid}`)));
 
-  const orderData = Array.isArray(order) ? order : [];
+  // const orderData = Array.isArray(order) ? order : [];
 
-  // console.log('Order Data:', orderData);
+  // const enrichedOrders = await Promise.all(
+  //   orderData.length > 0
+  //     ? orderData.map(async (orderItem: any) => {
+  //         const { uuid: order_uuid } = orderItem;
 
-  const enrichedOrders = await Promise.all(
-    orderData.length > 0
-      ? orderData.map(async (orderItem: any) => {
-          const { uuid: order_uuid } = orderItem;
+  //         try {
+  //           const diagnosisData
+  //             = diagnosis === 'true'
+  //               ? await fetchData(
+  //                   `/v1/work/diagnosis-by-order/${order_uuid}`,
+  //                 )
+  //               : null;
 
-          try {
-            const diagnosisData
-              = diagnosis === 'true'
-                ? await fetchData(
-                    `/v1/work/diagnosis-by-order/${order_uuid}`,
-                  )
-                : null;
+  //           const processData
+  //             = process === 'true'
+  //               ? await fetchData(
+  //                   `/v1/work/process?order_uuid=${order_uuid}`,
+  //                 )
+  //               : null;
 
-            const processData
-              = process === 'true'
-                ? await fetchData(
-                    `/v1/work/process?order_uuid=${order_uuid}`,
-                  )
-                : null;
+  //           return {
+  //             ...orderItem,
+  //             ...(diagnosisData
+  //               ? { diagnosis: diagnosisData?.data }
+  //               : {}),
+  //             ...(processData
+  //               ? { process: processData?.data }
+  //               : {}),
+  //           };
+  //         }
+  //         catch (error) {
+  //           console.error(`Error enriching order ${order_uuid}:`, error);
+  //           // Return order without enriched data if API calls fail
+  //           return orderItem;
+  //         }
+  //       })
+  //     : [],
+  // );
+  // enrichedOrders.sort(
+  //   (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  // );
 
-            return {
-              ...orderItem,
-              ...(diagnosisData
-                ? { diagnosis: diagnosisData?.data }
-                : {}),
-              ...(processData
-                ? { process: processData?.data }
-                : {}),
-            };
-          }
-          catch (error) {
-            console.error(`Error enriching order ${order_uuid}:`, error);
-            // Return order without enriched data if API calls fail
-            return orderItem;
-          }
-        })
-      : [],
-  );
-  enrichedOrders.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  // // Merge order_entry into each info item
+  // const infoWithOrders = data.map((infoItem) => {
+  //   // Find orders for this info uuid
+  //   const ordersForInfo = enrichedOrders.filter(order => order.info_uuid === infoItem.uuid);
+  //   return {
+  //     ...infoItem,
+  //     order_entry: ordersForInfo,
+  //   };
+  // });
 
-  // Merge order_entry into each info item
-  const infoWithOrders = data.map((infoItem) => {
-    // Find orders for this info uuid
-    const ordersForInfo = enrichedOrders.filter(order => order.info_uuid === infoItem.uuid);
-    return {
-      ...infoItem,
-      order_entry: ordersForInfo,
-    };
-  });
-
-  return c.json(infoWithOrders || [], HSCode.OK);
+  return c.json(data || [], HSCode.OK);
 };

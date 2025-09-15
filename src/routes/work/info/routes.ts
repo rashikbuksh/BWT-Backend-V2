@@ -173,8 +173,8 @@ export const getOneByUserUuid = createRoute({
     }),
     query: z.object({
       public: z.string().optional(),
-      diagnosis: z.string().optional(),
-      process: z.string().optional(),
+      // diagnosis: z.string().optional(),
+      // process: z.string().optional(),
     }),
   },
   tags,
