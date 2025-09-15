@@ -475,6 +475,8 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
 export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c: any) => {
   const { user_uuid } = c.req.valid('param');
 
+  const { diagnosis, process } = c.req.valid('query');
+
   const infoPromise = db
     .select({
       id: info.id,
@@ -482,14 +484,32 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
       uuid: info.uuid,
       user_uuid: info.user_uuid,
       user_id: sql`CONCAT('HU', TO_CHAR(${user.created_at}::timestamp, 'YY'), '-', ${user.id})`,
-      name: user.name,
-      phone: user.phone,
-      email: user.email,
-      address: user.address,
-      where_they_find_us: user.where_they_find_us,
-      service_type: info.service_type,
+      user_name: user.name,
+      user_phone: user.phone,
+      received_date: info.received_date,
+      is_product_received: info.is_product_received,
+      created_by: info.created_by,
+      created_by_name: hrSchema.users.name,
       created_at: info.created_at,
-      service_status: info.order_info_status,
+      updated_at: info.updated_at,
+      remarks: info.remarks,
+      location: info.location,
+      zone_uuid: info.zone_uuid,
+      zone_name: zone.name,
+      submitted_by: info.submitted_by,
+      branch_uuid: info.branch_uuid,
+      branch_name: storeSchema.branch.name,
+      reference_user_uuid: info.reference_user_uuid,
+      reference_user_name: reference_user.name,
+      is_commission_amount: info.is_commission_amount,
+      commission_amount: sql`COALESCE(info.commission_amount::float8, 0)`,
+      is_contact_with_customer: info.is_contact_with_customer,
+      customer_feedback: info.customer_feedback,
+      order_info_status: info.order_info_status,
+      user_email: user.email,
+      order_type: info.order_type,
+      received_by: info.received_by,
+      received_by_name: receivedByUser.name,
       product_entry: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
@@ -515,13 +535,90 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
+    .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
+    .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
+    .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
     .where(eq(info.user_uuid, user_uuid))
     .orderBy(desc(info.created_at));
 
   const data = await infoPromise;
 
-  // if (!data)
-  //   return DataNotFound(c);
+  // extract info.uuid from data
 
-  return c.json(data || [], HSCode.OK);
+  const infoUuids = data.map(item => item.uuid);
+
+  const api = createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`${endpoint}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  const order = await Promise.all([
+    infoUuids.map(uuid => fetchData(`/v1/work/order-by-info/${uuid}`)),
+  ]);
+
+  const orderData = order.flat();
+
+  const enrichedOrders = await Promise.all(
+    orderData.length > 0
+      ? orderData.map(async (orderItem: any) => {
+          const { uuid: order_uuid } = orderItem;
+
+          try {
+            const diagnosisData
+              = diagnosis === 'true'
+                ? await fetchData(
+                    `/v1/work/diagnosis-by-order/${order_uuid}`,
+                  )
+                : null;
+
+            const processData
+              = process === 'true'
+                ? await fetchData(
+                    `/v1/work/process?order_uuid=${order_uuid}`,
+                  )
+                : null;
+
+            return {
+              ...orderItem,
+              ...(diagnosisData
+                ? { diagnosis: diagnosisData?.data }
+                : {}),
+              ...(processData
+                ? { process: processData?.data }
+                : {}),
+            };
+          }
+          catch (error) {
+            console.error(`Error enriching order ${order_uuid}:`, error);
+            // Return order without enriched data if API calls fail
+            return orderItem;
+          }
+        })
+      : [],
+  );
+  enrichedOrders.sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+
+  // Merge order_entry into each info item
+  const infoWithOrders = data.map((infoItem) => {
+    // Find orders for this info uuid
+    const ordersForInfo = enrichedOrders.filter(order => order.info_uuid === infoItem.uuid);
+    return {
+      ...infoItem,
+      order_entry: ordersForInfo,
+    };
+  });
+
+  return c.json(infoWithOrders || [], HSCode.OK);
 };
