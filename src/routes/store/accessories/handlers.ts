@@ -86,11 +86,11 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
         return operators.eq(fields.uuid, uuid);
       },
     });
-    if (accessoriesData && accessoriesData.image_1) {
+    if (accessoriesData && accessoriesData.image_1 && typeof formData.image_1 === 'object') {
       const imagePath = await updateFile(formData.image_1, accessoriesData.image_1, 'store/accessories');
       formData.image_1 = imagePath;
     }
-    else {
+    else if (typeof formData.image_1 === 'object') {
       const imagePath = await insertFile(formData.image_1, 'store/accessories');
       formData.image_1 = imagePath;
     }

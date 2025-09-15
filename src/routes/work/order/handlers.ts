@@ -270,29 +270,29 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       },
     });
 
-    if (userData && userData.image_1 && formData.image_1) {
+    if (userData && userData.image_1 && typeof formData.image_1 === 'object') {
       const imagePath = await updateFile(formData.image_1, userData.image_1, 'work/order');
       formData.image_1 = imagePath;
     }
-    else if (formData.image_1) {
+    else if (typeof formData.image_1 === 'object') {
       const imagePath = await insertFile(formData.image_1, 'work/order');
       formData.image_1 = imagePath;
     }
 
-    if (userData && userData.image_2 && formData.image_2) {
+    if (userData && userData.image_2 && typeof formData.image_2 === 'object') {
       const imagePath = await updateFile(formData.image_2, userData.image_2, 'work/order');
       formData.image_2 = imagePath;
     }
-    else if (formData.image_2) {
+    else if (typeof formData.image_2 === 'object') {
       const imagePath = await insertFile(formData.image_2, 'work/order');
       formData.image_2 = imagePath;
     }
 
-    if (userData && userData.image_3 && formData.image_3) {
+    if (userData && userData.image_3 && typeof formData.image_3 === 'object') {
       const imagePath = await updateFile(formData.image_3, userData.image_3, 'work/order');
       formData.image_3 = imagePath;
     }
-    else if (formData.image_3) {
+    else if (typeof formData.image_3 === 'object') {
       const imagePath = await insertFile(formData.image_3, 'work/order');
       formData.image_3 = imagePath;
     }

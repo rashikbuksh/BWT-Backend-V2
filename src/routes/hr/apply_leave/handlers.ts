@@ -62,11 +62,11 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       },
     });
 
-    if (applyLeaveData && applyLeaveData.file) {
+    if (applyLeaveData && applyLeaveData.file && typeof formData.file === 'object') {
       const filePath = await updateFile(formData.file, applyLeaveData.file, 'public/apply-leave');
       formData.file = filePath;
     }
-    else {
+    else if (typeof formData.file === 'object') {
       const filePath = await insertFile(formData.file, 'public/apply-leave');
       formData.file = filePath;
     }

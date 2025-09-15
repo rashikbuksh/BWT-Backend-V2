@@ -53,11 +53,11 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       },
     });
 
-    if (productImageData && productImageData.image) {
+    if (productImageData && productImageData.image && typeof formData.image === 'object') {
       const imagePath = await updateFile(formData.image, productImageData.image, 'public/product-image');
       formData.image = imagePath;
     }
-    else {
+    else if (typeof formData.image === 'object') {
       const imagePath = await insertFile(formData.image, 'public/product-image');
       formData.image = imagePath;
     }
