@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -515,7 +515,8 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
-    .where(eq(info.user_uuid, user_uuid));
+    .where(eq(info.user_uuid, user_uuid))
+    .orderBy(desc(info.created_at));
 
   const data = await infoPromise;
 
