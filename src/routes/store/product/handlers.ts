@@ -129,6 +129,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         FROM store.review r
         WHERE r.product_uuid = ${product.uuid}
       )`,
+      has_discount: sql`EXISTS (
+        SELECT 1
+        FROM store.product_variant pv
+        WHERE pv.product_uuid = ${product.uuid}
+          AND pv.discount > 0
+      )`,
     })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
