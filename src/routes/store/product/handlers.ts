@@ -15,7 +15,32 @@ import { category, model, product } from '../schema';
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
-  const [data] = await db.insert(product).values(value).returning({
+  // replace spaces and special characters with hyphens and convert to lowercase
+  let url = (value.title as string)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  // check if the generated url already exists in the database
+  const existing = await db.select().from(product).where(eq(product.url, url)).limit(1).execute();
+
+  // if exists, append a number to make it unique
+  if (existing.length > 0) {
+    let suffix = 1;
+    let newUrl = `${url}-${suffix}`;
+
+    while (true) {
+      const check = await db.select().from(product).where(eq(product.url, newUrl)).limit(1).execute();
+      if (check.length === 0) {
+        url = newUrl;
+        break;
+      }
+      suffix += 1;
+      newUrl = `${url}-${suffix}`;
+    }
+  }
+
+  const [data] = await db.insert(product).values({ ...value, url }).returning({
     name: product.uuid,
   });
 
@@ -79,6 +104,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       care_maintenance_description: product.care_maintenance_description,
       attribute_list: product.attribute_list,
       refurbished: product.refurbished,
+      url: product.url,
       // Get is_main image, fallback to first image if none is_main
       image: sql`(
           SELECT pi.image
@@ -264,6 +290,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     is_order_exist: sql`EXISTS (SELECT 1 FROM store.ordered oi LEFT JOIN store.product_variant pv ON oi.product_variant_uuid = pv.uuid WHERE pv.product_uuid = ${product.uuid})`,
     extra_information: product.extra_information,
     refurbished: product.refurbished,
+    url: product.url,
     total_review: sql`(
         SELECT COUNT(*)::int
         FROM store.review r

@@ -104,6 +104,7 @@ export const product = store.table('product', {
   is_published: boolean('is_published').default(false),
   extra_information: text('extra_information').default(sql`null`),
   refurbished: refurbishedEnum('refurbished').default('no'),
+  url: text('url').default(sql`null`).unique(),
 });
 
 export const discountUnitEnum = pgEnum('discount_unit', ['bdt', 'percentage']);

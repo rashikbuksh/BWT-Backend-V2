@@ -12,7 +12,7 @@ export const insertSchema = createInsertSchema(
   product,
   {
     uuid: schema => schema.uuid.length(15),
-    // name: schema => schema.name.min(1),
+    title: schema => schema.title.min(1),
     category_uuid: schema => schema.category_uuid.length(15),
     // size_uuid: schema => schema.size_uuid.length(15),
     warranty_days: z.number().optional(),
