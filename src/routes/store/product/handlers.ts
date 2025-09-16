@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 // import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -167,19 +167,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(model, eq(product.model_uuid, model.uuid))
     .leftJoin(users, eq(product.created_by, users.uuid));
 
-  if (is_published === 'true') {
-    productPromise.where(eq(product.is_published, true));
+  const filters = [];
+
+  if (is_published) {
+    filters.push(eq(product.is_published, is_published));
   }
 
   if (refurbished) {
-    productPromise.where(eq(product.refurbished, refurbished));
+    filters.push(eq(product.refurbished, refurbished));
   }
 
   if (low_price && high_price) {
     const minPrice = Number(low_price);
     const maxPrice = Number(high_price);
     if (Number.isFinite(minPrice) && Number.isFinite(maxPrice)) {
-      productPromise.where(sql`
+      filters.push(sql`
         EXISTS (
           SELECT 1
           FROM store.product_variant pv
@@ -188,6 +190,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         )
       `);
     }
+  }
+
+  if (filters.length > 0) {
+    productPromise.where(and(...filters));
   }
 
   if (sorting === 'lowToHigh') {
