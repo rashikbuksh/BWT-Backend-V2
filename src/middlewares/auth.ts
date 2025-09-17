@@ -92,4 +92,5 @@ export const ALLOWED_ROUTES: string[] = [
   'http://localhost:4000',
   'http://103.147.163.46:5095',
   'https://bwt-frontend.fortunezip.com',
+  'https://bwt-web.fortunezip.com',
 ];
