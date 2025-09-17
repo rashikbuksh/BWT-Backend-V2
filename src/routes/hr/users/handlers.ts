@@ -1,7 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 import type { JWTPayload } from 'hono/utils/jwt/types';
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, or, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -256,9 +256,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   if (user_type) {
-    filters.push(eq(users.user_type, user_type));
     if (user_type === 'customer') {
-      filters.push(eq(users.user_type, 'web'));
+      filters.push(or(
+        eq(users.user_type, 'customer'),
+        eq(users.user_type, 'web'),
+      ));
+    }
+    else {
+      filters.push(eq(users.user_type, user_type));
     }
   }
 
