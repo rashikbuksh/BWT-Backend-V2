@@ -257,6 +257,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   if (user_type) {
     filters.push(eq(users.user_type, user_type));
+    if (user_type === 'customer') {
+      filters.push(eq(users.user_type, 'web'));
+    }
   }
 
   if (department_name) {
