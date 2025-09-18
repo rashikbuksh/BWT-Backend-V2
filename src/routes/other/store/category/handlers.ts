@@ -15,6 +15,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     value: category.uuid,
     label: category.name,
     total_products: sql`COUNT(${product.uuid})::float8`.as('total_products'),
+    image: category.image,
   })
     .from(category)
     .leftJoin(product, sql`${product.category_uuid} = ${category.uuid} AND ${product.is_published} = true ${refurbished ? sql` AND ${product.refurbished} = ${refurbished}` : sql``}`)
