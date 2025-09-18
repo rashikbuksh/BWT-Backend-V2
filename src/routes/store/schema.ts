@@ -37,6 +37,7 @@ export const category = store.table('category', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  image: text('image').default(sql`null`),
 });
 
 export const brand = store.table('brand', {
