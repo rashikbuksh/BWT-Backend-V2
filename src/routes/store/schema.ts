@@ -416,12 +416,13 @@ export const ordered = store.table('ordered', {
   selling_price: PG_DECIMAL('selling_price').notNull(),
   is_paid: boolean('is_paid').default(false),
   order_status: order_statusEnum('order_status').default('pending'),
-  product_serial: text('product_serial').default(sql`null`),
+  // product_serial: text('product_serial').default(sql`null`),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
   updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  serial_entry: text('serial_entry').array().default([]),
 });
 
 export const ship_address = store.table('ship_address', {

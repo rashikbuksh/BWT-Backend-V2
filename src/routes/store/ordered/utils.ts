@@ -40,7 +40,7 @@ export const insertSchema = createInsertSchema(
   quantity: true,
   is_paid: true,
   order_status: true,
-  product_serial: true,
+  serial_entry: true,
   created_by: true,
 });
 

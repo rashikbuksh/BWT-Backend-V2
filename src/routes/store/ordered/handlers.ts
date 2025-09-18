@@ -71,7 +71,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       selling_price: PG_DECIMAL_TO_FLOAT(ordered.selling_price),
       is_paid: ordered.is_paid,
       order_status: ordered.order_status,
-      product_serial: ordered.product_serial,
       created_by: ordered.created_by,
       created_by_name: createdByUser.name,
       created_at: ordered.created_at,
@@ -79,6 +78,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_by_name: updatedByUser.name,
       updated_at: ordered.updated_at,
       remarks: ordered.remarks,
+      serial_entry: ordered.serial_entry,
     })
     .from(ordered)
     .leftJoin(createdByUser, eq(ordered.created_by, createdByUser.uuid))
@@ -101,7 +101,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     selling_price: PG_DECIMAL_TO_FLOAT(ordered.selling_price),
     is_paid: ordered.is_paid,
     order_status: ordered.order_status,
-    product_serial: ordered.product_serial,
     created_by: ordered.created_by,
     created_by_name: createdByUser.name,
     created_at: ordered.created_at,
@@ -109,6 +108,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     updated_by_name: updatedByUser.name,
     updated_at: ordered.updated_at,
     remarks: ordered.remarks,
+    serial_entry: ordered.serial_entry,
   })
     .from(ordered)
     .leftJoin(createdByUser, eq(ordered.created_by, createdByUser.uuid))
