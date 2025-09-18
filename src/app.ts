@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import { configureOpenAPI } from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
+import { manageZktecoDevice } from '@/utils/zkteco';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -46,9 +47,7 @@ if (!isDev) {
   });
 }
 
-// const allRouter = [authRouter, ...routes];
-
-// app2.route(basePath2, authRouter);
+manageZktecoDevice();
 
 routes.forEach((route) => {
   app.route(basePath, route);
