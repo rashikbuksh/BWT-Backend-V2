@@ -29,6 +29,7 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
 }).partial({
+  image: true,
   updated_at: true,
   remarks: true,
 });
