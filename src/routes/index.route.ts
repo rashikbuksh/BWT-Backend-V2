@@ -5,6 +5,7 @@ import publicRoute from './publicRoute';
 import report from './report';
 import store from './store';
 import work from './work';
+import zkteco from './zkteco';
 
 const routes = [
   ...hr,
@@ -14,6 +15,7 @@ const routes = [
   ...work,
   ...other,
   ...publicRoute,
+  zkteco,
 ] as const;
 
 export default routes;

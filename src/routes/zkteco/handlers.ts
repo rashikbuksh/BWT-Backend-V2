@@ -1,6 +1,10 @@
 // import Zkteco from 'zkteco-js';
 
+import type { AppRouteHandler } from '@/lib/types';
+
 import ZKLib from 'zklib-js';
+
+import type { ListRoute } from './routes';
 
 const options = {
   ip: '192.168.10.23',
@@ -35,21 +39,21 @@ const options = {
 // }
 
 // ! zklib-js
-export async function manageZktecoDevice() {
+export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const device = new ZKLib(options.ip, options.port, options.timeout, options.inport);
   console.warn(device);
+  let allUser: any[] = [];
   try {
     await device.createSocket();
+
     console.warn('Connected to device');
 
-    // Add your device interaction logic here
-    if (true) {
-      const attendances = await device.getAttendances();
-      console.warn('Attendances:', attendances);
-    }
+    allUser = await device.getUsers();
   }
   catch (error) {
     console.error('Error:', error);
+    // Optionally, return an error response here
+    return c.json({ error: 'Failed to fetch all users' }, 500);
   }
   finally {
     if (typeof device.disconnect === 'function') {
@@ -59,4 +63,6 @@ export async function manageZktecoDevice() {
       catch {}
     }
   }
-}
+  // Return the allUser as a JSON response with status 200
+  return c.json(allUser, 200);
+};
