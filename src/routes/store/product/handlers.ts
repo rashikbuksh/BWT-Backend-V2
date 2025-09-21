@@ -161,6 +161,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         WHERE pv.product_uuid = ${product.uuid}
           AND pv.discount > 0
       )`,
+      selling_count: sql`(
+       SELECT COALESCE(MAX(sub.cnt), 0)
+       FROM (
+         SELECT oi.product_variant_uuid, COUNT(*)::int AS cnt
+         FROM store.ordered oi
+         LEFT JOIN store.bill_info bi ON oi.bill_info_uuid = bi.uuid
+         WHERE bi.bill_status = 'completed'
+         GROUP BY oi.product_variant_uuid
+      ) sub
+       JOIN store.product_variant pv ON pv.uuid = sub.product_variant_uuid
+       WHERE pv.product_uuid = ${product.uuid}
+      )`,
     })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
