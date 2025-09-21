@@ -130,6 +130,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     city: data.city,
     district: data.district,
     location: data.location,
+    created_at: data.created_at,
   };
 
   const can_access = data.can_access;
