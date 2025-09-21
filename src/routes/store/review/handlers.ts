@@ -63,7 +63,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { product_uuid } = c.req.valid('query');
+  const { product_uuid, limit } = c.req.valid('query');
 
   const reviewPromise = db
     .select({
@@ -92,6 +92,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(userHrSchema, eq(review.user_uuid, userHrSchema.uuid))
     .leftJoin(product, eq(review.product_uuid, product.uuid))
     .orderBy(desc(review.created_at));
+
+  if (limit) {
+    reviewPromise.limit(limit);
+  }
 
   if (product_uuid) {
     reviewPromise.where(

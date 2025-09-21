@@ -17,6 +17,7 @@ export const list = createRoute({
   request: {
     query: z.object({
       product_uuid: z.string().optional(),
+      limit: z.string().optional(),
     }),
   },
   responses: {
