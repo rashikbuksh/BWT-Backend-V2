@@ -15,6 +15,7 @@ import { product, review } from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
 const updatedByUser = alias(users, 'updated_by_user');
+const userHrSchema = alias(users, 'user_hr_schema');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -70,6 +71,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       product_uuid: review.product_uuid,
       product_title: product.title,
       user_uuid: review.user_uuid,
+      user_created_at: userHrSchema.created_at,
       email: review.email,
       name: review.name,
       comment: review.comment,
@@ -87,6 +89,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .from(review)
     .leftJoin(createdByUser, eq(review.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(review.updated_by, updatedByUser.uuid))
+    .leftJoin(userHrSchema, eq(review.user_uuid, userHrSchema.uuid))
     .leftJoin(product, eq(review.product_uuid, product.uuid))
     .orderBy(desc(review.created_at));
 
