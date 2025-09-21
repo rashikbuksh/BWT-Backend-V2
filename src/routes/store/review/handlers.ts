@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -63,17 +63,19 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { product_uuid, limit } = c.req.valid('query');
+  const { product_uuid, limit, is_unique } = c.req.valid('query');
 
-  const reviewPromise = db
+  // Base query builder
+  // Start base select
+  const baseQuery = db
     .select({
       uuid: review.uuid,
       product_uuid: review.product_uuid,
       product_title: product.title,
       user_uuid: review.user_uuid,
       user_created_at: userHrSchema.created_at,
-      email: review.email,
-      name: review.name,
+      email: sql`CASE WHEN review.email IS NOT NULL THEN review.email ELSE ${userHrSchema.email} END`,
+      name: sql`CASE WHEN review.name IS NOT NULL THEN review.name ELSE ${userHrSchema.name} END`,
       comment: review.comment,
       rating: review.rating,
       created_by: review.created_by,
@@ -90,21 +92,34 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(createdByUser, eq(review.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(review.updated_by, updatedByUser.uuid))
     .leftJoin(userHrSchema, eq(review.user_uuid, userHrSchema.uuid))
-    .leftJoin(product, eq(review.product_uuid, product.uuid))
-    .orderBy(desc(review.created_at));
+    .leftJoin(product, eq(review.product_uuid, product.uuid));
+  // Build dynamic parts without mutating base query typing
+  let dynamicQuery: any = baseQuery;
 
-  if (product_uuid) {
-    reviewPromise.where(
-      eq(review.product_uuid, product_uuid),
+  if (is_unique === 'true') {
+    const latestReviewPerUser = db.select({
+      user_uuid: review.user_uuid,
+      max_created_at: sql`MAX(${review.created_at})`.as('max_created_at'),
+    }).from(review).groupBy(review.user_uuid).as('latest_review_per_user');
+
+    dynamicQuery = dynamicQuery.innerJoin(
+      latestReviewPerUser,
+      and(
+        eq(review.user_uuid, latestReviewPerUser.user_uuid),
+        eq(review.created_at, latestReviewPerUser.max_created_at),
+      ),
     );
   }
 
-  if (limit) {
-    reviewPromise.limit(limit);
+  if (product_uuid) {
+    dynamicQuery = (dynamicQuery as any).where(eq(review.product_uuid, product_uuid));
   }
 
-  const data = await reviewPromise;
+  if (limit) {
+    dynamicQuery = (dynamicQuery as any).limit(limit);
+  }
 
+  const data = await (dynamicQuery as any).orderBy(desc(review.created_at));
   return c.json(data || [], HSCode.OK);
 };
 
