@@ -83,7 +83,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published, refurbished } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published, refurbished, category_uuid } = c.req.valid('query');
 
   const productPromise = db
     .select({
@@ -190,6 +190,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         )
       `);
     }
+  }
+
+  if (category_uuid) {
+    filters.push(eq(product.category_uuid, category_uuid));
   }
 
   if (filters.length > 0) {

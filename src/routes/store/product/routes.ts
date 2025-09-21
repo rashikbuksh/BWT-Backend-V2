@@ -26,6 +26,7 @@ export const list = createRoute({
       limit: z.string().optional(),
       is_published: z.string().optional(),
       refurbished: z.string().optional(),
+      category_uuid: z.string().optional(),
     }),
   },
   responses: {
