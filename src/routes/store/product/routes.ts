@@ -65,6 +65,9 @@ export const getOne = createRoute({
   method: 'get',
   request: {
     params: param.uuid,
+    query: z.object({
+      is_published: z.string().optional(),
+    }),
   },
   tags,
   responses: {

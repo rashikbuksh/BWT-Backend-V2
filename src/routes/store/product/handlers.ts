@@ -310,6 +310,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
+  const { is_published } = c.req.valid('query');
+
   const resultPromise = db.select({
     uuid: product.uuid,
     title: product.title,
@@ -461,8 +463,19 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
     .leftJoin(model, eq(product.model_uuid, model.uuid))
-    .leftJoin(users, eq(product.created_by, users.uuid))
-    .where(eq(product.uuid, uuid));
+    .leftJoin(users, eq(product.created_by, users.uuid));
+
+  const filters = [];
+
+  filters.push(eq(product.uuid, uuid));
+
+  if (is_published) {
+    filters.push(eq(product.is_published, is_published));
+  }
+
+  if (filters.length > 0) {
+    resultPromise.where(and(...filters));
+  }
 
   const [data] = await resultPromise;
 
