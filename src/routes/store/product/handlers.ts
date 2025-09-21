@@ -83,7 +83,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published, refurbished, category_uuid } = c.req.valid('query');
+  const { latest, categories, low_price, high_price, sorting, page, limit, is_pagination, is_published, refurbished, category_uuid, bestselling } = c.req.valid('query');
 
   const productPromise = db
     .select({
@@ -194,6 +194,36 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   if (category_uuid) {
     filters.push(eq(product.category_uuid, category_uuid));
+  }
+
+  if (bestselling === 'true') {
+    // require product to have at least one completed order on any variant
+    filters.push(sql`(
+      SELECT COALESCE(MAX(sub.cnt), 0)
+      FROM (
+        SELECT oi.product_variant_uuid, COUNT(*)::int AS cnt
+        FROM store.ordered oi
+        LEFT JOIN store.bill_info bi ON oi.bill_info_uuid = bi.uuid
+        WHERE bi.bill_status = 'pending'
+        GROUP BY oi.product_variant_uuid
+      ) sub
+      JOIN store.product_variant pv ON pv.uuid = sub.product_variant_uuid
+      WHERE pv.product_uuid = ${product.uuid}
+    ) > 0`);
+
+    // order products by the maximum per-variant order count (desc)
+    productPromise.orderBy(desc(sql`(
+      SELECT COALESCE(MAX(sub.cnt), 0)
+      FROM (
+        SELECT oi.product_variant_uuid, COUNT(*)::int AS cnt
+        FROM store.ordered oi
+        LEFT JOIN store.bill_info bi ON oi.bill_info_uuid = bi.uuid
+        WHERE bi.bill_status = 'pending'
+        GROUP BY oi.product_variant_uuid
+      ) sub
+      JOIN store.product_variant pv ON pv.uuid = sub.product_variant_uuid
+      WHERE pv.product_uuid = ${product.uuid}
+    )`));
   }
 
   if (filters.length > 0) {
