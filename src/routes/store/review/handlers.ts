@@ -93,14 +93,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(product, eq(review.product_uuid, product.uuid))
     .orderBy(desc(review.created_at));
 
-  if (limit) {
-    reviewPromise.limit(limit);
-  }
-
   if (product_uuid) {
     reviewPromise.where(
       eq(review.product_uuid, product_uuid),
     );
+  }
+
+  if (limit) {
+    reviewPromise.limit(limit);
   }
 
   const data = await reviewPromise;
