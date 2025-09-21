@@ -204,7 +204,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         SELECT oi.product_variant_uuid, COUNT(*)::int AS cnt
         FROM store.ordered oi
         LEFT JOIN store.bill_info bi ON oi.bill_info_uuid = bi.uuid
-        WHERE bi.bill_status = 'pending'
+        WHERE bi.bill_status = 'completed'
         GROUP BY oi.product_variant_uuid
       ) sub
       JOIN store.product_variant pv ON pv.uuid = sub.product_variant_uuid
@@ -218,7 +218,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         SELECT oi.product_variant_uuid, COUNT(*)::int AS cnt
         FROM store.ordered oi
         LEFT JOIN store.bill_info bi ON oi.bill_info_uuid = bi.uuid
-        WHERE bi.bill_status = 'pending'
+        WHERE bi.bill_status = 'completed'
         GROUP BY oi.product_variant_uuid
       ) sub
       JOIN store.product_variant pv ON pv.uuid = sub.product_variant_uuid
