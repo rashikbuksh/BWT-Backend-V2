@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -65,8 +65,6 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const { product_uuid, limit, is_unique } = c.req.valid('query');
 
-  // Base query builder
-  // Start base select
   const baseQuery = db
     .select({
       uuid: review.uuid,
@@ -93,24 +91,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(updatedByUser, eq(review.updated_by, updatedByUser.uuid))
     .leftJoin(userHrSchema, eq(review.user_uuid, userHrSchema.uuid))
     .leftJoin(product, eq(review.product_uuid, product.uuid));
+
   // Build dynamic parts without mutating base query typing
   let dynamicQuery: any = baseQuery;
 
-  if (is_unique === 'true') {
-    const latestReviewPerUser = db.select({
-      user_uuid: review.user_uuid,
-      max_created_at: sql`MAX(${review.created_at})`.as('max_created_at'),
-    }).from(review).groupBy(review.user_uuid).as('latest_review_per_user');
-
-    dynamicQuery = dynamicQuery.innerJoin(
-      latestReviewPerUser,
-      and(
-        eq(review.user_uuid, latestReviewPerUser.user_uuid),
-        eq(review.created_at, latestReviewPerUser.max_created_at),
-      ),
-    );
-  }
-
+  // If you only want latest per (email, product_uuid) at SQL level you can use a window function partition
+  // by COALESCE(review.email, user_hr.email) and product_uuid; however here we fetch rows then apply
+  // an application-level dedupe so we can enforce both "one row per email" and "one row per product".
   if (product_uuid) {
     dynamicQuery = (dynamicQuery as any).where(eq(review.product_uuid, product_uuid));
   }
@@ -119,8 +106,38 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     dynamicQuery = (dynamicQuery as any).limit(limit);
   }
 
-  const data = await (dynamicQuery as any).orderBy(desc(review.created_at));
-  return c.json(data || [], HSCode.OK);
+  // fetch rows ordered by created_at desc (newest first)
+  const rows = await (dynamicQuery as any).orderBy(desc(review.created_at));
+
+  if (is_unique === 'true') {
+    // Deduplicate:
+    // - Primary key for user identity is email (which is already the SELECT expression).
+    // - Fallback to user_uuid if email is null, and final fallback to uuid to avoid null key.
+    // - Ensure returned list has unique emails AND unique products. We iterate rows (newest first)
+    //   and pick the first row for each email, but skip rows for products already taken.
+    const seenEmails = new Set<string>();
+    const seenProducts = new Set<string>();
+    const result: any[] = [];
+
+    for (const r of rows) {
+      const emailKey = r.email ?? (r.user_uuid ? String(r.user_uuid) : r.uuid);
+      // if this email already taken, skip
+      if (emailKey && seenEmails.has(emailKey))
+        continue;
+      // if this product already taken, skip
+      if (seenProducts.has(r.product_uuid))
+        continue;
+
+      if (emailKey)
+        seenEmails.add(emailKey);
+      seenProducts.add(r.product_uuid);
+      result.push(r);
+    }
+
+    return c.json(result || [], HSCode.OK);
+  }
+
+  return c.json(rows || [], HSCode.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
