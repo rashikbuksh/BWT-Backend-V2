@@ -5,6 +5,7 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { getHolidayCountsDateRange } from '@/lib/variables';
+import { createApi } from '@/utils/api';
 
 import type { GetDepartmentAttendanceReportRoute, GetEmployeeAttendanceReportRoute, GetMonthlyAttendanceReportRoute } from './routes';
 
@@ -163,6 +164,24 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
 
   const data = await employeeAttendanceReportPromise;
 
+  const api = createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`${endpoint}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  const monthlyReportByEmployee = await fetchData(
+    `/v1/report/monthly-attendance-report?employee_uuid=${employee_uuid}&from_date=${from_date}&to_date=${to_date}`,
+  );
+
   // Format the data to structure attendance records with dates as keys
   const formattedData = data.rows.map((row: any) => {
     const attendanceByDate: any = {};
@@ -193,6 +212,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
       user_uuid: row.user_uuid,
       employee_name: row.employee_name,
       shift_details: row.shift_details,
+      monthly_details: monthlyReportByEmployee,
       ...attendanceByDate,
     };
   });
@@ -632,7 +652,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
 };
 
 export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
-  const { from_date, to_date } = c.req.valid('query');
+  const { from_date, to_date, employee_uuid } = c.req.valid('query');
 
   const holidays = await getHolidayCountsDateRange(from_date, to_date);
 
@@ -947,7 +967,10 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                             LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = t.shift_group_uuid AND sod.day = t.punch_date
                             GROUP BY t.employee_uuid
                           ) late_hours_summary ON e.uuid = late_hours_summary.employee_uuid
+                    WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
                   `;
+
+  // Execute the query
 
   const data = await db.execute(query);
 
