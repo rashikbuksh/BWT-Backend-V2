@@ -61,6 +61,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         ),
                 attendance_data AS (
                   SELECT
+                    e.uuid,
                     ud.user_uuid,
                     ud.employee_name,
                     s.name AS shift_name,
@@ -115,8 +116,14 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
-                  LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-                  LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                  LEFT JOIN LATERAL (
+                            SELECT
+                              COALESCE(
+                                (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = e.shift_group_uuid AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
+                                (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = e.shift_group_uuid AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
+                              ) AS shifts_uuid
+                          ) AS sg_sel ON TRUE
+                  LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                   LEFT JOIN hr.general_holidays gh ON gh.date = ud.punch_date
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                   LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
@@ -135,9 +142,10 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid
                 )
                 SELECT
+                    uuid,
                     user_uuid,
                     employee_name,
                     shift_name,
@@ -162,11 +170,14 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         'late_start_time', late_start_time,
                         'late_hours', late_hours,
                         'early_exit_time', early_exit_time,
-                        'early_exit_hours', early_exit_hours
+                        'early_exit_hours', early_exit_hours,
+                        'shift_name', shift_name,
+                        'start_time', start_time,
+                        'end_time', end_time
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
-                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time, department_name, designation_name, employment_type_name
+                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time, department_name, designation_name, employment_type_name, uuid
                 ORDER BY employee_name;
               `;
 
@@ -218,7 +229,29 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
       });
     }
 
+    const monthly_data = Array.isArray(row.attendance_records)
+      ? row.attendance_records.map((record: any) => ({
+          uuid: row.uuid,
+          punch_date: record.punch_date,
+          entry_time: record.entry_time,
+          exit_time: record.exit_time,
+          hours_worked: record.hours_worked,
+          expected_hours: record.expected_hours,
+          status: record.status,
+          late_time: record.late_time,
+          early_exit_before: record.early_exit_before,
+          late_start_time: record.late_start_time,
+          late_hours: record.late_hours,
+          early_exit_time: record.early_exit_time,
+          early_exit_hours: record.early_exit_hours,
+          shift_name: record.shift_name,
+          start_time: record.start_time,
+          end_time: record.end_time,
+        }))
+      : [];
+
     return {
+      uuid: row.uuid,
       user_uuid: row.user_uuid,
       employee_name: row.employee_name,
       department_name: row.department_name,
@@ -226,6 +259,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
       employment_type: row.employment_type_name,
       shift_details: row.shift_details,
       monthly_details: monthlyReportByEmployee[0],
+      monthly_data,
       ...attendanceByDate,
     };
   });
