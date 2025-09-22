@@ -24,7 +24,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     name: review.uuid,
   });
 
-  return c.json(createToast('create', data.name), HSCode.OK);
+  return c.json(createToast('create', data?.name ?? 'Comment created'), HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
