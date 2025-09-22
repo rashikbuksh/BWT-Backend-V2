@@ -212,7 +212,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
       user_uuid: row.user_uuid,
       employee_name: row.employee_name,
       shift_details: row.shift_details,
-      monthly_details: monthlyReportByEmployee,
+      monthly_details: monthlyReportByEmployee[0],
       ...attendanceByDate,
     };
   });
