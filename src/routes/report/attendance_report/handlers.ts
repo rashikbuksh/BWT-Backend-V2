@@ -108,13 +108,20 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                         WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                         ELSE 'Present'
-                    END as status
+                    END as status,
+                    dept.department AS department_name,
+                    des.designation AS designation_name,
+                    et.name AS employment_type_name
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                   LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
                   LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                   LEFT JOIN hr.general_holidays gh ON gh.date = ud.punch_date
+                  LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+                  LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
+                  LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
+                  LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                   LEFT JOIN LATERAL (
                     SELECT 1 AS is_special
                     FROM hr.special_holidays sh
@@ -128,12 +135,15 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name
                 )
                 SELECT
                     user_uuid,
                     employee_name,
                     shift_name,
+                    department_name,
+                    designation_name,
+                    employment_type_name,
                     JSON_BUILD_OBJECT(
                         'name', shift_name,
                         'start_time', start_time,
@@ -156,7 +166,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
-                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time
+                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time, department_name, designation_name, employment_type_name
                 ORDER BY employee_name;
               `;
 
@@ -211,6 +221,9 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
     return {
       user_uuid: row.user_uuid,
       employee_name: row.employee_name,
+      department_name: row.department_name,
+      designation_name: row.designation_name,
+      employment_type: row.employment_type_name,
       shift_details: row.shift_details,
       monthly_details: monthlyReportByEmployee[0],
       ...attendanceByDate,
