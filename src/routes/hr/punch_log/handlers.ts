@@ -17,7 +17,7 @@ import type {
   SelectLateEntryDateByEmployeeUuidRoute,
 } from './routes';
 
-import { device_list, employee, punch_log, shift_group, shifts, users } from '../schema';
+import { department, designation, device_list, employee, punch_log, shift_group, shifts, users } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -78,11 +78,15 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       device_list_name: device_list.name,
       punch_type: punch_log.punch_type,
       punch_time: punch_log.punch_time,
+      department_name: department.department,
+      designation_name: designation.designation,
     })
     .from(punch_log)
     .leftJoin(device_list, eq(punch_log.device_list_uuid, device_list.uuid))
     .leftJoin(employee, eq(punch_log.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .where(
       employee_uuid ? eq(punch_log.employee_uuid, employee_uuid) : undefined,
     )
@@ -105,11 +109,15 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       device_list_name: device_list.name,
       punch_type: punch_log.punch_type,
       punch_time: punch_log.punch_time,
+      department_name: department.department,
+      designation_name: designation.designation,
     })
     .from(punch_log)
     .leftJoin(device_list, eq(punch_log.device_list_uuid, device_list.uuid))
     .leftJoin(employee, eq(punch_log.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .where(eq(punch_log.uuid, uuid));
 
   const [data] = await punchLogPromise;
