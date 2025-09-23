@@ -14,6 +14,7 @@ import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute, Sele
 import { apply_leave, employee, leave_category, users } from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
+const employeeUser = alias(users, 'employee_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const formData = await c.req.parseBody();
@@ -113,7 +114,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: apply_leave.uuid,
       employee_uuid: apply_leave.employee_uuid,
-      employee_name: users.name,
+      employee_name: employeeUser.name,
       leave_category_uuid: apply_leave.leave_category_uuid,
       leave_category_name: leave_category.name,
       year: apply_leave.year,
@@ -134,7 +135,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       leave_category,
       eq(apply_leave.leave_category_uuid, leave_category.uuid),
     )
-    .leftJoin(users, eq(apply_leave.employee_uuid, users.uuid))
+    .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
+    .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
     .leftJoin(
       createdByUser,
       eq(apply_leave.created_by, createdByUser.uuid),
@@ -153,7 +155,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: apply_leave.uuid,
       employee_uuid: apply_leave.employee_uuid,
-      employee_name: users.name,
+      employee_name: employeeUser.name,
       leave_category_uuid: apply_leave.leave_category_uuid,
       leave_category_name: leave_category.name,
       year: apply_leave.year,
@@ -174,7 +176,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       leave_category,
       eq(apply_leave.leave_category_uuid, leave_category.uuid),
     )
-    .leftJoin(users, eq(apply_leave.employee_uuid, users.uuid))
+    .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
+    .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
     .leftJoin(
       createdByUser,
       eq(apply_leave.created_by, createdByUser.uuid),
@@ -224,7 +227,7 @@ export const selectAllApplyLeaveWithPagination: AppRouteHandler<SelectAllApplyLe
     .select({
       uuid: apply_leave.uuid,
       employee_uuid: apply_leave.employee_uuid,
-      employee_name: users.name,
+      employee_name: employeeUser.name,
       leave_category_uuid: apply_leave.leave_category_uuid,
       leave_category_name: leave_category.name,
       year: apply_leave.year,
@@ -242,7 +245,7 @@ export const selectAllApplyLeaveWithPagination: AppRouteHandler<SelectAllApplyLe
     })
     .from(apply_leave)
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
-    .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
     .leftJoin(
       leave_category,
       eq(apply_leave.leave_category_uuid, leave_category.uuid),
