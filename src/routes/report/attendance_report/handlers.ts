@@ -1137,6 +1137,25 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                           OR al.reason IS NOT NULL THEN 0
                         ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                     END AS expected_hours,
+                     GREATEST(
+                      COALESCE(
+                        CASE 
+                          WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
+                            (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8
+                          ELSE 0
+                        END
+                      , 0)
+                      -
+                      COALESCE(
+                        CASE
+                          WHEN gh.date IS NOT NULL
+                            OR sp.is_special = 1
+                            OR sod.is_offday
+                            OR al.reason IS NOT NULL THEN 0
+                          ELSE (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8
+                        END
+                      , 0)
+                    , 0)::float8 AS overtime_hours,
                     CASE
                         WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
                         WHEN sod.is_offday THEN 'Off Day'
@@ -1204,7 +1223,8 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     late_start_time,
                     late_hours,
                     early_exit_time,
-                    early_exit_hours
+                    early_exit_hours,
+                    overtime_hours
                 FROM attendance_data
                 ORDER BY employee_name, punch_date;
               `;
