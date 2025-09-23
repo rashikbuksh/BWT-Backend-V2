@@ -19,7 +19,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const image = formData.image;
 
-  const imagePath = await insertFile(image, 'store/product-image');
+  const imagePath = await insertFile(image, 'public/product-image');
 
   const value = {
     uuid: formData.uuid,
@@ -61,7 +61,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
   const [productImageData] = await productImagePromise;
 
-  formData.image = await handleImagePatch(formData.image, productImageData?.image ?? undefined, 'store/product-image');
+  formData.image = await handleImagePatch(formData.image, productImageData?.image ?? undefined, 'public/product-image');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
