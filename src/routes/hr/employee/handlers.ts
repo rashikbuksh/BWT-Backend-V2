@@ -149,8 +149,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
     .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
     .leftJoin(
       leave_policy,
       eq(employee.leave_policy_uuid, leave_policy.uuid),
@@ -381,8 +381,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
     .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
     .leftJoin(
       leave_policy,
       eq(employee.leave_policy_uuid, leave_policy.uuid),
@@ -669,8 +669,8 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
     .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
     .leftJoin(
       leave_policy,
       eq(employee.leave_policy_uuid, leave_policy.uuid),
