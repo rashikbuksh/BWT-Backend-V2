@@ -19,7 +19,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const image = formData.image;
 
-  const imagePath = await insertFile(image, 'public/product-image');
+  const imagePath = await insertFile(image, 'store/product-image');
 
   const value = {
     uuid: formData.uuid,
@@ -46,13 +46,22 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const formData = await c.req.parseBody();
 
   // Image Or File Handling
-  const productImageData = await db.query.product_image.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  // const productImageData = await db.query.product_image.findFirst({
+  //   where(fields, operators) {
+  //     return operators.eq(fields.uuid, uuid);
+  //   },
+  // });
 
-  formData.image = await handleImagePatch(formData.image, productImageData?.image ?? undefined, 'public/product-image');
+  const productImagePromise = db
+    .select({
+      image: product_image.image,
+    })
+    .from(product_image)
+    .where(eq(product_image.uuid, uuid));
+
+  const [productImageData] = await productImagePromise;
+
+  formData.image = await handleImagePatch(formData.image, productImageData?.image ?? undefined, 'store/product-image');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
@@ -73,13 +82,22 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  // get newsEntry file name
+  // get product image file name
 
-  const productImageData = await db.query.product_image.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  // const productImageData = await db.query.product_image.findFirst({
+  //   where(fields, operators) {
+  //     return operators.eq(fields.uuid, uuid);
+  //   },
+  // });
+
+  const productImagePromise = db
+    .select({
+      image: product_image.image,
+    })
+    .from(product_image)
+    .where(eq(product_image.uuid, uuid));
+
+  const [productImageData] = await productImagePromise;
 
   if (productImageData && productImageData.image) {
     deleteFile(productImageData.image);
