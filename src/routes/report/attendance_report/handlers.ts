@@ -383,13 +383,18 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
                             COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
                             COALESCE(attendance_summary.early_exit_days, 0)::float8 AS early_leaves,
-                            COALESCE(off_days_summary.total_off_days, 0)::float8 AS off_days
+                            COALESCE(off_days_summary.total_off_days, 0)::float8 AS off_days,
+                            s.name AS shift_name,
+                            s.start_time AS shift_start_time,
+                            s.end_time AS shift_end_time
                         FROM hr.employee e
                         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                         LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
                         LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
                         LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
                         LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
+                        LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+                        LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                         LEFT JOIN (
                             WITH daily_attendance AS (
                                 SELECT 
@@ -631,7 +636,10 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                         sd.leave_days,
                         sd.late_days,
                         sd.early_leaves,
-                        sd.off_days
+                        sd.off_days,
+                        sd.shift_name,
+                        sd.shift_start_time,
+                        sd.shift_end_time
                     `;
 
   // Execute the simplified query
@@ -687,6 +695,9 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
       late_days: row.late_days,
       early_leaves: row.early_leaves,
       off_days: row.off_days,
+      shift_name: row.shift_name,
+      start_time: row.shift_start_time,
+      end_time: row.shift_end_time,
       ...attendanceByDate,
       total_hours_worked: hours_worked_sum,
       total_expected_hours: expected_hours_sum,
