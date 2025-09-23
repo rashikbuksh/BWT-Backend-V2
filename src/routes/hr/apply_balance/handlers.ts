@@ -22,7 +22,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   let filePath = null;
 
   if (file)
-    filePath = file ? await insertFile(file, 'public/apply-balance') : null;
+    filePath = file ? await insertFile(file, 'hr/apply-balance') : null;
 
   const value = {
     uuid: formData.uuid,
@@ -52,13 +52,16 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const formData = await c.req.parseBody();
 
   // Image Or File Handling
-  const applyLeaveData = await db.query.apply_balance.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const applyBalancePromise = db
+    .select({
+      file: apply_balance.file,
+    })
+    .from(apply_balance)
+    .where(eq(apply_balance.uuid, uuid));
 
-  formData.file = await handleImagePatch(formData.file, applyLeaveData?.file ?? undefined, 'public/apply-balance');
+  const [applyBalanceData] = await applyBalancePromise;
+
+  formData.file = await handleImagePatch(formData.file, applyBalanceData?.file ?? undefined, 'hr/apply-balance');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
@@ -79,16 +82,18 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  // get applyLeave file name
+  // get applyBalance file name
+  const applyBalancePromise = db
+    .select({
+      file: apply_balance.file,
+    })
+    .from(apply_balance)
+    .where(eq(apply_balance.uuid, uuid));
 
-  const applyLeaveData = await db.query.apply_balance.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const [applyBalanceData] = await applyBalancePromise;
 
-  if (applyLeaveData && applyLeaveData.file) {
-    deleteFile(applyLeaveData.file);
+  if (applyBalanceData && applyBalanceData.file) {
+    deleteFile(applyBalanceData.file);
   }
 
   const [data] = await db.delete(apply_balance)
@@ -106,7 +111,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
-  const applyLeavePromise = db
+  const applyBalancePromise = db
     .select({
       uuid: apply_balance.uuid,
       employee_uuid: apply_balance.employee_uuid,
@@ -136,7 +141,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .orderBy(desc(apply_balance.created_at));
 
-  const data = await applyLeavePromise;
+  const data = await applyBalancePromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -144,7 +149,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const applyLeavePromise = db
+  const applyBalancePromise = db
     .select({
       uuid: apply_balance.uuid,
       employee_uuid: apply_balance.employee_uuid,
@@ -174,7 +179,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .where(eq(apply_balance.uuid, uuid));
 
-  const [data] = await applyLeavePromise;
+  const [data] = await applyBalancePromise;
 
   if (!data)
     return DataNotFound(c);
