@@ -543,37 +543,33 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                   (
                     SELECT jsonb_agg(
                       jsonb_build_object(
-                        'uuid', leave_category.uuid,
-                        'name', leave_category.name,
-                        'maximum_number_of_allowed_leaves', configuration_entry.maximum_number_of_allowed_leaves,
+                        'uuid', lc.uuid,
+                        'name', lc.name,
+                        'maximum_number_of_allowed_leaves', ce.maximum_number_of_allowed_leaves,
                         'used_leave_days', COALESCE(leave_summary.total_leave_days, 0),
                         'remaining_leave_days',
                           COALESCE(
-                            configuration_entry.maximum_number_of_allowed_leaves - COALESCE(leave_summary.total_leave_days, 0),
-                            configuration_entry.maximum_number_of_allowed_leaves
+                            ce.maximum_number_of_allowed_leaves - COALESCE(leave_summary.total_leave_days, 0),
+                            ce.maximum_number_of_allowed_leaves
                           )
                       )
                     )
-                    FROM hr.employee
-                    LEFT JOIN hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
-                    LEFT JOIN hr.configuration
-                      ON leave_policy.uuid = configuration.leave_policy_uuid
-                    LEFT JOIN hr.configuration_entry
-                      ON configuration_entry.configuration_uuid = configuration.uuid
-                    LEFT JOIN hr.leave_category
-                      ON leave_category.uuid = configuration_entry.leave_category_uuid
+                    FROM hr.configuration cfg
+                    LEFT JOIN hr.configuration_entry ce
+                      ON ce.configuration_uuid = cfg.uuid
+                    LEFT JOIN hr.leave_category lc
+                      ON lc.uuid = ce.leave_category_uuid
                     LEFT JOIN (
                       SELECT
-                        apply_leave.employee_uuid,
-                        apply_leave.leave_category_uuid,
-                        SUM(apply_leave.to_date::date - apply_leave.from_date::date + 1) AS total_leave_days
-                      FROM hr.apply_leave
-                      WHERE apply_leave.approval = 'approved' AND apply_leave.employee_uuid = ${employee_uuid}
-                      GROUP BY apply_leave.employee_uuid, apply_leave.leave_category_uuid
+                        al.employee_uuid,
+                        al.leave_category_uuid,
+                        SUM(al.to_date::date - al.from_date::date + 1) AS total_leave_days
+                      FROM hr.apply_leave al
+                      WHERE al.approval = 'approved' AND al.employee_uuid = ${employee_uuid}
+                      GROUP BY al.employee_uuid, al.leave_category_uuid
                     ) AS leave_summary
-                      ON leave_summary.employee_uuid = employee.uuid
-                      AND leave_summary.leave_category_uuid = leave_category.uuid
-                    WHERE leave_policy.uuid = ${employee.leave_policy_uuid}
+                      ON leave_summary.leave_category_uuid = lc.uuid
+                    WHERE cfg.leave_policy_uuid = ${employee.leave_policy_uuid}
                   )`,
       leave_application_information: sql`
                   (
