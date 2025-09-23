@@ -795,8 +795,18 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           -- Expected hours calculation
                           (((${to_date}::date - ${from_date}::date + 1) - 
                             (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
-                            ${holidays.general} + ${holidays.special})) * 8)::float8 AS expected_hours
-                        
+                            ${holidays.general} + ${holidays.special})) * 8)::float8 AS expected_hours,
+                         -- Overtime hours (non-negative): max(working_hours - expected_hours, 0)
+
+                          GREATEST(
+                            COALESCE(late_hours_summary.total_working_hours, 0)::float8
+                            -
+                            (((${to_date}::date - ${from_date}::date + 1) - 
+                              (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
+                               ${holidays.general} + ${holidays.special})) * 8)::float8,
+                            0
+                          )::float8 AS overtime_hours
+
                     FROM hr.employee e
                     LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                     LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid

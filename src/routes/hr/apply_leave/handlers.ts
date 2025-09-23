@@ -23,7 +23,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   let filePath = null;
 
   if (file)
-    filePath = file ? await insertFile(file, 'public/apply-leave') : null;
+    filePath = file ? await insertFile(file, 'hr/apply-leave') : null;
 
   const value = {
     uuid: formData.uuid,
@@ -56,13 +56,16 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const formData = await c.req.parseBody();
 
   // Image Or File Handling
-  const applyLeaveData = await db.query.apply_leave.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const applyLeavePromise = db
+    .select({
+      file: apply_leave.file,
+    })
+    .from(apply_leave)
+    .where(eq(apply_leave.uuid, uuid));
 
-  formData.file = await handleImagePatch(formData.file, applyLeaveData?.file ?? undefined, 'public/apply-leave');
+  const [applyLeaveData] = await applyLeavePromise;
+
+  formData.file = await handleImagePatch(formData.file, applyLeaveData?.file ?? undefined, 'hr/apply-leave');
 
   if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
@@ -84,12 +87,14 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
   // get applyLeave file name
+  const applyLeavePromise = db
+    .select({
+      file: apply_leave.file,
+    })
+    .from(apply_leave)
+    .where(eq(apply_leave.uuid, uuid));
 
-  const applyLeaveData = await db.query.apply_leave.findFirst({
-    where(fields, operators) {
-      return operators.eq(fields.uuid, uuid);
-    },
-  });
+  const [applyLeaveData] = await applyLeavePromise;
 
   if (applyLeaveData && applyLeaveData.file) {
     deleteFile(applyLeaveData.file);
