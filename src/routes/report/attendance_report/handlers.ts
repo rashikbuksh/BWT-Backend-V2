@@ -1152,7 +1152,7 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                             OR sp.is_special = 1
                             OR sod.is_offday
                             OR al.reason IS NOT NULL THEN 0
-                          ELSE (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8
+                          ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                         END
                       , 0)
                     , 0)::float8 AS overtime_hours,
