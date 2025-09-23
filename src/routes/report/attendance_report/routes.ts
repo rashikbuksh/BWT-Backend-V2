@@ -97,6 +97,41 @@ export const getMonthlyAttendanceReport = createRoute({
   },
   tags,
 });
+
+export const getDailyEmployeeAttendanceReport = createRoute({
+  path: '/report/daily-attendance-report',
+  method: 'get',
+  summary: 'Daily Attendance Report',
+  description: 'Get the attendance report for an employee',
+  request: {
+    query: z.object({
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
+      month: z.string().optional(),
+      employee_uuid: z.string().optional(),
+      date: z.string().optional(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(
+        z.object({
+          user_uuid: z.string(),
+          employee_name: z.string(),
+          punch_date: z.date(),
+          entry_time: z.string(),
+          exit_time: z.string(),
+          hours_worked: z.number(),
+          expected_hours: z.number(),
+        }),
+      ),
+      'The daily attendance report',
+    ),
+  },
+  tags,
+});
+
 export type GetEmployeeAttendanceReportRoute = typeof getEmployeeAttendanceReport;
 export type GetDepartmentAttendanceReportRoute = typeof getDepartmentAttendanceReport;
 export type GetMonthlyAttendanceReportRoute = typeof getMonthlyAttendanceReport;
+export type GetDailyEmployeeAttendanceReportRoute = typeof getDailyEmployeeAttendanceReport;
