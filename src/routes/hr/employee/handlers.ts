@@ -112,7 +112,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       // pass: employee.pass,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
-      department_uuid: employee.department_uuid,
+      department_uuid: users.department_uuid,
       department_name: department.department,
       leave_policy_uuid: employee.leave_policy_uuid,
       leave_policy_name: leave_policy.name,
