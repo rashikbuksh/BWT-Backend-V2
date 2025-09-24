@@ -59,7 +59,23 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
         WHERE pl3.employee_uuid IS NULL 
           AND al3.employee_uuid IS NULL
       ) AS absent_last_30_days,
-       line_manager.name as line_manager_name
+       line_manager.name as line_manager_name,
+       (
+          SELECT COUNT(*)
+          FROM hr.employee e
+          LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+          WHERE
+            ${status === 'active'
+              ? sql`e.is_resign = false AND e.status = true`
+              : status === 'inactive'
+                ? sql`e.is_resign = false AND e.status = false`
+                : status === 'resigned'
+                  ? sql`e.is_resign = true`
+                  : sql`e.status = true`}
+            ${department_uuid !== 'undefined' && department_uuid ? sql`AND u.department_uuid = ${department_uuid}` : sql``}
+            AND e.exclude_from_attendance = false
+            ${employee_uuid ? sql`AND e.uuid = ${employee_uuid}` : sql``}
+        ) AS total_employee
     FROM
         hr.employee
     LEFT JOIN
@@ -154,7 +170,23 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     'end_time', shifts.end_time
                 )
             ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as absent_days,
-            line_manager.name as line_manager_name
+            line_manager.name as line_manager_name,
+            (
+              SELECT COUNT(*)
+              FROM hr.employee e
+              LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+              WHERE
+                ${status === 'active'
+                  ? sql`e.is_resign = false AND e.status = true`
+                  : status === 'inactive'
+                    ? sql`e.is_resign = false AND e.status = false`
+                    : status === 'resigned'
+                      ? sql`e.is_resign = true`
+                      : sql`e.status = true`}
+                ${department_uuid !== 'undefined' && department_uuid ? sql` AND u.department_uuid = ${department_uuid}` : sql``}
+                AND e.exclude_from_attendance = false
+                ${employee_uuid ? sql`AND e.uuid = ${employee_uuid}` : sql``}
+            ) AS total_employee
         FROM 
             hr.employee
         LEFT JOIN 
