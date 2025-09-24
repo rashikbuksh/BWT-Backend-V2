@@ -48,7 +48,7 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                     (apply_leave.to_date::date - apply_leave.from_date::date + 1)::FLOAT
             END
         `} as days,
-        shifts.end_time::time - shifts.start_time::time as expected_hours
+        (shifts.end_time::time - shifts.start_time::time)::float8 as expected_hours
     FROM
         hr.apply_leave
     LEFT JOIN
