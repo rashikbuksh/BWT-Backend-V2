@@ -13,7 +13,9 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
 
   const employeePromise = db
     .select({
-      value: employee.uuid,
+      value: (is_hr === 'true' || is_line_manager === 'true')
+        ? employee.user_uuid
+        : employee.uuid,
       label: users.name,
       user_uuid: employee.user_uuid,
       policy: sql`
