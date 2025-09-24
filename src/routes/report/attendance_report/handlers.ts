@@ -569,7 +569,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             END AS late_hours,
                             CASE
                                 WHEN gh.date IS NOT NULL OR sp.is_special = 1 OR sod.is_offday OR al.reason IS NOT NULL THEN 0
-                                ELSE (EXTRACT(EPOCH FROM (s.end_time - s.start_time)) / 3600)::float8
+                                ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                             END AS expected_hours,
                             CASE
                                 WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
@@ -796,8 +796,10 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           (((${to_date}::date - ${from_date}::date + 1) - 
                             (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_summary.total_off_days, 0) + 
                             ${holidays.general} + ${holidays.special})) * 8)::float8 AS expected_hours,
-                         -- Overtime hours (non-negative): max(working_hours - expected_hours, 0)
 
+
+                         -- Overtime hours (non-negative): max(working_hours - expected_hours, 0)
+                         
                           GREATEST(
                             COALESCE(late_hours_summary.total_working_hours, 0)::float8
                             -
