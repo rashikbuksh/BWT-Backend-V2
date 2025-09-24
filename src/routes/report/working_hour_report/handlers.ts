@@ -275,7 +275,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                     ELSE (
                         EXTRACT(
                             EPOCH
-                            FROM s.end_time - s.start_time
+                            FROM s.end_time::time - s.start_time::time
                         ) / 3600
                     )::float8
                 END AS expected_hours,
