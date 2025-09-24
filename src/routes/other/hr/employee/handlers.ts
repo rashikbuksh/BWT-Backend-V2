@@ -15,6 +15,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .select({
       value: employee.uuid,
       label: users.name,
+      user_uuid: employee.user_uuid,
       policy: sql`
         jsonb_agg(
           jsonb_build_object(
