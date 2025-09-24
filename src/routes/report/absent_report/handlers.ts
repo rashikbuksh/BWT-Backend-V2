@@ -58,7 +58,8 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
           AND days.d BETWEEN al3.from_date::date AND al3.to_date::date
         WHERE pl3.employee_uuid IS NULL 
           AND al3.employee_uuid IS NULL
-      ) AS absent_last_30_days
+      ) AS absent_last_30_days,
+       line_manager.name as line_manager_name
     FROM
         hr.employee
     LEFT JOIN
@@ -71,6 +72,8 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
         hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
     LEFT JOIN
         hr.workplace ON employee.workplace_uuid = workplace.uuid
+    LEFT JOIN 
+        hr.users line_manager ON employee.line_manager_uuid = line_manager.uuid
     LEFT JOIN
         hr.shift_group ON employee.shift_group_uuid = shift_group.uuid
     LEFT JOIN
@@ -150,7 +153,8 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     'start_time', shifts.start_time,
                     'end_time', shifts.end_time
                 )
-            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as absent_days
+            ) FILTER (WHERE punch_log.employee_uuid IS NULL AND apply_leave.employee_uuid IS NULL) as absent_days,
+            line_manager.name as line_manager_name
         FROM 
             hr.employee
         LEFT JOIN 
@@ -163,6 +167,8 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
             hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
         LEFT JOIN
             hr.workplace ON employee.workplace_uuid = workplace.uuid
+        LEFT JOIN
+            hr.users line_manager ON employee.line_manager_uuid = line_manager.uuid
         LEFT JOIN
             -- Generate a calendar of working days for the specified date range
             (SELECT generate_series(
@@ -205,7 +211,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
             AND special_holidays.uuid IS NULL
         GROUP BY
             employee.uuid, users.name, employee.employee_id, department.department, 
-            designation.designation, employment_type.name, workplace.name
+            designation.designation, employment_type.name, workplace.name, line_manager.name
     )
     SELECT 
         *,
