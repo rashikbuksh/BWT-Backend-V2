@@ -68,7 +68,7 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
     LEFT JOIN
         hr.shift_group ON employee.shift_group_uuid = shift_group.uuid
     LEFT JOIN
-        hr.shifts ON shift_group.uuid = shifts.shift_group_uuid
+        hr.shifts ON shift_group.shifts_uuid = shifts.uuid
     WHERE 
         ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
         ${from_date && to_date
