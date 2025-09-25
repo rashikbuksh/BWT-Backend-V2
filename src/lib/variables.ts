@@ -38,13 +38,24 @@ export function PG_DECIMAL_TO_FLOAT(column: any, table = true) {
 }
 
 export function constructSelectAllQuery(
-  baseQuery: any,
-  params: any,
-  defaultSortField = 'created_at',
-  additionalSearchFields: string[] = [],
-  searchFieldNames: string,
-  field_value: string,
+  options: {
+    baseQuery: any;
+    params: any;
+    defaultSortField?: string;
+    additionalSearchFields?: string[];
+    searchFieldNames?: string;
+    field_value?: string;
+  },
 ) {
+  let {
+    baseQuery,
+    params,
+    defaultSortField = 'created_at',
+    additionalSearchFields = [],
+    searchFieldNames,
+    field_value,
+  } = options;
+
   const { q, page, limit, sort, orderby } = params;
 
   const avoidFields = [
