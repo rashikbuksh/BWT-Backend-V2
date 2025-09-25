@@ -131,10 +131,32 @@ export function constructSelectAllQuery(
 
   // Apply sorting
   if (sort) {
+    // const order = orderby === 'asc' ? asc : desc;
+    // baseQuery = baseQuery.orderBy(
+    //   order(baseQuery.config.table[Symbol.for('drizzle:Columns')][sort]),
+    // );
     const order = orderby === 'asc' ? asc : desc;
-    baseQuery = baseQuery.orderBy(
-      order(baseQuery.config.table[Symbol.for('drizzle:Columns')][sort]),
-    );
+
+    // Resolve column definition instead of executing the query
+    const mainCols = baseQuery.config.table[Symbol.for('drizzle:Columns')] || {};
+    let sortColumn = mainCols[sort];
+
+    if (!sortColumn) {
+      const joins = baseQuery.config.joins || [];
+      for (const j of joins) {
+        const jCols = j.table[Symbol.for('drizzle:Columns')] || {};
+        if (jCols[sort]) {
+          sortColumn = jCols[sort];
+          break;
+        }
+      }
+    }
+
+    if (!sortColumn) {
+      sortColumn = mainCols[defaultSortField];
+    }
+
+    baseQuery = baseQuery.orderBy(order(sortColumn));
   }
   else {
     baseQuery = baseQuery.orderBy(
