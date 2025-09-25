@@ -46,10 +46,6 @@ if (!isDev) {
   });
 }
 
-// const allRouter = [authRouter, ...routes];
-
-// app2.route(basePath2, authRouter);
-
 routes.forEach((route) => {
   app.route(basePath, route);
 });

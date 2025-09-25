@@ -24,9 +24,9 @@ const EnvSchema = z.object({
   SALT: z.coerce.number().default(14),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  ZKTECO_BASE_URL: z.string().optional(),
-  ZKTECO_USERNAME: z.string().optional(),
-  ZKTECO_PASSWORD: z.string().optional(),
+  ZKTECO_BASE_URL: z.string().default('http://103.147.163.46:5099'),
+  ZKTECO_USERNAME: z.string().default('rashikbuksh'),
+  ZKTECO_PASSWORD: z.string().default('rafsan123'),
 });
 
 export type env = z.infer<typeof EnvSchema>;
