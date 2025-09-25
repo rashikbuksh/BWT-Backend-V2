@@ -257,14 +257,14 @@ export const selectAllManualEntryWithPaginationFieldVisit: AppRouteHandler<Selec
 
   const baseQuery
         = is_pagination === 'true'
-          ? constructSelectAllQuery(
-              resultPromise,
-              c.req.valid('query'),
-              'created_at',
-              [users.name.name],
-              field_name,
+          ? constructSelectAllQuery({
+              baseQuery: resultPromise,
+              params: c.req.valid('query'),
+              defaultSortField: 'created_at',
+              additionalSearchFields: [users.name.name],
+              searchFieldNames: field_name,
               field_value,
-            )
+            })
           : resultPromise;
 
   const data = await baseQuery;
