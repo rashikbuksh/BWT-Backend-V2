@@ -253,7 +253,7 @@ export const selectAllManualEntryWithPaginationFieldVisit: AppRouteHandler<Selec
   const page = Number(c.req.query.page) || 1;
   const limit = Number(c.req.query.limit) || 10;
 
-  const resultPromiseForCount = await resultPromise;
+  // const resultPromiseForCount = await resultPromise;
 
   const baseQuery
         = is_pagination === 'true'
@@ -272,14 +272,14 @@ export const selectAllManualEntryWithPaginationFieldVisit: AppRouteHandler<Selec
   const pagination
         = is_pagination === 'true'
           ? {
-              total_record: resultPromiseForCount.length,
+              total_record: data.length,
               current_page: Number(page),
               total_page: Math.ceil(
-                resultPromiseForCount.length / limit,
+                data.length / limit,
               ),
               next_page:
                 page + 1
-                > Math.ceil(resultPromiseForCount.length / limit)
+                > Math.ceil(data.length / limit)
                   ? null
                   : page + 1,
               prev_page: page - 1 <= 0 ? null : page - 1,
