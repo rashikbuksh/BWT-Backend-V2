@@ -1,3 +1,5 @@
+import { getCookie } from 'hono/cookie';
+
 import env from '@/env';
 
 export async function fetchZKAuthToken(): Promise<string> {
@@ -30,15 +32,24 @@ export async function fetchZKAuthToken(): Promise<string> {
   }
 }
 
-export async function fetchZKEmployeeData(): Promise<string> {
-  const token = await fetchZKAuthToken();
+export async function fetchZKData(c: any, subPath: string): Promise<any> {
   const controller = new AbortController();
 
+  // get the token from cookie
+  const cookieToken = getCookie(c, 'zk_token');
+  if (!cookieToken) {
+    throw new Error('Missing zk_token cookie');
+  }
+
+  // Normalize and build URL to ZKTeco from provided subPath
+  const normalized = (subPath || '').replace(/^\/+/, '');
+  const targetUrl = `${env.ZKTECO_BASE_URL}/${normalized}`;
+
   try {
-    const response = await fetch(`${env.ZKTECO_BASE_URL}/personnel/api/employees/`, {
+    const response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Token ${token}`,
+        'Authorization': cookieToken,
         'Content-Type': 'application/json',
       },
       signal: controller.signal,

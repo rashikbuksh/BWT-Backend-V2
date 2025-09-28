@@ -48,7 +48,9 @@ export const getEmployeeFromZK = createRoute({
         count: z.number().int().nonnegative(),
         next: z.string().url().nullable(),
         previous: z.string().url().nullable(),
-        results: z.array(z.any()),
+        msg: z.string().nullable(),
+        code: z.number().int(),
+        data: z.array(z.any()),
       }),
       'The ZK employee data',
     ),
@@ -63,5 +65,26 @@ export const getEmployeeFromZK = createRoute({
   },
 });
 
+export const getZKDynamic = createRoute({
+  path: '/zk/*',
+  method: 'get',
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.any(),
+      'Proxy ZK response',
+    ),
+    [HSCode.BAD_REQUEST]: jsonContent(
+      z.object({ error: z.string() }),
+      'Validation / missing configuration',
+    ),
+    [HSCode.INTERNAL_SERVER_ERROR]: jsonContent(
+      z.object({ error: z.string() }),
+      'Error message',
+    ),
+  },
+});
+
 export type PostAuthTokenRoute = typeof postAuthToken;
 export type GetEmployeeFromZKRoute = typeof getEmployeeFromZK;
+export type GetZKDynamicRoute = typeof getZKDynamic;
