@@ -3,23 +3,27 @@ import type { AppRouteHandler } from '@/lib/types';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 // import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
+import z from 'zod';
 
 import db from '@/db';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetOneRoute, GetOneRouteByUrlRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { category, model, product } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
-  // replace spaces and special characters with hyphens and convert to lowercase
+  // make url-friendly from title with special character handling also replace $
   let url = (value.title as string)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .trim()
+    .replace(/\$/g, '') // replace dollar sign with 's' before general cleanup
+    .replace(/[^a-z0-9\s-]/g, '') // remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-') // replace spaces with hyphens
+    .replace(/-+/g, '-'); // collapse multiple hyphens
 
   // check if the generated url already exists in the database
   const existing = await db.select().from(product).where(eq(product.url, url)).limit(1).execute();
@@ -38,6 +42,12 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       suffix += 1;
       newUrl = `${url}-${suffix}`;
     }
+  }
+
+  // check if url is url-friendly using zod
+  const urlSchema = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+  if (!urlSchema.safeParse(url).success) {
+    return c.json({ error: 'Generated URL is not URL-friendly' }, HSCode.BAD_REQUEST);
   }
 
   const [data] = await db.insert(product).values({ ...value, url }).returning({
@@ -468,6 +478,190 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const filters = [];
 
   filters.push(eq(product.uuid, uuid));
+
+  if (is_published) {
+    filters.push(eq(product.is_published, is_published));
+  }
+
+  if (filters.length > 0) {
+    resultPromise.where(and(...filters));
+  }
+
+  const [data] = await resultPromise;
+
+  if (data) {
+    if (data.product_specification == null)
+      data.product_specification = [];
+    if (data.product_image == null)
+      data.product_image = [];
+    if (data.product_variant == null)
+      data.product_variant = [];
+  }
+
+  return c.json(data || {}, HSCode.OK);
+};
+
+export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any) => {
+  const { url } = c.req.valid('param');
+
+  const { is_published } = c.req.valid('query');
+
+  const resultPromise = db.select({
+    uuid: product.uuid,
+    title: product.title,
+    category_uuid: product.category_uuid,
+    category_name: category.name,
+    model_uuid: product.model_uuid,
+    model_name: model.name,
+    warranty_days: product.warranty_days,
+    service_warranty_days: product.service_warranty_days,
+    created_by: product.created_by,
+    created_by_name: users.name,
+    created_at: product.created_at,
+    updated_at: product.updated_at,
+    remarks: product.remarks,
+    specifications_description: product.specifications_description,
+    care_maintenance_description: product.care_maintenance_description,
+    attribute_list: product.attribute_list,
+    is_published: product.is_published,
+    is_order_exist: sql`EXISTS (SELECT 1 FROM store.ordered oi LEFT JOIN store.product_variant pv ON oi.product_variant_uuid = pv.uuid WHERE pv.product_uuid = ${product.uuid})`,
+    extra_information: product.extra_information,
+    refurbished: product.refurbished,
+    url: product.url,
+    total_review: sql`(
+        SELECT COUNT(*)::int
+        FROM store.review r
+        WHERE r.product_uuid = ${product.uuid}
+      )`,
+    average_rating: sql`(
+        SELECT COALESCE(ROUND(AVG(r.rating)::numeric, 1)::float8, 0)
+        FROM store.review r
+        WHERE r.product_uuid = ${product.uuid}
+      )`,
+    product_variant: sql`COALESCE(ARRAY(
+    SELECT json_build_object(
+      'uuid', pv.uuid,
+      'product_uuid', pv.product_uuid,
+      'selling_price', pv.selling_price::float8,
+      'discount', pv.discount::float8,
+      'warehouse_1', pv.warehouse_1::float8,
+      'warehouse_2', pv.warehouse_2::float8,
+      'warehouse_3', pv.warehouse_3::float8,
+      'warehouse_4', pv.warehouse_4::float8,
+      'warehouse_5', pv.warehouse_5::float8,
+      'warehouse_6', pv.warehouse_6::float8,
+      'warehouse_7', pv.warehouse_7::float8,
+      'warehouse_8', pv.warehouse_8::float8,
+      'warehouse_9', pv.warehouse_9::float8,
+      'warehouse_10', pv.warehouse_10::float8,
+      'warehouse_11', pv.warehouse_11::float8,
+      'warehouse_12', pv.warehouse_12::float8,
+      'selling_warehouse', pv.selling_warehouse::float8,
+      'created_by', pv.created_by,
+      'created_at', pv.created_at,
+      'updated_at', pv.updated_at,
+      'updated_by', pv.updated_by,
+      'remarks', pv.remarks,
+      'index', pv.index,
+      'discount_unit', pv.discount_unit,
+      'product_variant_values_entry', (
+        COALESCE((SELECT jsonb_agg(json_build_object(
+          'uuid', pvve.uuid,
+          'product_variant_uuid', pvve.product_variant_uuid,
+          'attribute_uuid', pvve.attribute_uuid,
+          'attribute_name', pa.name,
+          'value', pvve.value,
+          'created_by', pvve.created_by,
+          'created_at', pvve.created_at,
+          'updated_by', pvve.updated_by,
+          'updated_at', pvve.updated_at,
+          'remarks', pvve.remarks
+        ))
+        FROM store.product_variant_values_entry pvve
+        LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+        WHERE pvve.product_variant_uuid = pv.uuid), '[]'::jsonb)
+      )
+    )
+    FROM store.product_variant pv
+    WHERE pv.product_uuid = ${product.uuid}
+    ORDER BY pv.index ASC
+  ))`,
+    product_specification: sql`
+    (
+      SELECT json_agg(row_to_json(t))
+      FROM (
+        SELECT
+          ps.uuid,
+          ps.product_uuid,
+          ps.label,
+          ps.value,
+          ps.created_by,
+          ps.created_at,
+          ps.updated_by,
+          ps.updated_at,
+          ps.remarks,
+          ps.index
+        FROM store.product_specification ps
+        WHERE ps.product_uuid = ${product.uuid}
+        ORDER BY ps.index ASC
+      ) t
+    )
+    `,
+    product_image: sql`
+    (
+        SELECT json_agg(row_to_json(t))
+        FROM (
+          SELECT 
+            pi.uuid,
+            pi.product_uuid,
+            pi.variant_uuid,
+            pi.image,
+            pi.is_main,
+            pi.created_by,
+            pi.created_at,
+            pi.updated_at,
+            pi.remarks
+          FROM store.product_image pi
+          LEFT JOIN hr.users ON pi.created_by = users.uuid
+          WHERE pi.product_uuid = ${product.uuid}
+          ORDER BY pi.created_at ASC
+        ) t
+      ) as product_image
+    `,
+    review: sql`(
+      SELECT json_agg(row_to_json(t))
+      FROM (
+        SELECT
+          r.uuid,
+          r.product_uuid,
+          r.user_uuid,
+          r.email,
+          r.name,
+          r.comment,
+          r.rating,
+          r.created_by,
+          r.created_at,
+          r.updated_by,
+          r.updated_at,
+          r.remarks,
+          r.info_uuid,
+          r.accessories_uuid,
+          u.name AS created_by_name
+        FROM store.review r
+        LEFT JOIN hr.users u ON r.created_by = u.uuid
+        WHERE r.product_uuid = ${product.uuid}
+        ORDER BY r.created_at DESC
+      ) t
+    )`,
+  })
+    .from(product)
+    .leftJoin(category, eq(product.category_uuid, category.uuid))
+    .leftJoin(model, eq(product.model_uuid, model.uuid))
+    .leftJoin(users, eq(product.created_by, users.uuid));
+
+  const filters = [];
+
+  filters.push(eq(product.url, url));
 
   if (is_published) {
     filters.push(eq(product.is_published, is_published));

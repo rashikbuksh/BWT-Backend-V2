@@ -136,8 +136,37 @@ export const remove = createRoute({
   },
 });
 
+export const getOneByUrl = createRoute({
+  path: '/store/product/url/{url}',
+  method: 'get',
+  request: {
+    params: z.object({
+      url: z.string(),
+    }),
+    query: z.object({
+      is_published: z.string().optional(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The requested product',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'product not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetOneRouteByUrlRoute = typeof getOneByUrl;
