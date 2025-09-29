@@ -40,32 +40,32 @@ cp .env.example .env
 Install dependencies
 
 ```sh
-npm install
+bun install
 ```
 
 Create a postgres database and run drizzle generate and migrations
 
 ```sh
-npm run db-generate
-npm run db-migrate
+bun run db-generate
+bun run db-migrate
 ```
 
 Run
 
 ```sh
-npm run dev
+bun run dev
 ```
 
 Lint
 
 ```sh
-npm run lint
+bun run lint
 ```
 
 Test
 
 ```sh
-npm run test
+bun run test
 ```
 
 ## Code Tour
