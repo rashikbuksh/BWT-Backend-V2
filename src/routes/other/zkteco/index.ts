@@ -6,6 +6,6 @@ import * as routes from './routes';
 const router = createRouter()
   .openapi(routes.postAuthToken, handlers.postAuthToken)
   .openapi(routes.getEmployeeFromZK, handlers.getEmployeeFromZK)
-  .openapi(routes.getZKDynamic, handlers.getEmployeeFromZK);
+  .openapi(routes.getZKDynamic, handlers.getZKDynamic);
 
 export default router;

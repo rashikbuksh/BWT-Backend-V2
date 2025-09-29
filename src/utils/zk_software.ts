@@ -41,9 +41,11 @@ export async function fetchZKData(c: any, subPath: string): Promise<any> {
     throw new Error('Missing zk_token cookie');
   }
 
+  console.warn('subPath: ', subPath);
+
   // Normalize and build URL to ZKTeco from provided subPath
   const normalized = (subPath || '').replace(/^\/+/, '');
-  const targetUrl = `${env.ZKTECO_BASE_URL}/${normalized}`;
+  const targetUrl = `${env.ZKTECO_BASE_URL}/${normalized}/`;
 
   try {
     const response = await fetch(targetUrl, {
