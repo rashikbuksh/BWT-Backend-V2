@@ -502,6 +502,7 @@ export const forum = store.table('forum', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
   title: text('title').default(sql`null`),
+  tags: text('tags').array().default([]),
 });
 
 export default store;
