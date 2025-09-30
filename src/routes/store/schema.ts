@@ -505,4 +505,14 @@ export const forum = store.table('forum', {
   tags: text('tags').array().default([]),
 });
 
+export const tags = store.table('tags', {
+  uuid: uuid_primary,
+  name: text('name').notNull(),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default store;

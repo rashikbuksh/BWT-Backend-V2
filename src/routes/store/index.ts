@@ -26,6 +26,7 @@ import review from './review';
 import ship_address from './ship_address';
 import size from './size';
 import stock from './stock';
+import tags from './tags';
 import vendor from './vendor';
 import warehouse from './warehouse';
 
@@ -60,4 +61,5 @@ export default [
   ordered,
   accessories,
   forum,
+  tags,
 ];
