@@ -63,13 +63,14 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { product_uuid, limit, is_unique } = c.req.valid('query');
+  const { product_uuid, limit, is_unique, product_url } = c.req.valid('query');
 
   const baseQuery = db
     .select({
       uuid: review.uuid,
       product_uuid: review.product_uuid,
       product_title: product.title,
+      product_url: product.url,
       user_uuid: review.user_uuid,
       user_created_at: userHrSchema.created_at,
       email: sql`CASE WHEN review.user_uuid IS NULL THEN review.email ELSE ${userHrSchema.email} END`,
@@ -100,6 +101,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // an application-level dedupe so we can enforce both "one row per email" and "one row per product".
   if (product_uuid) {
     dynamicQuery = (dynamicQuery as any).where(eq(review.product_uuid, product_uuid));
+  }
+
+  if (product_url) {
+    dynamicQuery = (dynamicQuery as any).where(eq(product.url, product_url));
   }
 
   if (limit) {
