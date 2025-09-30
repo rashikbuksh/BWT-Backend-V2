@@ -120,6 +120,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .from(forum)
     .leftJoin(createdByUser, eq(forum.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(forum.updated_by, updatedByUser.uuid))
+    .leftJoin(userHrSchema, eq(forum.user_uuid, userHrSchema.uuid))
     .where(eq(forum.uuid, uuid));
 
   const [data] = await forumPromise;
