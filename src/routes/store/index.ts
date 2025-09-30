@@ -5,6 +5,7 @@ import branch from './branch';
 import brand from './brand';
 import category from './category';
 import floor from './floor';
+import forum from './forum';
 import group from './group';
 import internal_transfer from './internal_transfer';
 import model from './model';
@@ -58,4 +59,5 @@ export default [
   ship_address,
   ordered,
   accessories,
+  forum,
 ];
