@@ -488,4 +488,19 @@ export const review = store.table('review', {
   accessories_uuid: defaultUUID('accessories_uuid').references(() => accessories.uuid).default(sql`null`),
 });
 
+export const forum = store.table('forum', {
+  uuid: uuid_primary,
+  user_uuid: defaultUUID('user_uuid').references(() => hrSchema.users.uuid),
+  name: text('name').default(sql`null`),
+  phone: text('phone').default(sql`null`),
+  question: text('question').notNull(),
+  answer: text('answer').default(sql`null`),
+  is_answered: boolean('is_answered').default(false),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default store;
