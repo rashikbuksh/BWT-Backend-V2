@@ -31,6 +31,7 @@ export const insertSchema = createInsertSchema(
   name: true,
   phone: true,
   answer: true,
+  is_answered: true,
   updated_by: true,
   updated_at: true,
   remarks: true,
