@@ -3,18 +3,18 @@ import type { AppRouteHandler } from '@/lib/types';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { tags } from '@/routes/store/schema';
+import { brand } from '@/routes/store/schema';
 
 import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
-  const tagsPromise = db.select({
-    value: tags.uuid,
-    label: tags.name,
+  const brandPromise = db.select({
+    value: brand.uuid,
+    label: brand.name,
   })
-    .from(tags);
+    .from(brand);
 
-  const data = await tagsPromise;
+  const data = await brandPromise;
 
   return c.json(data, HSCode.OK);
 };
