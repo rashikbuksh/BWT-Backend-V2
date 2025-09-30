@@ -80,6 +80,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_by_name: updatedByUser.name,
       updated_at: forum.updated_at,
       remarks: forum.remarks,
+      title: forum.title,
     })
     .from(forum)
     .leftJoin(createdByUser, eq(forum.created_by, createdByUser.uuid))
@@ -112,6 +113,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       updated_by_name: updatedByUser.name,
       updated_at: forum.updated_at,
       remarks: forum.remarks,
+      title: forum.title,
     })
     .from(forum)
     .leftJoin(createdByUser, eq(forum.created_by, createdByUser.uuid))
