@@ -82,6 +82,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: forum.remarks,
       title: forum.title,
       tags: forum.tags,
+      tags_name: sql`(
+        SELECT COALESCE(json_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '[]'::json)
+        FROM store.tags t
+        WHERE t.uuid = ANY(forum.tags)
+      )`,
     })
     .from(forum)
     .leftJoin(createdByUser, eq(forum.created_by, createdByUser.uuid))
