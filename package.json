@@ -61,7 +61,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,scss,md}": [
-      "bun x eslint . --fix"
+      "eslint . --fix"
     ]
   }
 }
