@@ -501,6 +501,7 @@ export const forum = store.table('forum', {
   updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  title: text('title').default(sql`null`),
 });
 
 export default store;
