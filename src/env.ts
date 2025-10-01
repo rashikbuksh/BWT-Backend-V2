@@ -16,6 +16,7 @@ const logLevel = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] 
 const EnvSchema = z.object({
   SERVER_URL: z.string().default('http://localhost:3010'),
   PRODUCTION_URL: z.string().default('http://103.147.163.46:5090'),
+  PRODUCTION_URL_2: z.string().default('http://103.147.163.46:5090'),
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(9999),
   LOG_LEVEL: z.enum(logLevel).default('silent'),
