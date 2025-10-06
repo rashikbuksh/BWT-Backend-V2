@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -68,12 +68,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       employee_uuid: salary_increment.employee_uuid,
       employee_name: users.name,
       amount: PG_DECIMAL_TO_FLOAT(salary_increment.amount),
+      // Current salary = joining amount + sum of all increment amounts whose effective_date has passed
+      current_salary: sql`(
+        ${PG_DECIMAL_TO_FLOAT(employee.joining_amount)}
+        + COALESCE(SUM(CASE
+            WHEN salary_increment.effective_date <= NOW() THEN ${PG_DECIMAL_TO_FLOAT(salary_increment.amount)}
+            ELSE 0
+          END), 0)
+      )`.as('current_salary'),
       effective_date: salary_increment.effective_date,
       created_by: salary_increment.created_by,
       created_by_name: users.name,
       created_at: salary_increment.created_at,
       updated_at: salary_increment.updated_at,
       remarks: salary_increment.remarks,
+      approval: salary_increment.approval,
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
@@ -82,7 +91,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       createdByUser,
       eq(salary_increment.created_by, createdByUser.uuid),
     )
-    .orderBy(desc(salary_increment.created_at));
+    .orderBy(desc(salary_increment.created_at))
+    .groupBy(salary_increment.uuid, users.name, employee.joining_amount, createdByUser.name);
 
   const data = await salaryIncrementPromise;
 
@@ -98,12 +108,20 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       employee_uuid: salary_increment.employee_uuid,
       employee_name: users.name,
       amount: PG_DECIMAL_TO_FLOAT(salary_increment.amount),
+      current_salary: sql`(
+        ${PG_DECIMAL_TO_FLOAT(employee.joining_amount)}
+        + COALESCE(SUM(CASE
+            WHEN salary_increment.effective_date <= NOW() THEN ${PG_DECIMAL_TO_FLOAT(salary_increment.amount)}
+            ELSE 0
+          END), 0)
+      )`.as('current_salary'),
       effective_date: salary_increment.effective_date,
       created_by: salary_increment.created_by,
       created_by_name: createdByUser.name,
       created_at: salary_increment.created_at,
       updated_at: salary_increment.updated_at,
       remarks: salary_increment.remarks,
+      approval: salary_increment.approval,
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
@@ -112,7 +130,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       createdByUser,
       eq(salary_increment.created_by, createdByUser.uuid),
     )
-    .where(eq(salary_increment.uuid, uuid));
+    .where(eq(salary_increment.uuid, uuid))
+    .groupBy(salary_increment.uuid, users.name, employee.joining_amount, createdByUser.name);
 
   const [data] = await salaryIncrementPromise;
 

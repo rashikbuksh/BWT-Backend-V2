@@ -679,6 +679,7 @@ export const salary_increment = hr.table('salary_increment', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  approval: approval_status_enum('approval').default('pending'),
 });
 
 // ? salary entry
