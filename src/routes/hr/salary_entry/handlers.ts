@@ -312,20 +312,40 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
             ) AS total_increment
               ON employee.uuid = total_increment.employee_uuid
             LEFT JOIN (
-              SELECT 
-                pl.employee_uuid,
-                COUNT(CASE WHEN pl.punch_time IS NOT NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') < TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS present_days,
-                COUNT(CASE WHEN pl.punch_time IS NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS late_days
-              FROM hr.punch_log pl
-              LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-              LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
-              LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
-              WHERE pl.punch_time IS NOT NULL
-                AND EXTRACT(YEAR FROM pl.punch_time) = ${year}
-                AND EXTRACT(MONTH FROM pl.punch_time) = ${month}
-              GROUP BY pl.employee_uuid
-              ) AS attendance_summary
-              ON employee.uuid = attendance_summary.employee_uuid
+                  WITH daily_attendance AS (
+                    SELECT 
+                        pl.employee_uuid,
+                        DATE(pl.punch_time) AS attendance_date,
+                        MIN(pl.punch_time) AS first_punch,
+                        MAX(pl.punch_time) AS last_punch,
+                        shifts.late_time,
+                        shifts.early_exit_before
+                    FROM hr.punch_log pl
+                    LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+                    LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
+                    LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
+                  WHERE pl.punch_time IS NOT NULL
+                    AND EXTRACT(YEAR FROM pl.punch_time) = ${year}
+                    AND EXTRACT(MONTH FROM pl.punch_time) = ${month}
+                  GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before
+                    )
+                      SELECT 
+                        employee_uuid,
+                        COUNT(CASE 
+                            WHEN TO_CHAR(first_punch, 'HH24:MI') < TO_CHAR(late_time, 'HH24:MI') 
+                            THEN 1 
+                        END) AS present_days,
+                        COUNT(CASE 
+                            WHEN TO_CHAR(first_punch, 'HH24:MI') >= TO_CHAR(late_time, 'HH24:MI') 
+                            THEN 1 
+                        END) AS late_days,
+                        COUNT(CASE 
+                            WHEN TO_CHAR(last_punch, 'HH24:MI') < TO_CHAR(early_exit_before, 'HH24:MI') 
+                            THEN 1 
+                        END) AS early_leaves
+                    FROM daily_attendance
+                    GROUP BY employee_uuid
+              ) AS attendance_summary ON employee.uuid = attendance_summary.employee_uuid
             LEFT JOIN (
               SELECT
                   al.employee_uuid,
