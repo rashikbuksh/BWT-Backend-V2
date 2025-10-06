@@ -429,7 +429,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                             'end_time', end_time,
                             'punch_date', punch_date
                         )
-                        ) AS shift_details
+                        ) AS absent_days
                 FROM attendance_data
                 WHERE status = 'Absent'
                 GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name
