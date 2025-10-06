@@ -604,7 +604,7 @@ export const punch_log = hr.table('punch_log', {
     () => device_list.uuid,
   ),
   punch_type: punch_type('punch_type').default('face'),
-  punch_time: DateTime('punch_time').notNull(),
+  punch_time: DateTime('punch_time').default(sql`null`),
   manual_entry_uuid: defaultUUID('manual_entry_uuid').references(
     () => manual_entry.uuid,
   ).default(sql`null`),

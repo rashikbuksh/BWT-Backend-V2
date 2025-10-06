@@ -21,8 +21,8 @@ export const insertSchema = createInsertSchema(
   uuid: true,
   employee_uuid: true,
   device_list_uuid: true,
-  punch_time: true,
 }).partial({
   punch_type: true,
+  punch_time: true,
 });
 export const patchSchema = insertSchema.partial();
