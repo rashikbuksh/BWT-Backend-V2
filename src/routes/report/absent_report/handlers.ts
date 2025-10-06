@@ -381,7 +381,9 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     END as status,
                     dept.department AS department_name,
                     des.designation AS designation_name,
-                    et.name AS employment_type_name
+                    et.name AS employment_type_name,
+                    e.employee_id,
+                    line_manager.name AS line_manager_name
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -398,6 +400,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                   LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                   LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
+                  LEFT JOIN hr.users line_manager ON e.line_manager_uuid = line_manager.uuid
                   LEFT JOIN LATERAL (
                     SELECT 1 AS is_special
                     FROM hr.special_holidays sh
@@ -412,7 +415,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`} 
                     ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name
                 )
                 SELECT
                     uuid,
@@ -422,6 +425,8 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     department_name,
                     designation_name,
                     employment_type_name, 
+                    employee_id,
+                    line_manager_name,
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
                             'shift_name', shift_name,
@@ -432,7 +437,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                         ) AS absent_days
                 FROM attendance_data
                 WHERE status = 'Absent'
-                GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name
+                GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name
                 ORDER BY employee_name;
               `;
   const data = await db.execute(query);
