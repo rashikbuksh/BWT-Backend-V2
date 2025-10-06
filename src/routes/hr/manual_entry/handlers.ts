@@ -18,10 +18,10 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
   const [data] = await db.insert(manual_entry).values(value).returning({
-    name: manual_entry.uuid,
+    name: manual_entry.type,
   });
 
-  return c.json(createToast('create', data.name), HSCode.OK);
+  return c.json(createToast('create', data?.name ?? ''), HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
@@ -35,13 +35,13 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     .set(updates)
     .where(eq(manual_entry.uuid, uuid))
     .returning({
-      name: manual_entry.uuid,
+      name: manual_entry.type,
     });
 
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('update', data.name), HSCode.OK);
+  return c.json(createToast('update', data?.name ?? ''), HSCode.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
@@ -50,13 +50,13 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const [data] = await db.delete(manual_entry)
     .where(eq(manual_entry.uuid, uuid))
     .returning({
-      name: manual_entry.uuid,
+      name: manual_entry.type,
     });
 
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('delete', data.name), HSCode.OK);
+  return c.json(createToast('delete', data?.name ?? ''), HSCode.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
