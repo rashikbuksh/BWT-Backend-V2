@@ -424,7 +424,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     employment_type_name, 
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
-                            'name', shift_name,
+                            'shift_name', shift_name,
                             'start_time', start_time,
                             'end_time', end_time,
                             'punch_date', punch_date
