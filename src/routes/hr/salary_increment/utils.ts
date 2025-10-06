@@ -38,6 +38,7 @@ export const insertSchema = createInsertSchema(
   updated_at: true,
   remarks: true,
   approval: true,
+  is_approved: true,
 });
 
 export const patchSchema = insertSchema.partial();

@@ -83,6 +83,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_at: salary_increment.updated_at,
       remarks: salary_increment.remarks,
       approval: salary_increment.approval,
+      is_approved: salary_increment.is_approved,
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
@@ -122,6 +123,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       updated_at: salary_increment.updated_at,
       remarks: salary_increment.remarks,
       approval: salary_increment.approval,
+      is_approved: salary_increment.is_approved,
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
