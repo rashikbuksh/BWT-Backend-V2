@@ -258,10 +258,10 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                       COALESCE(off_days_summary.total_off_days, 0)
                     )::float8 AS absent_days,
                 ${totalDays}::int AS total_days,
-               COALESCE((employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / ${totalDays}, 0)::float8 AS daily_salary,
+               COALESCE((employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / 30, 0)::float8 AS daily_salary,
                COALESCE(
                         (
-                          (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / ${totalDays}
+                          (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / 30
                           *
                           (
                             COALESCE(attendance_summary.present_days, 0)
@@ -275,11 +275,11 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 )::float8 AS gross_salary,
                 COALESCE(
                     FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) * 
-                    (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / ${totalDays}
+                    (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / 30
                   , 0)::float8 AS late_salary_deduction,
                 (
                   COALESCE(
-                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / ${totalDays}) *
+                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30) *
                     (
                       COALESCE(attendance_summary.present_days, 0)
                       + COALESCE(off_days_summary.total_off_days, 0)
@@ -291,7 +291,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   -
                   COALESCE(
                     FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) *
-                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / ${totalDays})
+                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30)
                   , 0)
                 )::float8 AS net_payable,
                 COALESCE(loan_summary.total_loan_amount, 0)::float8 AS total_loan_amount,
