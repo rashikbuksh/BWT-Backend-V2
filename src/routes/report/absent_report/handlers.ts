@@ -421,35 +421,18 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     shift_name,
                     department_name,
                     designation_name,
-                    employment_type_name,
-                    punch_date,
-                    JSON_BUILD_OBJECT(
-                        'name', shift_name,
-                        'start_time', start_time,
-                        'end_time', end_time
-                    ) AS shift_details,
+                    employment_type_name, 
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
-                        'punch_date', punch_date,
-                        'entry_time', entry_time,
-                        'exit_time', exit_time,
-                        'hours_worked', hours_worked,
-                        'expected_hours', expected_hours,
-                        'status', status,
-                        'late_time', late_time,
-                        'early_exit_before', early_exit_before,
-                        'late_start_time', late_start_time,
-                        'late_hours', late_hours,
-                        'early_exit_time', early_exit_time,
-                        'early_exit_hours', early_exit_hours,
-                        'shift_name', shift_name,
-                        'start_time', start_time,
-                        'end_time', end_time
-                        ) ORDER BY punch_date
-                    ) AS attendance_records
+                            'name', shift_name,
+                            'start_time', start_time,
+                            'end_time', end_time,
+                            'punch_date', punch_date
+                        )
+                        ) AS shift_details
                 FROM attendance_data
                 WHERE status = 'Absent'
-                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time, department_name, designation_name, employment_type_name, uuid, punch_date
+                GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name
                 ORDER BY employee_name;
               `;
   const data = await db.execute(query);
