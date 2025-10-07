@@ -231,6 +231,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 employee.created_at,
                 employee.updated_at,
                 employee.remarks,
+                employeeDepartment.department as employee_department_name,
+                employeeDesignation.designation as employee_designation_name,
                 COALESCE(total_increment.total_salary_increment, 0)::float8 AS total_incremented_salary,
                 COALESCE(attendance_summary.present_days, 0)::float8 AS present_days,
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
@@ -302,6 +304,10 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
               ON employee.user_uuid = employeeUser.uuid
             LEFT JOIN hr.users createdByUser
               ON employee.created_by = createdByUser.uuid
+            LEFT JOIN hr.designation employeeDesignation
+              ON employeeUser.designation_uuid = employeeDesignation.uuid
+            LEFT JOIN hr.department employeeDepartment
+              ON employeeUser.department_uuid = employeeDepartment.uuid
             LEFT JOIN (
               SELECT 
                 si.employee_uuid, 
