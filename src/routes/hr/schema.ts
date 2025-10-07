@@ -448,6 +448,7 @@ export const employee = hr.table('employee', {
   second_field_visit_approver_uuid: defaultUUID('second_field_visit_approver_uuid')
     .references(() => users.uuid)
     .default(sql`null`),
+  late_day_unit: integer('late_day_unit').default(3),
 });
 
 // ? Employee Address
