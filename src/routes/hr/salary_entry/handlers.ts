@@ -295,7 +295,11 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   , 0)
                 )::float8 AS net_payable,
                 COALESCE(loan_summary.total_loan_amount, 0)::float8 AS total_loan_amount,
-                COALESCE(loan_entry_summary.total_paid_loan_amount, 0)::float8 AS total_paid_loan_amount
+                COALESCE(loan_entry_summary.total_paid_loan_amount, 0)::float8 AS total_paid_loan_amount,
+                COALESCE(loan_summary.total_salary_advance_amount, 0)::float8 AS total_salary_advance_amount,
+                COALESCE(loan_entry_summary.total_paid_salary_advance_amount, 0)::float8 AS total_paid_salary_advance_amount,
+                (COALESCE(loan_summary.total_loan_amount, 0) - COALESCE(loan_entry_summary.total_paid_loan_amount, 0))::float8 AS due_loan_amount,
+                (COALESCE(loan_summary.total_salary_advance_amount, 0) - COALESCE(loan_entry_summary.total_paid_salary_advance_amount, 0))::float8 AS due_salary_advance_amount
             FROM  hr.employee
             LEFT JOIN hr.users employeeUser
               ON employee.user_uuid = employeeUser.uuid
@@ -438,7 +442,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 (
                   SELECT 
                     l.employee_uuid,
-                    SUM(l.amount) AS total_loan_amount
+                    SUM(CASE WHEN l.type = 'salary_advance' THEN l.amount ELSE 0 END) AS total_salary_advance_amount,
+                    SUM(CASE WHEN l.type = 'other' THEN l.amount ELSE 0 END) AS total_loan_amount
                   FROM hr.loan l
                   WHERE EXTRACT(YEAR FROM l.date) <= ${year}
                     AND EXTRACT(MONTH FROM l.date) <= ${month}
@@ -449,7 +454,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
               (
                 SELECT 
                   l.employee_uuid,
-                  SUM(le.amount) AS total_paid_loan_amount
+                  SUM(CASE WHEN l.type = 'salary_advance' THEN COALESCE(le.amount, 0) ELSE 0 END) AS total_paid_salary_advance_amount,
+                  SUM(CASE WHEN l.type = 'other' THEN COALESCE(le.amount, 0) ELSE 0 END) AS total_paid_loan_amount
                 FROM hr.loan_entry le
                 LEFT JOIN hr.loan l ON le.loan_uuid = l.uuid
                 WHERE EXTRACT(YEAR FROM le.date) <= ${year}
