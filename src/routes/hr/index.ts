@@ -2,6 +2,7 @@ import apply_balance from './apply_balance';
 import apply_leave from './apply_leave';
 import configuration from './configuration';
 import configuration_entry from './configuration_entry';
+import dashboard from './dashboard';
 import department from './department';
 import designation from './designation';
 import device_list from './device_list';
@@ -64,4 +65,5 @@ export default [
   salary_entry,
   loan,
   loan_entry,
+  dashboard,
 ];
