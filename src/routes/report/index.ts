@@ -1,6 +1,6 @@
 import absent_report from './absent_report';
 import attendance_report from './attendance_report';
-import dashboard from './dashboard';
+// import dashboard from './dashboard';
 import field_visit_report from './field_visit_report';
 import late_report from './late_report';
 import leave_report from './leave_report';
@@ -13,7 +13,7 @@ const report = [
   late_report,
   working_hour_report,
   field_visit_report,
-  dashboard,
+  // dashboard,
 ];
 
 export default report;

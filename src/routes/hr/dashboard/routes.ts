@@ -3,10 +3,10 @@ import { jsonContent } from 'stoker/openapi/helpers';
 
 import { createRoute, z } from '@hono/zod-openapi';
 
-const tags = ['reports'];
+const tags = ['hr.dashboard'];
 
 export const getEmployeeAttendanceReport = createRoute({
-  path: '/report/attendance-report',
+  path: '/hr/attendance-report',
   method: 'get',
   summary: 'Attendance Report',
   description: 'Get the attendance report for an employee',
@@ -38,7 +38,7 @@ export const getEmployeeAttendanceReport = createRoute({
 });
 
 export const getAttendanceReport = createRoute({
-  path: '/dashboard/attendance',
+  path: '/hr/dashboard/attendance',
   method: 'get',
   summary: 'Dashboard Attendance Report',
   description: 'Get the attendance report for a department',
@@ -69,7 +69,7 @@ export const getAttendanceReport = createRoute({
 });
 
 export const getMonthlyAttendanceReport = createRoute({
-  path: '/report/monthly-attendance-report',
+  path: '/hr/monthly-attendance-report',
   method: 'get',
   summary: 'Monthly Attendance Report',
   description: 'Get the monthly attendance report for an employee',
@@ -99,7 +99,7 @@ export const getMonthlyAttendanceReport = createRoute({
 });
 
 export const getDailyEmployeeAttendanceReport = createRoute({
-  path: '/report/daily-attendance-report',
+  path: '/hr/daily-attendance-report',
   method: 'get',
   summary: 'Daily Attendance Report',
   description: 'Get the attendance report for an employee',
