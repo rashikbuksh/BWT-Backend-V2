@@ -445,6 +445,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     SUM(CASE WHEN l.type = 'salary_advance' THEN l.amount ELSE 0 END) AS total_salary_advance_amount,
                     SUM(CASE WHEN l.type = 'other' THEN l.amount ELSE 0 END) AS total_loan_amount
                   FROM hr.loan l
+                  WHERE EXTRACT(YEAR FROM l.date) <= ${year}
+                    AND EXTRACT(MONTH FROM l.date) <= ${month}
                   GROUP BY employee_uuid
                 ) AS loan_summary
             ON employee.uuid = loan_summary.employee_uuid
@@ -456,6 +458,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   SUM(CASE WHEN l.type = 'other' THEN COALESCE(le.amount, 0) ELSE 0 END) AS total_paid_loan_amount
                 FROM hr.loan_entry le
                 LEFT JOIN hr.loan l ON le.loan_uuid = l.uuid
+                WHERE EXTRACT(YEAR FROM le.date) <= ${year}
+                  AND EXTRACT(MONTH FROM le.date) <= ${month}
                 GROUP BY l.employee_uuid
               ) AS loan_entry_summary
             ON employee.uuid = loan_entry_summary.employee_uuid
