@@ -139,6 +139,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       personal_phone: employee.personal_phone,
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
+      late_day_unit: employee.late_day_unit,
     })
     .from(employee)
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
@@ -275,6 +276,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       personal_phone: employee.personal_phone,
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
+      late_day_unit: employee.late_day_unit,
       employee_address: sql`
           COALESCE((
             SELECT jsonb_agg(
@@ -539,6 +541,8 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       national_id: employee.national_id,
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
+      personal_phone: employee.personal_phone,
+      late_day_unit: employee.late_day_unit,
       remaining_leave_information: sql`
                   (
                     SELECT jsonb_agg(
