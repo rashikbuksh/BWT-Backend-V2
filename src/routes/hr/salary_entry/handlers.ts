@@ -274,7 +274,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                         0
                 )::float8 AS gross_salary,
                 COALESCE(
-                    FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) * 
+                    FLOOR(COALESCE(attendance_summary.late_days, 0) / employee.late_day_unit) * 
                     (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / 30
                   , 0)::float8 AS late_salary_deduction,
                 (
@@ -290,7 +290,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   , 0)
                   -
                   COALESCE(
-                    FLOOR(COALESCE(attendance_summary.late_days, 0) / 3) *
+                    FLOOR(COALESCE(attendance_summary.late_days, 0) / employee.late_day_unit) *
                     (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30)
                   , 0)
                 )::float8 AS net_payable,
