@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetEmployeeAttendanceReportRoute, GetEmployeeLeaveInformationDetailsRoute, GetEmployeeSummaryDetailsByEmployeeUuidRoute, GetManualEntryByEmployeeRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { department, designation, employee, employment_type, leave_policy, shift_group, sub_department, users, workplace } from '../schema';
+import { department, designation, employee, employment_type, leave_policy, shift_group, shifts, sub_department, users, workplace } from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
 const lineManagerUser = alias(users, 'line_manager_user');
@@ -95,6 +95,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       end_date: employee.end_date,
       shift_group_uuid: employee.shift_group_uuid,
       shift_group_name: shift_group.name,
+      shift_group_start_time: shifts.start_time,
+      shift_group_end_time: shifts.end_time,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -150,6 +152,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
     .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
+    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(department, eq(users.department_uuid, department.uuid))
     .leftJoin(
@@ -232,6 +235,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       end_date: employee.end_date,
       shift_group_uuid: employee.shift_group_uuid,
       shift_group_name: shift_group.name,
+      shift_group_start_time: shifts.start_time,
+      shift_group_end_time: shifts.end_time,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -383,6 +388,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
     .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
+    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(department, eq(users.department_uuid, department.uuid))
     .leftJoin(
