@@ -268,19 +268,74 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name
                     )
                     SELECT
-                      uuid,
-                      user_uuid,
-                      employee_name,
-                      shift_name,
-                      department_name,
-                      designation_name,
-                      employment_type_name, 
-                      employee_id,
-                      line_manager_name
-                    FROM attendance_data
-                    WHERE status = 'Absent'
-                    GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name
-                    ORDER BY employee_name;
+                          uuid,
+                          user_uuid,
+                          employee_name,
+                          shift_name,
+                          department_name,
+                          designation_name,
+                          employment_type_name, 
+                          employee_id,
+                          line_manager_name,
+                          shift_name,
+                          start_time,
+                          end_time,
+                          punch_date,
+
+                          -- last date the employee had any punch (last present)
+                          (
+                            SELECT MAX(DATE(pl2.punch_time))
+                            FROM hr.punch_log pl2
+                            WHERE pl2.employee_uuid = attendance_data.uuid
+                          ) AS last_present,
+
+                          -- last date in the last 30 calendar days where there was NO punch and NOT on approved leave
+                          (
+                            SELECT MAX(d)
+                            FROM (
+                              SELECT generate_series(
+                                CURRENT_DATE - INTERVAL '29 days',
+                                CURRENT_DATE,
+                                '1 day'
+                              )::date AS d
+                            ) AS days
+                            WHERE NOT EXISTS (
+                              SELECT 1 FROM hr.punch_log pl4
+                              WHERE pl4.employee_uuid = attendance_data.uuid
+                                AND DATE(pl4.punch_time) = days.d
+                            )
+                            AND NOT EXISTS (
+                              SELECT 1 FROM hr.apply_leave al4
+                              WHERE al4.employee_uuid = attendance_data.uuid
+                                AND al4.approval = 'approved'
+                                AND days.d BETWEEN al4.from_date::date AND al4.to_date::date
+                            )
+                          ) AS last_absent_last_30_days,
+
+                          -- count of absent days in the last 30 calendar days (no punch & not on approved leave)
+                          (
+                            SELECT COUNT(*)
+                            FROM (
+                              SELECT generate_series(
+                                CURRENT_DATE - INTERVAL '29 days',
+                                CURRENT_DATE,
+                                '1 day'
+                              )::date AS d
+                            ) AS days
+                            LEFT JOIN hr.punch_log pl3 
+                              ON pl3.employee_uuid = attendance_data.uuid 
+                              AND DATE(pl3.punch_time) = days.d
+                            LEFT JOIN hr.apply_leave al3 
+                              ON al3.employee_uuid = attendance_data.uuid 
+                              AND al3.approval = 'approved'
+                              AND days.d BETWEEN al3.from_date::date AND al3.to_date::date
+                            WHERE pl3.employee_uuid IS NULL 
+                              AND al3.employee_uuid IS NULL
+                          ) AS absent_last_30_days_count
+                        FROM attendance_data
+                        WHERE status = 'Absent'
+                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date
+                        ORDER BY employee_name;
                   `;
 
   const data = await db.execute(query);
