@@ -92,15 +92,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(createdByUser, eq(manual_entry.created_by, createdByUser.uuid))
     .orderBy(desc(manual_entry.created_at));
 
+  const filters = [];
+
   if (employee_uuid) {
-    resultPromise.where(eq(manual_entry.employee_uuid, employee_uuid));
+    filters.push(eq(manual_entry.employee_uuid, employee_uuid));
   }
 
   if (type) {
-    resultPromise.where(eq(manual_entry.type, type));
+    filters.push(eq(manual_entry.type, type));
   }
   if (approval) {
-    resultPromise.where(eq(manual_entry.approval, approval));
+    filters.push(eq(manual_entry.approval, approval));
+  }
+
+  if (filters.length > 0) {
+    resultPromise.where(and(...filters));
   }
 
   const data = await resultPromise;

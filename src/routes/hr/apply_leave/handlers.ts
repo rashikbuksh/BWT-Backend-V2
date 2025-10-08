@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -150,14 +150,19 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .orderBy(desc(apply_leave.created_at));
 
+  const filters = [];
+
   if (employee_uuid) {
-    apply_leavePromise.where(eq(apply_leave.employee_uuid, employee_uuid));
+    filters.push(eq(apply_leave.employee_uuid, employee_uuid));
   }
 
   if (approval) {
-    apply_leavePromise.where(eq(apply_leave.approval, approval));
+    filters.push(eq(apply_leave.approval, approval));
   }
 
+  if (filters.length > 0) {
+    apply_leavePromise.where(and(...filters));
+  }
   const data = await apply_leavePromise;
 
   return c.json(data || [], HSCode.OK);
