@@ -5,16 +5,16 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 const tags = ['hr.dashboard'];
 
-export const getEmployeeAttendanceReport = createRoute({
-  path: '/hr/attendance-report',
+export const getLateEmployeeAttendanceReport = createRoute({
+  path: '/hr/dashboard/late-attendance',
   method: 'get',
-  summary: 'Attendance Report',
-  description: 'Get the attendance report for an employee',
+  summary: 'Late Attendance',
+  description: 'Get the late attendance report for employees',
   request: {
     query: z.object({
-      from_date: z.string().optional(),
-      to_date: z.string().optional(),
-      month: z.string().optional(),
+      // from_date: z.string().optional(),
+      // to_date: z.string().optional(),
+      // month: z.string().optional(),
       employee_uuid: z.string().optional(),
     }),
   },
@@ -31,7 +31,7 @@ export const getEmployeeAttendanceReport = createRoute({
           expected_hours: z.number(),
         }),
       ),
-      'The attendance report',
+      'The late attendance report for employees',
     ),
   },
   tags,
@@ -131,7 +131,7 @@ export const getDailyEmployeeAttendanceReport = createRoute({
   tags,
 });
 
-export type GetEmployeeAttendanceReportRoute = typeof getEmployeeAttendanceReport;
+export type GetLateEmployeeAttendanceReportRoute = typeof getLateEmployeeAttendanceReport;
 export type GetAttendanceReportRoute = typeof getAttendanceReport;
 export type GetMonthlyAttendanceReportRoute = typeof getMonthlyAttendanceReport;
 export type GetDailyEmployeeAttendanceReportRoute = typeof getDailyEmployeeAttendanceReport;
