@@ -98,18 +98,18 @@ export const getMonthlyAttendanceReport = createRoute({
   tags,
 });
 
-export const getDailyEmployeeAttendanceReport = createRoute({
-  path: '/hr/daily-attendance-report',
+export const getOnLeaveEmployeeAttendanceReport = createRoute({
+  path: '/hr/dashboard/on-leave-attendance',
   method: 'get',
-  summary: 'Daily Attendance Report',
-  description: 'Get the attendance report for an employee',
+  summary: 'On Leave Attendance Report',
+  description: 'Get the on-leave attendance report for employees',
   request: {
     query: z.object({
-      from_date: z.string().optional(),
-      to_date: z.string().optional(),
-      month: z.string().optional(),
+      // from_date: z.string().optional(),
+      // to_date: z.string().optional(),
+      // month: z.string().optional(),
       employee_uuid: z.string().optional(),
-      date: z.string().optional(),
+      // date: z.string().optional(),
     }),
   },
   responses: {
@@ -125,7 +125,7 @@ export const getDailyEmployeeAttendanceReport = createRoute({
           expected_hours: z.number(),
         }),
       ),
-      'The daily attendance report',
+      'The on-leave attendance report for employees',
     ),
   },
   tags,
@@ -134,4 +134,4 @@ export const getDailyEmployeeAttendanceReport = createRoute({
 export type GetLateEmployeeAttendanceReportRoute = typeof getLateEmployeeAttendanceReport;
 export type GetAttendanceReportRoute = typeof getAttendanceReport;
 export type GetMonthlyAttendanceReportRoute = typeof getMonthlyAttendanceReport;
-export type GetDailyEmployeeAttendanceReportRoute = typeof getDailyEmployeeAttendanceReport;
+export type GetOnLeaveEmployeeAttendanceReportRoute = typeof getOnLeaveEmployeeAttendanceReport;

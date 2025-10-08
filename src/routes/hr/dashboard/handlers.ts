@@ -7,7 +7,7 @@ import db from '@/db';
 import { getHolidayCountsDateRange } from '@/lib/variables';
 // import { createApi } from '@/utils/api';
 
-import type { GetAttendanceReportRoute, GetDailyEmployeeAttendanceReportRoute, GetLateEmployeeAttendanceReportRoute, GetMonthlyAttendanceReportRoute } from './routes';
+import type { GetAttendanceReportRoute, GetLateEmployeeAttendanceReportRoute, GetMonthlyAttendanceReportRoute, GetOnLeaveEmployeeAttendanceReportRoute } from './routes';
 
 export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAttendanceReportRoute> = async (c: any) => {
   const { employee_uuid } = c.req.valid('query');
@@ -964,8 +964,10 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
   return c.json(data.rows || [], HSCode.OK);
 };
 
-export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeAttendanceReportRoute> = async (c: any) => {
-  const { date, employee_uuid } = c.req.valid('query');
+export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmployeeAttendanceReportRoute> = async (c: any) => {
+  const { employee_uuid } = c.req.valid('query');
+
+  const date = sql`CURRENT_DATE `;
 
   const query = sql`
                 WITH date_series AS (
@@ -1087,7 +1089,11 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     dept.department AS department_name,
                     des.designation AS designation_name,
                     et.name AS employment_type_name,
-                    w.name AS workplace_name
+                    w.name AS workplace_name,
+                    al.reason AS leave_reason,
+                    al.from_date AS leave_from,
+                    al.to_date AS leave_to,
+                    lineManager.name AS line_manager_name
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -1103,6 +1109,7 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                   LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
+                  LEFT JOIN hr.users lineManager ON e.line_manager_uuid = lineManager.uuid
                   LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                   LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
                   LEFT JOIN LATERAL (
@@ -1118,7 +1125,7 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, w.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name
                 )
                 SELECT
                     uuid,
@@ -1143,8 +1150,13 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     late_hours,
                     early_exit_time,
                     early_exit_hours,
-                    overtime_hours
+                    overtime_hours,
+                    leave_reason,
+                    leave_from,
+                    leave_to,
+                    line_manager_name
                 FROM attendance_data
+                WHERE status = 'Leave'
                 ORDER BY employee_name, punch_date;
               `;
 
