@@ -117,8 +117,35 @@ export const remove = createRoute({
   },
 });
 
+export const getAllGeneralAndSpecialHolidays = createRoute({
+  path: '/hr/all-holidays',
+  method: 'get',
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(
+        z.object({
+          uuid: z.string(),
+          id: z.number(),
+          name: z.string(),
+          from_date: z.string(),
+          to_date: z.string(),
+          type: z.enum(['General', 'Special']),
+          created_by: z.string(),
+          created_by_name: z.string().nullable(),
+          created_at: z.string(),
+          updated_at: z.string(),
+          remarks: z.string().nullable(),
+        }),
+      ),
+      'The list of all general and special holidays',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetAllGeneralAndSpecialHolidaysRoute = typeof getAllGeneralAndSpecialHolidays;
