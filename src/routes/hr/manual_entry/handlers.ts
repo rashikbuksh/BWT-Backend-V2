@@ -164,15 +164,15 @@ export const manualEntryByEmployee: AppRouteHandler<ManualEntryByEmployeeRoute> 
     })
     .from(manual_entry)
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
-    .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
-    .leftJoin(createdByDesignation, eq(createdByUser.designation_uuid, createdByDesignation.uuid))
-    .leftJoin(createdByDepartment, eq(createdByUser.department_uuid, createdByDepartment.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
     .leftJoin(
       createdByUser,
       eq(manual_entry.created_by, createdByUser.uuid),
     )
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(createdByDesignation, eq(createdByUser.designation_uuid, createdByDesignation.uuid))
+    .leftJoin(createdByDepartment, eq(createdByUser.department_uuid, createdByDepartment.uuid))
     .leftJoin(
       device_list,
       eq(manual_entry.device_list_uuid, device_list.uuid),
