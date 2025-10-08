@@ -8,7 +8,7 @@ const tags = ['hr.dashboard'];
 export const getLateEmployeeAttendanceReport = createRoute({
   path: '/hr/dashboard/late-attendance',
   method: 'get',
-  summary: 'Late Attendance',
+  summary: 'Daily Late Attendance',
   description: 'Get the late attendance report for employees',
   request: {
     query: z.object({
