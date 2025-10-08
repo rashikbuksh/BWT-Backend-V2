@@ -176,7 +176,8 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                           END as status,
                           dept.department AS department_name,
                           des.designation AS designation_name,
-                          et.name AS employment_type_name
+                          et.name AS employment_type_name,
+                          lineManager.name AS line_manager_name
                         FROM hr.employee e
                         LEFT JOIN user_dates_day ud ON e.user_uuid = ud.user_uuid
                         LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -192,6 +193,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                         LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                         LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
+                        LEFT JOIN hr.users lineManager ON e.line_manager_uuid = lineManager.uuid
                         LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                         LEFT JOIN LATERAL (
                           SELECT 1 AS is_special
@@ -205,7 +207,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN sg_off_days_day sod ON sod.shift_group_uuid = e.shift_group_uuid
                           AND sod.day = ud.punch_date
                         WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                        GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid
+                        GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, lineManager.name
                       ),
 
                       -- attendance for month range (1st .. today) used only to compute total late count per user
@@ -284,6 +286,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         ad.late_hours,
                         ad.early_exit_time,
                         ad.early_exit_hours,
+                        ad. line_manager_name,
                         COALESCE(ml.total_late_in_month, 0)::int AS total_late_in_month
                       FROM attendance_data_day ad
                       LEFT JOIN month_late_counts ml ON ml.user_uuid = ad.user_uuid
