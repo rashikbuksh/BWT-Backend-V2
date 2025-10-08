@@ -449,12 +449,13 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
 export const getManualEntryDetailsByEmployee: AppRouteHandler<GetManualEntryByEmployeeRoute> = async (c: any) => {
   const { employee_uuid } = c.req.valid('param');
+  const { field_visit_uuid } = c.req.valid('query');
 
   const api = createApi(c);
 
   const fetchData = async (endpoint: string) =>
     await api
-      .get(`${endpoint}/${employee_uuid}`)
+      .get(`${endpoint}/${employee_uuid}?field_visit_uuid=${field_visit_uuid || ''}`)
       .then(response => response.data)
       .catch((error) => {
         console.error(

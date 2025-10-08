@@ -124,6 +124,11 @@ export const getManualEntryDetailsByEmployee = createRoute({
     params: z.object({
       employee_uuid: z.string(),
     }),
+    query: z.object({
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
+      field_visit_uuid: z.string().optional(),
+    }),
   },
   tags,
   responses: {
