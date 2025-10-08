@@ -13,6 +13,8 @@ import type { CreateRoute, GetOneRoute, ListRoute, ManualEntryByEmployeeRoute, P
 import { department, designation, device_list, employee, manual_entry, users } from '../schema';
 
 const createdByUser = alias(users, 'createdByUser');
+const createdByDesignation = alias(designation, 'createdByDesignation');
+const createdByDepartment = alias(department, 'createdByDepartment');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -140,6 +142,10 @@ export const manualEntryByEmployee: AppRouteHandler<ManualEntryByEmployeeRoute> 
       uuid: manual_entry.uuid,
       employee_uuid: manual_entry.employee_uuid,
       employee_name: users.name,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
       type: manual_entry.type,
       entry_time: manual_entry.entry_time,
       exit_time: manual_entry.exit_time,
@@ -147,21 +153,21 @@ export const manualEntryByEmployee: AppRouteHandler<ManualEntryByEmployeeRoute> 
       area: manual_entry.area,
       created_by: manual_entry.created_by,
       created_by_name: createdByUser.name,
+      created_by_designation_name: createdByDesignation.designation,
+      created_by_department_name: createdByDepartment.department,
       created_at: manual_entry.created_at,
       updated_at: manual_entry.updated_at,
       remarks: manual_entry.remarks,
-      department_uuid: employee.department_uuid,
-      department_name: department.department,
-      designation_uuid: employee.designation_uuid,
-      designation_name: designation.designation,
       device_list_uuid: manual_entry.device_list_uuid,
       device_list_name: device_list.name,
       approval: manual_entry.approval,
     })
     .from(manual_entry)
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(createdByDesignation, eq(createdByUser.designation_uuid, createdByDesignation.uuid))
+    .leftJoin(createdByDepartment, eq(createdByUser.department_uuid, createdByDepartment.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
     .leftJoin(
       createdByUser,
