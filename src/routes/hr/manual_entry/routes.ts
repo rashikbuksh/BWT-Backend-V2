@@ -13,6 +13,20 @@ const tags = ['hr.manual_entry'];
 export const list = createRoute({
   path: '/hr/manual-entry',
   method: 'get',
+  request: {
+    query: z.object({
+      q: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+      sort: z.string().optional(),
+      orderby: z.string().optional(),
+      employee_uuid: z.string().optional(),
+      type: z.string().optional(),
+      approval: z.string().optional(),
+    }),
+
+  },
+
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
