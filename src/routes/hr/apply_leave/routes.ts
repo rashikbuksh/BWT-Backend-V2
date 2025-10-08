@@ -13,6 +13,17 @@ const tags = ['hr.apply_leave'];
 export const list = createRoute({
   path: '/hr/apply-leave',
   method: 'get',
+  request: {
+    query: z.object({
+      q: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+      sort: z.string().optional(),
+      orderby: z.string().optional(),
+      employee_uuid: z.string().optional(),
+      approval: z.string().optional(),
+    }),
+  },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(

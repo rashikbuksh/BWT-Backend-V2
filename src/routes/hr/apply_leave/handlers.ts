@@ -115,6 +115,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
+  const { employee_uuid, approval } = c.req.valid('query');
+
   const apply_leavePromise = db
     .select({
       uuid: apply_leave.uuid,
@@ -147,6 +149,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(apply_leave.created_by, createdByUser.uuid),
     )
     .orderBy(desc(apply_leave.created_at));
+
+  if (employee_uuid) {
+    apply_leavePromise.where(eq(apply_leave.employee_uuid, employee_uuid));
+  }
+
+  if (approval) {
+    apply_leavePromise.where(eq(apply_leave.approval, approval));
+  }
 
   const data = await apply_leavePromise;
 
