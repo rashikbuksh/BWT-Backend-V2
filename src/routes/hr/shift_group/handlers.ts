@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -118,6 +118,35 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_at: shift_group.created_at,
       updated_at: shift_group.updated_at,
       remarks: shift_group.remarks,
+      current_shift: sql`(
+                          SELECT 
+                                json_build_object(
+                                  'shifts_uuid', r.shifts_uuid,
+                                  'effective_date', r.effective_date,
+                                  'shift_group_uuid', r.shift_group_uuid,
+                                  'created_at', r.created_at,
+                                  'off_days', r.off_days
+                                ) AS current_shift
+                          FROM hr.roster r
+                          WHERE r.shift_group_uuid = ${shift_group.uuid} AND r.shifts_uuid = ${shift_group.shifts_uuid} AND r.effective_date <= CURRENT_DATE
+                          ORDER BY r.effective_date DESC
+                          LIMIT 1
+      )`,
+      next_shift: sql`(
+                          SELECT 
+                                json_build_object(
+                                  'shifts_uuid', r.shifts_uuid,
+                                  'effective_date', r.effective_date,
+                                  'shift_group_uuid', r.shift_group_uuid,
+                                  'created_at', r.created_at,
+                                  'off_days', r.off_days
+                                ) AS next_shift
+                          FROM hr.roster r
+                          WHERE r.shift_group_uuid = ${shift_group.uuid} AND r.shifts_uuid = ${shift_group.shifts_uuid} AND r.effective_date > CURRENT_DATE
+                          ORDER BY r.effective_date ASC
+                          LIMIT 1
+      )`,
+
     })
     .from(shift_group)
     .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
