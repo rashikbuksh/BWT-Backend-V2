@@ -125,11 +125,17 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                                   'effective_date', r.effective_date,
                                   'shift_group_uuid', r.shift_group_uuid,
                                   'created_at', r.created_at,
-                                  'off_days', r.off_days
+                                  'off_days', r.off_days,
+                                  'shift_group_name', sg.name,
+                                  'shift_name', s.name,
+                                  'shift_start_time', s.start_time,
+                                  'shift_end_time', s.end_time
                                 ) AS current_shift
                           FROM hr.roster r
+                          LEFT JOIN hr.shifts s ON r.shifts_uuid = s.uuid
+                          LEFT JOIN hr.shift_group sg ON r.shift_group_uuid = sg.uuid
                           WHERE r.shift_group_uuid = ${shift_group.uuid} AND r.shifts_uuid = ${shift_group.shifts_uuid} AND r.effective_date::date <= CURRENT_DATE::date
-                          ORDER BY r.effective_date DESC
+                          ORDER BY r.effective_date::date DESC
                           LIMIT 1
       )`,
       next_shift: sql`(
@@ -139,11 +145,17 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                                   'effective_date', r.effective_date,
                                   'shift_group_uuid', r.shift_group_uuid,
                                   'created_at', r.created_at,
-                                  'off_days', r.off_days
+                                  'off_days', r.off_days,
+                                  'shift_group_name', sg.name,
+                                  'shift_name', s.name,
+                                  'shift_start_time', s.start_time,
+                                  'shift_end_time', s.end_time
                                 ) AS next_shift
                           FROM hr.roster r
+                          LEFT JOIN hr.shifts s ON r.shifts_uuid = s.uuid
+                          LEFT JOIN hr.shift_group sg ON r.shift_group_uuid = sg.uuid
                           WHERE r.shift_group_uuid = ${shift_group.uuid} AND r.shifts_uuid = ${shift_group.shifts_uuid} AND r.effective_date::date > CURRENT_DATE::date
-                          ORDER BY r.effective_date ASC
+                          ORDER BY r.effective_date::date ASC
                           LIMIT 1
       )`,
 
