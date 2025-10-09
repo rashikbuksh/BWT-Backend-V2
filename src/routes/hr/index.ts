@@ -12,6 +12,7 @@ import employee_address from './employee_address';
 import employee_document from './employee_document';
 import employee_education from './employee_education';
 import employee_history from './employee_history';
+import employee_log from './employee_log';
 import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
@@ -66,4 +67,5 @@ export default [
   loan,
   loan_entry,
   dashboard,
+  employee_log,
 ];
