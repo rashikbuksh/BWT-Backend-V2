@@ -1,4 +1,5 @@
 import apply_balance from './apply_balance';
+import apply_late from './apply_late';
 import apply_leave from './apply_leave';
 import configuration from './configuration';
 import configuration_entry from './configuration_entry';
@@ -68,4 +69,5 @@ export default [
   loan_entry,
   dashboard,
   employee_log,
+  apply_late,
 ];
