@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -8,13 +8,35 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { shift_group, shifts, users } from '../schema';
+import { roster, shift_group, shifts, users } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
+  const rosterData = await db
+    .select()
+    .from(roster)
+    .where(and(
+      eq(roster.shift_group_uuid, value.uuid),
+      eq(roster.shifts_uuid, value.shifts_uuid),
+      eq(roster.effective_date, value.effective_date),
+    ));
+
+  if (rosterData.length > 0) {
+    return c.json(createToast('error', 'Shift Group already assigned in Roster'), HSCode.BAD_REQUEST);
+  }
+
   const [data] = await db.insert(shift_group).values(value).returning({
     name: shift_group.name,
+  });
+
+  await db.insert(roster).values({
+    shift_group_uuid: value.uuid,
+    shifts_uuid: value.shifts_uuid,
+    effective_date: value.effective_date,
+    created_by: value.created_by,
+    off_days: value.off_days,
+    created_at: value.created_at,
   });
 
   return c.json(createToast('create', data.name), HSCode.OK);
@@ -27,12 +49,34 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   if (Object.keys(updates).length === 0)
     return ObjectNotFound(c);
 
+  const rosterData = await db
+    .select()
+    .from(roster)
+    .where(and(
+      eq(roster.shift_group_uuid, uuid),
+      eq(roster.shifts_uuid, updates.shifts_uuid),
+      eq(roster.effective_date, updates.effective_date),
+    ));
+
+  if (rosterData.length > 0) {
+    return c.json(createToast('error', 'Shift Group already assigned in Roster'), HSCode.BAD_REQUEST);
+  }
+
   const [data] = await db.update(shift_group)
     .set(updates)
     .where(eq(shift_group.uuid, uuid))
     .returning({
       name: shift_group.name,
     });
+
+  await db.insert(roster).values({
+    shift_group_uuid: uuid,
+    shifts_uuid: updates.shifts_uuid,
+    effective_date: updates.effective_date,
+    created_by: updates.created_by,
+    off_days: updates.off_days,
+    created_at: updates.updated_at,
+  });
 
   if (!data)
     return DataNotFound(c);
