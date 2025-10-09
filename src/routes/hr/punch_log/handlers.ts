@@ -270,7 +270,7 @@ export const selectEmployeePunchLogPerDayByEmployeeUuid: AppRouteHandler<SelectE
 };
 
 export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployeeLateDayByEmployeeUuidRoute> = async (c: any) => {
-  const { from_date, to_date } = c.req.valid('query');
+  // const { from_date, to_date } = c.req.valid('query');
 
   const { employee_uuid } = c.req.valid('param');
   // const fromDateYear = from_date ? new Date(from_date).getFullYear() : null;
@@ -336,47 +336,37 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
   // ]);
 
   const punch_log_query = sql`
-      WITH user_dates AS (
-        SELECT 
-          u.uuid AS user_uuid, 
-          u.name AS employee_name,
-          ${from_date && to_date ? sql`d.punch_date` : sql`NULL AS punch_date`}
-        FROM hr.users u
-        ${from_date && to_date
-          ? sql`
-            CROSS JOIN (
-              SELECT generate_series(${from_date}::date, ${to_date}::date, INTERVAL '1 day')::date AS punch_date
-            ) d`
-          : sql``}
-      )
-      SELECT
-        ud.user_uuid,
-        ud.employee_name,
-        DATE(pl.punch_time) AS punch_date,
-        MIN(pl.punch_time) AS entry_time,
-        MAX(pl.punch_time) AS exit_time,
-        (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8 AS duration_hours
-      FROM hr.employee e
-      LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
-      LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid ${from_date && to_date ? sql` AND DATE(pl.punch_time) = DATE(ud.punch_date)` : sql``}
-      LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-      LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-      WHERE 
-        e.uuid = ${employee_uuid}
-        AND pl.punch_time > s.late_time
-      GROUP BY ud.user_uuid, ud.employee_name, pl.punch_time
-      ORDER BY ud.user_uuid, pl.punch_time;
-    `;
+                            SELECT
+                              e.user_uuid,
+                              u.name AS employee_name,
+                              pl.punch_date,
+                              pl.entry_time,
+                              pl.exit_time,
+                              (EXTRACT(EPOCH FROM pl.exit_time::time - pl.entry_time::time) / 3600)::float8 AS duration_hours,
+                              s.late_time::time,
+                              (EXTRACT(EPOCH FROM pl.entry_time::time - s.late_time::time) / 3600)::float8 AS late_hours
+                            FROM hr.employee e
+                            LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+                            LEFT JOIN 
+                                    (
+                                      SELECT 
+                                        pl.employee_uuid,
+                                        DATE(pl.punch_time) AS punch_date,
+                                        MIN(pl.punch_time) AS entry_time,
+                                        MAX(pl.punch_time) AS exit_time
+                                      FROM hr.punch_log pl
+                                      LEFT JOIN hr.employee emp ON pl.employee_uuid = emp.uuid
+                                      GROUP BY pl.employee_uuid, DATE(pl.punch_time)
+                                    ) AS pl ON e.uuid = pl.employee_uuid
+                            LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+                            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                            WHERE e.uuid = ${employee_uuid} AND pl.entry_time::time > s.late_time::time
+                            GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time
+                            `;
 
   const punch_logPromise = db.execute(punch_log_query);
 
   const data = await punch_logPromise;
-
-  // const response = [{
-  //   data: data?.rows,
-  //   // special_holidays: specialHolidaysResult?.rows,
-  //   // general_holidays: generalHolidaysResult?.rows,
-  // }];
 
   return c.json(data?.rows || [], HSCode.OK);
 };
