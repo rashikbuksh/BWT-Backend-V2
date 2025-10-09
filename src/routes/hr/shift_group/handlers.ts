@@ -129,7 +129,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                                 ) AS current_shift
                           FROM hr.roster r
                           WHERE r.shift_group_uuid = ${shift_group.uuid} AND r.shifts_uuid = ${shift_group.shifts_uuid} AND r.effective_date::date <= CURRENT_DATE::date
-                          ORDER BY r.effective_date DESC
+                          ORDER BY r.effective_date::date DESC
                           LIMIT 1
       )`,
       next_shift: sql`(
@@ -143,7 +143,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                                 ) AS next_shift
                           FROM hr.roster r
                           WHERE r.shift_group_uuid = ${shift_group.uuid} AND r.shifts_uuid = ${shift_group.shifts_uuid} AND r.effective_date::date > CURRENT_DATE::date
-                          ORDER BY r.effective_date ASC
+                          ORDER BY r.effective_date::date ASC
                           LIMIT 1
       )`,
 
