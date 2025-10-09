@@ -757,4 +757,22 @@ export const employee_log = hr.table('employee_log', {
   remarks: text('remarks').default(sql`null`),
 });
 
+export const late_approval_status_enum = pgEnum('late_approval_status_enum', [
+  'pending',
+  'approved',
+  'rejected',
+]);
+
+export const apply_late = hr.table('apply_late', {
+  uuid: uuid_primary,
+  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
+  date: DateTime('date').notNull(),
+  reason: text('reason').notNull(),
+  status: late_approval_status_enum('status').default('pending'),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default hr;
