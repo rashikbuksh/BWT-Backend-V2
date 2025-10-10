@@ -1,6 +1,6 @@
 import { kvPairs, verifyCodeToMethod } from './utils';
 
-function parseATTLOG(fields: string[], type: string) {
+export function parseATTLOG(fields: string[], type: string) {
   // Tagged format: "ATTLOG PIN TIMESTAMP STATUS VERIFY WORKCODE ..."
   if (type === 'tagged') {
     return {
@@ -35,7 +35,7 @@ function parseATTLOG(fields: string[], type: string) {
   return {};
 }
 
-function parseLine(line: string) {
+export function parseLine(line: string) {
   // Trim CR/LF
   const raw = line.trim();
   if (!raw)
@@ -100,5 +100,3 @@ function parseLine(line: string) {
       return { type: 'UNKNOWN', raw };
   }
 }
-
-module.exports = { parseLine };

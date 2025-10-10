@@ -25,9 +25,10 @@ const EnvSchema = z.object({
   SALT: z.coerce.number().default(14),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  ZKTECO_BASE_URL: z.string().default('http://103.147.163.46:5099'),
-  ZKTECO_USERNAME: z.string().default('rashikbuksh'),
-  ZKTECO_PASSWORD: z.string().default('rafsan123'),
+  PULL_MODE: z.string().default('1'),
+  USE_CRLF: z.string().default('1'),
+  DEFAULT_LOOKBACK_HOURS: z.string().default('48'),
+  ICLOCK_COMMAND: z.string().default('ATTLOG'),
 });
 
 export type env = z.infer<typeof EnvSchema>;
