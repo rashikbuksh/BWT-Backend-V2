@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import { configureOpenAPI } from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
 import { ALLOWED_ROUTES, isPublicRoute, VerifyToken } from '@/middlewares/auth';
+import zktecoRouter from '@/routes/zkteco';
 import { serveStatic } from '@hono/node-server/serve-static';
 
 import env from './env';
@@ -22,7 +23,6 @@ app.use('*', bodyLimit({
 
 // ! don't put a trailing slash
 export const basePath = '/v1';
-export const basePath2 = '/v2';
 const isDev = env.NODE_ENV === 'development';
 const isVps = env.NODE_ENV === 'vps';
 
@@ -49,5 +49,8 @@ if (!isDev) {
 routes.forEach((route) => {
   app.route(basePath, route);
 });
+
+// zkteco routes
+app.route('/', zktecoRouter);
 
 export default app;

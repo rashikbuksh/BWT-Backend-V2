@@ -3,11 +3,11 @@ import { jsonContent } from 'stoker/openapi/helpers';
 
 import { createRoute, z } from '@hono/zod-openapi';
 
-const tags = ['attendence'];
+const tags = ['attendance'];
 
-export const patch = createRoute({
+export const post = createRoute({
   path: '/iclock/cdata',
-  method: 'patch',
+  method: 'post',
   request: {
     query: z.object({
       SN: z.string().optional().describe('The device Serial Number'),
@@ -59,6 +59,6 @@ export const addBulkUsers = createRoute({
   },
 });
 
-export type PatchRoute = typeof patch;
+export type PostRoute = typeof post;
 export type DeviceHealthRoute = typeof deviceHealth;
 export type AddBulkUsersRoute = typeof addBulkUsers;

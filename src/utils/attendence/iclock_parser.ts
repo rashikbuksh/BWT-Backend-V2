@@ -35,6 +35,14 @@ export function parseATTLOG(fields: string[], type: string) {
   return {};
 }
 
+export function splitLines(raw: string): string[] {
+  return String(raw)
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+}
+
 export function parseLine(line: string) {
   // Trim CR/LF
   const raw = line.trim();
@@ -92,8 +100,19 @@ export function parseLine(line: string) {
 
     // Attendance (plain) if first token is an integer PIN
     case /^\d+$/.test(firstToken): {
-      const fields = raw.split('\t');
-      return parseATTLOG(fields, 'plain');
+      const lines = splitLines(raw);
+      if (lines.length > 1) {
+        console.warn('Multiple lines in single ATTLOG entry, using first line only', raw);
+      }
+
+      const log = [];
+
+      for (const l of lines) {
+        const fields = l.split('\t');
+        log.push(parseATTLOG(fields, 'plain'));
+      }
+
+      return { log, type: 'REAL_TIME_LOG' };
     }
 
     default:

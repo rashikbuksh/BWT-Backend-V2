@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, DeviceHealthRoute, PatchRoute } from './routes';
+import type { AddBulkUsersRoute, DeviceHealthRoute, PostRoute } from './routes';
 
 import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markStaleCommands, recordCDataEvent } from './functions';
 
@@ -22,7 +22,7 @@ const cdataEvents = new Map(); // sn -> [{ at, lineCount, firstLine, hasUserInfo
 const rawCDataStore = new Map(); // sn -> [{ at, raw, bytes }]
 // const pollHistory = new Map(); // sn -> [{ at, queueBefore, deliveredCount, remote }]
 
-export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
+export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
   const raw = c.req.valid('body') || '';
 
@@ -68,6 +68,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     if (items.type === 'REAL_TIME_LOG') {
       pushedLogs.push(items);
     }
+
     else {
       informationLogs.push(items);
       if (items.type === 'USER') {
@@ -121,12 +122,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       `[user-summary] SN=${sn} added=${userCount} duplicates_skipped=${duplicateCount} total_users=${totalUsers}`,
     );
   }
-
-  // console.warn(usersByDevice, 'usersByDevice');
-
-  // console.warn('pushedLogs', pushedLogs);
-
-  // console.warn('informationLogs', informationLogs);
 
   const st = deviceState.get(sn) || {};
   st.lastSeenAt = new Date().toISOString();
