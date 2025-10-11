@@ -5,9 +5,9 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, DeviceHealthRoute, PostRoute } from './routes';
+import type { AddBulkUsersRoute, DeviceHealthRoute, GetRequestRoute, PostRoute } from './routes';
 
-import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markStaleCommands, recordCDataEvent } from './functions';
+import { buildFetchCommand, commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
 // In-memory stores (replace with DB in prod)
 const pushedLogs = []; // raw + enriched entries -- attendance real time logs
@@ -21,6 +21,65 @@ const sentCommands = new Map(); // sn -> [{ id, cmd, queuedAt, sentAt(deprecated
 const cdataEvents = new Map(); // sn -> [{ at, lineCount, firstLine, hasUserInfo, hasAttlog, hasOptionLike }]
 const rawCDataStore = new Map(); // sn -> [{ at, raw, bytes }]
 // const pollHistory = new Map(); // sn -> [{ at, queueBefore, deliveredCount, remote }]
+
+export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
+  const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
+  const state = deviceState.get(sn) || {};
+  state.lastSeenAt = new Date().toISOString();
+
+  deviceState.set(sn, state);
+
+  // Debug: log each poll (can be noisy; comment out if too verbose)
+  const queueCheck = ensureQueue(sn, commandQueue);
+  if (queueCheck && queueCheck.length > 0) {
+    console.warn(
+      `[getrequest] poll SN=${sn} pullMode=${env.PULL_MODE} queued=${queueCheck.length}`,
+    );
+  }
+
+  const queue = ensureQueue(sn, commandQueue);
+
+  if (queue?.length) {
+    const sep = env.USE_CRLF ? '\r\n' : '\n';
+    const cmds = queue;
+
+    const body = cmds.join(sep) + sep;
+    console.warn(cmds);
+    console.warn(`*[getrequest] SN=${sn} sending ${cmds.length} cmd(s)`); // concise log
+    console.warn(body);
+    // Record commands (pre-write) for diagnostics
+    const remote = (c.req.socket && c.req.socket.remoteAddress) || null;
+
+    const justIds: string[] = [];
+    const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
+    cmds.forEach((c: string) => {
+      recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
+      const list = sentCommands.get(sn);
+      // console.warn(`list`, list);
+      if (list)
+        justIds.push(list[list.length - 1].id);
+    });
+    // console.warn(`body`, body);
+    // Attempt send
+    c.status(200).send(body);
+    // Approximate bytes (body length in UTF-8)
+    const bytes = Buffer.byteLength(body, 'utf8');
+    markDelivered(sn, justIds, bytes, sentCommands);
+    recordPoll(sn, remote, queue.length + cmds.length, cmds.length, new Map());
+    markStaleCommands(sn, sentCommands);
+    return; // response already sent
+  }
+  if (env.PULL_MODE) {
+    const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
+    const sep = env.USE_CRLF ? '\r\n' : '\n';
+    // console.warn(`[getrequest] SN=${sn} auto cmd: ${cmd}`);
+    recordPoll(sn, (c.req.socket && c.req.socket.remoteAddress) || null, (queue?.length ?? 0), 0, new Map());
+    return c.status(200).send(cmd + sep);
+  }
+  console.warn(`[getrequest] SN=${sn} idle (no commands, pullMode=false)`);
+  recordPoll(sn, (c.req.socket && c.req.socket.remoteAddress) || null, (queue?.length ?? 0), 0, new Map());
+  return c.status(200).send('');
+};
 
 export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';

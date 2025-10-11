@@ -1,6 +1,94 @@
 import env from '@/env';
+import { fmtYmdHms } from '@/utils/attendence/utils';
 
 export const commandSyntax = String(env.ICLOCK_COMMAND).toUpperCase();
+
+let globalCommandId = 1;
+
+export function recordSentCommand(sn: string, cmd: string, remote: string | null, sentCommands: Map<string, any[]>, ensureSentList: (sn: string) => any[]) {
+  const list = ensureSentList(sn);
+  list.push({
+    id: globalCommandId++,
+    cmd,
+    queuedAt: new Date().toISOString(), // new canonical field
+    sentAt: new Date().toISOString(), // legacy name retained for compatibility
+    deliveredAt: null,
+    bytesSent: null,
+    respondedAt: null,
+    staleAt: null,
+    remote: remote || null,
+  });
+  // Cap list length to avoid unbounded growth
+  if (list.length > 500)
+    list.splice(0, list.length - 500);
+}
+
+export function recordPoll(sn: string, remote: string | null, queueBefore: number, deliveredCount: number, pollHistory: Map<string, any[]>) {
+  if (!pollHistory.has(sn))
+    pollHistory.set(sn, []);
+  const arr = pollHistory.get(sn);
+  if (arr) {
+    arr.push({ at: new Date().toISOString(), remote, queueBefore, deliveredCount });
+    if (arr.length > 200)
+      arr.splice(0, arr.length - 200);
+  }
+}
+
+export function markDelivered(sn: string, ids: string[], bytes: number, sentCommands: Map<string, any[]>) {
+  const list = sentCommands.get(sn);
+  if (!list)
+    return;
+  const ts = new Date().toISOString();
+  for (const rec of list) {
+    if (ids.includes(rec.id)) {
+      rec.deliveredAt = ts;
+      rec.bytesSent = bytes;
+    }
+  }
+}
+
+export function buildFetchCommand(sn: string, defaultLookbackHours = 24, commandSyntax: string = 'ATT_LOG', deviceState: Map<string, any>) {
+  const st = deviceState.get(sn);
+  const now = new Date();
+  const end = fmtYmdHms(now);
+  let start;
+
+  if (st?.lastStamp) {
+    // st.lastStamp is stored as a Y-m-d H:M:S string (not a Date). toISO() returns a string,
+    // so calling getTime() on it caused: TypeError: last?.getTime is not a function.
+    // Parse safely into a Date and fall back to now if invalid.
+    const raw = String(st.lastStamp).trim();
+    let parsed = new Date(raw.includes('T') ? raw : raw.replace(' ', 'T'));
+    if (Number.isNaN(parsed.getTime())) {
+      // Attempt secondary parse via Date components (YYYY-MM-DD HH:mm:ss)
+      const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+      if (m) {
+        const [_, Y, M, D, h, i, s] = m;
+        parsed = new Date(Number(Y), Number(M) - 1, Number(D), Number(h), Number(i), Number(s));
+      }
+    }
+    if (Number.isNaN(parsed.getTime()))
+      parsed = now;
+    // Subtract 1s to avoid missing the next edge record (device returns > start)
+    const s = new Date(parsed.getTime() - 1000);
+    start = fmtYmdHms(s);
+  }
+  else {
+    const s = new Date(now.getTime() - defaultLookbackHours * 3600 * 1000);
+    start = fmtYmdHms(s);
+  }
+
+  switch (commandSyntax) {
+    case 'DATA_QUERY':
+      return `C:1:DATA QUERY ATTLOG StartTime=${start} EndTime=${end}`;
+    case 'GET_ATTLOG':
+      return `C:1:GET ATTLOG StartTime=${start} EndTime=${end}`;
+    case 'ATTLOG':
+      return `C:1:ATTLOG`;
+    default:
+      return `C:1:DATA QUERY ATTLOG StartTime=${start} EndTime=${end}`;
+  }
+}
 
 export function recordCDataEvent(sn: string, summary: any, cdataEvents: Map<string, any[]>, sentCommands: Map<string, any[]>) {
   if (!cdataEvents.has(sn))

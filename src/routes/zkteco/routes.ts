@@ -5,6 +5,23 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 const tags = ['attendance'];
 
+export const getRequest = createRoute({
+  path: '/iclock/cdata',
+  method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+      table: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
+      options: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'The cdata retrieved'),
+  },
+});
+
 export const post = createRoute({
   path: '/iclock/cdata',
   method: 'post',
@@ -65,6 +82,7 @@ export const addBulkUsers = createRoute({
   },
 });
 
+export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type DeviceHealthRoute = typeof deviceHealth;
 export type AddBulkUsersRoute = typeof addBulkUsers;
