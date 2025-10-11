@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, DeviceHealthRoute, GetRequestRoute, PostRoute } from './routes';
+import type { AddBulkUsersRoute, DeviceHealthRoute, GetRequestRoute, GetRoute, PostRoute } from './routes';
 
 import { buildFetchCommand, commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -188,6 +188,11 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
 
   console.warn(`cdata SN=${sn} parsed_items=${allParsedItems.length} raw_lines=${rawLines.length}`);
   return c.json('OK', 200);
+};
+
+export const get: AppRouteHandler<GetRoute> = async (c: any) => {
+  console.warn({ ok: true, message: 'GET /api/getrequest is deprecated, use POST /api/iclock/cdata instead' });
+  return c.json({ ok: true, message: 'GET /api/getrequest is deprecated, use POST /api/iclock/cdata instead' });
 };
 
 export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) => {

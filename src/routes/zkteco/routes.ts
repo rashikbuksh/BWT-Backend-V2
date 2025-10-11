@@ -82,7 +82,25 @@ export const addBulkUsers = createRoute({
   },
 });
 
+export const get = createRoute({
+  path: '/iclock/cdata',
+  method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+      table: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
+      options: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'The cdata retrieved'),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type DeviceHealthRoute = typeof deviceHealth;
 export type AddBulkUsersRoute = typeof addBulkUsers;
+export type GetRoute = typeof get;
