@@ -55,7 +55,7 @@ export const deviceHealth = createRoute({
 });
 
 export const addBulkUsers = createRoute({
-  path: '/iclock/cdata/bulk',
+  path: '/add/user/bulk',
   method: 'post',
   request: {
     query: z.object({
@@ -99,8 +99,63 @@ export const get = createRoute({
   },
 });
 
+// Legacy iClock protocol endpoints that ZKTeco devices expect
+export const getRequest_legacy = createRoute({
+  path: '/iclock/getrequest',
+  method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Commands for device'),
+  },
+});
+
+export const deviceCmd = createRoute({
+  path: '/iclock/devicecmd',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Device command processed'),
+  },
+});
+
+export const customCommand = createRoute({
+  path: '/iclock/custom-command',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+    body: jsonContent(
+      z.object({
+        command: z.string().describe('The custom command to send'),
+      }),
+      'The custom command to send',
+    ),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'The custom command accepted'),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type DeviceHealthRoute = typeof deviceHealth;
 export type AddBulkUsersRoute = typeof addBulkUsers;
 export type GetRoute = typeof get;
+export type CustomCommandRoute = typeof customCommand;
+export type GetRequestLegacyRoute = typeof getRequest_legacy;
+export type DeviceCmdRoute = typeof deviceCmd;

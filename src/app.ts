@@ -15,8 +15,19 @@ const app = createApp();
 
 configureOpenAPI(app);
 
+// log all the requests
+app.use(async (c, next) => {
+  console.warn(`[${new Date().toISOString()}] ${c.req.method} ${c.req.url}`);
+  await next();
+});
+
 // Apply 50 MB limit to all routes
 app.use('*', bodyLimit({
+  maxSize: 50 * 1024 * 1024, // 50 MB
+  onError: c => c.text('File too large Greater Than 50 MB', 413),
+}));
+
+app.use('/iclock', bodyLimit({
   maxSize: 50 * 1024 * 1024, // 50 MB
   onError: c => c.text('File too large Greater Than 50 MB', 413),
 }));
