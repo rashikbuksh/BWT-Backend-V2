@@ -53,6 +53,7 @@
     "nextval",
     "openapi",
     "pino",
-    "typecheck"
+    "typecheck",
+    "umap"
   ]
 }

@@ -133,7 +133,19 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
 
 export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) => {
   // Process users with proper async handling
+  const { sn } = c.req.valid('query');
+
+  const deviceIdentifier = sn;
   const deviceEntries = Array.from(deviceState.entries());
+
+  // Check if specific device identifier exists when provided
+  if (deviceIdentifier && !deviceState.has(deviceIdentifier)) {
+    return c.json({
+      ok: false,
+      error: `Device with SN '${deviceIdentifier}' not found`,
+      availableDevices: Array.from(deviceState.keys()),
+    }, 404);
+  }
 
   // Debug: Log current usersByDevice state
   console.warn('[health] Current usersByDevice map:');
@@ -142,31 +154,39 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
   }
 
   const usersSummary = await Promise.all(
-    deviceEntries.map(async ([sn, _]) => {
-      console.warn(`[health] Processing device SN=${sn}`);
-      await ensureUsersFetched(sn, usersByDevice, commandQueue);
-      const umap = usersByDevice.get(sn);
-      const count = umap ? umap.size : 0;
-      console.warn(`[health] SN=${sn} final count=${count}`);
-      return {
-        sn,
-        count,
-      };
-    }),
+    (deviceIdentifier ? [[deviceIdentifier, deviceState.get(deviceIdentifier)]] : deviceEntries)
+      .map(async ([sn, _]) => {
+        console.warn(`[health] Processing device SN=${sn}`);
+        await ensureUsersFetched(sn, usersByDevice, commandQueue);
+        const umap = usersByDevice.get(sn);
+        const count = umap ? umap.size : 0;
+        console.warn(`[health] SN=${sn} final count=${count}`);
+        return {
+          sn,
+          count,
+        };
+      }),
   );
 
-  return c.json({
+  const response = {
     ok: true,
-    devices: Array.from(deviceState.entries()).map(([sn, s]) => ({
-      sn,
-      lastStamp: s.lastStamp,
-      lastSeenAt: s.lastSeenAt,
-      lastUserSyncAt: s.lastUserSyncAt,
-    })),
+    devices: (deviceIdentifier
+      ? deviceState.has(deviceIdentifier)
+        ? [{ sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }]
+        : []
+      : Array.from(deviceState.entries()).map(([sn, s]) => ({
+          sn,
+          lastStamp: s.lastStamp,
+          lastSeenAt: s.lastSeenAt,
+          lastUserSyncAt: s.lastUserSyncAt,
+        }))
+    ),
     users: usersSummary,
     pullMode: env.PULL_MODE,
     commandSyntax,
-  });
+  };
+
+  return c.json(response);
 };
 
 export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) => {
@@ -178,12 +198,11 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   await ensureUsersFetched(sn, usersByDevice, commandQueue);
 
   const {
-    users, // array of user objects: [{ name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', pin2?: '', group?: '' }]
+    users, // array of user objects: [{ name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', group?: '' }]
     startPin, // optional: starting PIN number (default: auto-detect next available)
     pinKey, // override PIN field label (e.g. Badgenumber, EnrollNumber)
     style, // 'spaces' to use spaces instead of tabs
     optimistic = true, // whether to apply optimistic caching
-    fullQuery = true, // whether to query full user list after bulk insert
   } = c.req('body') || {};
 
   if (!Array.isArray(users) || users.length === 0) {
@@ -238,7 +257,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
       const priVal = Number(user.privilege ?? 0);
       const deptVal = clean(user.department || '');
       const pwdVal = clean(user.password || '');
-      const pin2Val = clean(user.pin2 || '');
       const grpVal = clean(user.group || '');
 
       // Build command parts
@@ -252,8 +270,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
         baseParts.push(`Dept=${deptVal}`);
       if (pwdVal)
         baseParts.push(`Passwd=${pwdVal}`);
-      if (pin2Val)
-        baseParts.push(`PIN2=${pin2Val}`);
       if (grpVal)
         baseParts.push(`Grp=${grpVal}`);
 
@@ -269,7 +285,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
           privilege: String(priVal),
           department: deptVal,
           password: pwdVal ? '****' : undefined,
-          pin2: pin2Val || undefined,
           group: grpVal || undefined,
           updatedLocallyAt: nowIso,
           createdAt: nowIso,
@@ -295,11 +310,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
         : String(error);
       errors.push({ index: i, error: errorMsg, user });
     }
-  }
-
-  // Add query commands for verification
-  if (fullQuery) {
-    commands.push(`C:${commands.length + 1}:DATA QUERY USERINFO`);
   }
 
   // Queue all commands

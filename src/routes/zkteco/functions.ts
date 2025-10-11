@@ -78,7 +78,7 @@ export async function ensureUsersFetched(sn: string, usersByDevice: Map<string, 
   return umap;
 }
 
-export function getNextAvailablePin(sn: string, startPin = 1, usersByDevice: Map<string, Map<string, any>>) {
+export function getNextAvailablePin(sn: string, startPin: string, usersByDevice: Map<string, Map<string, any>>) {
   // Use ensureUserMap to get existing map (already fetched by calling function)
   const umap = ensureUserMap(sn, usersByDevice) ?? new Map();
   let pin = Number(startPin) || 1;

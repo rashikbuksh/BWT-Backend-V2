@@ -4,6 +4,7 @@ import { desc, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
@@ -79,6 +80,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .orderBy(desc(device_list.created_at));
 
   const data = await deviceListPromise;
+
+  if (data) {
+    data.forEach((item) => {
+      // call this api to get device connection status
+      // /device/health
+      const api = createApi(c);
+      api.get(`/device/health?sn=${item.identifier}`, {
+        'x-device-identifier': item.identifier,
+      }).then((res) => {
+        res.data.ok ? (item.connection_status = true) : (item.connection_status = false);
+      }).catch(() => {
+        item.connection_status = false;
+      });
+    });
+  }
 
   return c.json(data || [], HSCode.OK);
 };
