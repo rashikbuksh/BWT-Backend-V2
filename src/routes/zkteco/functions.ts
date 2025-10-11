@@ -84,7 +84,7 @@ export function buildFetchCommand(sn: string, defaultLookbackHours = 24, command
     case 'GET_ATTLOG':
       return `C:1:GET ATTLOG StartTime=${start} EndTime=${end}`;
     case 'ATTLOG':
-      return `C:1:ATTLOG`;
+      return `C:1:DATA QUERY USERINFO`;
     default:
       return `C:1:DATA QUERY ATTLOG StartTime=${start} EndTime=${end}`;
   }
