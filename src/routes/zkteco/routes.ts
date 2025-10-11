@@ -25,6 +25,12 @@ export const post = createRoute({
 export const deviceHealth = createRoute({
   path: '/device/health',
   method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
   tags,
   responses: {
     [HSCode.OK]: jsonContent({}, 'The device health status'),
