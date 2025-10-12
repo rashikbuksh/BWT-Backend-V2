@@ -1,9 +1,10 @@
 import type { AppRouteHandler } from '@/lib/types';
 
+import { eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { shift_group } from '@/routes/hr/schema';
+import { shift_group, shifts } from '@/routes/hr/schema';
 
 import type { ValueLabelRoute } from './routes';
 
@@ -12,8 +13,12 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .select({
       value: shift_group.uuid,
       label: shift_group.name,
+      effective_date: shift_group.effective_date,
+      start_time: shifts.start_time,
+      end_time: shifts.end_time,
     })
-    .from(shift_group);
+    .from(shift_group)
+    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid));
 
   const data = await shiftGroupPromise;
 
