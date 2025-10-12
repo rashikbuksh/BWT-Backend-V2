@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { apply_late, employee, users } from '../schema';
+import { apply_late, department, designation, employee, users } from '../schema';
 
 const createdByUser = alias(users, 'createdByUser');
 
@@ -63,13 +63,15 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
-  // const { date } = c.req.valid('query');
+  const { status } = c.req.valid('query');
 
-  const salaryIncrementPromise = db
+  const applyLatePromise = db
     .select({
       uuid: apply_late.uuid,
       employee_uuid: apply_late.employee_uuid,
       employee_name: users.name,
+      employee_department_name: department.department,
+      employee_designation_name: designation.designation,
       date: apply_late.date,
       reason: apply_late.reason,
       status: apply_late.status,
@@ -86,9 +88,17 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_late.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .orderBy(desc(apply_late.created_at));
 
-  const data = await salaryIncrementPromise;
+  if (status) {
+    applyLatePromise.where(
+      eq(apply_late.status, status),
+    );
+  }
+
+  const data = await applyLatePromise;
 
   return c.json(data || [], HSCode.OK);
 };
@@ -96,11 +106,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  const salaryIncrementPromise = db
+  const applyLatePromise = db
     .select({
       uuid: apply_late.uuid,
       employee_uuid: apply_late.employee_uuid,
       employee_name: users.name,
+      employee_department_name: department.department,
+      employee_designation_name: designation.designation,
       date: apply_late.date,
       reason: apply_late.reason,
       status: apply_late.status,
@@ -117,9 +129,11 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_late.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .where(eq(apply_late.uuid, uuid));
 
-  const [data] = await salaryIncrementPromise;
+  const [data] = await applyLatePromise;
 
   if (!data)
     return DataNotFound(c);
