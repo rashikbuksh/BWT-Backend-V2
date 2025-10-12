@@ -9,7 +9,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { department, designation, employee, employee_log, leave_policy, shift_group, users } from '../schema';
+import { department, designation, employee, employee_log, leave_policy, shift_group, shifts, users } from '../schema';
 
 const employeeUser = alias(users, 'employeeUser');
 
@@ -109,6 +109,79 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
       type_name: sql<string>`COALESCE(${leave_policy.name}, ${shift_group.name})`,
+      current_shift_group_uuid: sql<string>`(
+        SELECT
+          el.type_uuid
+        FROM
+          ${employee_log} AS el
+        WHERE
+          el.employee_uuid = ${employee_log.employee_uuid}
+          AND el.type = 'shift_group' AND el.effective_date <= CURRENT_DATE
+        ORDER BY
+          el.effective_date DESC
+        LIMIT 1
+      )`,
+      current_shift_group_name: sql<string>`(
+        SELECT
+          sg.name
+        FROM  ${employee_log} AS el
+        LEFT JOIN ${shift_group} AS sg ON el.type_uuid = sg.uuid
+        WHERE
+          el.employee_uuid = ${employee_log.employee_uuid}
+          AND el.type = 'shift_group' AND el.effective_date <= CURRENT_DATE
+        ORDER BY
+          el.effective_date DESC
+        LIMIT 1
+      )`,
+      current_shift_start_time: sql<string>`(
+        SELECT
+          s.start_time
+        FROM  ${employee_log} AS el
+        LEFT JOIN ${shift_group} AS sg ON el.type_uuid = sg.uuid
+        WHERE
+          el.employee_uuid = ${employee_log.employee_uuid}
+          AND el.type = 'shift_group' AND el.effective_date <= CURRENT_DATE
+        ORDER BY
+          el.effective_date DESC
+        LIMIT 1
+      )`,
+      current_shift_end_time: sql<string>`(
+        SELECT
+          s.end_time
+        FROM  ${employee_log} AS el
+        LEFT JOIN ${shift_group} AS sg ON el.type_uuid = sg.uuid
+        LEFT JOIN ${shifts} AS s ON sg.shift_uuid = s.uuid
+        WHERE
+          el.employee_uuid = ${employee_log.employee_uuid}
+          AND el.type = 'shift_group' AND el.effective_date <= CURRENT_DATE
+        ORDER BY
+          el.effective_date DESC
+        LIMIT 1
+      )`,
+      current_leave_policy_uuid: sql<string>`(
+        SELECT
+          el.type_uuid
+        FROM
+          ${employee_log} AS el
+        WHERE
+          el.employee_uuid = ${employee_log.employee_uuid}
+          AND el.type = 'leave_policy' AND el.effective_date <= CURRENT_DATE
+        ORDER BY
+          el.effective_date DESC
+        LIMIT 1
+      )`,
+      current_leave_policy_name: sql<string>`(
+        SELECT
+          lp.name
+        FROM  ${employee_log} AS el
+        LEFT JOIN ${leave_policy} AS lp ON el.type_uuid = lp.uuid
+        WHERE
+          el.employee_uuid = ${employee_log.employee_uuid}
+          AND el.type = 'leave_policy' AND el.effective_date <= CURRENT_DATE
+        ORDER BY
+          el.effective_date DESC
+        LIMIT 1
+      )`,
       effective_date: employee_log.effective_date,
       created_by: employee_log.created_by,
       created_by_name: users.name,
