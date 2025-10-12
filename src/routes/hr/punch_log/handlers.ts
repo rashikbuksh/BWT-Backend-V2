@@ -309,6 +309,7 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                               SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL
                             )
                             GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time, d.department, des.designation, e.uuid
+                            ORDER BY pl.punch_date DESC
                             `;
 
   const punch_logPromise = db.execute(punch_log_query);
