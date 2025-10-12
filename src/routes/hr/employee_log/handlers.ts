@@ -21,7 +21,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
-  const { id } = c.req.valid('param');
+  const { uuid } = c.req.valid('param');
   const updates = c.req.valid('json');
 
   if (Object.keys(updates).length === 0)
@@ -29,7 +29,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
   const [data] = await db.update(employee_log)
     .set(updates)
-    .where(eq(employee_log.id, id))
+    .where(eq(employee_log.uuid, uuid))
     .returning({
       name: employee_log.id,
     });
@@ -41,10 +41,10 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
-  const { id } = c.req.valid('param');
+  const { uuid } = c.req.valid('param');
 
   const [data] = await db.delete(employee_log)
-    .where(eq(employee_log.id, id))
+    .where(eq(employee_log.uuid, uuid))
     .returning({
       name: employee_log.id,
     });
@@ -61,6 +61,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const employee_logPromise = db
     .select({
       id: employee_log.id,
+      uuid: employee_log.uuid,
       employee_uuid: employee_log.employee_uuid,
       employee_name: users.name,
       employee_department_name: department.department,
@@ -85,17 +86,19 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
-  const { id } = c.req.valid('param');
+  const { uuid } = c.req.valid('param');
 
   const employee_logPromise = db
     .select({
       id: employee_log.id,
+      uuid: employee_log.uuid,
       employee_uuid: employee_log.employee_uuid,
       employee_name: users.name,
       employee_department_name: department.department,
       employee_designation_name: designation.designation,
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
+      effective_date: employee_log.effective_date,
       created_by: employee_log.created_by,
       created_by_name: users.name,
       created_at: employee_log.created_at,
@@ -106,7 +109,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(users, eq(employee_log.created_by, users.uuid))
     .leftJoin(department, eq(employee_log.employee_uuid, department.uuid))
     .leftJoin(designation, eq(employee_log.employee_uuid, designation.uuid))
-    .where(eq(employee_log.id, id));
+    .where(eq(employee_log.uuid, uuid));
 
   const [data] = await employee_logPromise;
 

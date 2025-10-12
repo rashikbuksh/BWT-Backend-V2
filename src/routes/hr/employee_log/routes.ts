@@ -44,11 +44,11 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/hr/employee-log/{id}',
+  path: '/hr/employee-log/{uuid}',
   method: 'get',
   request: {
     params: z.object({
-      id: z.coerce.number().int().positive(),
+      uuid: z.string().length(15),
     }),
   },
   tags,
@@ -69,11 +69,11 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/hr/employee-log/{id}',
+  path: '/hr/employee-log/{uuid}',
   method: 'patch',
   request: {
     params: z.object({
-      id: z.coerce.number().int().positive(),
+      uuid: z.string().length(15),
     }),
     body: jsonContentRequired(
       patchSchema,
@@ -99,11 +99,11 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/employee-log/{id}',
+  path: '/hr/employee-log/{uuid}',
   method: 'delete',
   request: {
     params: z.object({
-      id: z.coerce.number().int().positive(),
+      uuid: z.string().length(15),
     }),
   },
   tags,

@@ -754,6 +754,9 @@ export const employee_log = hr.table('employee_log', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  uuid: uuid_primary,
+  effective_date: DateTime('effective_date').default(sql`null`),
+
 });
 
 export const late_approval_status_enum = pgEnum('late_approval_status_enum', [

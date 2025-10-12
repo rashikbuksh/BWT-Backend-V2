@@ -7,6 +7,7 @@ import { employee_log } from '../schema';
 
 //* crud
 export const selectSchema = createSelectSchema(employee_log, {
+  uuid: schema => schema.uuid.length(15),
   employee_uuid: schema => schema.employee_uuid.length(15),
   type_uuid: schema => schema.type_uuid.length(15),
   created_by: schema => schema.created_by.length(15),
@@ -23,6 +24,7 @@ export const selectSchema = createSelectSchema(employee_log, {
 export const insertSchema = createInsertSchema(
   employee_log,
   {
+    uuid: schema => schema.uuid.length(15),
     employee_uuid: schema => schema.employee_uuid.length(15),
     type_uuid: schema => schema.type_uuid.length(15),
     created_by: schema => schema.created_by.length(15),
@@ -34,9 +36,11 @@ export const insertSchema = createInsertSchema(
     }),
   },
 ).required({
+  uuid: true,
   employee_uuid: true,
   type: true,
   type_uuid: true,
+  effective_date: true,
   created_by: true,
   created_at: true,
 }).partial({
