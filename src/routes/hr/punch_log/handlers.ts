@@ -272,7 +272,7 @@ export const selectEmployeePunchLogPerDayByEmployeeUuid: AppRouteHandler<SelectE
 export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployeeLateDayByEmployeeUuidRoute> = async (c: any) => {
   // const { employee_uuid } = c.req.valid('param');
 
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, apply_late_uuid } = c.req.valid('query');
 
   const punch_log_query = sql`
                             SELECT
@@ -306,7 +306,7 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                             LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                             WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`true`}
                             AND pl.entry_time::time > s.late_time::time AND pl.entry_time NOT IN (
-                              SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL
+                              SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL AND (${apply_late_uuid ? sql`uuid != ${apply_late_uuid}` : sql`true`})
                             )
                             GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time, d.department, des.designation, e.uuid
                             ORDER BY pl.punch_date DESC
