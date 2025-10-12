@@ -74,6 +74,10 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     return true;
   }
 
+  if (url.startsWith('/iclock')) {
+    return true;
+  }
+
   return publicUrls.some(route => url.startsWith(route.url) && route.method === method);
 }
 
@@ -97,4 +101,6 @@ export const ALLOWED_ROUTES: string[] = [
   'https://bwt-web.fortunezip.com',
   'https://bwt-admin.synaptech.cloud',
   'https://bwt-web.synaptech.cloud',
+  'http://192.168.1.107:5090',
+  'http://192.168.1.103:4370',
 ];

@@ -5,9 +5,9 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetRequestLegacyRoute, GetRequestRoute, GetRoute, PostRoute } from './routes';
+import type { AddBulkUsersRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
 
-import { buildFetchCommand, commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
+import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
 // In-memory stores (replace with DB in prod)
 const pushedLogs = []; // raw + enriched entries -- attendance real time logs
@@ -27,8 +27,12 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
   const options = c.req.valid('query').options || '';
   const language = c.req.valid('query').language || '';
   const pushver = c.req.valid('query').pushver || '';
+  const deviceType = c.req.valid('query').DeviceType || '';
+  const pushOptionsFlag = c.req.valid('query').PushOptionsFlag || '';
 
-  console.warn(`[cdata-GET] SN=${sn} options=${options} language=${language} pushver=${pushver}`);
+  console.warn(`*** /ICLOCK/CDATA GET ENDPOINT CALLED ***`);
+  console.warn(`SN=${sn} options=${options} language=${language} pushver=${pushver}`);
+  console.warn(`DeviceType=${deviceType} PushOptionsFlag=${pushOptionsFlag}`);
 
   const state = deviceState.get(sn) || {};
   state.lastSeenAt = new Date().toISOString();
@@ -44,13 +48,22 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
 
   const queue = ensureQueue(sn, commandQueue);
 
+  // Add a test command only once per device session (when device state doesn't have testCommandSent flag)
+  // if (queue && queue.length === 0 && !state.testCommandSent) {
+  //   queue.push('C:1:DATA QUERY USERINFO');
+  //   state.testCommandSent = true;
+  //   deviceState.set(sn, state);
+  //   console.warn(`[cdata-GET] SN=${sn} added one-time test USERINFO command to empty queue`);
+  // }
+
   if (queue?.length) {
-    const sep = env.USE_CRLF ? '\r\n' : '\n';
-    const cmds = queue;
+    const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+    const cmds = [...queue]; // Create a copy of the commands
+    queue.length = 0; // Clear the queue immediately after copying
 
     const body = cmds.join(sep) + sep;
     console.warn(cmds);
-    console.warn(`*[getrequest] SN=${sn} sending ${cmds.length} cmd(s)`); // concise log
+    console.warn(`*[cdata-GET] SN=${sn} sending ${cmds.length} cmd(s), queue cleared`); // concise log
     console.warn(body);
     // Record commands (pre-write) for diagnostics
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
@@ -72,29 +85,39 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
     markStaleCommands(sn, sentCommands);
     return c.text(body); // Return plain text response
   }
-  if (env.PULL_MODE) {
-    const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
-    const sep = env.USE_CRLF ? '\r\n' : '\n';
-    console.warn(`[cdata-GET] SN=${sn} auto cmd: ${cmd}`);
-    recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-    return c.text(cmd + sep);
-  }
-  console.warn(`[cdata-GET] SN=${sn} idle (no commands, pullMode=false)`);
+  // if (env.PULL_MODE === '1') {
+  //   const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
+  //   const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+  //   console.warn(`[cdata-GET] SN=${sn} auto cmd: ${cmd}`);
+  //   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
+  //   return c.text(cmd + sep);
+  // }
+  console.warn(`[cdata-GET] SN=${sn} idle (no commands, pullMode=${env.PULL_MODE})`);
   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-  return c.text('');
+  return c.text('OK');
 };
 
 export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
+  // const table = c.req.valid('query').table || c.req.valid('query').options || '';
   const raw = c.req.valid('body') || '';
+
+  console.warn(c.req.raw, 'req details');
+
+  console.warn(`*** /ICLOCK/CDATA POST ENDPOINT CALLED *** SN=${sn}`);
+  console.warn(`POST data received: ${raw.length} bytes`);
 
   // Debug summary of payload
   const rawLines = String(raw).replace(/\r/g, '\n').split('\n').filter(Boolean);
+  // console.warn(`POST lines: ${rawLines.length}, first line: ${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`);
+
   // console.warn(
   //   `[cdata] SN=${sn} table=${table} lines=${rawLines.length} bytes=${Buffer.byteLength(
   //     String(raw)
   //   )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`
   // );
+
+  console.warn(rawLines, 'raw lines');
 
   recordCDataEvent(sn, {
     at: new Date().toISOString(),
@@ -193,60 +216,31 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   return c.json('OK', 200);
 };
 
-export const get: AppRouteHandler<GetRoute> = async (c: any) => {
+export const connectionTest: AppRouteHandler<ConnectionTestRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
+
+  console.warn(`*** CONNECTION TEST *** SN=${sn} device testing connectivity`);
+
   const state = deviceState.get(sn) || {};
   state.lastSeenAt = new Date().toISOString();
-
+  state.connectionTestAt = new Date().toISOString();
   deviceState.set(sn, state);
 
-  // Debug: log each poll (can be noisy; comment out if too verbose)
-  const queueCheck = ensureQueue(sn, commandQueue);
-  if (queueCheck && queueCheck.length > 0) {
-    console.warn(
-      `[getrequest] poll SN=${sn} pullMode=${env.PULL_MODE} queued=${queueCheck.length}`,
-    );
-  }
+  // Return a simple response that ZKTeco devices expect
+  return c.text('OK');
+};
 
-  const queue = ensureQueue(sn, commandQueue);
+export const iclockRoot: AppRouteHandler<IclockRootRoute> = async (c: any) => {
+  const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
 
-  if (queue?.length) {
-    const sep = env.USE_CRLF ? '\r\n' : '\n';
-    const cmds = queue;
+  console.warn(`*** ICLOCK ROOT *** SN=${sn} device checking root endpoint`);
 
-    const body = cmds.join(sep) + sep;
-    console.warn(cmds);
-    console.warn(`*[getrequest] SN=${sn} sending ${cmds.length} cmd(s)`); // concise log
-    console.warn(body);
-    // Record commands (pre-write) for diagnostics
-    const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
+  const state = deviceState.get(sn) || {};
+  state.lastSeenAt = new Date().toISOString();
+  deviceState.set(sn, state);
 
-    const justIds: string[] = [];
-    const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
-    cmds.forEach((c: string) => {
-      recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
-      const list = sentCommands.get(sn);
-      if (list)
-        justIds.push(list[list.length - 1].id);
-    });
-
-    const bytes = Buffer.byteLength(body, 'utf8');
-    markDelivered(sn, justIds, bytes, sentCommands);
-    recordPoll(sn, remote, queue.length + cmds.length, cmds.length, new Map());
-    markStaleCommands(sn, sentCommands);
-    return c.text(body);
-  }
-
-  if (env.PULL_MODE) {
-    const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
-    const sep = env.USE_CRLF ? '\r\n' : '\n';
-    recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-    return c.text(cmd + sep);
-  }
-
-  console.warn(`[getrequest] SN=${sn} idle (no commands, pullMode=false)`);
-  recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-  return c.text('');
+  // Return response indicating server is ready
+  return c.text('OK');
 };
 
 export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) => {
@@ -270,6 +264,13 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
   for (const [sn, umap] of usersByDevice.entries()) {
     console.warn(`  SN=${sn} users=${umap.size} pins=[${Array.from(umap.keys()).join(', ')}]`);
   }
+
+  // Get command queue status
+  const queueStatus = Array.from(commandQueue.entries()).map(([sn, queue]) => ({
+    sn,
+    queueLength: queue.length,
+    commands: queue.slice(0, 5), // Show first 5 commands
+  }));
 
   const usersSummary = await Promise.all(
     (deviceIdentifier ? [[deviceIdentifier, deviceState.get(deviceIdentifier)]] : deviceEntries)
@@ -300,6 +301,7 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
         }))
     ),
     users: usersSummary,
+    commandQueues: queueStatus,
     pullMode: env.PULL_MODE,
     commandSyntax,
   };
@@ -505,11 +507,12 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
   const queue = ensureQueue(sn, commandQueue);
 
   if (queue?.length) {
-    const sep = env.USE_CRLF ? '\r\n' : '\n';
-    const cmds = queue;
+    const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+    const cmds = [...queue]; // Create a copy of the commands
+    queue.length = 0; // Clear the queue immediately after copying
 
     const body = cmds.join(sep) + sep;
-    console.warn(`[getrequest-legacy] SN=${sn} sending ${cmds.length} cmd(s): ${body}`);
+    console.warn(`[getrequest-legacy] SN=${sn} sending ${cmds.length} cmd(s), queue cleared: ${body.trim()}`);
 
     // Record commands
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
@@ -530,27 +533,94 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
     return c.text(body);
   }
 
-  if (env.PULL_MODE) {
-    const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
-    const sep = env.USE_CRLF ? '\r\n' : '\n';
-    console.warn(`[getrequest-legacy] SN=${sn} auto cmd: ${cmd}`);
-    recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-    return c.text(cmd + sep);
+  if (env.PULL_MODE === '1' || env.PULL_MODE === 'true') {
+    // const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
+    // const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+    // console.warn(`[getrequest-legacy] SN=${sn} auto cmd: ${cmd}`);
+    // recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
+    return c.text('ok');
   }
 
-  console.warn(`[getrequest-legacy] SN=${sn} idle (no commands)`);
-  recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-  return c.text('');
+  // Always send a command to request data from device even if PULL_MODE is off
+  // const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
+  // const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+  // console.warn(`[getrequest-legacy] SN=${sn} sending auto cmd: ${cmd}`);
+  // recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
+  return c.text('ok');
 };
 
 export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
+  const info = c.req.valid('query').INFO || c.req.valid('query').info || '';
   const body = await c.req.text();
 
-  console.warn(`[devicecmd] SN=${sn} received command response: ${body}`);
+  console.warn(`[devicecmd] *** LEGACY DEVICECMD CALLED *** SN=${sn} INFO=${info}`);
+  if (body) {
+    console.warn(`[devicecmd] SN=${sn} body: ${body}`);
+  }
 
-  // This endpoint is typically used by the device to send command responses
-  // You can process the response here if needed
+  // Handle status reports like "1"
+  if (info.match(/^\d+$/)) {
+    console.warn(`[devicecmd] SN=${sn} status report: ${info}`);
+    return c.text('OK');
+  }
 
+  // Handle heartbeat/ping commands
+  const state = deviceState.get(sn) || {};
+  state.lastSeenAt = new Date().toISOString();
+
+  // Parse INFO data and update device state
+  if (info.includes('~')) {
+    const [stamp, users, fp, logs, oplog, photoCount] = info.split('~');
+    state.stamp = stamp;
+    state.users = users;
+    state.fingerprints = fp;
+    state.logs = logs;
+    state.oplog = oplog;
+    state.photoCount = photoCount;
+    console.warn(`[devicecmd] SN=${sn} updated state:`, state);
+  }
+
+  deviceState.set(sn, state);
+
+  const queue = ensureQueue(sn, commandQueue);
+
+  if (queue?.length) {
+    const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+    const cmds = [...queue]; // Create a copy of the commands
+    queue.length = 0; // Clear the queue immediately after copying
+
+    const body = cmds.join(sep) + sep;
+    console.warn(`[devicecmd] SN=${sn} sending ${cmds.length} cmd(s), queue cleared: ${body.trim()}`);
+
+    // Record commands
+    const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
+    const justIds: string[] = [];
+    const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
+
+    cmds.forEach((c: string) => {
+      recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
+      const list = sentCommands.get(sn);
+      if (list)
+        justIds.push(list[list.length - 1].id);
+    });
+
+    const bytes = Buffer.byteLength(body, 'utf8');
+    markDelivered(sn, justIds, bytes, sentCommands);
+    recordPoll(sn, remote, queue.length + cmds.length, cmds.length, new Map());
+    markStaleCommands(sn, sentCommands);
+    return c.text(body);
+  }
+
+  // if (env.PULL_MODE === '1') {
+  //   const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
+  //   const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
+  //   console.warn(`[devicecmd] SN=${sn} auto cmd: ${cmd}`);
+  //   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
+  //   return c.text(cmd + sep);
+  // }
+
+  console.warn(`[devicecmd] SN=${sn} idle (no commands, pullMode=${env.PULL_MODE})`);
+  recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
   return c.text('OK');
 };

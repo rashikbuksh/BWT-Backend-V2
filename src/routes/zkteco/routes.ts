@@ -13,7 +13,11 @@ export const getRequest = createRoute({
       SN: z.string().optional().describe('The device Serial Number'),
       sn: z.string().optional().describe('The device Serial Number'),
       table: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
-      options: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
+      options: z.string().optional().describe('Device options like "all"'),
+      language: z.string().optional().describe('Language code'),
+      pushver: z.string().optional().describe('Push version like "2.4.1"'),
+      DeviceType: z.string().optional().describe('Device type like "att"'),
+      PushOptionsFlag: z.string().optional().describe('Push options flag'),
     }),
   },
   tags,
@@ -30,8 +34,19 @@ export const post = createRoute({
       SN: z.string().optional().describe('The device Serial Number'),
       sn: z.string().optional().describe('The device Serial Number'),
       table: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
-      options: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
+      options: z.string().optional().describe('Options parameter'),
+      language: z.string().optional().describe('Language code'),
+      pushver: z.string().optional().describe('Push version'),
+      DeviceType: z.string().optional().describe('Device type'),
+      PushOptionsFlag: z.string().optional().describe('Push options flag'),
     }),
+    body: {
+      content: {
+        'text/plain': {
+          schema: z.string().describe('Raw text data from device'),
+        },
+      },
+    },
   },
   tags,
   responses: {
@@ -39,8 +54,40 @@ export const post = createRoute({
   },
 });
 
+// Simple connection test endpoint
+export const connectionTest = createRoute({
+  path: '/iclock/ping',
+  method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Connection test successful'),
+  },
+});
+
+// Root iclock endpoint that some devices might call
+export const iclockRoot = createRoute({
+  path: '/iclock',
+  method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'iClock server ready'),
+  },
+});
+
 export const deviceHealth = createRoute({
-  path: '/device/health',
+  path: '/iclock/device/health',
   method: 'get',
   request: {
     query: z.object({
@@ -55,7 +102,7 @@ export const deviceHealth = createRoute({
 });
 
 export const addBulkUsers = createRoute({
-  path: '/add/user/bulk',
+  path: '/iclock/add/user/bulk',
   method: 'post',
   request: {
     query: z.object({
@@ -82,23 +129,6 @@ export const addBulkUsers = createRoute({
   },
 });
 
-export const get = createRoute({
-  path: '/iclock/cdata',
-  method: 'get',
-  request: {
-    query: z.object({
-      SN: z.string().optional().describe('The device Serial Number'),
-      sn: z.string().optional().describe('The device Serial Number'),
-      table: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
-      options: z.string().optional().describe('The table name, e.g., ATTLOG, USERINFO'),
-    }),
-  },
-  tags,
-  responses: {
-    [HSCode.OK]: jsonContent({}, 'The cdata retrieved'),
-  },
-});
-
 // Legacy iClock protocol endpoints that ZKTeco devices expect
 export const getRequest_legacy = createRoute({
   path: '/iclock/getrequest',
@@ -122,7 +152,16 @@ export const deviceCmd = createRoute({
     query: z.object({
       SN: z.string().optional().describe('The device Serial Number'),
       sn: z.string().optional().describe('The device Serial Number'),
+      INFO: z.string().optional().describe('Device info string'),
+      info: z.string().optional().describe('Device info string'),
     }),
+    body: {
+      content: {
+        'text/plain': {
+          schema: z.string().optional().describe('Raw text data from device'),
+        },
+      },
+    },
   },
   tags,
   responses: {
@@ -131,7 +170,7 @@ export const deviceCmd = createRoute({
 });
 
 export const customCommand = createRoute({
-  path: '/iclock/custom-command',
+  path: '/iclock/device/custom-command',
   method: 'post',
   request: {
     query: z.object({
@@ -153,9 +192,10 @@ export const customCommand = createRoute({
 
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
+export type ConnectionTestRoute = typeof connectionTest;
+export type IclockRootRoute = typeof iclockRoot;
 export type DeviceHealthRoute = typeof deviceHealth;
 export type AddBulkUsersRoute = typeof addBulkUsers;
-export type GetRoute = typeof get;
 export type CustomCommandRoute = typeof customCommand;
 export type GetRequestLegacyRoute = typeof getRequest_legacy;
 export type DeviceCmdRoute = typeof deviceCmd;

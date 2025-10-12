@@ -13,7 +13,7 @@ const httpServer = createServer(async (req, res) => {
 
   // Handle body properly for POST/PUT/PATCH requests
   let body: BodyInit | null = null;
-  if (req.method && !['GET', 'HEAD'].includes(req.method)) {
+  if (req.method && !['GET', 'POST', 'HEAD'].includes(req.method)) {
     const chunks: Buffer[] = [];
     for await (const chunk of req) {
       chunks.push(chunk);

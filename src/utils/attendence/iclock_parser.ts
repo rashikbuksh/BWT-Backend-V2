@@ -49,6 +49,8 @@ export function parseLine(line: string) {
   if (!raw)
     return null;
 
+  console.warn('Parsing line:', raw);
+
   // Identify by first token
   const firstToken = raw.split('\t', 1)[0];
 
