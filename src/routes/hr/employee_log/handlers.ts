@@ -138,6 +138,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           s.start_time
         FROM  ${employee_log} AS el
         LEFT JOIN ${shift_group} AS sg ON el.type_uuid = sg.uuid
+        LEFT JOIN ${shifts} AS s ON sg.shifts_uuid = s.uuid
         WHERE
           el.employee_uuid = ${employee_log.employee_uuid}
           AND el.type = 'shift_group' AND el.effective_date <= CURRENT_DATE
@@ -150,7 +151,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           s.end_time
         FROM  ${employee_log} AS el
         LEFT JOIN ${shift_group} AS sg ON el.type_uuid = sg.uuid
-        LEFT JOIN ${shifts} AS s ON sg.shift_uuid = s.uuid
+        LEFT JOIN ${shifts} AS s ON sg.shifts_uuid = s.uuid
         WHERE
           el.employee_uuid = ${employee_log.employee_uuid}
           AND el.type = 'shift_group' AND el.effective_date <= CURRENT_DATE
