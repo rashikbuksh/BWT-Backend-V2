@@ -99,23 +99,23 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
 
 export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
-  // const table = c.req.valid('query').table || c.req.valid('query').options || '';
-  const raw = c.req.valid('body') || '';
+  const table = c.req.valid('query').table || c.req.valid('query').options || '';
 
-  console.warn(c.req.raw, 'req details');
+  // Get raw text body for ZKTeco device data
+  const raw = await c.req.text();
+
+  console.warn(`Content-Type: ${c.req.header('content-type')}, Content-Length: ${c.req.header('content-length')}`);
 
   console.warn(`*** /ICLOCK/CDATA POST ENDPOINT CALLED *** SN=${sn}`);
-  console.warn(`POST data received: ${raw.length} bytes`);
+  console.warn(`POST data received: ${raw ? raw.length : 0} bytes`);
 
   // Debug summary of payload
-  const rawLines = String(raw).replace(/\r/g, '\n').split('\n').filter(Boolean);
-  // console.warn(`POST lines: ${rawLines.length}, first line: ${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`);
-
-  // console.warn(
-  //   `[cdata] SN=${sn} table=${table} lines=${rawLines.length} bytes=${Buffer.byteLength(
-  //     String(raw)
-  //   )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`
-  // );
+  const rawLines = String(raw || '').replace(/\r/g, '\n').split('\n').filter(Boolean);
+  console.warn(
+    `[cdata] SN=${sn} table=${table} lines=${rawLines.length} bytes=${Buffer.byteLength(
+      String(raw || ''),
+    )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`,
+  );
 
   console.warn(rawLines, 'raw lines');
 
@@ -129,7 +129,7 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   if (!rawCDataStore.has(sn))
     rawCDataStore.set(sn, []);
   const rawArr = rawCDataStore.get(sn);
-  rawArr.push({ at: new Date().toISOString(), raw: truncated, bytes: Buffer.byteLength(raw) });
+  rawArr.push({ at: new Date().toISOString(), raw: truncated, bytes: Buffer.byteLength(raw || '') });
   if (rawArr.length > 100)
     rawArr.splice(0, rawArr.length - 100);
   markStaleCommands(sn, sentCommands);
@@ -310,20 +310,21 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
 };
 
 export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) => {
-  const sn = c.req('query').sn || c.req('query').SN;
+  const sn = c.req.query('sn') || c.req.query('SN');
   if (!sn)
     return c.json({ error: 'sn is required' });
 
   // Ensure users are fetched before bulk operations
   await ensureUsersFetched(sn, usersByDevice, commandQueue);
 
+  const body = await c.req.json();
   const {
     users, // array of user objects: [{ name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', group?: '' }]
     startPin, // optional: starting PIN number (default: auto-detect next available)
     pinKey, // override PIN field label (e.g. Badgenumber, EnrollNumber)
     style, // 'spaces' to use spaces instead of tabs
     optimistic = true, // whether to apply optimistic caching
-  } = c.req('body') || {};
+  } = body || {};
 
   if (!Array.isArray(users) || users.length === 0) {
     return c.json({ error: 'users array is required and must not be empty' });
@@ -455,7 +456,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
     `[bulk-add-users] SN=${sn} queued ${commands.length} commands for ${processedUsers.length} users`,
   );
 
-  c.json({
+  return c.json({
     ok: true,
     sn,
     processed: processedUsers.length,
@@ -473,12 +474,15 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
 };
 
 export const customCommand: AppRouteHandler<CustomCommandRoute> = async (c: any) => {
-  const sn = c.req.query.sn || c.req.query.SN;
+  const sn = c.req.query('sn') || c.req.query('SN');
   if (!sn)
-    return c.res.status(400).json({ error: 'sn is required' });
-  const { command } = c.req.body || {};
+    return c.json({ error: 'sn is required' }, 400);
+
+  const body = await c.req.json();
+  const { command } = body || {};
   if (!command)
-    return c.res.status(400).json({ error: 'command is required' });
+    return c.json({ error: 'command is required' }, 400);
+
   let cmd = String(command).trim();
   if (!cmd.startsWith('C:'))
     cmd = `${cmd}`;
@@ -486,11 +490,11 @@ export const customCommand: AppRouteHandler<CustomCommandRoute> = async (c: any)
   if (q) {
     q.push(cmd);
     console.warn(`[custom-command] SN=${sn} queued:\n  > ${cmd}`);
-    c.json({ ok: true, enqueued: [cmd], queueSize: q.length });
+    return c.json({ ok: true, enqueued: [cmd], queueSize: q.length });
   }
   else {
     console.warn(`[custom-command] SN=${sn} failed to queue command: queue not found`);
-    c.res.status(500).json({ error: 'Failed to enqueue command: queue not found' });
+    return c.json({ error: 'Failed to enqueue command: queue not found' }, 500);
   }
 };
 
