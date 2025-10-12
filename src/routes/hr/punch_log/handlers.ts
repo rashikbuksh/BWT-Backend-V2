@@ -274,8 +274,6 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
 
   const { employee_uuid } = c.req.valid('query');
 
-  console.log('employee_uuid', employee_uuid);
-
   const punch_log_query = sql`
                             SELECT
                               e.uuid AS employee_uuid,
