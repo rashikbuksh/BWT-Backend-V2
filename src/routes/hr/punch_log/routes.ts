@@ -187,6 +187,7 @@ export const SelectEmployeeLateDayByEmployeeUuid = createRoute({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
       employee_uuid: z.string().optional(),
+      apply_late_uuid: z.string().optional(),
     }),
   },
   tags,
