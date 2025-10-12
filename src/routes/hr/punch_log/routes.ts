@@ -177,15 +177,16 @@ export const SelectEmployeePunchLogPerDayByEmployeeUuid = createRoute({
 });
 
 export const SelectEmployeeLateDayByEmployeeUuid = createRoute({
-  path: '/hr/punch-log/late-day/{employee_uuid}',
+  path: '/hr/punch-log-late-day',
   method: 'get',
   request: {
-    params: z.object({
-      employee_uuid: z.string(),
-    }),
+    // params: z.object({
+    //   employee_uuid: z.string().optional(),
+    // }),
     query: z.object({
       from_date: z.string().optional(),
       to_date: z.string().optional(),
+      employee_uuid: z.string().optional(),
     }),
   },
   tags,

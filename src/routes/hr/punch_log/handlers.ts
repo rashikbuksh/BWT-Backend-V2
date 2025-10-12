@@ -270,75 +270,19 @@ export const selectEmployeePunchLogPerDayByEmployeeUuid: AppRouteHandler<SelectE
 };
 
 export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployeeLateDayByEmployeeUuidRoute> = async (c: any) => {
-  // const { from_date, to_date } = c.req.valid('query');
+  // const { employee_uuid } = c.req.valid('param');
 
-  const { employee_uuid } = c.req.valid('param');
-  // const fromDateYear = from_date ? new Date(from_date).getFullYear() : null;
-  // const fromDateMonth = from_date ? new Date(from_date).getMonth() + 1 : null;
-  // const toDateYear = to_date ? new Date(to_date).getFullYear() : null;
-  // const toDateMonth = to_date ? new Date(to_date).getMonth() + 1 : null;
+  const { employee_uuid } = c.req.valid('query');
 
-  // const SpecialHolidaysQuery = sql`
-  //     SELECT date(gs.generated_date) AS holiday_date, sh.name, 'special' AS holiday_type
-  //     FROM hr.special_holidays sh
-  //     JOIN LATERAL (
-  //       SELECT generate_series(sh.from_date::date, sh.to_date::date, INTERVAL '1 day') AS generated_date
-  //     ) gs ON TRUE
-  //     WHERE
-  //       ${
-  //         fromDateYear && fromDateMonth
-  //           ? sql`(
-  //         EXTRACT(YEAR FROM sh.to_date) > ${fromDateYear}
-  //         OR (EXTRACT(YEAR FROM sh.to_date) = ${fromDateYear} AND EXTRACT(MONTH FROM sh.to_date) >= ${fromDateMonth})
-  //       )`
-  //           : sql`true`
-  //       }
-  //       AND ${
-  //         toDateYear && toDateMonth
-  //           ? sql`(
-  //         EXTRACT(YEAR FROM sh.from_date) < ${toDateYear}
-  //         OR (EXTRACT(YEAR FROM sh.from_date) = ${toDateYear} AND EXTRACT(MONTH FROM sh.from_date) <= ${toDateMonth})
-  //       )`
-  //           : sql`true`
-  //       }
-  //     ORDER BY holiday_date;
-  //   `;
-
-  // const generalHolidayQuery = sql`
-  //     SELECT date(date) AS holiday_date, name, 'general' AS holiday_type
-  //     FROM hr.general_holidays
-  //     WHERE
-  //       ${
-  //         fromDateYear && fromDateMonth
-  //           ? sql`(
-  //             EXTRACT(YEAR FROM date) > ${fromDateYear}
-  //             OR (EXTRACT(YEAR FROM date) = ${fromDateYear} AND EXTRACT(MONTH FROM date) >= ${fromDateMonth})
-  //           )`
-  //           : sql`true`
-  //       }
-  //       AND ${
-  //         toDateYear && toDateMonth
-  //           ? sql`(
-  //             EXTRACT(YEAR FROM date) < ${toDateYear}
-  //             OR (EXTRACT(YEAR FROM date) = ${toDateYear} AND EXTRACT(MONTH FROM date) <= ${toDateMonth})
-  //           )`
-  //           : sql`true`
-  //       }
-  //     ORDER BY holiday_date;
-  //   `;
-
-  // const specialHolidaysPromise = db.execute(SpecialHolidaysQuery);
-  // const generalHolidaysPromise = db.execute(generalHolidayQuery);
-
-  // const [specialHolidaysResult, generalHolidaysResult] = await Promise.all([
-  //   specialHolidaysPromise,
-  //   generalHolidaysPromise,
-  // ]);
+  console.log('employee_uuid', employee_uuid);
 
   const punch_log_query = sql`
                             SELECT
+                              e.uuid AS employee_uuid,
                               e.user_uuid,
                               u.name AS employee_name,
+                              d.department AS employee_department_name,
+                              des.designation AS employee_designation_name,
                               pl.punch_date,
                               pl.entry_time,
                               pl.exit_time,
@@ -347,6 +291,8 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                               (EXTRACT(EPOCH FROM pl.entry_time::time - s.late_time::time) / 3600)::float8 AS late_hours
                             FROM hr.employee e
                             LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+                            LEFT JOIN hr.department d ON u.department_uuid = d.uuid
+                            LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                             LEFT JOIN 
                                     (
                                       SELECT 
@@ -360,10 +306,11 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                                     ) AS pl ON e.uuid = pl.employee_uuid
                             LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
                             LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-                            WHERE e.uuid = ${employee_uuid} AND pl.entry_time::time > s.late_time::time AND pl.entry_time NOT IN (
+                            WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`true`}
+                            AND pl.entry_time::time > s.late_time::time AND pl.entry_time NOT IN (
                               SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL
                             )
-                            GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time
+                            GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time, d.department, des.designation, e.uuid
                             `;
 
   const punch_logPromise = db.execute(punch_log_query);
