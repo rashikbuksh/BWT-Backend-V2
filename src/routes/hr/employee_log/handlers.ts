@@ -1,6 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -8,7 +9,9 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { department, designation, employee_log, users } from '../schema';
+import { department, designation, employee, employee_log, leave_policy, shift_group, users } from '../schema';
+
+const employeeUser = alias(users, 'employeeUser');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -63,11 +66,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       id: employee_log.id,
       uuid: employee_log.uuid,
       employee_uuid: employee_log.employee_uuid,
-      employee_name: users.name,
+      employee_name: employeeUser.name,
       employee_department_name: department.department,
       employee_designation_name: designation.designation,
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
+      type_name: sql<string>`COALESCE(${leave_policy.name}, ${shift_group.name})`,
+      effective_date: employee_log.effective_date,
       created_by: employee_log.created_by,
       created_by_name: users.name,
       created_at: employee_log.created_at,
@@ -76,8 +81,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     })
     .from(employee_log)
     .leftJoin(users, eq(employee_log.created_by, users.uuid))
-    .leftJoin(department, eq(employee_log.employee_uuid, department.uuid))
-    .leftJoin(designation, eq(employee_log.employee_uuid, designation.uuid))
+    .leftJoin(employee, eq(employee_log.employee_uuid, employee.uuid))
+    .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
+    .leftJoin(department, eq(employeeUser.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employeeUser.designation_uuid, designation.uuid))
+    .leftJoin(leave_policy, eq(employee_log.type_uuid, leave_policy.uuid))
+    .leftJoin(shift_group, eq(employee_log.type_uuid, shift_group.uuid))
+    // .where(eq(employee_log.employee_uuid, 'EMP00000000001'))
     .orderBy(desc(employee_log.created_at));
 
   const data = await employee_logPromise;
@@ -93,11 +103,12 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       id: employee_log.id,
       uuid: employee_log.uuid,
       employee_uuid: employee_log.employee_uuid,
-      employee_name: users.name,
+      employee_name: employeeUser.name,
       employee_department_name: department.department,
       employee_designation_name: designation.designation,
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
+      type_name: sql<string>`COALESCE(${leave_policy.name}, ${shift_group.name})`,
       effective_date: employee_log.effective_date,
       created_by: employee_log.created_by,
       created_by_name: users.name,
@@ -107,8 +118,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     })
     .from(employee_log)
     .leftJoin(users, eq(employee_log.created_by, users.uuid))
-    .leftJoin(department, eq(employee_log.employee_uuid, department.uuid))
-    .leftJoin(designation, eq(employee_log.employee_uuid, designation.uuid))
+    .leftJoin(employee, eq(employee_log.employee_uuid, employee.uuid))
+    .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
+    .leftJoin(department, eq(employeeUser.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employeeUser.designation_uuid, designation.uuid))
+    .leftJoin(leave_policy, eq(employee_log.type_uuid, leave_policy.uuid))
+    .leftJoin(shift_group, eq(employee_log.type_uuid, shift_group.uuid))
+    // .where(eq(employee_log.employee_uuid, 'EMP00000000001'))
+    // .orderBy(desc(employee_log.created_at))
     .where(eq(employee_log.uuid, uuid));
 
   const [data] = await employee_logPromise;
