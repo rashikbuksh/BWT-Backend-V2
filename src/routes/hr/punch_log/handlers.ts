@@ -360,6 +360,7 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                                     ) AS pl ON e.uuid = pl.employee_uuid
                             LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
                             LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                            LEFT JOIN hr.apply_late al ON e.uuid = al.employee_uuid AND pl.punch_date = al.date AND al.date IS NULL
                             WHERE e.uuid = ${employee_uuid} AND pl.entry_time::time > s.late_time::time
                             GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time
                             `;
