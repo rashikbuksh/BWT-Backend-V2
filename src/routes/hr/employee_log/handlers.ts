@@ -8,7 +8,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { employee_log, users } from '../schema';
+import { department, designation, employee_log, users } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -62,6 +62,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       id: employee_log.id,
       employee_uuid: employee_log.employee_uuid,
+      employee_name: users.name,
+      employee_department_name: department.department,
+      employee_designation_name: designation.designation,
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
       created_by: employee_log.created_by,
@@ -72,6 +75,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     })
     .from(employee_log)
     .leftJoin(users, eq(employee_log.created_by, users.uuid))
+    .leftJoin(department, eq(employee_log.employee_uuid, department.uuid))
+    .leftJoin(designation, eq(employee_log.employee_uuid, designation.uuid))
     .orderBy(desc(employee_log.created_at));
 
   const data = await employee_logPromise;
@@ -86,6 +91,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       id: employee_log.id,
       employee_uuid: employee_log.employee_uuid,
+      employee_name: users.name,
+      employee_department_name: department.department,
+      employee_designation_name: designation.designation,
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
       created_by: employee_log.created_by,
@@ -96,6 +104,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     })
     .from(employee_log)
     .leftJoin(users, eq(employee_log.created_by, users.uuid))
+    .leftJoin(department, eq(employee_log.employee_uuid, department.uuid))
+    .leftJoin(designation, eq(employee_log.employee_uuid, designation.uuid))
     .where(eq(employee_log.id, id));
 
   const [data] = await employee_logPromise;
