@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
+import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
 
 import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -345,7 +345,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   const umap = ensureUserMap(sn, usersByDevice);
   const nowIso = new Date().toISOString();
 
-  let currentPin = getNextAvailablePin(sn, startPin, usersByDevice);
+  let currentPin = await getNextAvailablePin(sn, startPin, usersByDevice);
   const commands = [];
   const processedUsers = [];
   const errors = [];
@@ -435,6 +435,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
 
   // Queue all commands
   if (q) {
+    console.log(`commands: `, q);
     commands.forEach(cmd => q.push(cmd));
   }
 
@@ -455,6 +456,9 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   console.warn(
     `[bulk-add-users] SN=${sn} queued ${commands.length} commands for ${processedUsers.length} users`,
   );
+
+  // Clear the usersByDevice cache to force refresh from device
+  usersByDevice.delete(sn);
 
   return c.json({
     ok: true,
@@ -507,6 +511,14 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
   deviceState.set(sn, state);
 
   console.warn(`[getrequest-legacy] SN=${sn} device polling for commands`);
+
+  const userMap = ensureUserMap(sn, usersByDevice);
+
+  if (userMap && userMap.size < 1) {
+    await ensureUsersFetched(sn, usersByDevice, commandQueue);
+  }
+
+  console.warn(`[getrequest-legacy] SN=${sn} fetched users, total now: ${userMap?.size}`);
 
   const queue = ensureQueue(sn, commandQueue);
 
@@ -627,4 +639,67 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
   console.warn(`[devicecmd] SN=${sn} idle (no commands, pullMode=${env.PULL_MODE})`);
   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
   return c.text('OK');
+};
+
+// New handler to clear command queue
+export const clearCommandQueue: AppRouteHandler<ClearCommandQueueRoute> = async (c: any) => {
+  const sn = c.req.query('sn') || c.req.query('SN');
+  if (!sn) {
+    return c.json({ error: 'sn is required' }, 400);
+  }
+
+  const queue = ensureQueue(sn, commandQueue);
+  const queueLength = queue?.length ?? 0;
+
+  if (queue) {
+    queue.length = 0; // Clear the queue
+  }
+
+  // Also clear sent commands history for this device
+  sentCommands.delete(sn);
+
+  console.warn(`[clear-queue] SN=${sn} cleared ${queueLength} commands from queue`);
+
+  return c.json({
+    ok: true,
+    sn,
+    clearedCommands: queueLength,
+    message: `Cleared ${queueLength} commands from queue for device ${sn}`,
+  });
+};
+
+// Handler to get queue status
+export const getQueueStatus: AppRouteHandler<GetQueueStatusRoute> = async (c: any) => {
+  const sn = c.req.query('sn') || c.req.query('SN');
+
+  if (sn) {
+    // Get status for specific device
+    const queue = ensureQueue(sn, commandQueue);
+    const sentList = sentCommands.get(sn) || [];
+
+    return c.json({
+      ok: true,
+      sn,
+      queueLength: queue?.length ?? 0,
+      pendingCommands: queue || [],
+      sentCommands: sentList.slice(-10), // Last 10 sent commands
+      lastSeen: deviceState.get(sn)?.lastSeenAt || null,
+    });
+  }
+  else {
+    // Get status for all devices
+    const allQueues = Array.from(commandQueue.entries()).map(([deviceSn, queue]) => ({
+      sn: deviceSn,
+      queueLength: queue.length,
+      pendingCommands: queue.slice(0, 5), // First 5 commands
+      lastSeen: deviceState.get(deviceSn)?.lastSeenAt || null,
+    }));
+
+    return c.json({
+      ok: true,
+      devices: allQueues,
+      totalDevices: allQueues.length,
+      totalQueuedCommands: allQueues.reduce((sum, d) => sum + d.queueLength, 0),
+    });
+  }
 };

@@ -166,13 +166,13 @@ export async function ensureUsersFetched(sn: string, usersByDevice: Map<string, 
   return umap;
 }
 
-export function getNextAvailablePin(sn: string, startPin: string, usersByDevice: Map<string, Map<string, any>>) {
+export async function getNextAvailablePin(sn: string, startPin: string, usersByDevice: Map<string, Map<string, any>>) {
   // Use ensureUserMap to get existing map (already fetched by calling function)
-  const umap = ensureUserMap(sn, usersByDevice) ?? new Map();
+  const umap = await ensureUsersFetched(sn, usersByDevice, new Map());
   let pin = Number(startPin) || 1;
 
   // Find the highest existing PIN to start from
-  const existingPins = Array.from(umap.keys())
+  const existingPins = Array.from((umap ?? new Map()).keys())
     .map(p => Number(p))
     .filter(p => !Number.isNaN(p));
   if (existingPins.length > 0) {
@@ -181,7 +181,8 @@ export function getNextAvailablePin(sn: string, startPin: string, usersByDevice:
   }
 
   // Find next available PIN
-  while (umap.has(String(pin))) {
+  const userMap = umap ?? new Map();
+  while (userMap.has(String(pin))) {
     pin++;
   }
 

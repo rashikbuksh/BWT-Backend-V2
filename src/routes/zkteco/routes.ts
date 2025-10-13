@@ -190,6 +190,36 @@ export const customCommand = createRoute({
   },
 });
 
+export const clearCommandQueue = createRoute({
+  path: '/iclock/device/clear-queue',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Command queue cleared'),
+  },
+});
+
+export const getQueueStatus = createRoute({
+  path: '/iclock/device/queue-status',
+  method: 'get',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Queue status retrieved'),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type ConnectionTestRoute = typeof connectionTest;
@@ -197,5 +227,7 @@ export type IclockRootRoute = typeof iclockRoot;
 export type DeviceHealthRoute = typeof deviceHealth;
 export type AddBulkUsersRoute = typeof addBulkUsers;
 export type CustomCommandRoute = typeof customCommand;
+export type ClearCommandQueueRoute = typeof clearCommandQueue;
+export type GetQueueStatusRoute = typeof getQueueStatus;
 export type GetRequestLegacyRoute = typeof getRequest_legacy;
 export type DeviceCmdRoute = typeof deviceCmd;
