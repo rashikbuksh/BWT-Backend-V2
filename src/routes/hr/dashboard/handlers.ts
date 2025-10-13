@@ -184,8 +184,8 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN LATERAL (
                           SELECT
                             COALESCE(
-                              (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = e.shift_group_uuid AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
-                              (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = e.shift_group_uuid AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
+                              (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
+                              (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
                             ) AS shifts_uuid
                         ) AS sg_sel ON TRUE
                         LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
@@ -204,10 +204,10 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                           AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                           AND al.approval = 'approved'
-                        LEFT JOIN sg_off_days_day sod ON sod.shift_group_uuid = e.shift_group_uuid
+                        LEFT JOIN sg_off_days_day sod ON sod.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1)
                           AND sod.day = ud.punch_date
                         WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                        GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, lineManager.name
+                        GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, lineManager.name
                       ),
 
                       -- attendance for month range (1st .. today) used only to compute total late count per user
@@ -235,8 +235,8 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN LATERAL (
                           SELECT
                             COALESCE(
-                              (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = e.shift_group_uuid AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
-                              (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = e.shift_group_uuid AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
+                              (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
+                              (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
                             ) AS shifts_uuid
                         ) AS sg_sel ON TRUE
                         LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
@@ -250,10 +250,10 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                           AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                           AND al.approval = 'approved'
-                        LEFT JOIN sg_off_days_month sod ON sod.shift_group_uuid = e.shift_group_uuid
+                        LEFT JOIN sg_off_days_month sod ON sod.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1)
                           AND sod.day = ud.punch_date
                         WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                        GROUP BY ud.user_uuid, ud.punch_date, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, e.shift_group_uuid, e.uuid
+                        GROUP BY ud.user_uuid, ud.punch_date, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), e.uuid
                       ),
 
                       -- precompute month late counts per user
@@ -1103,8 +1103,8 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                   LEFT JOIN LATERAL (
                             SELECT
                               COALESCE(
-                                (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = e.shift_group_uuid AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
-                                (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = e.shift_group_uuid AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
+                                (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
+                                (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
                               ) AS shifts_uuid
                           ) AS sg_sel ON TRUE
                   LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
@@ -1124,11 +1124,11 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                   LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                     AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                     AND al.approval = 'approved'
-                  LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = e.shift_group_uuid
+                  LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1)
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,(SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name
                 )
                 SELECT
                     uuid,

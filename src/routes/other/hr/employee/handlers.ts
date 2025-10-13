@@ -34,7 +34,12 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     )
     .leftJoin(
       leave_policy,
-      eq(employee.leave_policy_uuid, leave_policy.uuid),
+      eq(sql` SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.employee_uuid = ${employee.uuid}
+            AND el.type = 'leave_policy' AND el.effective_date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1`, leave_policy.uuid),
     )
     .leftJoin(
       configuration,
@@ -82,7 +87,12 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .where(
       and(
         leave_policy_required
-          ? sql`${employee.leave_policy_uuid} IS NOT NULL`
+          ? sql`(SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.employee_uuid = ${employee.uuid}
+            AND el.type = 'leave_policy' AND el.effective_date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1) IS NOT NULL`
           : sql`true`,
         is_hr === 'true'
           ? eq(employee.is_hr, true)
