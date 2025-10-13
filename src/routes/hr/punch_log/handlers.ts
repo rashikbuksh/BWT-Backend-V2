@@ -302,7 +302,12 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                                       LEFT JOIN hr.employee emp ON pl.employee_uuid = emp.uuid
                                       GROUP BY pl.employee_uuid, DATE(pl.punch_time)
                                     ) AS pl ON e.uuid = pl.employee_uuid
-                            LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+                            LEFT JOIN hr.shift_group sg ON (SELECT el.type_uuid
+                                                           FROM hr.employee_log el
+                                                           WHERE el.employee_uuid = e.uuid
+                                                           AND el.type = 'shift_group' AND el.effective_date <= pl.punch_date
+                                                           ORDER BY el.effective_date DESC
+                                                           LIMIT 1) = sg.uuid
                             LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                             WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`true`}
                             AND pl.entry_time::time > s.late_time::time AND pl.entry_time NOT IN (
