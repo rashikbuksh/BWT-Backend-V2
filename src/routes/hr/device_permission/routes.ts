@@ -34,8 +34,8 @@ export const create = createRoute({
   method: 'post',
   request: {
     body: jsonContentRequired(
-      z.array(insertSchema),
-      'Array of device-permission to create',
+      insertSchema,
+      'The device-permission to create',
     ),
   },
   tags,
