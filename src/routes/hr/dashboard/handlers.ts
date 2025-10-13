@@ -322,7 +322,12 @@ export const getAttendanceReport: AppRouteHandler<GetAttendanceReportRoute> = as
                             e.uuid AS employee_uuid,
                             u.uuid AS user_uuid,
                             u.name AS employee_name,
-                            e.shift_group_uuid
+                            (SELECT el.type_uuid
+                             FROM hr.employee_log el
+                             WHERE el.employee_uuid = e.uuid
+                             AND el.type = 'shift_group' AND el.effective_date::date <= ${date}::date
+                             ORDER BY el.effective_date DESC
+                             LIMIT 1) AS shift_group_uuid
                         FROM hr.employee e
                         JOIN hr.users u ON e.user_uuid = u.uuid
                         WHERE ${department_uuid ? sql`u.department_uuid = ${department_uuid}` : sql`TRUE`}
@@ -401,7 +406,12 @@ export const getAttendanceReport: AppRouteHandler<GetAttendanceReportRoute> = as
                         LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
                         LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
                         LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-                        LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
+                        LEFT JOIN hr.shift_group sg ON (SELECT el.type_uuid
+                                                      FROM hr.employee_log el
+                                                      WHERE el.employee_uuid = e.uuid
+                                                      AND el.type = 'shift_group' AND el.effective_date::date <= ${date}::date
+                                                      ORDER BY el.effective_date DESC
+                                                      LIMIT 1) = sg.uuid
                         LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                         LEFT JOIN (
                             WITH daily_attendance AS (
@@ -412,15 +422,25 @@ export const getAttendanceReport: AppRouteHandler<GetAttendanceReportRoute> = as
                                     MAX(pl.punch_time) AS last_punch,
                                     shifts.late_time,
                                     shifts.early_exit_before,
-                                    e.shift_group_uuid
+                                    (SELECT el.type_uuid
+                                     FROM hr.employee_log el
+                                     WHERE el.employee_uuid = pl.employee_uuid
+                                     AND el.type = 'shift_group' AND el.effective_date::date <= DATE(pl.punch_time)
+                                      ORDER BY el.effective_date DESC
+                                      LIMIT 1) AS shift_group_uuid
                                 FROM hr.punch_log pl
                                 LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                                LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
+                                LEFT JOIN hr.shift_group ON (SELECT el.type_uuid
+                                                            FROM hr.employee_log el
+                                                            WHERE el.employee_uuid = pl.employee_uuid
+                                                            AND el.type = 'shift_group' AND el.effective_date::date <= DATE(pl.punch_time)
+                                                            ORDER BY el.effective_date DESC
+                                                            LIMIT 1) = hr.shift_group.uuid
                                 LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
                                 WHERE pl.punch_time IS NOT NULL
                                     AND DATE(pl.punch_time) >= ${from_date}::date
                                     AND DATE(pl.punch_time) <= ${to_date}::date
-                                GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before, e.shift_group_uuid
+                                GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before, shift_group_uuid
                             )
                             SELECT 
                                 da.employee_uuid,
@@ -509,7 +529,12 @@ export const getAttendanceReport: AppRouteHandler<GetAttendanceReportRoute> = as
                             FROM all_offset_days
                             WHERE lower(to_char(DAY, 'Dy')) = lower(dname)
                             GROUP BY shift_group_uuid
-                        ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
+                        ) AS off_days_summary ON (SELECT el.type_uuid
+                                                 FROM hr.employee_log el
+                                                 WHERE el.employee_uuid = e.uuid
+                                                 AND el.type = 'shift_group' AND el.effective_date::date <= ${date}::date
+                                                 ORDER BY el.effective_date DESC
+                                                 LIMIT 1) = off_days_summary.shift_group_uuid
                         WHERE ${department_uuid ? sql`u.department_uuid = ${department_uuid}` : sql`TRUE`}
                     ), 
                     -- 3a) expand each shift_group’s configured off_days into concrete dates
