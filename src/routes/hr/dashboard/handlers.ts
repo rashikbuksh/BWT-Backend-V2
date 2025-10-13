@@ -425,7 +425,7 @@ export const getAttendanceReport: AppRouteHandler<GetAttendanceReportRoute> = as
                                     (SELECT el.type_uuid
                                      FROM hr.employee_log el
                                      WHERE el.employee_uuid = pl.employee_uuid
-                                     AND el.type = 'shift_group' AND el.effective_date::date <= DATE(pl.punch_time)
+                                     AND el.type = 'shift_group' AND el.effective_date::date <= ${date}::date
                                       ORDER BY el.effective_date DESC
                                       LIMIT 1) AS shift_group_uuid
                                 FROM hr.punch_log pl
@@ -433,7 +433,7 @@ export const getAttendanceReport: AppRouteHandler<GetAttendanceReportRoute> = as
                                 LEFT JOIN hr.shift_group ON (SELECT el.type_uuid
                                                             FROM hr.employee_log el
                                                             WHERE el.employee_uuid = pl.employee_uuid
-                                                            AND el.type = 'shift_group' AND el.effective_date::date <= DATE(pl.punch_time)
+                                                            AND el.type = 'shift_group' AND el.effective_date::date <= ${date}::date
                                                             ORDER BY el.effective_date DESC
                                                             LIMIT 1) = hr.shift_group.uuid
                                 LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
