@@ -142,7 +142,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
-      current_shift_group_uuid: sql`
+      shift_group_uuid: sql`
           (
             SELECT el.type_uuid
             FROM hr.employee_log el
@@ -150,7 +150,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_shift_group_name: sql`
+      shift_group_name: sql`
           (
             SELECT sg.name
             FROM hr.employee_log el
@@ -159,7 +159,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_shift_start_time: sql`
+      shift_group_start_time: sql`
           (
             SELECT s.start_time
             FROM hr.employee_log el
@@ -169,7 +169,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_shift_end_time: sql`
+      shift_group_end_time: sql`
           (
             SELECT s.end_time
             FROM hr.employee_log el
@@ -179,7 +179,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_leave_policy_uuid: sql`
+      leave_policy_uuid: sql`
           (
             SELECT el.type_uuid
             FROM hr.employee_log el
@@ -187,7 +187,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_leave_policy_name: sql`
+      leave_policy_name: sql`
           (
             SELECT lp.name
             FROM hr.employee_log el
@@ -330,7 +330,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
-      current_shift_group_uuid: sql`
+      shift_group_uuid: sql`
           (
             SELECT el.type_uuid
             FROM hr.employee_log el
@@ -338,7 +338,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_shift_group_name: sql`
+      shift_group_name: sql`
           (
             SELECT sg.name
             FROM hr.employee_log el
@@ -347,7 +347,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_shift_start_time: sql`
+      shift_group_start_time: sql`
           (
             SELECT s.start_time
             FROM hr.employee_log el
@@ -357,7 +357,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_shift_end_time: sql`
+      shift_group_end_time: sql`
           (
             SELECT s.end_time
             FROM hr.employee_log el
@@ -368,7 +368,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             LIMIT 1
           )`,
 
-      current_leave_policy_uuid: sql`
+      leave_policy_uuid: sql`
           (
             SELECT el.type_uuid
             FROM hr.employee_log el
@@ -376,7 +376,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             ORDER BY el.effective_date DESC
             LIMIT 1
           )`,
-      current_leave_policy_name: sql`
+      leave_policy_name: sql`
           (
             SELECT lp.name
             FROM hr.employee_log el
