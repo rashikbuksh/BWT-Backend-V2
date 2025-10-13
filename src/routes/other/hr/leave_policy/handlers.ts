@@ -15,6 +15,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .select({
       value: leave_policy.uuid,
       label: leave_policy.name,
+      is_default: leave_policy.is_default,
     })
     .from(leave_policy)
     .leftJoin(configuration, eq(leave_policy.uuid, configuration.leave_policy_uuid))

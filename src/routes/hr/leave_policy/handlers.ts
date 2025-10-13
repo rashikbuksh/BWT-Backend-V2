@@ -68,6 +68,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_at: leave_policy.created_at,
       updated_at: leave_policy.updated_at,
       remarks: leave_policy.remarks,
+      is_default: leave_policy.is_default,
     })
     .from(leave_policy)
     .leftJoin(users, eq(leave_policy.created_by, users.uuid))
@@ -91,6 +92,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       created_at: leave_policy.created_at,
       updated_at: leave_policy.updated_at,
       remarks: leave_policy.remarks,
+      is_default: leave_policy.is_default,
     })
     .from(leave_policy)
     .leftJoin(users, eq(leave_policy.created_by, users.uuid))
