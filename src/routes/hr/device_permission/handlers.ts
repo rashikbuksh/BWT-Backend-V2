@@ -245,9 +245,13 @@ export const getNotAssignedEmployeeForPermissionByDeviceListUuid: AppRouteHandle
 export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
   const { employee_uuid, sn } = c.req.valid('query');
 
+  console.warn(employee_uuid, ' employee_uuid');
+
   const userInfo = await db.select()
     .from(users)
     .where(eq(users.uuid, employee_uuid));
+
+  console.warn(userInfo, ' userInfo');
 
   const api = createApi(c);
 
