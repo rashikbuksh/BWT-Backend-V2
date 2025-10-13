@@ -16,6 +16,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       effective_date: shift_group.effective_date,
       start_time: shifts.start_time,
       end_time: shifts.end_time,
+      is_default: shift_group.default_shift,
     })
     .from(shift_group)
     .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid));
