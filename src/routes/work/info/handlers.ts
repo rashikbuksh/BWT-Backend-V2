@@ -423,18 +423,18 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
 
       try {
         const diagnosisData
-            = diagnosis === 'true'
-              ? await fetchData(
-                  `/v1/work/diagnosis-by-order/${order_uuid}`,
-                )
-              : null;
+          = diagnosis === 'true'
+            ? await fetchData(
+                `/v1/work/diagnosis-by-order/${order_uuid}`,
+              )
+            : null;
 
         const processData
-            = process === 'true'
-              ? await fetchData(
-                  `/v1/work/process?order_uuid=${order_uuid}`,
-                )
-              : null;
+          = process === 'true'
+            ? await fetchData(
+                `/v1/work/process?order_uuid=${order_uuid}`,
+              )
+            : null;
 
         return {
           ...orderItem,
