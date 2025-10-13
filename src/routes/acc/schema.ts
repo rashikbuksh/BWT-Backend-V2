@@ -7,8 +7,7 @@ import {
   PG_DECIMAL,
   uuid_primary,
 } from '@/lib/variables';
-
-import * as hrSchema from '../hr/schema.js';
+import * as hrSchema from '@/routes/hr/schema';
 
 const acc = pgSchema('acc');
 

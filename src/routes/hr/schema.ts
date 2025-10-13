@@ -596,7 +596,7 @@ export const manual_entry = hr.table('manual_entry', {
 });
 
 // ? Punch Log
-export const punch_type = pgEnum('punch_type', ['face', 'fingerprint', 'rfid', 'manual']);
+export const punch_type = pgEnum('punch_type', ['face', 'fingerprint', 'rfid', 'manual', 'password', 'other']);
 
 export const punch_log = hr.table('punch_log', {
   uuid: uuid_primary,

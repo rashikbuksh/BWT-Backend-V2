@@ -1,5 +1,11 @@
+import { eq } from 'drizzle-orm';
+
+import db from '@/db';
 import env from '@/env';
+import nanoid from '@/lib/nanoid';
 import { fmtYmdHms } from '@/utils/attendence/utils';
+
+import { device_list, employee, punch_log } from '../hr/schema';
 
 export const commandSyntax = String(env.ICLOCK_COMMAND).toUpperCase();
 
@@ -187,10 +193,49 @@ export async function getNextAvailablePin(sn: string, startPin: string, usersByD
   }
 
   return pin;
-}
+};
 
-export function insertRealTimeLogToBackend(pushedLogs: any[]) {
+export async function insertRealTimeLogToBackend(pushedLogs: any[]) {
   // TODO: Implement the logic to insert real-time logs into the backend
 
-  console.log('Inserting real-time logs to backend:', pushedLogs);
+  const log = pushedLogs[0].log;
+  const sn = pushedLogs[0].sn || 'unknown';
+
+  // get device uuid from sn
+  const device = await db.select().from(device_list).where(eq(device_list.identifier, sn)).limit(1);
+  const device_uuid = device.length > 0 ? device[0].uuid : null;
+
+  const value: any[] = [];
+
+  log.map(async (l: any) => {
+    const employeeInfomation = await db.select().from(employee).where(eq(employee.pin, log.pin)).limit(1);
+    const employee_uuid = employeeInfomation.length > 0 ? employeeInfomation[0].uuid : null;
+
+    const punchType: 'fingerprint' | 'password' | 'rfid' | 'face' | 'other'
+      = log.verify === 'fingerprint'
+        ? 'fingerprint'
+        : log.verify === 'password'
+          ? 'password'
+          : log.verify === 'card'
+            ? 'rfid'
+            : log.verify === 'face'
+              ? 'face'
+              : 'other';
+
+    value.push({
+      uuid: nanoid(15),
+      device_list_uuid: device_uuid,
+      employee_uuid,
+      punch_type: punchType,
+      punch_time: l.timestamp,
+    });
+  });
+
+  const punchLogInsert = await db.insert(punch_log)
+    .values(value)
+    .returning({ name: punch_log.uuid });
+
+  console.warn('Inserted punch log: ', punchLogInsert.length);
+
+  return punchLogInsert.length;
 }
