@@ -258,7 +258,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   const api = createApi(c);
 
-  const clearQueue = api.get(`/iclock/device/clear-queue?sn=${sn}`);
+  const clearQueue = await api.get(`/iclock/device/clear-queue?sn=${sn}`);
 
   await clearQueue;
 
@@ -274,7 +274,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with ${pin}`);
 
     const employeeUpdate = db.update(employee)
-      .set({ pin })
+      .set({ pin: employee_uuid })
       .where(eq(employee.uuid, employee_uuid))
       .returning();
 

@@ -169,6 +169,8 @@ export async function ensureUsersFetched(sn: string, usersByDevice: Map<string, 
     console.warn(`[ensure-users] SN=${sn} user fetch already queued`);
   }
 
+  console.warn(`[ensure-users] SN=${sn} returning empty user map for now`);
+
   return umap;
 }
 
