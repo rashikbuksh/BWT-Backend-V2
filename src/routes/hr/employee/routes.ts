@@ -233,32 +233,6 @@ export const getEmployeeSummaryDetailsByEmployeeUuid = createRoute({
   },
 });
 
-export const syncUser = createRoute({
-  path: '/hr/sync-to-device',
-  method: 'post',
-  request: {
-    query: z.object({
-      sn: z.string(),
-      employee_uuid: z.string(),
-    }),
-  },
-  tags,
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
-      'The employee sync to device',
-    ),
-    [HSCode.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      'Employee sync to device not found',
-    ),
-    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(param.uuid),
-      'Invalid id error',
-    ),
-  },
-});
-
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -268,4 +242,3 @@ export type GetManualEntryByEmployeeRoute = typeof getManualEntryDetailsByEmploy
 export type GetEmployeeLeaveInformationDetailsRoute = typeof getEmployeeLeaveInformationDetails;
 export type GetEmployeeAttendanceReportRoute = typeof getEmployeeAttendanceReport;
 export type GetEmployeeSummaryDetailsByEmployeeUuidRoute = typeof getEmployeeSummaryDetailsByEmployeeUuid;
-export type PostSyncUser = typeof syncUser;

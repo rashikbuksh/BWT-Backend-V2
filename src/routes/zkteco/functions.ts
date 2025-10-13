@@ -198,7 +198,7 @@ export async function getNextAvailablePin(sn: string, startPin: string, usersByD
 export async function insertRealTimeLogToBackend(pushedLogs: any[]) {
   // TODO: Implement the logic to insert real-time logs into the backend
 
-  const log = pushedLogs[0].log;
+  const logEntries = pushedLogs[0].log;
   const sn = pushedLogs[0].sn || 'unknown';
 
   // get device uuid from sn
@@ -207,29 +207,44 @@ export async function insertRealTimeLogToBackend(pushedLogs: any[]) {
 
   const value: any[] = [];
 
-  log.map(async (l: any) => {
-    const employeeInfomation = await db.select().from(employee).where(eq(employee.pin, log.pin)).limit(1);
-    const employee_uuid = employeeInfomation.length > 0 ? employeeInfomation[0].uuid : null;
+  console.warn('log: ', logEntries);
 
-    const punchType: 'fingerprint' | 'password' | 'rfid' | 'face' | 'other'
-      = log.verify === 'fingerprint'
-        ? 'fingerprint'
-        : log.verify === 'password'
-          ? 'password'
-          : log.verify === 'card'
-            ? 'rfid'
-            : log.verify === 'face'
-              ? 'face'
-              : 'other';
+  // Use Promise.all to wait for all async operations
+  const processedEntries = await Promise.all(
+    logEntries.map(async (l: any) => {
+      const employeeInfomation = await db.select().from(employee).where(eq(employee.pin, l.pin)).limit(1);
+      const employee_uuid = employeeInfomation.length > 0 ? employeeInfomation[0].uuid : null;
 
-    value.push({
-      uuid: nanoid(15),
-      device_list_uuid: device_uuid,
-      employee_uuid,
-      punch_type: punchType,
-      punch_time: l.timestamp,
-    });
-  });
+      const punchType: 'fingerprint' | 'password' | 'rfid' | 'face' | 'other'
+        = l.verify === 'fingerprint'
+          ? 'fingerprint'
+          : l.verify === 'password'
+            ? 'password'
+            : l.verify === 'card'
+              ? 'rfid'
+              : l.verify === 'face'
+                ? 'face'
+                : 'other';
+
+      return {
+        uuid: nanoid(15),
+        device_list_uuid: device_uuid,
+        employee_uuid,
+        punch_type: punchType,
+        punch_time: l.timestamp,
+      };
+    }),
+  );
+
+  // Add all processed entries to value array
+  value.push(...processedEntries);
+
+  console.warn('Inserting punch log: ', value);
+
+  if (value.length === 0) {
+    console.warn('No punch logs to insert');
+    return 0;
+  }
 
   const punchLogInsert = await db.insert(punch_log)
     .values(value)

@@ -5,9 +5,10 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import createApi from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetNotAssignedEmployeeForPermissionByDeviceListUuidRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetNotAssignedEmployeeForPermissionByDeviceListUuidRoute, GetOneRoute, ListRoute, PatchRoute, PostSyncUser, RemoveRoute } from './routes';
 
 import { device_list, device_permission, employee, users } from '../schema';
 
@@ -15,6 +16,33 @@ const createdByUser = alias(users, 'created_by_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
+
+  const deviceInfo = await db.select()
+    .from(device_list)
+    .where(eq(device_list.uuid, value.device_list_uuid));
+
+  if (deviceInfo.length === 0)
+    return ObjectNotFound(c);
+
+  const sn = deviceInfo[0]?.identifier;
+
+  const api = createApi(c);
+
+  const syncToDevice = api.post(
+    `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}`,
+  );
+
+  await syncToDevice.then((response) => {
+    console.warn(response, ' response from sync to device');
+    if (response.status === HSCode.OK) {
+      console.warn(`[hr-device-permission] Successfully synced employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
+    }
+    else {
+      console.error(`[hr-device-permission] Failed to sync employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
+    }
+  }).catch((error) => {
+    console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
+  });
 
   const [data] = await db.insert(device_permission).values(value).returning({
     name: device_permission.uuid,
@@ -212,4 +240,41 @@ export const getNotAssignedEmployeeForPermissionByDeviceListUuid: AppRouteHandle
   const data = await devicePermissionPromise;
 
   return c.json(data.rows || [], HSCode.OK);
+};
+
+export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
+  const { employee_uuid, sn } = c.req.valid('query');
+
+  const userInfo = await db.select()
+    .from(users)
+    .where(eq(users.uuid, employee_uuid));
+
+  const api = createApi(c);
+
+  const clearQueue = api.get(`/iclock/device/clear-queue?sn=${sn}`);
+
+  await clearQueue;
+
+  const response = await api.post(
+    `/iclock/add/user/bulk?sn=${sn}`,
+    { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
+  );
+
+  const pin = response.data.processedUsers[0].pin;
+
+  if (response.data.ok === true) {
+    console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with ${pin}`);
+
+    const employeeUpdate = db.update(employee)
+      .set({ pin })
+      .where(eq(employee.uuid, employee_uuid))
+      .returning();
+
+    await employeeUpdate;
+
+    return c.json(createToast('create', `${userInfo[0].name} synced to ${sn}.`), HSCode.OK);
+  }
+  else {
+    return c.json('error', `${userInfo[0].name} not synced to ${sn}.`, HSCode.PRECONDITION_FAILED);
+  }
 };

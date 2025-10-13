@@ -148,11 +148,15 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   // Process all parsed items
   let userCount = 0;
   let duplicateCount = 0;
+  const currentSessionLogs = []; // Collect real-time logs for this session
 
   for (const items of allParsedItems) {
     if (items.type === 'REAL_TIME_LOG') {
       pushedLogs.push({ ...items, sn });
-      insertRealTimeLogToBackend(pushedLogs);
+      currentSessionLogs.push({ ...items, sn });
+      insertRealTimeLogToBackend(currentSessionLogs).then((insertedCount) => {
+        console.warn(`[real-time-logs] SN=${sn} successfully inserted ${insertedCount} attendance records`);
+      });
     }
 
     else {

@@ -9,6 +9,7 @@ const router = createRouter()
   .openapi(routes.getOne, handlers.getOne)
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
-  .openapi(routes.getNotAssignedEmployeeForPermissionByDeviceListUuid, handlers.getNotAssignedEmployeeForPermissionByDeviceListUuid);
+  .openapi(routes.getNotAssignedEmployeeForPermissionByDeviceListUuid, handlers.getNotAssignedEmployeeForPermissionByDeviceListUuid)
+  .openapi(routes.syncUser, handlers.syncUser);
 
 export default router;

@@ -18,7 +18,6 @@ import type {
   GetOneRoute,
   ListRoute,
   PatchRoute,
-  PostSyncUser,
   RemoveRoute,
 } from './routes';
 
@@ -1067,41 +1066,4 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
     return c.json(data.rows[0] || {}, HSCode.OK);
   else
     return c.json(data.rows || [], HSCode.OK);
-};
-
-export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
-  const { employee_uuid, sn } = c.req.valid('query');
-
-  const userInfo = await db.select()
-    .from(users)
-    .where(eq(users.uuid, employee_uuid));
-
-  const api = createApi(c);
-
-  const clearQueue = api.get(`/iclock/device/clear-queue?sn=${sn}`);
-
-  await clearQueue;
-
-  const response = await api.post(
-    `/iclock/add/user/bulk?sn=${sn}`,
-    { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
-  );
-
-  const pin = response.data.processedUsers[0].pin;
-
-  if (response.data.ok === true) {
-    console.warn(`[hr-employee] Successfully sent user to device SN=${sn} with ${pin}`);
-
-    const employeeUpdate = db.update(employee)
-      .set({ pin })
-      .where(eq(employee.uuid, employee_uuid))
-      .returning();
-
-    await employeeUpdate;
-
-    return c.json(createToast('create', `${userInfo[0].name} synced to ${sn}.`), HSCode.OK);
-  }
-  else {
-    return c.json('error', `${userInfo[0].name} not synced to ${sn}.`, HSCode.PRECONDITION_FAILED);
-  }
 };
