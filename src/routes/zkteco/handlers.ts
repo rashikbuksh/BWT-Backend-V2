@@ -402,6 +402,8 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
       const command = `C:${i + 1}:DATA UPDATE USERINFO ${join(baseParts)}`;
       commands.push(command);
 
+      console.warn(`[bulk-add-users] SN=${sn} queued command for user index ${i}: ${command}`);
+
       // Optimistic cache update
       if (optimistic && umap) {
         umap.set(pinVal, {
@@ -440,7 +442,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
 
   // Queue all commands
   if (q) {
-    console.log(`commands: `, q);
     commands.forEach(cmd => q.push(cmd));
   }
 
