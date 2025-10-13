@@ -27,8 +27,6 @@ import {
   designation,
   employee,
   employment_type,
-  leave_policy,
-  shift_group,
   sub_department,
   users,
   workplace,
@@ -622,7 +620,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
       // shift_group_uuid: employee.shift_group_uuid,
-      shift_group_name: shift_group.name,
+      // shift_group_name: shift_group.name,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -645,7 +643,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       department_name: department.department,
       employee_id: employee.employee_id,
       // leave_policy_uuid: employee.leave_policy_uuid,
-      leave_policy_name: leave_policy.name,
+      // leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
       first_leave_approver_name: firstLeaveApprover.name,
@@ -968,7 +966,11 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
                             COUNT(CASE WHEN pl.punch_time IS NULL AND TO_CHAR(pl.punch_time, 'HH24:MI') >= TO_CHAR(shifts.late_time, 'HH24:MI') THEN 1 END) AS late_days
                         FROM hr.punch_log pl
                         LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                        LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
+                        LEFT JOIN hr.shift_group ON (SELECT el.type_uuid
+                                                        FROM hr.employee_log el
+                                                        WHERE el.type = 'shift_group' AND el.employee_uuid = e.uuid AND el.effective_date::date <= pl.punch_time::date
+                                                        ORDER BY el.effective_date DESC
+                                                        LIMIT 1) = shift_group.uuid
                         LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
                         WHERE pl.punch_time IS NOT NULL
                             AND pl.punch_time >= ${from_date}::date
@@ -1047,7 +1049,11 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
                         )
                         GROUP BY shift_group_uuid
                     ) AS off_days_summary
-                        ON employee.shift_group_uuid = off_days_summary.shift_group_uuid
+                        ON (SELECT el.type_uuid
+                            FROM hr.employee_log el
+                            WHERE el.type = 'shift_group' AND el.employee_uuid = employee.uuid AND el.effective_date::date <= ${to_date}::date
+                            ORDER BY el.effective_date DESC
+                            LIMIT 1) = off_days_summary.shift_group_uuid
                     WHERE employee.status = true 
                     AND employee.uuid = ${employee_uuid}
                     ORDER BY employee.created_at DESC
