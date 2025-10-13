@@ -345,7 +345,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   const umap = ensureUserMap(sn, usersByDevice);
   const nowIso = new Date().toISOString();
 
-  let currentPin = getNextAvailablePin(sn, startPin, usersByDevice);
+  let currentPin = await getNextAvailablePin(sn, startPin, usersByDevice);
   const commands = [];
   const processedUsers = [];
   const errors = [];
@@ -456,6 +456,8 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
     `[bulk-add-users] SN=${sn} queued ${commands.length} commands for ${processedUsers.length} users`,
   );
 
+  usersByDevice.clear();
+
   return c.json({
     ok: true,
     sn,
@@ -507,6 +509,12 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
   deviceState.set(sn, state);
 
   console.warn(`[getrequest-legacy] SN=${sn} device polling for commands`);
+
+  const userMap = ensureUserMap(sn, usersByDevice);
+
+  if (userMap && userMap.size < 1) {
+    await ensureUsersFetched(sn, usersByDevice, commandQueue);
+  }
 
   const queue = ensureQueue(sn, commandQueue);
 

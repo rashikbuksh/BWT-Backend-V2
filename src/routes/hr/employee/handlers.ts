@@ -9,9 +9,30 @@ import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetEmployeeAttendanceReportRoute, GetEmployeeLeaveInformationDetailsRoute, GetEmployeeSummaryDetailsByEmployeeUuidRoute, GetManualEntryByEmployeeRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type {
+  CreateRoute,
+  GetEmployeeAttendanceReportRoute,
+  GetEmployeeLeaveInformationDetailsRoute,
+  GetEmployeeSummaryDetailsByEmployeeUuidRoute,
+  GetManualEntryByEmployeeRoute,
+  GetOneRoute,
+  ListRoute,
+  PatchRoute,
+  PostSyncUser,
+  RemoveRoute,
+} from './routes';
 
-import { department, designation, employee, employment_type, leave_policy, shift_group, sub_department, users, workplace } from '../schema';
+import {
+  department,
+  designation,
+  employee,
+  employment_type,
+  leave_policy,
+  shift_group,
+  sub_department,
+  users,
+  workplace,
+} from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
 const lineManagerUser = alias(users, 'line_manager_user');
@@ -912,9 +933,9 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
   ]);
 
   const total_special_holidays
-        = specialHolidaysResult.rows[0]?.total_special_holidays || 0;
+    = specialHolidaysResult.rows[0]?.total_special_holidays || 0;
   const total_general_holidays
-        = generalHolidaysResult.rows[0]?.total_off_days || 0;
+    = generalHolidaysResult.rows[0]?.total_off_days || 0;
 
   const query = sql`
                     SELECT 
@@ -1040,4 +1061,37 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
     return c.json(data.rows[0] || {}, HSCode.OK);
   else
     return c.json(data.rows || [], HSCode.OK);
+};
+
+export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
+  const { employee_uuid, sn } = c.req.valid('query');
+
+  const userInfo = await db.select()
+    .from(users)
+    .where(eq(users.uuid, employee_uuid));
+
+  const api = createApi(c);
+
+  const response = await api.post(
+    `/iclock/add/user/bulk?sn=${sn}`,
+    { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
+  );
+
+  const pin = response.data.processedUsers[0].pin;
+  console.warn(pin, 'pin');
+
+  if (response.data.ok === true) {
+    console.warn(`[hr-employee] Successfully sent user to device SN=${sn} with ${pin}`);
+
+    const employeeUpdate = await db.update(employee)
+      .set({ pin })
+      .where(eq(employee.uuid, employee_uuid))
+      .returning();
+
+    console.log(employeeUpdate, 'employeeUpdate');
+    return c.json(createToast('create', `${userInfo[0].name} synced to ${sn}.`), HSCode.OK);
+  }
+  else {
+    return c.json('error', `${userInfo[0].name} not synced to ${sn}.`, HSCode.PRECONDITION_FAILED);
+  }
 };
