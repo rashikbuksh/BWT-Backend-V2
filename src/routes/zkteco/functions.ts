@@ -188,3 +188,9 @@ export async function getNextAvailablePin(sn: string, startPin: string, usersByD
 
   return pin;
 }
+
+export function insertRealTimeLogToBackend(pushedLogs: any[]) {
+  // TODO: Implement the logic to insert real-time logs into the backend
+
+  console.log('Inserting real-time logs to backend:', pushedLogs);
+}
