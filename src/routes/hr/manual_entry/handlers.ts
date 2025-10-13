@@ -281,43 +281,43 @@ export const selectAllManualEntryWithPaginationFieldVisit: AppRouteHandler<Selec
   // const resultPromiseForCount = await resultPromise;
 
   const baseQuery
-        = is_pagination === 'true'
-          ? constructSelectAllQuery({
-              baseQuery: resultPromise,
-              params: c.req.valid('query'),
-              defaultSortField: 'created_at',
-              additionalSearchFields: [users.name.name],
-              searchFieldNames: field_name,
-              field_value,
-            })
-          : resultPromise;
+    = is_pagination === 'true'
+      ? constructSelectAllQuery({
+          baseQuery: resultPromise,
+          params: c.req.valid('query'),
+          defaultSortField: 'created_at',
+          additionalSearchFields: [users.name.name],
+          searchFieldNames: field_name,
+          field_value,
+        })
+      : resultPromise;
 
   const data = await baseQuery;
 
   const pagination
-        = is_pagination === 'true'
-          ? {
-              total_record: data.length,
-              current_page: Number(page),
-              total_page: Math.ceil(
-                data.length / limit,
-              ),
-              next_page:
+    = is_pagination === 'true'
+      ? {
+          total_record: data.length,
+          current_page: Number(page),
+          total_page: Math.ceil(
+            data.length / limit,
+          ),
+          next_page:
                 page + 1
                 > Math.ceil(data.length / limit)
                   ? null
                   : page + 1,
-              prev_page: page - 1 <= 0 ? null : page - 1,
-            }
-          : null;
+          prev_page: page - 1 <= 0 ? null : page - 1,
+        }
+      : null;
 
   const response
-        = is_pagination === 'true'
-          ? {
-              data,
-              pagination,
-            }
-          : data;
+    = is_pagination === 'true'
+      ? {
+          data,
+          pagination,
+        }
+      : data;
 
   return c.json(response, HSCode.OK);
 };
