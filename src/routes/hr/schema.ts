@@ -375,9 +375,6 @@ export const employee = hr.table('employee', {
     () => employment_type.uuid,
   ),
   end_date: DateTime('end_date').default(sql`null`),
-  shift_group_uuid: defaultUUID('shift_group_uuid').references(
-    () => shift_group.uuid,
-  ),
   line_manager_uuid: defaultUUID('line_manager_uuid').references(
     () => users.uuid,
   ),
@@ -404,9 +401,6 @@ export const employee = hr.table('employee', {
     () => department.uuid,
   ),
   company_id: boolean('company_id').default(false),
-  leave_policy_uuid: defaultUUID('leave_policy_uuid').references(
-    () => leave_policy.uuid,
-  ),
   report_position: text('report_position').default(sql`null`),
   employee_id: text('employee_id').notNull(),
   first_leave_approver_uuid: defaultUUID('first_leave_approver_uuid')
