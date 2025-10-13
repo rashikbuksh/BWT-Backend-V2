@@ -264,6 +264,7 @@ export const leave_policy = hr.table('leave_policy', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  is_default: boolean('is_default').default(false),
 });
 
 // ? Leave Category
