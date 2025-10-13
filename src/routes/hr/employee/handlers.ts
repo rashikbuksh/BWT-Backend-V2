@@ -1072,23 +1072,27 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   const api = createApi(c);
 
+  const clearQueue = api.get(`/iclock/device/clear-queue?sn=${sn}`);
+
+  await clearQueue;
+
   const response = await api.post(
     `/iclock/add/user/bulk?sn=${sn}`,
     { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
   );
 
   const pin = response.data.processedUsers[0].pin;
-  console.warn(pin, 'pin');
 
   if (response.data.ok === true) {
     console.warn(`[hr-employee] Successfully sent user to device SN=${sn} with ${pin}`);
 
-    const employeeUpdate = await db.update(employee)
+    const employeeUpdate = db.update(employee)
       .set({ pin })
       .where(eq(employee.uuid, employee_uuid))
       .returning();
 
-    console.log(employeeUpdate, 'employeeUpdate');
+    await employeeUpdate;
+
     return c.json(createToast('create', `${userInfo[0].name} synced to ${sn}.`), HSCode.OK);
   }
   else {

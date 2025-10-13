@@ -11,6 +11,8 @@ const router = createRouter()
   .openapi(routes.deviceHealth, handlers.deviceHealth)
   .openapi(routes.addBulkUsers, handlers.addBulkUsers)
   .openapi(routes.customCommand, handlers.customCommand)
+  .openapi(routes.clearCommandQueue, handlers.clearCommandQueue)
+  .openapi(routes.getQueueStatus, handlers.getQueueStatus)
   .openapi(routes.getRequest_legacy, handlers.getRequest_legacy)
   .openapi(routes.deviceCmd, handlers.deviceCmd);
 
