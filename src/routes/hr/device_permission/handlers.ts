@@ -124,50 +124,25 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .orderBy(desc(device_permission.created_at));
 
-  if (employee_uuid && device_list_uuid && permission_type) {
-    devicePermissionPromise.where(
-      and(
-        eq(device_permission.employee_uuid, employee_uuid),
-        eq(device_permission.device_list_uuid, device_list_uuid),
-        eq(device_permission.permission_type, permission_type),
-      ),
-    );
+  // Build dynamic where conditions based on provided query parameters
+  const whereConditions = [];
+
+  if (employee_uuid) {
+    whereConditions.push(eq(device_permission.employee_uuid, employee_uuid));
   }
-  else if (employee_uuid && device_list_uuid) {
-    devicePermissionPromise.where(
-      and(
-        eq(device_permission.employee_uuid, employee_uuid),
-        eq(device_permission.device_list_uuid, device_list_uuid),
-      ),
-    );
+
+  if (device_list_uuid) {
+    whereConditions.push(eq(device_permission.device_list_uuid, device_list_uuid));
   }
-  else if (employee_uuid && permission_type) {
-    devicePermissionPromise.where(
-      and(
-        eq(device_permission.employee_uuid, employee_uuid),
-        eq(device_permission.permission_type, permission_type),
-      ),
-    );
+
+  if (permission_type) {
+    whereConditions.push(eq(device_permission.permission_type, permission_type));
   }
-  else if (device_list_uuid && permission_type) {
+
+  // Apply where conditions if any exist
+  if (whereConditions.length > 0) {
     devicePermissionPromise.where(
-      and(
-        eq(device_permission.device_list_uuid, device_list_uuid),
-        eq(device_permission.permission_type, permission_type),
-      ),
-    );
-  }
-  else if (employee_uuid) {
-    devicePermissionPromise.where(eq(device_permission.employee_uuid, employee_uuid));
-  }
-  else if (device_list_uuid) {
-    devicePermissionPromise.where(
-      eq(device_permission.device_list_uuid, device_list_uuid),
-    );
-  }
-  else if (permission_type) {
-    devicePermissionPromise.where(
-      eq(device_permission.permission_type, permission_type),
+      whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions),
     );
   }
 
