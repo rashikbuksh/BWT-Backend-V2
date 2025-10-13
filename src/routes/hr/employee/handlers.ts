@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetEmployeeAttendanceReportRoute, GetEmployeeLeaveInformationDetailsRoute, GetEmployeeSummaryDetailsByEmployeeUuidRoute, GetManualEntryByEmployeeRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { department, designation, employee, employment_type, leave_policy, shift_group, shifts, sub_department, users, workplace } from '../schema';
+import { department, designation, employee, employment_type, leave_policy, shift_group, sub_department, users, workplace } from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
 const lineManagerUser = alias(users, 'line_manager_user');
@@ -93,10 +93,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       employment_type_uuid: employee.employment_type_uuid,
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
-      shift_group_uuid: employee.shift_group_uuid,
-      shift_group_name: shift_group.name,
-      shift_group_start_time: shifts.start_time,
-      shift_group_end_time: shifts.end_time,
+      // shift_group_uuid: employee.shift_group_uuid,
+      // shift_group_name: shift_group.name,
+      // shift_group_start_time: shifts.start_time,
+      // shift_group_end_time: shifts.end_time,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -116,8 +116,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       designation_name: designation.designation,
       department_uuid: users.department_uuid,
       department_name: department.department,
-      leave_policy_uuid: employee.leave_policy_uuid,
-      leave_policy_name: leave_policy.name,
+      // leave_policy_uuid: employee.leave_policy_uuid,
+      // leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
       first_leave_approver_name: firstLeaveApprover.name,
@@ -142,6 +142,60 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
+      current_shift_group_uuid: sql`
+          (
+            SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_shift_group_name: sql`
+          (
+            SELECT sg.name
+            FROM hr.employee_log el
+            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_shift_start_time: sql`
+          (
+            SELECT s.start_time
+            FROM hr.employee_log el
+            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
+            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_shift_end_time: sql`
+          (
+            SELECT s.end_time
+            FROM hr.employee_log el
+            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
+            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_leave_policy_uuid: sql`
+          (
+            SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_leave_policy_name: sql`
+          (
+            SELECT lp.name
+            FROM hr.employee_log el
+            LEFT JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
+            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
     })
     .from(employee)
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
@@ -151,14 +205,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(employee.sub_department_uuid, sub_department.uuid),
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
-    .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
-    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(
-      leave_policy,
-      eq(employee.leave_policy_uuid, leave_policy.uuid),
-    )
     .leftJoin(
       employment_type,
       eq(employee.employment_type_uuid, employment_type.uuid),
@@ -233,10 +281,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       employment_type_uuid: employee.employment_type_uuid,
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
-      shift_group_uuid: employee.shift_group_uuid,
-      shift_group_name: shift_group.name,
-      shift_group_start_time: shifts.start_time,
-      shift_group_end_time: shifts.end_time,
+      // shift_group_uuid: employee.shift_group_uuid,
+      // shift_group_name: shift_group.name,
+      // shift_group_start_time: shifts.start_time,
+      // shift_group_end_time: shifts.end_time,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -256,8 +304,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       designation_name: designation.designation,
       department_uuid: users.department_uuid,
       department_name: department.department,
-      leave_policy_uuid: employee.leave_policy_uuid,
-      leave_policy_name: leave_policy.name,
+      // leave_policy_uuid: employee.leave_policy_uuid,
+      // leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
       first_leave_approver_name: firstLeaveApprover.name,
@@ -282,6 +330,61 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
+      current_shift_group_uuid: sql`
+          (
+            SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_shift_group_name: sql`
+          (
+            SELECT sg.name
+            FROM hr.employee_log el
+            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_shift_start_time: sql`
+          (
+            SELECT s.start_time
+            FROM hr.employee_log el
+            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
+            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_shift_end_time: sql`
+          (
+            SELECT s.end_time
+            FROM hr.employee_log el
+            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
+            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+
+      current_leave_policy_uuid: sql`
+          (
+            SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      current_leave_policy_name: sql`
+          (
+            SELECT lp.name
+            FROM hr.employee_log el
+            LEFT JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
+            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
       employee_address: sql`
           COALESCE((
             SELECT jsonb_agg(
@@ -387,14 +490,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       eq(employee.sub_department_uuid, sub_department.uuid),
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
-    .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
-    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(
-      leave_policy,
-      eq(employee.leave_policy_uuid, leave_policy.uuid),
-    )
     .leftJoin(
       employment_type,
       eq(employee.employment_type_uuid, employment_type.uuid),
@@ -503,7 +600,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       employment_type_uuid: employee.employment_type_uuid,
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
-      shift_group_uuid: employee.shift_group_uuid,
+      // shift_group_uuid: employee.shift_group_uuid,
       shift_group_name: shift_group.name,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
@@ -526,7 +623,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       department_uuid: users.department_uuid,
       department_name: department.department,
       employee_id: employee.employee_id,
-      leave_policy_uuid: employee.leave_policy_uuid,
+      // leave_policy_uuid: employee.leave_policy_uuid,
       leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
@@ -580,7 +677,11 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                       GROUP BY al.employee_uuid, al.leave_category_uuid
                     ) AS leave_summary
                       ON leave_summary.leave_category_uuid = lc.uuid
-                    WHERE cfg.leave_policy_uuid = ${employee.leave_policy_uuid}
+                    WHERE cfg.leave_policy_uuid = (SELECT el.type_uuid
+                                              FROM hr.employee_log el
+                                              WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee_uuid} AND el.effective_date::date <= CURRENT_DATE
+                                              ORDER BY el.effective_date DESC
+                                              LIMIT 1)
                   )`,
       leave_application_information: sql`
                   (
@@ -681,13 +782,8 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       eq(employee.sub_department_uuid, sub_department.uuid),
     )
     .leftJoin(createdByUser, eq(employee.created_by, createdByUser.uuid))
-    .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(
-      leave_policy,
-      eq(employee.leave_policy_uuid, leave_policy.uuid),
-    )
     .leftJoin(
       employment_type,
       eq(employee.employment_type_uuid, employment_type.uuid),
