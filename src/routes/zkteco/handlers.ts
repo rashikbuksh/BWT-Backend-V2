@@ -7,10 +7,10 @@ import { parseLine } from '@/utils/attendence/iclock_parser';
 
 import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
 
-import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
+import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
 // In-memory stores (replace with DB in prod)
-const pushedLogs = []; // raw + enriched entries -- attendance real time logs
+const pushedLogs: any[] = []; // raw + enriched entries -- attendance real time logs
 const informationLogs = []; // raw INFO lines -- user info, user details
 const deviceState = new Map(); // sn -> { lastStamp, lastSeenAt, lastUserSyncAt }
 const commandQueue = new Map(); // sn -> [ '...' ]
@@ -151,7 +151,8 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
 
   for (const items of allParsedItems) {
     if (items.type === 'REAL_TIME_LOG') {
-      pushedLogs.push(items);
+      pushedLogs.push({ ...items, sn });
+      insertRealTimeLogToBackend(pushedLogs);
     }
 
     else {
