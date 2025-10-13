@@ -247,9 +247,12 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   console.warn(employee_uuid, ' employee_uuid');
 
-  const userInfo = await db.select()
+  const userInfo = await db.select({
+    name: users.name,
+  })
     .from(users)
-    .where(eq(users.uuid, employee_uuid));
+    .leftJoin(employee, eq(users.uuid, employee.user_uuid))
+    .where(eq(employee.uuid, employee_uuid));
 
   console.warn(userInfo, ' userInfo');
 
