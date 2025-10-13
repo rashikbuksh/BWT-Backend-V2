@@ -264,10 +264,11 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   const response = await api.post(
     `/iclock/add/user/bulk?sn=${sn}`,
-    { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
+    { users: [{ pin: employee_uuid, name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
   );
 
-  const pin = response.data.processedUsers[0].pin;
+  const pin = employee_uuid;
+  // response.data.processedUsers[0].pin;
 
   if (response.data.ok === true) {
     console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with ${pin}`);
