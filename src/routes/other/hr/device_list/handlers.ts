@@ -25,8 +25,8 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       ),
     )
     .where(
-      employee_uuid !== undefined && employee_uuid !== '' && employee_uuid !== null
-        ? sql`${device_permission.employee_uuid} IS NULL`
+      employee_uuid
+        ? sql`${device_permission.employee_uuid} != ${employee_uuid}`
         : sql`true`,
     );
 
