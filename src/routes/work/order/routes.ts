@@ -23,6 +23,7 @@ export const list = createRoute({
       is_repair: z.string().optional(),
       is_return: z.string().optional(),
       is_delivery_complete: z.string().optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   responses: {

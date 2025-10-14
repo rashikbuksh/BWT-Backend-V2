@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -297,22 +297,36 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
     .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid));
 
+  // Build filters array and apply them together
+  const filters = [];
+
+  // Filter by customer
   if (customer_uuid) {
-    infoPromise.where(eq(info.user_uuid, customer_uuid));
+    filters.push(eq(info.user_uuid, customer_uuid));
   }
+
+  // Filter by order status
   if (status === 'pending') {
-    infoPromise.where(
+    filters.push(
       sql`COALESCE(order_count_tbl.order_count, 0) != COALESCE(delivered_count_tbl.delivered_count, 0)`,
     );
   }
-  if (status === 'complete') {
-    infoPromise.where(
-      sql`COALESCE(order_count_tbl.order_count, 0) = COALESCE(delivered_count_tbl.delivered_count, 0) AND COALESCE(order_count_tbl.order_count, 0) > 0 AND COALESCE(delivered_count_tbl.delivered_count, 0) > 0`,
+  else if (status === 'complete') {
+    filters.push(
+      sql`COALESCE(order_count_tbl.order_count, 0) = COALESCE(delivered_count_tbl.delivered_count, 0) 
+          AND COALESCE(order_count_tbl.order_count, 0) > 0 
+          AND COALESCE(delivered_count_tbl.delivered_count, 0) > 0`,
     );
   }
 
-  if (orderType !== 'undefined' && orderType !== null) {
-    infoPromise.where(eq(info.order_type, orderType));
+  // Filter by order type (exclude undefined/null values)
+  if (orderType && orderType !== 'undefined') {
+    filters.push(eq(info.order_type, orderType));
+  }
+
+  // Apply all filters if any exist
+  if (filters.length > 0) {
+    infoPromise.where(filters.length === 1 ? filters[0] : and(...filters));
   }
 
   const data = await infoPromise;

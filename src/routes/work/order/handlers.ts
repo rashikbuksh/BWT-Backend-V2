@@ -497,7 +497,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { qc, is_delivered, work_in_hand, customer_uuid, is_repair, is_return, is_delivery_complete } = c.req.valid('query');
+  const { qc, is_delivered, work_in_hand, customer_uuid, is_repair, is_return, is_delivery_complete, engineer_uuid } = c.req.valid('query');
 
   const orderPromise = db
     .select({
@@ -674,6 +674,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         eq(orderTable.is_ready_for_delivery, false),
       ),
     );
+  }
+
+  // Engineer-specific orders
+  if (engineer_uuid) {
+    filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
   }
 
   // Apply filters if any exist
