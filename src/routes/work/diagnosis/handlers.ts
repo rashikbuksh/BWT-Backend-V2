@@ -14,6 +14,7 @@ import type { CreateRoute, GetByOrderRoute, GetOneRoute, ListRoute, PatchRoute, 
 
 import { diagnosis, info, order, problem } from '../schema';
 
+const engineerUser = alias(users, 'engineerUser');
 const info_user = alias(users, 'info_user');
 const order_table = alias(order, 'order_table');
 const reclaimedOrderTable = alias(order, 'reclaimed_order_table');
@@ -71,6 +72,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     order_uuid: diagnosis.order_uuid,
     order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
     engineer_uuid: diagnosis.engineer_uuid,
+    engineer_name: engineerUser.name,
     problems_uuid: diagnosis.problems_uuid,
     problem_statement: diagnosis.problem_statement,
     status: diagnosis.status,
@@ -127,6 +129,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
+    .leftJoin(engineerUser, eq(diagnosis.engineer_uuid, engineerUser.uuid))
     .where(eq(diagnosis.is_proceed_to_repair, false))
     .orderBy(desc(diagnosis.created_at));
 
@@ -213,6 +216,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       order_uuid: diagnosis.order_uuid,
       order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
       engineer_uuid: diagnosis.engineer_uuid,
+      engineer_name: engineerUser.name,
       problems_uuid: diagnosis.problems_uuid,
       problem_statement: diagnosis.problem_statement,
       status: diagnosis.status,
@@ -267,6 +271,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
+    .leftJoin(engineerUser, eq(diagnosis.engineer_uuid, engineerUser.uuid))
     .where(eq(diagnosis.uuid, uuid));
 
   const [data] = await resultPromise;
@@ -348,6 +353,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
       order_uuid: diagnosis.order_uuid,
       order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
       engineer_uuid: diagnosis.engineer_uuid,
+      engineer_name: engineerUser.name,
       problems_uuid: diagnosis.problems_uuid,
       problem_statement: diagnosis.problem_statement,
       status: diagnosis.status,
@@ -404,6 +410,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
+    .leftJoin(engineerUser, eq(diagnosis.engineer_uuid, engineerUser.uuid))
     .where(eq(diagnosis.order_uuid, order_uuid));
 
   const [data] = await resultPromise;
