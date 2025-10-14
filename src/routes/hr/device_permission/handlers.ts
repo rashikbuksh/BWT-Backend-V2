@@ -237,27 +237,69 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   await clearQueue;
 
+  const requestBody = { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] };
+  console.warn(`[hr-device-permission] Sending request to add user bulk:`, JSON.stringify(requestBody, null, 2));
+
   const response = await api.post(
     `/iclock/add/user/bulk?sn=${sn}`,
-    { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
+    requestBody,
   );
 
-  const pin = response.data.processedUsers[0].pin;
-  // response.data.processedUsers[0].pin;
+  console.warn(`[hr-device-permission] Raw response from add user bulk:`, JSON.stringify(response, null, 2));
 
-  if (response.data.ok === true) {
-    console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with ${pin}`);
+  // Check if response and response.data exist
+  if (!response || !response.data) {
+    console.error(`[hr-device-permission] Invalid response structure:`, response);
+    return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Invalid response from device.`), HSCode.INTERNAL_SERVER_ERROR);
+  }
 
-    const employeeUpdate = db.update(employee)
-      .set({ pin })
-      .where(eq(employee.uuid, employee_uuid))
-      .returning();
+  // Check if processedUsers exists and has at least one item
+  if (!response.data.processedUsers || !Array.isArray(response.data.processedUsers) || response.data.processedUsers.length === 0) {
+    console.error(`[hr-device-permission] No processed users in response:`, response.data);
+    return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No users were processed.`), HSCode.INTERNAL_SERVER_ERROR);
+  }
 
-    await employeeUpdate;
+  const processedUser = response.data.processedUsers[0];
 
-    return c.json(createToast('create', `${userInfo[0].name} synced to ${sn}.`), HSCode.OK);
+  // Check if the processed user has a pin
+  if (!processedUser || typeof processedUser.pin === 'undefined') {
+    console.error(`[hr-device-permission] No PIN assigned to processed user:`, processedUser);
+    return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No PIN was assigned.`), HSCode.INTERNAL_SERVER_ERROR);
+  }
+
+  const pin = processedUser.pin;
+
+  // Check if the operation was successful
+  if (response.data.ok === true && pin) {
+    console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with PIN=${pin}`);
+
+    try {
+      const _employeeUpdate = await db.update(employee)
+        .set({ pin })
+        .where(eq(employee.uuid, employee_uuid))
+        .returning();
+
+      console.warn(`[hr-device-permission] Updated employee ${employee_uuid} with PIN=${pin}`);
+
+      return c.json(createToast('create', `${userInfo[0].name} synced to ${sn} with PIN ${pin}.`), HSCode.OK);
+    }
+    catch (dbError) {
+      console.error(`[hr-device-permission] Failed to update employee PIN in database:`, dbError);
+      return c.json(createToast('error', `User synced to device but failed to update PIN in database.`), HSCode.INTERNAL_SERVER_ERROR);
+    }
   }
   else {
-    return c.json('error', `${userInfo[0].name} not synced to ${sn}.`, HSCode.PRECONDITION_FAILED);
+    console.error(`[hr-device-permission] Failed to sync user to device:`, {
+      ok: response.data.ok,
+      pin,
+      errors: response.data.errors || 'No errors provided',
+      response: response.data,
+    });
+
+    const errorMessage = response.data.errors && response.data.errors.length > 0
+      ? response.data.errors[0].error
+      : 'Unknown error occurred';
+
+    return c.json(createToast('error', `${userInfo[0].name} not synced to ${sn}: ${errorMessage}`), HSCode.PRECONDITION_FAILED);
   }
 };

@@ -531,6 +531,23 @@ export const employee_document = hr.table('employee_document', {
   remarks: text('remarks').default(sql`null`),
 });
 
+export const biometric_type_enum = pgEnum('biometric_type', [
+  'fingerprint',
+  'face',
+  'rfid',
+]);
+
+export const employee_biometric = hr.table('employee_biometric', {
+  uuid: uuid_primary,
+  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
+  template: text('template').notNull(),
+  biometric_type: biometric_type_enum('biometric_type').default('fingerprint'),
+  finger_index: integer('finger_index').default(sql`0`),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export const permission_type_enum = pgEnum('permission_type_enum', [
   'permanent',
   'temporary',
