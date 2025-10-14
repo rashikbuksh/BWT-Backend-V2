@@ -1098,7 +1098,7 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
   ]);
 
   // If engineer_uuid is provided and order is null, return a blank response
-  if (engineer_uuid && !order) {
+  if (engineer_uuid && (!order || Object.keys(order).length === 0)) {
     return c.json({}, HSCode.OK);
   }
 
