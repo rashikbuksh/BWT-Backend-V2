@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
+import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute } from './routes';
 
 import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -470,7 +470,18 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   // Clear the usersByDevice cache to force refresh from device
   usersByDevice.delete(sn);
 
-  await ensureUsersFetched(sn, usersByDevice, commandQueue);
+  // Schedule a delayed user fetch to get updated user list after device processes the commands
+  setTimeout(async () => {
+    try {
+      console.warn(`[bulk-add-users] SN=${sn} fetching updated user list after ${commands.length} user additions`);
+      await ensureUsersFetched(sn, usersByDevice, commandQueue);
+      const umap = ensureUserMap(sn, usersByDevice);
+      console.warn(`[bulk-add-users] SN=${sn} user fetch completed, total users now: ${umap?.size ?? 0}`);
+    }
+    catch (error) {
+      console.error(`[bulk-add-users] SN=${sn} failed to fetch users after bulk addition:`, error);
+    }
+  }, 5000); // Wait 5 seconds for device to process the user addition commands
 
   return c.json({
     ok: true,
@@ -710,8 +721,14 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
   return c.text('OK');
 };
 
-// Utility function to clear command queue for a device
-export function clearCommandQueue(sn: string): { clearedQueuedCommands: number; clearedSentCommands: number } {
+// Route handler to clear command queue for a device
+export const clearCommandQueue: AppRouteHandler<ClearCommandQueueRoute> = async (c: any) => {
+  const sn = c.req.query('sn') || c.req.query('SN');
+
+  if (!sn) {
+    return c.json({ error: 'sn is required' }, 400);
+  }
+
   const queue = commandQueue.get(sn);
   const queueLength = queue ? queue.length : 0;
 
@@ -729,11 +746,42 @@ export function clearCommandQueue(sn: string): { clearedQueuedCommands: number; 
 
   console.warn(`[clear-queue] SN=${sn} cleared ${queueLength} queued commands and ${sentCount} sent commands`);
 
-  return {
+  return c.json({
+    ok: true,
+    sn,
     clearedQueuedCommands: queueLength,
     clearedSentCommands: sentCount,
-  };
-}
+    message: `Cleared ${queueLength} queued commands and ${sentCount} sent commands for device ${sn}`,
+  });
+};
+
+// Route handler to refresh users from device
+export const refreshUsers: AppRouteHandler<RefreshUsersRoute> = async (c: any) => {
+  const sn = c.req.query('sn') || c.req.query('SN');
+
+  if (!sn) {
+    return c.json({ error: 'sn is required' }, 400);
+  }
+
+  // Clear user cache to force fresh fetch
+  usersByDevice.delete(sn);
+
+  // Ensure users are fetched from device
+  await ensureUsersFetched(sn, usersByDevice, commandQueue);
+
+  const umap = ensureUserMap(sn, usersByDevice);
+  const userCount = umap?.size ?? 0;
+
+  console.warn(`[refresh-users] SN=${sn} initiated user refresh, queued fetch command. Current cached users: ${userCount}`);
+
+  return c.json({
+    ok: true,
+    sn,
+    message: `User refresh initiated for device ${sn}`,
+    currentCachedUsers: userCount,
+    note: 'QUERY USERINFO command has been queued. Users will be refreshed when device next polls for commands.',
+  });
+};
 
 // Handler to get queue status
 export const getQueueStatus: AppRouteHandler<GetQueueStatusRoute> = async (c: any) => {
