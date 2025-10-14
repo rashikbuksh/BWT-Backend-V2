@@ -233,7 +233,8 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   const api = createApi(c);
 
-  const clearQueue = await api.get(`/iclock/device/clear-queue?sn=${sn}`);
+  // Clear queue before adding user to prevent command conflicts
+  const clearQueue = await api.post(`/iclock/device/clear-queue?sn=${sn}`, {});
 
   await clearQueue;
 
@@ -246,6 +247,17 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
   );
 
   console.warn(`[hr-device-permission] Raw response from add user bulk:`, JSON.stringify(response, null, 2));
+
+  // Wait a moment for device to process the user addition, then refresh user list
+  setTimeout(async () => {
+    try {
+      console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
+      await api.post(`/iclock/device/refresh-users?sn=${sn}`, {});
+    }
+    catch (error) {
+      console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
+    }
+  }, 3000); // Wait 3 seconds
 
   // Check if response and response.data exist
   if (!response || !response.data) {
