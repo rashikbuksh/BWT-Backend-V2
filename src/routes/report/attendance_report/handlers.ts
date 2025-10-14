@@ -123,13 +123,13 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                               COALESCE(
                                 (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid =  (SELECT el.type_uuid
                                                             FROM hr.employee_log el
-                                                            WHERE el.employee_uuid = pl.employee_uuid
+                                                            WHERE el.employee_uuid = e.uuid
                                                             AND el.type = 'shift_group' AND el.effective_date::date <= ud.punch_date::date
                                                             ORDER BY el.effective_date DESC
                                                             LIMIT 1) AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
                                 (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid =  (SELECT el.type_uuid
                                                             FROM hr.employee_log el
-                                                            WHERE el.employee_uuid = pl.employee_uuid
+                                                            WHERE el.employee_uuid = e.uuid
                                                             AND el.type = 'shift_group' AND el.effective_date::date <= ud.punch_date::date
                                                             ORDER BY el.effective_date DESC
                                                             LIMIT 1) AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
