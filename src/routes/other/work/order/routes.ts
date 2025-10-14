@@ -12,6 +12,7 @@ export const valueLabel = createRoute({
   request: {
     query: z.object({
       is_repair: z.string().optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   responses: {
