@@ -154,6 +154,7 @@ export const deviceCmd = createRoute({
       sn: z.string().optional().describe('The device Serial Number'),
       INFO: z.string().optional().describe('Device info string'),
       info: z.string().optional().describe('Device info string'),
+      cmds: z.string().optional().describe('Comma-separated command IDs that were executed'),
     }),
     body: {
       content: {

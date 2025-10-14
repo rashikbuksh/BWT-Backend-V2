@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
+import type { AddBulkUsersRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute } from './routes';
 
 import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -466,6 +466,8 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   // Clear the usersByDevice cache to force refresh from device
   usersByDevice.delete(sn);
 
+  await ensureUsersFetched(sn, usersByDevice, commandQueue);
+
   return c.json({
     ok: true,
     sn,
@@ -572,13 +574,54 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
 };
 
 export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
-  const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
-  const info = c.req.valid('query').INFO || c.req.valid('query').info || '';
+  const query = c.req.valid('query') || {};
+  const sn = query.SN || query.sn || '';
+  const info = query.INFO || query.info || '';
+  const cmds = query.cmds || ''; // Command IDs that were executed
   const body = await c.req.text();
 
-  console.warn(`[devicecmd] *** LEGACY DEVICECMD CALLED *** SN=${sn} INFO=${info}`);
+  console.warn(`[devicecmd] SN=${sn} INFO=${info} cmds=${cmds}`);
   if (body) {
     console.warn(`[devicecmd] SN=${sn} body: ${body}`);
+  }
+
+  // Handle executed command confirmations
+  if (cmds) {
+    const cmdIds = cmds.split(',').map((id: string) => id.trim()).filter(Boolean);
+
+    if (cmdIds.length > 0) {
+      const sentCmds = sentCommands.get(sn) || [];
+      let executedCount = 0;
+
+      cmdIds.forEach((cmdId: string) => {
+        const cmd = sentCmds.find((c: any) => c.id === cmdId);
+        if (cmd && !cmd.executedAt) {
+          cmd.executedAt = new Date().toISOString();
+          cmd.status = 'executed';
+          executedCount++;
+        }
+      });
+
+      console.warn(`[devicecmd] SN=${sn} marked ${executedCount}/${cmdIds.length} commands as executed`);
+
+      // Clean up old executed commands (keep only last 50 executed commands per device)
+      const executedCommands = sentCmds.filter((c: any) => c.executedAt);
+      if (executedCommands.length > 50) {
+        executedCommands.sort((a: any, b: any) =>
+          new Date(a.executedAt).getTime() - new Date(b.executedAt).getTime(),
+        );
+
+        const toRemove = executedCommands.slice(0, executedCommands.length - 50);
+        toRemove.forEach((oldCmd: any) => {
+          const index = sentCmds.findIndex((c: any) => c.id === oldCmd.id);
+          if (index >= 0) {
+            sentCmds.splice(index, 1);
+          }
+        });
+
+        console.warn(`[devicecmd] SN=${sn} cleaned up ${toRemove.length} old executed commands`);
+      }
+    }
   }
 
   // Handle status reports like "1"
@@ -634,45 +677,35 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
     return c.text(body);
   }
 
-  // if (env.PULL_MODE === '1') {
-  //   const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
-  //   const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
-  //   console.warn(`[devicecmd] SN=${sn} auto cmd: ${cmd}`);
-  //   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-  //   return c.text(cmd + sep);
-  // }
-
   console.warn(`[devicecmd] SN=${sn} idle (no commands, pullMode=${env.PULL_MODE})`);
   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
   return c.text('OK');
 };
 
-// New handler to clear command queue
-export const clearCommandQueue: AppRouteHandler<ClearCommandQueueRoute> = async (c: any) => {
-  const sn = c.req.query('sn') || c.req.query('SN');
-  if (!sn) {
-    return c.json({ error: 'sn is required' }, 400);
-  }
-
-  const queue = ensureQueue(sn, commandQueue);
-  const queueLength = queue?.length ?? 0;
+// Utility function to clear command queue for a device
+export function clearCommandQueue(sn: string): { clearedQueuedCommands: number; clearedSentCommands: number } {
+  const queue = commandQueue.get(sn);
+  const queueLength = queue ? queue.length : 0;
 
   if (queue) {
     queue.length = 0; // Clear the queue
   }
 
-  // Also clear sent commands history for this device
-  sentCommands.delete(sn);
+  // Also clear sent commands for this device
+  const sentCmds = sentCommands.get(sn);
+  const sentCount = sentCmds ? sentCmds.length : 0;
 
-  console.warn(`[clear-queue] SN=${sn} cleared ${queueLength} commands from queue`);
+  if (sentCmds) {
+    sentCmds.length = 0; // Clear sent commands tracking
+  }
 
-  return c.json({
-    ok: true,
-    sn,
-    clearedCommands: queueLength,
-    message: `Cleared ${queueLength} commands from queue for device ${sn}`,
-  });
-};
+  console.warn(`[clear-queue] SN=${sn} cleared ${queueLength} queued commands and ${sentCount} sent commands`);
+
+  return {
+    clearedQueuedCommands: queueLength,
+    clearedSentCommands: sentCount,
+  };
+}
 
 // Handler to get queue status
 export const getQueueStatus: AppRouteHandler<GetQueueStatusRoute> = async (c: any) => {

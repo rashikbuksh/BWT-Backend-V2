@@ -239,7 +239,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   const response = await api.post(
     `/iclock/add/user/bulk?sn=${sn}`,
-    { users: [{ pin: employee_uuid, name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
+    { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
   );
 
   const pin = employee_uuid;
