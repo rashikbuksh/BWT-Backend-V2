@@ -12,8 +12,6 @@ import type { GetDailyEmployeeAttendanceReportRoute, GetDepartmentAttendanceRepo
 export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceReportRoute> = async (c: any) => {
   const { from_date, to_date, employee_uuid } = c.req.valid('query');
 
-  console.log('Received parameters:', { from_date, to_date, employee_uuid });
-
   const query = sql`
                 WITH date_series AS (
                   SELECT generate_series(${from_date}::date, ${to_date}::date, INTERVAL '1 day')::date AS punch_date

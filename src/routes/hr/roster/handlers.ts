@@ -180,10 +180,22 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                   LEFT JOIN
                     hr.users ON employee.user_uuid = users.uuid
                   LEFT JOIN 
-                    hr.shift_group ON employee.shift_group_uuid = shift_group.uuid
+                    hr.shift_group ON (SELECT el.type_uuid FROM hr.employee_log el
+                      WHERE el.employee_uuid = employee.uuid
+                      AND el.type = 'shift_group' AND (
+                        EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                      )
+                      ORDER BY el.effective_date DESC
+                      LIMIT 1) = shift_group.uuid
                   LEFT JOIN
                     hr.roster ON (
-                      employee.shift_group_uuid = roster.shift_group_uuid
+                      (SELECT el.type_uuid FROM hr.employee_log el
+                        WHERE el.employee_uuid = employee.uuid
+                        AND el.type = 'shift_group' AND (
+                          EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                        )
+                        ORDER BY el.effective_date DESC
+                        LIMIT 1) = roster.shift_group_uuid
                       AND (
                         EXTRACT(YEAR FROM roster.effective_date) <= ${year} AND EXTRACT(MONTH FROM roster.effective_date) <= ${month}
                       )
