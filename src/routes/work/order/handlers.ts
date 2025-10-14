@@ -101,7 +101,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     ready_for_delivery_date,
     engineer_uuid,
     advance_pay,
-
+    is_return,
+    return_comment,
   } = formData;
 
   let imagePath_1 = null;
@@ -223,6 +224,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     problem_statement,
     engineer_uuid: defaultIfEmpty(engineer_uuid, null),
     advance_pay: defaultIfEmpty(advance_pay, 0),
+    is_return,
+    return_comment,
   };
 
   try {
@@ -383,6 +386,8 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.created_by = defaultIfEmpty(formData.created_by, null);
   formData.engineer_uuid = defaultIfEmpty(formData.engineer_uuid, null);
   formData.advance_pay = defaultIfEmpty(formData.advance_pay, 0);
+  formData.is_return = defaultIfEmpty(formData.is_return, false);
+  formData.return_comment = defaultIfEmpty(formData.return_comment, null);
 
   console.warn(formData, 'Final formData before update');
 
@@ -559,6 +564,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       engineer_uuid: orderTable.engineer_uuid,
       engineer_name: engineerUser.name,
       advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
+      is_return: orderTable.is_return,
+      return_comment: orderTable.return_comment,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -851,6 +858,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       engineer_uuid: orderTable.engineer_uuid,
       engineer_name: engineerUser.name,
       advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
+      is_return: orderTable.is_return,
+      return_comment: orderTable.return_comment,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -1135,6 +1144,8 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       engineer_uuid: orderTable.engineer_uuid,
       engineer_name: engineerUser.name,
       advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
+      is_return: orderTable.is_return,
+      return_comment: orderTable.return_comment,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))

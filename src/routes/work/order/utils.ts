@@ -93,6 +93,8 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   engineer_uuid: true,
   advance_pay: true,
+  is_return: true,
+  return_comment: true,
 }).omit({
   id: true,
 });

@@ -158,7 +158,8 @@ export const order = work.table('order', {
     () => hrSchema.users.uuid,
   ).default(sql`null`),
   advance_pay: PG_DECIMAL('advance_pay').default(sql`0`),
-
+  is_return: boolean('is_return').default(false),
+  return_comment: text('return_comment').default(sql`null`),
 });
 export const statusEnum = pgEnum('status', [
   'pending',
