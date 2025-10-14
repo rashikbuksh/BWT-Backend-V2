@@ -21,6 +21,8 @@ export const list = createRoute({
       work_in_hand: z.string().optional(),
       customer_uuid: z.string().optional(),
       is_repair: z.string().optional(),
+      is_return: z.string().optional(),
+      is_delivery_complete: z.string().optional(),
     }),
   },
   responses: {

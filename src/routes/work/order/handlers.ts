@@ -497,7 +497,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { qc, is_delivered, work_in_hand, customer_uuid, is_repair } = c.req.valid('query');
+  const { qc, is_delivered, work_in_hand, customer_uuid, is_repair, is_return, is_delivery_complete } = c.req.valid('query');
 
   const orderPromise = db
     .select({
@@ -596,10 +596,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
     .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .leftJoin(deliverySchema.challan_entry, eq(deliverySchema.challan_entry.order_uuid, orderTable.uuid))
+    .leftJoin(deliverySchema.challan, eq(deliverySchema.challan.uuid, deliverySchema.challan_entry.challan_uuid))
     .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid));
 
+  // Build filters based on query parameters
   const filters = [];
 
+  // Quality Control filter
   if (qc === 'true') {
     filters.push(
       and(
@@ -609,15 +612,26 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     );
   }
 
+  // Ready for delivery but not yet delivered
   if (is_delivered === 'true') {
     filters.push(
-      and(eq(orderTable.is_ready_for_delivery, true), sql`${deliverySchema.challan_entry.uuid} IS NULL`),
+      and(
+        eq(orderTable.is_ready_for_delivery, true),
+        sql`${deliverySchema.challan_entry.uuid} IS NULL`,
+      ),
     );
   }
 
+  // Delivery completed
+  if (is_delivery_complete === 'true') {
+    filters.push(eq(deliverySchema.challan.is_delivery_complete, true));
+  }
+
+  // Work in progress (no action taken yet)
   if (work_in_hand === 'true') {
     filters.push(
       and(
+        eq(orderTable.is_return, false),
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
         eq(orderTable.is_proceed_to_repair, false),
@@ -625,6 +639,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     );
   }
 
+  // Returned orders
+  if (is_return === 'true') {
+    filters.push(eq(orderTable.is_return, true));
+  }
+
+  // Customer-specific orders (ready for delivery or challan needed, not yet delivered)
   if (customer_uuid) {
     filters.push(
       and(
@@ -638,17 +658,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             db
               .select()
               .from(deliverySchema.challan_entry)
-              .where(
-                eq(
-                  deliverySchema.challan_entry.order_uuid,
-                  orderTable.uuid,
-                ),
-              ),
+              .where(eq(deliverySchema.challan_entry.order_uuid, orderTable.uuid)),
           ),
         ),
       ),
     );
   }
+
+  // Orders in repair phase
   if (is_repair === 'true') {
     filters.push(
       and(
@@ -659,17 +676,17 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     );
   }
 
+  // Apply filters if any exist
   if (filters.length > 0) {
     orderPromise.where(and(...filters));
   }
 
-  // Apply ordering based on is_delivered parameter
-  if (is_delivered === 'true') {
-    orderPromise.orderBy(desc(orderTable.ready_for_delivery_date));
-  }
-  else {
-    orderPromise.orderBy(desc(orderTable.created_at));
-  }
+  // Apply ordering - prioritize delivery date for delivered orders, otherwise creation date
+  orderPromise.orderBy(
+    is_delivered === 'true'
+      ? desc(orderTable.ready_for_delivery_date)
+      : desc(orderTable.created_at),
+  );
 
   const data = await orderPromise;
 
