@@ -10,7 +10,7 @@ import { info, order } from '@/routes/work/schema';
 import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
-  const { is_repair } = c.req.valid('query');
+  const { is_repair, engineer_uuid } = c.req.valid('query');
   const orderPromise = db
     .select({
       value: order.uuid,
@@ -48,6 +48,9 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
         eq(order.is_ready_for_delivery, false),
       ),
     );
+  }
+  if (engineer_uuid) {
+    filters.push(eq(order.engineer_uuid, engineer_uuid));
   }
 
   if (filters.length > 0) {
