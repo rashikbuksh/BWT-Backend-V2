@@ -22,6 +22,7 @@ import {
 
 const engineer_user = alias(users, 'engineer_user');
 const user = alias(users, 'user');
+const order_table = alias(order, 'order_table');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -80,7 +81,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       section_name: section.name,
       order_uuid: process.order_uuid,
       diagnosis_uuid: process.diagnosis_uuid,
-      engineer_uuid: process.engineer_uuid,
+      engineer_uuid: order_table.engineer_uuid,
       engineer_name: engineer_user.name,
       problems_uuid: process.problems_uuid,
       problem_statement: process.problem_statement,
@@ -129,8 +130,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(process.box_uuid, storeSchema.box.uuid),
     )
     .leftJoin(
+      order_table,
+      eq(process.order_uuid, order_table.uuid),
+    )
+    .leftJoin(
       engineer_user,
-      eq(process.engineer_uuid, engineer_user.uuid),
+      eq(order_table.engineer_uuid, engineer_user.uuid),
     )
     .leftJoin(
       storeSchema.branch,
@@ -242,7 +247,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       uuid: process.uuid,
       section_uuid: process.section_uuid,
       diagnosis_uuid: process.diagnosis_uuid,
-      engineer_uuid: process.engineer_uuid,
+      engineer_uuid: order_table.engineer_uuid,
       engineer_name: engineer_user.name,
       problems_uuid: process.problems_uuid,
       problem_statement: process.problem_statement,
@@ -279,7 +284,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       eq(process.floor_uuid, storeSchema.floor.uuid),
     )
     .leftJoin(storeSchema.box, eq(process.box_uuid, storeSchema.box.uuid))
-    .leftJoin(engineer_user, eq(process.engineer_uuid, engineer_user.uuid))
+    .leftJoin(
+      order_table,
+      eq(process.order_uuid, order_table.uuid),
+    )
+    .leftJoin(
+      engineer_user,
+      eq(order_table.engineer_uuid, engineer_user.uuid),
+    )
     .leftJoin(
       storeSchema.branch,
       eq(storeSchema.warehouse.branch_uuid, storeSchema.branch.uuid),

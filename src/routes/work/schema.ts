@@ -173,9 +173,6 @@ export const diagnosis = work.table('diagnosis', {
   id: serial('id').notNull().unique(),
   uuid: uuid_primary,
   order_uuid: defaultUUID('order_uuid').references(() => order.uuid),
-  engineer_uuid: defaultUUID('engineer_uuid').references(
-    () => hrSchema.users.uuid,
-  ),
   problems_uuid: text('problems_uuid').array().default([]),
   problem_statement: text('problem_statement'),
   status: statusEnum('status').default('pending'),
@@ -209,9 +206,6 @@ export const process = work.table('process', {
   order_uuid: defaultUUID('order_uuid').references(() => order.uuid),
   diagnosis_uuid: defaultUUID('diagnosis_uuid').references(
     () => diagnosis.uuid,
-  ),
-  engineer_uuid: defaultUUID('engineer_uuid').references(
-    () => hrSchema.users.uuid,
   ),
   problems_uuid: text('problems_uuid').array().default([]),
   problem_statement: text('problem_statement').default(sql`null`),

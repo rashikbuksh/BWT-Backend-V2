@@ -13,7 +13,6 @@ export const insertSchema = createInsertSchema(
   {
     uuid: schema => schema.uuid.length(15),
     order_uuid: schema => schema.order_uuid.min(1),
-    engineer_uuid: schema => schema.engineer_uuid.length(15),
     problems_uuid: z.array(z.string()).optional(),
     problem_statement: schema => schema.problem_statement.optional(),
     status: schema => schema.status.optional(),
@@ -34,7 +33,6 @@ export const insertSchema = createInsertSchema(
 ).required({
   uuid: true,
   order_uuid: true,
-  engineer_uuid: true,
   created_by: true,
   created_at: true,
 }).partial({

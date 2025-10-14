@@ -71,7 +71,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), '-', ${diagnosis.id})`,
     order_uuid: diagnosis.order_uuid,
     order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
-    engineer_uuid: diagnosis.engineer_uuid,
+    engineer_uuid: order_table.engineer_uuid,
     engineer_name: engineerUser.name,
     problems_uuid: diagnosis.problems_uuid,
     problem_statement: diagnosis.problem_statement,
@@ -129,7 +129,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .leftJoin(engineerUser, eq(diagnosis.engineer_uuid, engineerUser.uuid))
+    .leftJoin(engineerUser, eq(order_table.engineer_uuid, engineerUser.uuid))
     .where(eq(diagnosis.is_proceed_to_repair, false))
     .orderBy(desc(diagnosis.created_at));
 
@@ -215,7 +215,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), ${diagnosis.id})`,
       order_uuid: diagnosis.order_uuid,
       order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
-      engineer_uuid: diagnosis.engineer_uuid,
+      engineer_uuid: order_table.engineer_uuid,
       engineer_name: engineerUser.name,
       problems_uuid: diagnosis.problems_uuid,
       problem_statement: diagnosis.problem_statement,
@@ -271,7 +271,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .leftJoin(engineerUser, eq(diagnosis.engineer_uuid, engineerUser.uuid))
+    .leftJoin(engineerUser, eq(order_table.engineer_uuid, engineerUser.uuid))
     .where(eq(diagnosis.uuid, uuid));
 
   const [data] = await resultPromise;
@@ -352,7 +352,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
       diagnosis_id: sql`CONCAT('WD', TO_CHAR(${diagnosis.created_at}, 'YY'), ${diagnosis.id})`,
       order_uuid: diagnosis.order_uuid,
       order_id: sql`CASE WHEN ${order_table.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) ELSE CONCAT('RWO', TO_CHAR(${order_table.created_at}, 'YY'), '-', ${order_table.id}) END`,
-      engineer_uuid: diagnosis.engineer_uuid,
+      engineer_uuid: order_table.engineer_uuid,
       engineer_name: engineerUser.name,
       problems_uuid: diagnosis.problems_uuid,
       problem_statement: diagnosis.problem_statement,
@@ -410,7 +410,7 @@ export const getByOrder: AppRouteHandler<GetByOrderRoute> = async (c: any) => {
     .leftJoin(model, eq(order_table.model_uuid, model.uuid))
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .leftJoin(engineerUser, eq(diagnosis.engineer_uuid, engineerUser.uuid))
+    .leftJoin(engineerUser, eq(order_table.engineer_uuid, engineerUser.uuid))
     .where(eq(diagnosis.order_uuid, order_uuid));
 
   const [data] = await resultPromise;
