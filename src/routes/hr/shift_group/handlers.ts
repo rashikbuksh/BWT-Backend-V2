@@ -30,14 +30,25 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     name: shift_group.name,
   });
 
-  await db.insert(roster).values({
-    shift_group_uuid: value.uuid,
-    shifts_uuid: value.shifts_uuid,
-    effective_date: value.effective_date,
-    created_by: value.created_by,
-    off_days: value.off_days,
-    created_at: value.created_at,
-  });
+  // await db.insert(roster).values({
+  //   shift_group_uuid: value.uuid,
+  //   shifts_uuid: value.shifts_uuid,
+  //   effective_date: value.effective_date,
+  //   created_by: value.created_by,
+  //   off_days: value.off_days,
+  //   created_at: value.created_at,
+  // });
+
+  if (value.uuid != null && value.shifts_uuid != null && value.effective_date != null && value.created_by != null && value.off_days != null && value.created_at != null) {
+    await db.insert(roster).values({
+      shift_group_uuid: value.uuid,
+      shifts_uuid: value.shifts_uuid,
+      effective_date: value.effective_date,
+      created_by: value.created_by,
+      off_days: value.off_days,
+      created_at: value.created_at,
+    });
+  }
 
   return c.json(createToast('create', data.name), HSCode.OK);
 };
@@ -69,14 +80,25 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
       name: shift_group.name,
     });
 
-  await db.insert(roster).values({
-    shift_group_uuid: uuid,
-    shifts_uuid: updates.shifts_uuid,
-    effective_date: updates.effective_date,
-    created_by: updates.created_by,
-    off_days: updates.off_days,
-    created_at: updates.updated_at,
-  });
+  // await db.insert(roster).values({
+  //   shift_group_uuid: uuid,
+  //   shifts_uuid: updates.shifts_uuid,
+  //   effective_date: updates.effective_date,
+  //   created_by: updates.created_by,
+  //   off_days: updates.off_days,
+  //   created_at: updates.updated_at,
+  // });
+
+  if (uuid != null && updates.shifts_uuid != null && updates.effective_date != null && updates.created_by != null && updates.off_days != null && updates.updated_at != null) {
+    await db.insert(roster).values({
+      shift_group_uuid: uuid,
+      shifts_uuid: updates.shifts_uuid,
+      effective_date: updates.effective_date,
+      created_by: updates.created_by,
+      off_days: updates.off_days,
+      created_at: updates.updated_at,
+    });
+  }
 
   if (!data)
     return DataNotFound(c);
