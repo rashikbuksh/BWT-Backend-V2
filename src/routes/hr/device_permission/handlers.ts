@@ -242,14 +242,14 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] },
   );
 
-  const pin = employee_uuid;
+  const pin = response.data.processedUsers[0].pin;
   // response.data.processedUsers[0].pin;
 
   if (response.data.ok === true) {
     console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with ${pin}`);
 
     const employeeUpdate = db.update(employee)
-      .set({ pin: employee_uuid })
+      .set({ pin })
       .where(eq(employee.uuid, employee_uuid))
       .returning();
 
