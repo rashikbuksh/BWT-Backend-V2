@@ -535,15 +535,26 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
     const cmds = [...queue]; // Create a copy of the commands
     queue.length = 0; // Clear the queue immediately after copying
 
-    const body = cmds.join(sep) + sep;
-    console.warn(`[getrequest-legacy] SN=${sn} sending ${cmds.length} cmd(s), queue cleared: ${body.trim()}`);
+    // Debug: log what's in the commands array
+    console.warn(`[getrequest-legacy] SN=${sn} commands before join:`, cmds.map(c => ({ type: typeof c, value: c })));
+
+    // Ensure all commands are strings
+    const stringCmds = cmds.map((c) => {
+      if (typeof c === 'string')
+        return c;
+      console.warn(`[getrequest-legacy] SN=${sn} converting non-string command:`, { type: typeof c, value: c });
+      return String(c);
+    });
+
+    const body = stringCmds.join(sep) + sep;
+    console.warn(`[getrequest-legacy] SN=${sn} sending ${stringCmds.length} cmd(s), queue cleared: ${body.trim()}`);
 
     // Record commands
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
     const justIds: string[] = [];
     const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
 
-    cmds.forEach((c: string) => {
+    stringCmds.forEach((c: string) => {
       recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
       const list = sentCommands.get(sn);
       if (list)
@@ -552,7 +563,7 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
 
     const bytes = Buffer.byteLength(body, 'utf8');
     markDelivered(sn, justIds, bytes, sentCommands);
-    recordPoll(sn, remote, queue.length + cmds.length, cmds.length, new Map());
+    recordPoll(sn, remote, queue.length + stringCmds.length, stringCmds.length, new Map());
     markStaleCommands(sn, sentCommands);
     return c.text(body);
   }
@@ -655,15 +666,26 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
     const cmds = [...queue]; // Create a copy of the commands
     queue.length = 0; // Clear the queue immediately after copying
 
-    const body = cmds.join(sep) + sep;
-    console.warn(`[devicecmd] SN=${sn} sending ${cmds.length} cmd(s), queue cleared: ${body.trim()}`);
+    // Debug: log what's in the commands array
+    console.warn(`[devicecmd] SN=${sn} commands before join:`, cmds.map(c => ({ type: typeof c, value: c })));
+
+    // Ensure all commands are strings
+    const stringCmds = cmds.map((c) => {
+      if (typeof c === 'string')
+        return c;
+      console.warn(`[devicecmd] SN=${sn} converting non-string command:`, { type: typeof c, value: c });
+      return String(c);
+    });
+
+    const body = stringCmds.join(sep) + sep;
+    console.warn(`[devicecmd] SN=${sn} sending ${stringCmds.length} cmd(s), queue cleared: ${body.trim()}`);
 
     // Record commands
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
     const justIds: string[] = [];
     const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
 
-    cmds.forEach((c: string) => {
+    stringCmds.forEach((c: string) => {
       recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
       const list = sentCommands.get(sn);
       if (list)
@@ -672,7 +694,7 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
 
     const bytes = Buffer.byteLength(body, 'utf8');
     markDelivered(sn, justIds, bytes, sentCommands);
-    recordPoll(sn, remote, queue.length + cmds.length, cmds.length, new Map());
+    recordPoll(sn, remote, queue.length + stringCmds.length, stringCmds.length, new Map());
     markStaleCommands(sn, sentCommands);
     return c.text(body);
   }

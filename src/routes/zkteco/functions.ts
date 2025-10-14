@@ -139,6 +139,28 @@ export function ensureQueue(sn: string, commandQueue: Map<string, string[]>) {
   return commandQueue.get(sn);
 }
 
+// Safe queue push function that ensures only strings are added
+export function safeQueuePush(queue: string[] | undefined, command: any): boolean {
+  if (!queue) {
+    console.warn('[safe-queue-push] Queue is undefined, cannot push command');
+    return false;
+  }
+
+  if (typeof command !== 'string') {
+    console.warn('[safe-queue-push] Command is not a string, converting:', { type: typeof command, value: command });
+    const stringCmd = String(command);
+    if (stringCmd === '[object Object]') {
+      console.error('[safe-queue-push] Command cannot be safely converted to string, skipping:', command);
+      return false;
+    }
+    queue.push(stringCmd);
+    return true;
+  }
+
+  queue.push(command);
+  return true;
+}
+
 export function ensureUserMap(sn: string, usersByDevice: Map<string, Map<string, any>>) {
   if (!usersByDevice.has(sn))
     usersByDevice.set(sn, new Map());
