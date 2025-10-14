@@ -814,6 +814,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
+  const { engineer_uuid } = c.req.valid('query');
+
   const orderPromise = db
     .select({
       id: orderTable.id,
@@ -922,8 +924,21 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
     .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid))
-    .where(eq(orderTable.uuid, uuid));
+    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid));
+
+  const filters = [];
+
+  // Always filter by the order UUID from the path parameter
+  filters.push(eq(orderTable.uuid, uuid));
+
+  // If engineer_uuid is provided, add it to the where clause
+  if (engineer_uuid) {
+    filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
+  }
+
+  if (filters.length > 0) {
+    orderPromise.where(and(...filters));
+  }
 
   const data = await orderPromise;
 
@@ -1059,6 +1074,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOrderRoute> = async (c: any) => {
   const { order_uuid } = c.req.valid('param');
 
+  const { engineer_uuid } = c.req.valid('query');
+
   const api = createApi(c);
 
   const fetchData = async (endpoint: string) =>
@@ -1074,11 +1091,16 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
       });
 
   const [order, diagnosis, process, product_transfer] = await Promise.all([
-    fetchData(`/v1/work/order/${order_uuid}`),
+    fetchData(`/v1/work/order/${order_uuid}?engineer_uuid=${engineer_uuid}`),
     fetchData(`/v1/work/diagnosis-by-order/${order_uuid}`),
     fetchData(`/v1/work/process?order_uuid=${order_uuid}`),
     fetchData(`/v1/store/product-transfer/by/${order_uuid}`),
   ]);
+
+  // If engineer_uuid is provided and order is null, return a blank response
+  if (engineer_uuid && !order) {
+    return c.json({}, HSCode.OK);
+  }
 
   const data = {
     ...order,
@@ -1095,6 +1117,8 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
 
 export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   const { info_uuid } = c.req.valid('param');
+
+  const { engineer_uuid } = c.req.valid('query');
 
   const orderPromise = db
     .select({
@@ -1208,8 +1232,20 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
     )
     .leftJoin(diagnosis, eq(orderTable.uuid, diagnosis.order_uuid))
     .leftJoin(reclaimedOrderTable, eq(orderTable.reclaimed_order_uuid, reclaimedOrderTable.uuid))
-    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid))
-    .where(eq(orderTable.info_uuid, info_uuid));
+    .leftJoin(engineerUser, eq(orderTable.engineer_uuid, engineerUser.uuid));
+
+  const filters = [];
+  // Always filter by the info UUID from the path parameter
+  filters.push(eq(orderTable.info_uuid, info_uuid));
+
+  // If engineer_uuid is provided, add it to the where clause
+  if (engineer_uuid) {
+    filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
+  }
+
+  if (filters.length > 0) {
+    orderPromise.where(and(...filters));
+  }
 
   const data = await orderPromise;
 

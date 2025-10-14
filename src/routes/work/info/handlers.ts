@@ -193,7 +193,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { customer_uuid, status, orderType } = c.req.valid('query');
+  const { customer_uuid, status, orderType, engineer_uuid } = c.req.valid('query');
 
   // console.log('orderType:', orderType);
 
@@ -295,7 +295,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
-    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid));
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
+    .leftJoin(order, eq(info.uuid, order.info_uuid));
 
   // Build filters array and apply them together
   const filters = [];
@@ -322,6 +323,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // Filter by order type (exclude undefined/null values)
   if (orderType && orderType !== 'undefined') {
     filters.push(eq(info.order_type, orderType));
+  }
+
+  // Filter by engineer_uuid (checks if any order under the info is assigned to the engineer)
+  if (engineer_uuid) {
+    filters.push(eq(order.engineer_uuid, engineer_uuid));
   }
 
   // Apply all filters if any exist
@@ -406,7 +412,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
 export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUuidRoute> = async (c: any) => {
   const { info_uuid } = c.req.valid('param');
-  const { diagnosis, process, is_update } = c.req.valid('query');
+  const { diagnosis, process, is_update, engineer_uuid } = c.req.valid('query');
 
   const api = createApi(c);
 
@@ -424,7 +430,7 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
 
   const [info, order] = await Promise.all([
     fetchData(`/v1/work/info/${info_uuid}`),
-    fetchData(`/v1/work/order-by-info/${info_uuid}`),
+    fetchData(`/v1/work/order-by-info/${info_uuid}?engineer_uuid=${engineer_uuid || ''}`),
   ]);
 
   // Check if order.data exists and is an array before processing
@@ -475,6 +481,10 @@ export const getOrderDetailsByInfoUuid: AppRouteHandler<GetOrderDetailsByInfoUui
     enrichedOrders.sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
+  }
+
+  if (engineer_uuid && orderData.length === 0) {
+    return c.json({}, HSCode.OK);
   }
 
   const response = {
