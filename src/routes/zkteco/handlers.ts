@@ -69,7 +69,11 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
 
     const justIds: string[] = [];
-    const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
+    const ensureSentList = (sn: string) => {
+      if (!sentCommands.has(sn))
+        sentCommands.set(sn, []);
+      return sentCommands.get(sn) ?? [];
+    };
     cmds.forEach((c: string) => {
       recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
       const list = sentCommands.get(sn);
@@ -535,9 +539,6 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
     const cmds = [...queue]; // Create a copy of the commands
     queue.length = 0; // Clear the queue immediately after copying
 
-    // Debug: log what's in the commands array
-    console.warn(`[getrequest-legacy] SN=${sn} commands before join:`, cmds.map(c => ({ type: typeof c, value: c })));
-
     // Ensure all commands are strings
     const stringCmds = cmds.map((c) => {
       if (typeof c === 'string')
@@ -552,7 +553,11 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
     // Record commands
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
     const justIds: string[] = [];
-    const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
+    const ensureSentList = (sn: string) => {
+      if (!sentCommands.has(sn))
+        sentCommands.set(sn, []);
+      return sentCommands.get(sn) ?? [];
+    };
 
     stringCmds.forEach((c: string) => {
       recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
@@ -666,9 +671,6 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
     const cmds = [...queue]; // Create a copy of the commands
     queue.length = 0; // Clear the queue immediately after copying
 
-    // Debug: log what's in the commands array
-    console.warn(`[devicecmd] SN=${sn} commands before join:`, cmds.map(c => ({ type: typeof c, value: c })));
-
     // Ensure all commands are strings
     const stringCmds = cmds.map((c) => {
       if (typeof c === 'string')
@@ -683,7 +685,11 @@ export const deviceCmd: AppRouteHandler<DeviceCmdRoute> = async (c: any) => {
     // Record commands
     const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
     const justIds: string[] = [];
-    const ensureSentList = (sn: string) => ensureQueue(sn, commandQueue) ?? [];
+    const ensureSentList = (sn: string) => {
+      if (!sentCommands.has(sn))
+        sentCommands.set(sn, []);
+      return sentCommands.get(sn) ?? [];
+    };
 
     stringCmds.forEach((c: string) => {
       recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
