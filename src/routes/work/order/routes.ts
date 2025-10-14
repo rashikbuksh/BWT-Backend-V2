@@ -198,6 +198,8 @@ export const getDiagnosisDetailsByOrder = createRoute({
   request: {
     params: z.object({
       order_uuid: z.string().length(15),
+    }),
+    query: z.object({
       engineer_uuid: z.string().length(15).optional(),
     }),
   },
