@@ -161,7 +161,6 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                   WHERE
                                     EXTRACT(YEAR FROM gh.date) = ${year}
                                     AND EXTRACT(MONTH FROM gh.date) = ${month}
-                                    AND gh.date >= (SELECT start_date FROM hr.employee WHERE uuid = ${employee_uuid})
                                 `;
 
   const query = sql`
