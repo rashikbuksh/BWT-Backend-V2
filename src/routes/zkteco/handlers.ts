@@ -153,6 +153,7 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   let userCount = 0;
   let duplicateCount = 0;
   const currentSessionLogs = []; // Collect real-time logs for this session
+  const biometricItems = []; // Collect all biometric items for batch processing
 
   for (const items of allParsedItems) {
     if (items.type === 'REAL_TIME_LOG') {
@@ -164,12 +165,8 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
     }
 
     else if (items.type === 'BIOPHOTO' || items.type === 'BIODATA' || items.type === 'USERPIC') {
-      // Process biometric data (face photos, fingerprint templates, user pictures)
-      insertBiometricData([items]).then((result) => {
-        console.warn(`[biometric-data] SN=${sn} processed ${items.type}: ${result.inserted} inserted, ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors`);
-      }).catch((error) => {
-        console.warn(`[biometric-data] SN=${sn} error processing ${items.type}:`, error);
-      });
+      // Collect biometric data for batch processing
+      biometricItems.push(items);
     }
 
     else {
@@ -215,6 +212,15 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
         }
       }
     }
+  }
+
+  // Process biometric items in batch if any were collected
+  if (biometricItems.length > 0) {
+    insertBiometricData(biometricItems).then((result) => {
+      console.warn(`[biometric-data] SN=${sn} batch processed ${biometricItems.length} items: ${result.inserted} inserted, ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors`);
+    }).catch((error) => {
+      console.warn(`[biometric-data] SN=${sn} error in batch processing:`, error);
+    });
   }
 
   // Summary logging for user operations

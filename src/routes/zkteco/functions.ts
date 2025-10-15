@@ -299,8 +299,8 @@ export async function insertBiometricData(biometricItems: any[]) {
         .limit(1);
 
       if (employeeRecord.length === 0) {
-        console.warn(`[insert-biometric] Employee not found for PIN: ${item.PIN || item.pin}`);
-        return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin}` };
+        console.warn(`[insert-biometric] Employee not found for PIN: ${item.PIN || item.pin} - Type: ${item.type} - Skipping this record`);
+        return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin}`, pin: item.PIN || item.pin, type: item.type };
       }
 
       // Determine biometric type based on the data type
@@ -378,7 +378,7 @@ export async function insertBiometricData(biometricItems: any[]) {
 
         if (existingTemplateHash === templateHash) {
           console.warn(`[insert-biometric] Duplicate ${biometricType} data for employee PIN: ${item.PIN || item.pin} (finger: ${fingerIndex}) - skipping`);
-          return { action: 'skipped', uuid: existingBiometric[0].uuid };
+          return { action: 'skipped', uuid: existingBiometric[0].uuid, pin: item.PIN || item.pin, type: item.type };
         }
         else {
           // Template data is different, update the existing record
@@ -393,7 +393,7 @@ export async function insertBiometricData(biometricItems: any[]) {
             .returning({ uuid: employee_biometric.uuid });
 
           console.warn(`[insert-biometric] Updated ${biometricType} data for employee PIN: ${item.PIN || item.pin} (finger: ${fingerIndex}) - template changed`);
-          return { action: 'updated', uuid: updateResult[0].uuid };
+          return { action: 'updated', uuid: updateResult[0].uuid, pin: item.PIN || item.pin, type: item.type };
         }
       }
 
@@ -404,12 +404,12 @@ export async function insertBiometricData(biometricItems: any[]) {
         .returning({ uuid: employee_biometric.uuid });
 
       console.warn(`[insert-biometric] Inserted new ${biometricType} data for employee PIN: ${item.PIN || item.pin} (finger: ${fingerIndex})`);
-      return { action: 'inserted', uuid: insertResult[0].uuid };
+      return { action: 'inserted', uuid: insertResult[0].uuid, pin: item.PIN || item.pin, type: item.type };
     }
     catch (error) {
-      console.error(`[insert-biometric] Error processing biometric data:`, error);
+      console.error(`[insert-biometric] Error processing biometric data for PIN: ${item.PIN || item.pin}:`, error);
       console.error(`[insert-biometric] Item data:`, item);
-      return { action: 'error', uuid: null, error: (error as Error).message };
+      return { action: 'error', uuid: null, error: (error as Error).message, pin: item.PIN || item.pin, type: item.type };
     }
   });
 
@@ -421,6 +421,26 @@ export async function insertBiometricData(biometricItems: any[]) {
   const updated = successfulResults.filter(result => result.action === 'updated').length;
   const skipped = successfulResults.filter(result => result.action === 'skipped').length;
   const errors = successfulResults.filter(result => result.action === 'error' || result.action === 'employee_not_found').length;
+
+  // Log details about failed records
+  const failedRecords = successfulResults.filter(result => result.action === 'error' || result.action === 'employee_not_found');
+  if (failedRecords.length > 0) {
+    console.warn(`[insert-biometric] Failed records details:`);
+    failedRecords.forEach((record) => {
+      console.warn(`  - PIN: ${record.pin}, Type: ${record.type}, Reason: ${record.action}, Error: ${record.error}`);
+    });
+  }
+
+  // Log successful records summary
+  const successfulRecords = successfulResults.filter(result => result.action === 'inserted' || result.action === 'updated' || result.action === 'skipped');
+  if (successfulRecords.length > 0) {
+    const pinsByAction = {
+      inserted: successfulRecords.filter(r => r.action === 'inserted').map(r => r.pin),
+      updated: successfulRecords.filter(r => r.action === 'updated').map(r => r.pin),
+      skipped: successfulRecords.filter(r => r.action === 'skipped').map(r => r.pin),
+    };
+    console.warn(`[insert-biometric] Successful records: Inserted PINs=[${pinsByAction.inserted.join(',')}], Updated PINs=[${pinsByAction.updated.join(',')}], Skipped PINs=[${pinsByAction.skipped.join(',')}]`);
+  }
 
   console.warn(`[insert-biometric] Results: ${inserted} inserted, ${updated} updated, ${skipped} skipped, ${errors} errors (${successfulResults.length} total processed)`);
   return { inserted, updated, skipped, errors, total: successfulResults.length };
