@@ -68,15 +68,12 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
-    .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
       and(
         eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_ready_for_delivery, false),
         eq(orderTable.is_transferred_for_qc, false),
+        eq(orderTable.is_ready_for_delivery, false),
         eq(orderTable.is_return, false),
-        eq(challan.is_delivery_complete, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
     );
@@ -120,7 +117,8 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
     .where(
       and(
         eq(orderTable.is_ready_for_delivery, true),
-        eq(challan.is_delivery_complete, false),
+        sql`${challan_entry.uuid} IS NULL`,
+        eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
     );
