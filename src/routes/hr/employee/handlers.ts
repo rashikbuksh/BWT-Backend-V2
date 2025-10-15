@@ -161,6 +161,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
+      profile_picture: employee.profile_picture,
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -349,6 +350,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       joining_amount: PG_DECIMAL_TO_FLOAT(employee.joining_amount),
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
+      profile_picture: employee.profile_picture,
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -666,6 +668,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       is_resign: employee.is_resign,
       personal_phone: employee.personal_phone,
       late_day_unit: employee.late_day_unit,
+      profile_picture: employee.profile_picture,
       remaining_leave_information: sql`
                   (
                     SELECT jsonb_agg(
@@ -944,6 +947,7 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
                             employee.created_at,
                             employee.updated_at,
                             employee.remarks,
+                            employee.profile_picture,
                             COALESCE(attendance_summary.present_days, 0)::float8 AS present_days,
                             COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
                             COALESCE(leave_summary.total_leave_days, 0)::float8 AS total_leave_days,
