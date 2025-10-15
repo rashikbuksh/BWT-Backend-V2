@@ -40,7 +40,8 @@ export const orderDiagnosisCount = createRoute({
     [HSCode.OK]: jsonContent(
       z.array(
         z.object({
-          diagnosis_count: z.number().describe('The total count of distinct diagnoses'),
+          order_count: z.number().describe('The total count of distinct orders'),
+          product_quantity: z.number().describe('The total quantity of products across all orders'),
         }),
       ),
       'The list of diagnoses',
@@ -61,7 +62,8 @@ export const repairCount = createRoute({
     [HSCode.OK]: jsonContent(
       z.array(
         z.object({
-          repair_count: z.number().describe('The total count of distinct repairs'),
+          order_count: z.number().describe('The total count of distinct orders'),
+          product_quantity: z.number().describe('The total quantity of products across all orders'),
         }),
       ),
       'The list of repairs',
@@ -82,7 +84,8 @@ export const qcCount = createRoute({
     [HSCode.OK]: jsonContent(
       z.array(
         z.object({
-          qc_count: z.number().describe('The total count of distinct quality checks'),
+          order_count: z.number().describe('The total count of distinct orders'),
+          product_quantity: z.number().describe('The total quantity of products across all orders'),
         }),
       ),
       'The list of quality checks',
@@ -103,7 +106,8 @@ export const readyForDeliveryCount = createRoute({
     [HSCode.OK]: jsonContent(
       z.array(
         z.object({
-          ready_for_delivery_count: z.number().describe('The total count of distinct orders ready for delivery'),
+          order_count: z.number().describe('The total count of distinct orders'),
+          product_quantity: z.number().describe('The total quantity of products across all orders'),
         }),
       ),
       'The list of orders ready for delivery',
@@ -124,7 +128,8 @@ export const deliveredCount = createRoute({
     [HSCode.OK]: jsonContent(
       z.array(
         z.object({
-          delivered_count: z.number().describe('The total count of distinct delivered orders'),
+          order_count: z.number().describe('The total count of distinct orders'),
+          product_quantity: z.number().describe('The total quantity of products across all orders'),
         }),
       ),
       'The list of delivered orders',
