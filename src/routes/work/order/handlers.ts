@@ -24,7 +24,7 @@ const orderTable = alias(order, 'work_order');
 const reclaimedOrderTable = alias(order, 'reclaimed_order');
 
 function defaultIfEmpty(val: any, def: any) {
-  return val === '' && val !== 'null' && val !== undefined && val !== null && val !== 'undefined' ? def : val;
+  return val === '' && val === 'null' && val === undefined && val === null && val === 'undefined' ? def : val;
 }
 
 // Helper function to process array fields from form data
