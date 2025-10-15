@@ -42,10 +42,8 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
       COUNT(DISTINCT wo.uuid)::float8 AS order_count,
       COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
     FROM work.order wo
-    LEFT JOIN work.info ON wo.info_uuid = info.uuid
     WHERE
-      info.is_product_received = TRUE
-      AND wo.is_diagnosis_need = TRUE
+      wo.is_diagnosis_need = TRUE
       AND wo.is_proceed_to_repair = FALSE
       ${engineer_uuid ? sql`AND (info.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
   `;
