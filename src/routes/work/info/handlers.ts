@@ -325,7 +325,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   // Filter by engineer_uuid (checks if any order under the info is assigned to the engineer)
-  if (engineer_uuid !== undefined || engineer_uuid !== null || engineer_uuid !== '') {
+  if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     infoPromise.leftJoin(order, eq(info.uuid, order.info_uuid));
     filters.push(eq(order.engineer_uuid, engineer_uuid));
   }
