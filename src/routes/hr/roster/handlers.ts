@@ -250,8 +250,8 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
 
   const response = {
     roster: data.rows,
-    special_holidays: specialHolidays.rows,
-    general_holidays: generalHolidays.rows,
+    special_holidays: specialHolidays.rows || [],
+    general_holidays: generalHolidays.rows || [],
   };
 
   return c.json(response || [], HSCode.OK);
