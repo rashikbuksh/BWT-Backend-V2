@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { configuration, configuration_entry, employee, leave_category, leave_policy } from '@/routes/hr/schema';
+import { configuration, configuration_entry, employee, employee_log, leave_category, leave_policy } from '@/routes/hr/schema';
 
 import type { ValueLabelRoute } from './routes';
 
@@ -39,8 +39,12 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       ),
     )
     .leftJoin(
+      employee_log,
+      eq(leave_policy.uuid, employee_log.type_uuid),
+    )
+    .leftJoin(
       employee,
-      eq(leave_policy.uuid, employee.leave_policy_uuid),
+      eq(employee_log.employee_uuid, employee.uuid),
     )
     .where(
       employee_uuid
