@@ -191,30 +191,50 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                   LEFT JOIN
                     hr.users ON employee.user_uuid = users.uuid
                   LEFT JOIN 
-                    hr.shift_group ON (SELECT el.type_uuid FROM hr.employee_log el
-                      WHERE el.employee_uuid = employee.uuid
-                      AND el.type = 'shift_group' AND (
-                        EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
-                      )
-                      AND el.effective_date >= employee.start_date
-                      ORDER BY el.effective_date DESC
-                      LIMIT 1) = shift_group.uuid
+                    hr.shift_group ON (
+                      COALESCE(
+                        (SELECT el.type_uuid FROM hr.employee_log el
+                          WHERE el.employee_uuid = employee.uuid
+                          AND el.type = 'shift_group' AND (
+                            EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                          )
+                          AND el.effective_date >= employee.start_date
+                          ORDER BY el.effective_date DESC
+                          LIMIT 1),
+                        (SELECT el.type_uuid FROM hr.employee_log el
+                          WHERE el.employee_uuid = employee.uuid
+                          AND el.type = 'shift_group' AND (
+                            EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                          )
+                          ORDER BY el.effective_date DESC
+                          LIMIT 1)
+                      ) = shift_group.uuid
+                    )
                   LEFT JOIN 
                     hr.shifts AS shifts ON shift_group.shifts_uuid = shifts.uuid
                   LEFT JOIN
                     hr.roster ON (
-                      (SELECT el.type_uuid FROM hr.employee_log el
-                        WHERE el.employee_uuid = employee.uuid
-                        AND el.type = 'shift_group' AND (
-                          EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
-                        )
-                        AND el.effective_date >= employee.start_date
-                        ORDER BY el.effective_date DESC
-                        LIMIT 1) = roster.shift_group_uuid
+                      COALESCE(
+                        (SELECT el.type_uuid FROM hr.employee_log el
+                          WHERE el.employee_uuid = employee.uuid
+                          AND el.type = 'shift_group' AND (
+                            EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                          )
+                          AND el.effective_date >= employee.start_date
+                          ORDER BY el.effective_date DESC
+                          LIMIT 1),
+                        (SELECT el.type_uuid FROM hr.employee_log el
+                          WHERE el.employee_uuid = employee.uuid
+                          AND el.type = 'shift_group' AND (
+                            EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                          )
+                          ORDER BY el.effective_date DESC
+                          LIMIT 1)
+                      ) = roster.shift_group_uuid
                       AND (
                         EXTRACT(YEAR FROM roster.effective_date) <= ${year} AND EXTRACT(MONTH FROM roster.effective_date) <= ${month}
                       )
-                      AND roster.effective_date >= employee.start_date
+                      AND (roster.effective_date >= employee.start_date OR roster.effective_date IS NULL)
                     )
                       LEFT JOIN
                           hr.apply_leave ON (
