@@ -1091,7 +1091,9 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
       });
 
   const [order, diagnosis, process, product_transfer] = await Promise.all([
-    fetchData(`/v1/work/order/${order_uuid}?engineer_uuid=${engineer_uuid}`),
+    engineer_uuid
+      ? fetchData(`/v1/work/order/${order_uuid}?engineer_uuid=${engineer_uuid}`)
+      : fetchData(`/v1/work/order/${order_uuid}`),
     fetchData(`/v1/work/diagnosis-by-order/${order_uuid}`),
     fetchData(`/v1/work/process?order_uuid=${order_uuid}`),
     fetchData(`/v1/store/product-transfer/by/${order_uuid}`),
