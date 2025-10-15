@@ -23,9 +23,12 @@ export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = 
       COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
     FROM work.order wo
     LEFT JOIN work.info ON wo.info_uuid = info.uuid
+    LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
+    LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
     WHERE
       info.is_product_received = TRUE
       AND wo.is_return = FALSE
+      AND (ch.is_delivery_complete = FALSE OR ch.uuid IS NULL)
       ${engineer_uuid ? sql`AND (info.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
   `;
 

@@ -295,8 +295,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
-    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
-    .leftJoin(order, eq(info.uuid, order.info_uuid));
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid));
 
   // Build filters array and apply them together
   const filters = [];
@@ -326,7 +325,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   // Filter by engineer_uuid (checks if any order under the info is assigned to the engineer)
-  if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
+  if (engineer_uuid !== undefined || engineer_uuid !== null || engineer_uuid !== '') {
+    infoPromise.leftJoin(order, eq(info.uuid, order.info_uuid));
     filters.push(eq(order.engineer_uuid, engineer_uuid));
   }
 
