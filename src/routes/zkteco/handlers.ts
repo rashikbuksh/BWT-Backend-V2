@@ -7,7 +7,7 @@ import { parseLine } from '@/utils/attendence/iclock_parser';
 
 import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute } from './routes';
 
-import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
+import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
 // In-memory stores (replace with DB in prod)
 const pushedLogs: any[] = []; // raw + enriched entries -- attendance real time logs
@@ -160,6 +160,15 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
       currentSessionLogs.push({ ...items, sn });
       insertRealTimeLogToBackend(currentSessionLogs).then((insertedCount) => {
         console.warn(`[real-time-logs] SN=${sn} successfully inserted ${insertedCount} attendance records`);
+      });
+    }
+
+    else if (items.type === 'BIOPHOTO' || items.type === 'BIODATA' || items.type === 'USERPIC') {
+      // Process biometric data (face photos, fingerprint templates, user pictures)
+      insertBiometricData([items]).then((result) => {
+        console.warn(`[biometric-data] SN=${sn} processed ${items.type}: ${result.inserted} inserted, ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors`);
+      }).catch((error) => {
+        console.warn(`[biometric-data] SN=${sn} error processing ${items.type}:`, error);
       });
     }
 
