@@ -10,54 +10,47 @@ import createApi from '@/utils/api';
 
 import type { DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
 
-import { info, order } from '../schema';
+import { order } from '../schema';
 
 const orderTable = alias(order, 'work_order');
 
 export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = async (c: any) => {
   const { engineer_uuid } = c.req.valid('query');
 
-  const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
-    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
-  })
-    .from(info)
-    .leftJoin(orderTable, eq(info.uuid, orderTable.uuid))
-    .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
-    .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
-    .where(
-      and(
-        eq(info.is_product_received, true),
-        eq(orderTable.is_return, false),
-        eq(challan.is_delivery_complete, false),
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
-      ),
-    );
+  const resultPromise = sql`
+    SELECT
+      COUNT(DISTINCT wo.uuid)::float8 AS order_count,
+      COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
+    FROM work.order wo
+    LEFT JOIN work.info ON wo.info_uuid = info.uuid
+    WHERE
+      info.is_product_received = TRUE
+      AND wo.is_return = FALSE
+      ${engineer_uuid ? sql`AND (info.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
+  `;
 
-  const data = await resultPromise;
+  const data = await db.execute(resultPromise);
 
-  return c.json(data[0] || {}, HSCode.OK);
+  return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
 };
 
 export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = async (c: any) => {
   const { engineer_uuid } = c.req.valid('query');
 
-  const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
-    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
-  })
-    .from(orderTable)
-    .where(
-      and(
-        eq(orderTable.is_diagnosis_need, true),
-        eq(orderTable.is_proceed_to_repair, false),
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
-      ),
-    );
+  const resultPromise = sql`
+    SELECT
+      COUNT(DISTINCT work_order.uuid)::float8 AS order_count,
+      COALESCE(SUM(work_order.quantity), 0)::float8 AS product_quantity
+    FROM work.order work_order
+    WHERE
+      work_order.is_diagnosis_need = TRUE
+      AND work_order.is_proceed_to_repair = FALSE
+      ${engineer_uuid ? sql`AND (info.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
+  `;
 
-  const data = await resultPromise;
+  const data = await db.execute(resultPromise);
 
-  return c.json(data[0] || {}, HSCode.OK);
+  return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
 };
 
 export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => {
