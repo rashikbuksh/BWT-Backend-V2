@@ -321,7 +321,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   }
 
   function defaultIfEmpty(val: any, def: any) {
-    return val === '' ? def : val;
+    return val === '' && val !== 'null' && val !== undefined && val !== null && val !== 'undefined' ? def : val;
   }
 
   formData.model_uuid = defaultIfEmpty(formData.model_uuid, null);
