@@ -128,7 +128,13 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                 FROM hr.special_holidays sh
                                 JOIN LATERAL (
                                   SELECT generate_series(
-                                    GREATEST(sh.from_date::date, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date),
+                                    GREATEST(
+                                      sh.from_date::date, 
+                                      GREATEST(
+                                        (SELECT start_date FROM hr.employee WHERE uuid = ${employee_uuid})::date,
+                                        TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date
+                                      )
+                                    ),
                                     LEAST(sh.to_date::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date),
                                     INTERVAL '1 day'
                                   ) AS generated_date
@@ -142,6 +148,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                     EXTRACT(YEAR FROM sh.from_date) < ${year}
                                     OR (EXTRACT(YEAR FROM sh.from_date) = ${year} AND EXTRACT(MONTH FROM sh.from_date) <= ${month})
                                   )
+                                  AND sh.from_date >= (SELECT start_date FROM hr.employee WHERE uuid = ${employee_uuid})
                                 ORDER BY gs.generated_date
 `;
 
@@ -154,19 +161,23 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                   WHERE
                                     EXTRACT(YEAR FROM gh.date) = ${year}
                                     AND EXTRACT(MONTH FROM gh.date) = ${month}
+                                    AND gh.date >= (SELECT start_date FROM hr.employee WHERE uuid = ${employee_uuid})
                                 `;
 
   const query = sql`
                   SELECT 
                     employee.uuid as employee_uuid,
                     users.name as employee_name,
+                    employee.start_date,
                     jsonb_agg(
-                      jsonb_build_object(
+                      DISTINCT jsonb_build_object(
                         'shift_group_uuid', shift_group.uuid,
                         'shift_group_name', shift_group.name,
                         'effective_date', roster.effective_date,
                         'off_days', roster.off_days,
-                        'created_at', roster.created_at
+                        'created_at', roster.created_at,
+                        'start_date', shifts.start_time,
+                        'end_date', shifts.end_time
                       )
                     ) FILTER (WHERE shift_group.uuid IS NOT NULL) as shift_group,
                     jsonb_agg(
@@ -187,6 +198,8 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                       )
                       ORDER BY el.effective_date DESC
                       LIMIT 1) = shift_group.uuid
+                  LEFT JOIN 
+                    hr.shifts AS shifts ON shift_group.shifts_uuid = shifts.uuid
                   LEFT JOIN
                     hr.roster ON (
                       (SELECT el.type_uuid FROM hr.employee_log el
