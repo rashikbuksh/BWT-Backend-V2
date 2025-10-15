@@ -170,7 +170,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                             'effective_date',
                             roster.effective_date,
                             'off_days',
-                            roster.off_days,
+                            COALESCE(roster.off_days, '[]'),
                             'created_at',
                             roster.created_at,
                             'start_time',
