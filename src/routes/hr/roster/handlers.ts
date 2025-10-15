@@ -174,9 +174,9 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                             'created_at',
                             roster.created_at,
                             'start_time',
-                            shifts.start_time::time,
+                            shifts.start_time,
                             'end_time',
-                            shifts.end_time::time
+                            shifts.end_time
                         )
                     ) FILTER (
                         WHERE
