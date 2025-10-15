@@ -43,7 +43,8 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    diagnosis_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
     .where(
@@ -63,7 +64,8 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    repair_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
@@ -88,7 +90,8 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    qc_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
     .where(
@@ -108,7 +111,8 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    ready_for_delivery_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
@@ -130,7 +134,8 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    delivered_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
