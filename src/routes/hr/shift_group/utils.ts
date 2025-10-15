@@ -49,10 +49,10 @@ export const insertSchema = createInsertSchema(
   uuid: true,
   name: true,
   shifts_uuid: true,
-  effective_date: true,
   created_by: true,
   created_at: true,
 }).partial({
+  effective_date: true,
   default_shift: true,
   status: true,
   off_days: true,
