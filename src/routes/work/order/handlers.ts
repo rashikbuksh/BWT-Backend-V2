@@ -154,36 +154,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     return val === '' ? def : val;
   }
 
-  // const value = {
-  //   is_diagnosis_need,
-  //   is_proceed_to_repair,
-  //   is_challan_needed,
-  //   is_home_repair,
-  //   brand_uuid,
-  //   model_uuid: finalModelUuid,
-  //   quantity: quantity || 0,
-  //   proposed_cost: proposed_cost || 0,
-  //   bill_amount: bill_amount || 0,
-  //   serial_no,
-  //   problems_uuid: processedProblemsUuid,
-  //   problem_statement,
-  //   accessories: processedAccessories,
-  //   warehouse_uuid,
-  //   rack_uuid,
-  //   floor_uuid,
-  //   box_uuid,
-  //   remarks,
-  //   image_1: imagePath_1,
-  //   image_2: imagePath_2,
-  //   image_3: imagePath_3,
-  //   info_uuid,
-  //   uuid,
-  //   created_at,
-  //   created_by,
-  //   is_reclaimed,
-  //   reclaimed_order_uuid,
-  // };
-
   const value = {
     model_uuid: defaultIfEmpty(finalModelUuid, null),
     serial_no: defaultIfEmpty(serial_no, null),
