@@ -164,12 +164,24 @@ export const dashboardReport: AppRouteHandler<DashboardReportRoute> = async (c: 
     readyForDeliveryCountResult,
     deliveredCountResult,
   ] = await Promise.all([
-    api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}`).then(res => res.data),
-    api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}`).then(res => res.data),
-    api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}`).then(res => res.data),
-    api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}`).then(res => res.data),
-    api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}`).then(res => res.data),
-    api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/order-and-product-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/order-diagnosis-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/repair-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/qc-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/ready-for-delivery-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/delivered-count').then(res => res.data),
   ]);
 
   return c.json({
