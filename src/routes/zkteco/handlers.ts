@@ -108,8 +108,6 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   // Get raw text body for ZKTeco device data
   const raw = await c.req.text();
 
-  console.warn(`Content-Type: ${c.req.header('content-type')}, Content-Length: ${c.req.header('content-length')}`);
-
   console.warn(`*** /ICLOCK/CDATA POST ENDPOINT CALLED *** SN=${sn}`);
   console.warn(`POST data received: ${raw ? raw.length : 0} bytes`);
 
@@ -120,8 +118,6 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
       String(raw || ''),
     )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`,
   );
-
-  console.warn(rawLines, 'raw lines');
 
   recordCDataEvent(sn, {
     at: new Date().toISOString(),
@@ -215,6 +211,7 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   }
 
   // Process biometric items in batch if any were collected
+  console.warn(`[biometric-data] SN=${sn} processing ${biometricItems.length} biometric items in batch`);
   if (biometricItems.length > 0) {
     insertBiometricData(biometricItems).then((result) => {
       console.warn(`[biometric-data] SN=${sn} batch processed ${biometricItems.length} items: ${result.inserted} inserted, ${result.updated} updated, ${result.skipped} skipped, ${result.errors} errors`);

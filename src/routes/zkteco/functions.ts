@@ -232,8 +232,6 @@ export async function insertRealTimeLogToBackend(pushedLogs: any[]) {
 
   const value: any[] = [];
 
-  console.warn('log: ', logEntries);
-
   // Use Promise.all to wait for all async operations
   const processedEntries = await Promise.all(
     logEntries.map(async (l: any) => {
@@ -263,8 +261,6 @@ export async function insertRealTimeLogToBackend(pushedLogs: any[]) {
 
   // Add all processed entries to value array
   value.push(...processedEntries);
-
-  console.warn('Inserting punch log: ', value);
 
   if (value.length === 0) {
     console.warn('No punch logs to insert');
