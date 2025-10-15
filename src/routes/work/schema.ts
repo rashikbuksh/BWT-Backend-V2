@@ -64,6 +64,7 @@ export const serviceTypeEnum = pgEnum('service_type', [
   'display',
   'all_in_one',
   'accessories',
+  'tv',
 ]);
 
 export const info = work.table('info', {
