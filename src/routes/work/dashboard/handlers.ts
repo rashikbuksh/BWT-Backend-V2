@@ -45,6 +45,7 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
     WHERE
       wo.is_diagnosis_need = TRUE
       AND wo.is_proceed_to_repair = FALSE
+      AND wo.is_return = FALSE
       ${engineer_uuid ? sql`AND (info.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
   `;
 
@@ -89,6 +90,7 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_transferred_for_qc, true),
         eq(orderTable.is_ready_for_delivery, false),
+        eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
     );
@@ -138,6 +140,7 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_ready_for_delivery, true),
         eq(challan.is_delivery_complete, true),
+        eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
     );
