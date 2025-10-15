@@ -444,6 +444,7 @@ export const employee = hr.table('employee', {
     .default(sql`null`),
   late_day_unit: integer('late_day_unit').default(3),
   pin: text('pin').default(sql`null`),
+  profile_picture: text('profile_picture').default(sql`null`),
 });
 
 // ? Employee Address

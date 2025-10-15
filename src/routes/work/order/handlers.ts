@@ -677,7 +677,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   // Engineer-specific orders
-  if (engineer_uuid) {
+  if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
   }
 
@@ -932,7 +932,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   filters.push(eq(orderTable.uuid, uuid));
 
   // If engineer_uuid is provided, add it to the where clause
-  if (engineer_uuid) {
+  if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
   }
 
@@ -1239,7 +1239,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
   filters.push(eq(orderTable.info_uuid, info_uuid));
 
   // If engineer_uuid is provided, add it to the where clause
-  if (engineer_uuid) {
+  if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
   }
 

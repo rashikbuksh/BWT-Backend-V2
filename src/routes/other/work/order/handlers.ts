@@ -49,7 +49,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       ),
     );
   }
-  if (engineer_uuid) {
+  if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     filters.push(eq(order.engineer_uuid, engineer_uuid));
   }
 

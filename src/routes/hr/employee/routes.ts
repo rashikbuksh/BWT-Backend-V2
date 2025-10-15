@@ -233,6 +233,40 @@ export const getEmployeeSummaryDetailsByEmployeeUuid = createRoute({
   },
 });
 
+export const updateProfilePicture = createRoute({
+  path: '/hr/employee/profile-picture/by/{employee_uuid}',
+  method: 'patch',
+  request: {
+    params: z.object({
+      employee_uuid: z.string(),
+    }),
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: {
+            ...insertSchema,
+          },
+        },
+      },
+    },
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The updated employee profile picture',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'Employee not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'The validation error(s)',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -242,3 +276,4 @@ export type GetManualEntryByEmployeeRoute = typeof getManualEntryDetailsByEmploy
 export type GetEmployeeLeaveInformationDetailsRoute = typeof getEmployeeLeaveInformationDetails;
 export type GetEmployeeAttendanceReportRoute = typeof getEmployeeAttendanceReport;
 export type GetEmployeeSummaryDetailsByEmployeeUuidRoute = typeof getEmployeeSummaryDetailsByEmployeeUuid;
+export type UpdateProfilePictureRoute = typeof updateProfilePicture;

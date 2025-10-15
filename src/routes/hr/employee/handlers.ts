@@ -5,7 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
+import { handleImagePatch, PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -19,6 +19,7 @@ import type {
   ListRoute,
   PatchRoute,
   RemoveRoute,
+  UpdateProfilePictureRoute,
 } from './routes';
 
 import {
@@ -1066,4 +1067,33 @@ export const getEmployeeSummaryDetailsByEmployeeUuid: AppRouteHandler<GetEmploye
     return c.json(data.rows[0] || {}, HSCode.OK);
   else
     return c.json(data.rows || [], HSCode.OK);
+};
+
+export const updateProfilePicture: AppRouteHandler<UpdateProfilePictureRoute> = async (c: any) => {
+  const { employee_uuid } = c.req.valid('param');
+  const formData = await c.req.parseBody();
+
+  // existing employee profile picture
+  const employeeProfilePromise = db
+    .select({ profile_picture: employee.profile_picture })
+    .from(employee)
+    .where(eq(employee.uuid, employee_uuid));
+
+  const [employeeData] = await employeeProfilePromise;
+
+  const file = formData.profile_picture;
+  let filePath = null;
+
+  if (file)
+    filePath = file ? await handleImagePatch(file, employeeData?.profile_picture ?? undefined, 'hr/employee') : null;
+
+  const query = sql`
+    UPDATE hr.employee
+    SET profile_picture = ${filePath}
+    WHERE uuid = ${employee_uuid}
+  `;
+
+  await db.execute(query);
+
+  return c.json({ message: 'Profile picture updated successfully' }, HSCode.OK);
 };

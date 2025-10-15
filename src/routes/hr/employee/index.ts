@@ -12,6 +12,7 @@ const router = createRouter()
   .openapi(routes.getManualEntryDetailsByEmployee, handlers.getManualEntryDetailsByEmployee)
   .openapi(routes.getEmployeeLeaveInformationDetails, handlers.getEmployeeLeaveInformationDetails)
   .openapi(routes.getEmployeeAttendanceReport, handlers.getEmployeeAttendanceReport)
-  .openapi(routes.getEmployeeSummaryDetailsByEmployeeUuid, handlers.getEmployeeSummaryDetailsByEmployeeUuid);
+  .openapi(routes.getEmployeeSummaryDetailsByEmployeeUuid, handlers.getEmployeeSummaryDetailsByEmployeeUuid)
+  .openapi(routes.updateProfilePicture, handlers.updateProfilePicture);
 
 export default router;
