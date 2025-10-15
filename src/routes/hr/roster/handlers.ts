@@ -173,10 +173,10 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                             roster.off_days,
                             'created_at',
                             roster.created_at,
-                            'start_date',
-                            shifts.start_time,
-                            'end_date',
-                            shifts.end_time
+                            'start_time',
+                            shifts.start_time::time,
+                            'end_time',
+                            shifts.end_time::time
                         )
                     ) FILTER (
                         WHERE
