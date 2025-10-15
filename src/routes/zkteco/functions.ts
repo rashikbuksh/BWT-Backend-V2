@@ -296,7 +296,7 @@ export async function insertBiometricData(biometricItems: any[]) {
 
       if (employeeRecord.length === 0) {
         console.warn(`[insert-biometric] Employee not found for PIN: ${item.PIN || item.pin} - Type: ${item.type} - Skipping this record`);
-        // return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin}`, pin: item.PIN || item.pin, type: item.type };
+        return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin}`, pin: item.PIN || item.pin, type: item.type };
       }
 
       // Determine biometric type based on the data type
@@ -328,7 +328,7 @@ export async function insertBiometricData(biometricItems: any[]) {
       // Prepare biometric data for insertion
       const biometricData = {
         uuid: nanoid(),
-        employee_uuid: employeeRecord[0].uuid || null,
+        employee_uuid: employeeRecord[0].uuid,
         template: templateData, // The actual biometric data
         biometric_type: biometricType as 'fingerprint' | 'face' | 'rfid',
         finger_index: fingerIndex,
@@ -374,7 +374,7 @@ export async function insertBiometricData(biometricItems: any[]) {
 
         if (existingTemplateHash === templateHash) {
           console.warn(`[insert-biometric] Duplicate ${biometricType} data for employee PIN: ${item.PIN || item.pin} (finger: ${fingerIndex}) - skipping`);
-          // return { action: 'skipped', uuid: existingBiometric[0].uuid, pin: item.PIN || item.pin, type: item.type };
+          return { action: 'skipped', uuid: existingBiometric[0].uuid, pin: item.PIN || item.pin, type: item.type };
         }
         else {
           // Template data is different, update the existing record
