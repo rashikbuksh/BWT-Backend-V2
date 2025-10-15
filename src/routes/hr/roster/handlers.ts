@@ -161,6 +161,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                   WHERE
                                     EXTRACT(YEAR FROM gh.date) = ${year}
                                     AND EXTRACT(MONTH FROM gh.date) = ${month}
+                                    AND gh.date >= (SELECT start_date FROM hr.employee WHERE uuid = ${employee_uuid})
                                 `;
 
   const query = sql`
@@ -195,6 +196,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                       AND el.type = 'shift_group' AND (
                         EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
                       )
+                      AND el.effective_date >= employee.start_date
                       ORDER BY el.effective_date DESC
                       LIMIT 1) = shift_group.uuid
                   LEFT JOIN 
@@ -206,11 +208,13 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                         AND el.type = 'shift_group' AND (
                           EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
                         )
+                        AND el.effective_date >= employee.start_date
                         ORDER BY el.effective_date DESC
                         LIMIT 1) = roster.shift_group_uuid
                       AND (
                         EXTRACT(YEAR FROM roster.effective_date) <= ${year} AND EXTRACT(MONTH FROM roster.effective_date) <= ${month}
                       )
+                      AND roster.effective_date >= employee.start_date
                     )
                       LEFT JOIN
                           hr.apply_leave ON (
@@ -224,6 +228,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                   EXTRACT(YEAR FROM apply_leave.from_date) < ${year}
                                   OR (EXTRACT(YEAR FROM apply_leave.from_date) = ${year} AND EXTRACT(MONTH FROM apply_leave.from_date) <= ${month})
                               )
+                              AND apply_leave.from_date >= employee.start_date
                           )
                   WHERE 
                     employee.uuid = ${employee_uuid}
