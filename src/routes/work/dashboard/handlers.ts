@@ -18,11 +18,11 @@ export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = 
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(info)
-    .leftJoin(orderTable, eq(info.uuid, orderTable.info_uuid))
+    .leftJoin(orderTable, eq(info.uuid, orderTable.uuid))
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
@@ -43,7 +43,7 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
@@ -64,7 +64,7 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
@@ -90,7 +90,7 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
@@ -111,7 +111,7 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
@@ -134,7 +134,7 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
   const { engineer_uuid } = c.req.valid('query');
 
   const resultPromise = db.select({
-    order_count: sql`COUNT(DISTINCT ${orderTable.info_uuid})::float8`,
+    order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
