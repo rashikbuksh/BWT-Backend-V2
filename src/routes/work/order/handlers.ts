@@ -23,10 +23,6 @@ const engineerUser = alias(hrSchema.users, 'engineer_user');
 const orderTable = alias(order, 'work_order');
 const reclaimedOrderTable = alias(order, 'reclaimed_order');
 
-function defaultIfEmpty(val: any, def: any) {
-  return val === '' && val === 'null' && val === undefined && val === null && val === 'undefined' ? def : val;
-}
-
 // Helper function to process array fields from form data
 function processArrayField(value: any): string[] {
   if (!value)
@@ -153,6 +149,10 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const processedProblemsUuid = problems_uuid === '' ? [] : processArrayField(problems_uuid);
   const processedAccessories = accessories === '' ? [] : processArrayField(accessories);
+
+  function defaultIfEmpty(val: any, def: any) {
+    return val === '' || val === 'null' || val === undefined || val === null || val === 'undefined' ? def : val;
+  }
 
   const value = {
     model_uuid: defaultIfEmpty(finalModelUuid, null),
@@ -318,6 +318,10 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
         });
       finalModelUuid = newModel.uuid;
     }
+  }
+
+  function defaultIfEmpty(val: any, def: any) {
+    return val === '' || val === 'null' || val === undefined || val === null || val === 'undefined' ? def : val;
   }
 
   formData.model_uuid = defaultIfEmpty(formData.model_uuid, null);
