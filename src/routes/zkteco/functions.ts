@@ -378,7 +378,7 @@ export async function insertBiometricData(biometricItems: any[]) {
 
         if (existingTemplateHash === templateHash) {
           console.warn(`[insert-biometric] Duplicate ${biometricType} data for employee PIN: ${item.PIN || item.pin} (finger: ${fingerIndex}) - skipping`);
-          return { action: 'skipped', uuid: existingBiometric[0].uuid, pin: item.PIN || item.pin, type: item.type };
+          // return { action: 'skipped', uuid: existingBiometric[0].uuid, pin: item.PIN || item.pin, type: item.type };
         }
         else {
           // Template data is different, update the existing record
