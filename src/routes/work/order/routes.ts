@@ -89,7 +89,7 @@ export const getOne = createRoute({
   request: {
     params: param.uuid,
     query: z.object({
-      engineer_uuid: z.string().length(15).optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   tags,
@@ -200,7 +200,7 @@ export const getDiagnosisDetailsByOrder = createRoute({
       order_uuid: z.string().length(15),
     }),
     query: z.object({
-      engineer_uuid: z.string().length(15).optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   tags,
@@ -233,7 +233,7 @@ export const getByInfo = createRoute({
     }),
     query: z.object({
       public: z.string().optional(),
-      engineer_uuid: z.string().length(15).optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   tags,

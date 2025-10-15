@@ -19,7 +19,7 @@ export const list = createRoute({
       customer_uuid: z.string().optional(),
       status: z.string().optional(),
       orderType: z.string().optional(),
-      engineer_uuid: z.string().length(15).optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   responses: {
@@ -139,7 +139,7 @@ export const getOrderDetailsByInfoUuid = createRoute({
       diagnosis: z.string().optional(),
       process: z.string().optional(),
       is_update: z.string().optional(),
-      engineer_uuid: z.string().length(15).optional(),
+      engineer_uuid: z.string().optional(),
     }),
   },
   tags,
