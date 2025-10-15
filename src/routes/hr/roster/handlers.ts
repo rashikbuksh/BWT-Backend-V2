@@ -161,23 +161,39 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                     employee.uuid as employee_uuid,
                     users.name as employee_name,
                     employee.start_date,
-                    jsonb_agg(
-                      DISTINCT jsonb_build_object(
-                        'shift_group_uuid', shift_group.uuid,
-                        'shift_group_name', shift_group.name,
-                        'effective_date', roster.effective_date,
-                        'off_days', roster.off_days,
-                        'created_at', roster.created_at,
-                        'start_date', shifts.start_time,
-                        'end_date', shifts.end_time
-                      )
-                    ) FILTER (WHERE shift_group.uuid IS NOT NULL) as shift_group,
-                    jsonb_agg(
-                      jsonb_build_object(
-                        'from_date', apply_leave.from_date,
-                        'to_date', apply_leave.to_date
-                      )
-                    ) FILTER (WHERE apply_leave.from_date IS NOT NULL AND apply_leave.to_date IS NOT NULL) as applied_leaves
+                    COALESCE(jsonb_agg(
+                        DISTINCT jsonb_build_object(
+                            'shift_group_uuid',
+                            shift_group.uuid,
+                            'shift_group_name',
+                            shift_group.name,
+                            'effective_date',
+                            roster.effective_date,
+                            'off_days',
+                            roster.off_days,
+                            'created_at',
+                            roster.created_at,
+                            'start_date',
+                            shifts.start_time,
+                            'end_date',
+                            shifts.end_time
+                        )
+                    ) FILTER (
+                        WHERE
+                            shift_group.uuid IS NOT NULL
+                    ), '[]') as shift_group,
+                    COALESCE(jsonb_agg(
+                        jsonb_build_object(
+                            'from_date',
+                            apply_leave.from_date,
+                            'to_date',
+                            apply_leave.to_date
+                        )
+                    ) FILTER (
+                        WHERE
+                            apply_leave.from_date IS NOT NULL
+                            AND apply_leave.to_date IS NOT NULL
+                    ), '[]') as applied_leaves
                   FROM 
                     hr.employee 
                   LEFT JOIN
