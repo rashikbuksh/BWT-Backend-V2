@@ -199,8 +199,10 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                     employee.uuid as employee_uuid,
                     users.name as employee_name,
                     employee.start_date,
-                    COALESCE(jsonb_agg(
+                    jsonb_agg(
                         DISTINCT jsonb_build_object(
+                            'date',
+                            date_series.generated_date,
                             'shift_group_uuid',
                             shift_group.uuid,
                             'shift_group_name',
@@ -219,7 +221,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                     ) FILTER (
                         WHERE
                             shift_group.uuid IS NOT NULL
-                    ), '[]') as shift_group,
+                    ) as shift_group,
                     COALESCE(jsonb_agg(
                         jsonb_build_object(
                             'from_date',
@@ -239,19 +241,22 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                   CROSS JOIN hr.employee 
                   LEFT JOIN
                     hr.users ON employee.user_uuid = users.uuid
-                  LEFT JOIN
-                    hr.roster ON (
-                      (SELECT el.type_uuid FROM hr.employee_log el
+                  LEFT JOIN LATERAL (
+                      SELECT *
+                      FROM hr.roster
+                      WHERE roster.shift_group_uuid = (
+                        SELECT el.type_uuid
+                        FROM hr.employee_log el
                         WHERE el.employee_uuid = employee.uuid
-                        AND el.type = 'shift_group' AND (
-                          el.effective_date <= date_series.generated_date
-                        )
+                          AND el.type = 'shift_group'
+                          AND el.effective_date <= date_series.generated_date
                         ORDER BY el.effective_date DESC
-                        LIMIT 1) = roster.shift_group_uuid
-                      AND (
-                        roster.effective_date <= date_series.generated_date
+                        LIMIT 1
                       )
-                    )
+                      AND roster.effective_date <= date_series.generated_date
+                      ORDER BY roster.effective_date DESC
+                      LIMIT 1
+                    ) roster ON TRUE
                   LEFT JOIN
                     hr.shift_group ON roster.shift_group_uuid = shift_group.uuid
                   LEFT JOIN
