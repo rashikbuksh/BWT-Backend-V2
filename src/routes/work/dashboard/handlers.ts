@@ -10,7 +10,7 @@ import createApi from '@/utils/api';
 
 import type { DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
 
-import { info, order } from '../schema';
+import { order } from '../schema';
 
 const orderTable = alias(order, 'work_order');
 
@@ -76,17 +76,11 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .leftJoin(info, eq(orderTable.info_uuid, info.uuid))
-    .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
-    .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
       and(
-        eq(info.is_product_received, true),
-        eq(orderTable.is_diagnosis_need, true),
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
-        sql`${challan.uuid} IS NULL`,
         eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
@@ -105,17 +99,11 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .leftJoin(info, eq(orderTable.info_uuid, info.uuid))
-    .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
-    .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
       and(
-        eq(info.is_product_received, true),
-        eq(orderTable.is_diagnosis_need, true),
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_transferred_for_qc, true),
         eq(orderTable.is_ready_for_delivery, false),
-        sql`${challan.uuid} IS NULL`,
         eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
@@ -134,17 +122,13 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .leftJoin(info, eq(orderTable.info_uuid, info.uuid))
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
       and(
-        eq(info.is_product_received, true),
-        eq(orderTable.is_diagnosis_need, true),
         eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_transferred_for_qc, true),
         eq(orderTable.is_ready_for_delivery, true),
-        sql`${challan.uuid} IS NULL`,
+        sql`${challan_entry.uuid} IS NULL`,
         eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
@@ -163,15 +147,11 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .leftJoin(info, eq(orderTable.info_uuid, info.uuid))
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
       and(
-        eq(info.is_product_received, true),
-        eq(orderTable.is_diagnosis_need, true),
         eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_transferred_for_qc, true),
         eq(orderTable.is_ready_for_delivery, true),
         eq(challan.is_delivery_complete, true),
         eq(orderTable.is_return, false),
