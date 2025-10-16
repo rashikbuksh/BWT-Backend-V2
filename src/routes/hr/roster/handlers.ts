@@ -123,8 +123,6 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
 
   const joiningDate = employeeData[0]?.start_date;
 
-  // console.log('joiningDate', joiningDate);
-
   let from_date = '';
   let to_date = '';
 
@@ -139,7 +137,17 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
     else {
       from_date = `${year}-${String(month).padStart(2, '0')}-01`;
     }
-    to_date = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+
+    if (Number(year) === currentYear && Number(month) === currentMonth) {
+      to_date = currentDate.toISOString().split('T')[0]; // Set to current date
+    }
+    else {
+      to_date = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+    }
   }
 
   const specialHolidaysQuery = sql`
