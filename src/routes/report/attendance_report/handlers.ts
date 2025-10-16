@@ -157,12 +157,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,(SELECT el.type_uuid
-                          FROM hr.employee_log el
-                          WHERE el.employee_uuid = e.uuid
-                          AND el.type = 'shift_group' AND el.effective_date::date <= ud.punch_date::date
-                          ORDER BY el.effective_date DESC
-                          LIMIT 1), dept.department, des.designation, et.name, e.uuid
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid
                 )
                 SELECT
                     uuid,
