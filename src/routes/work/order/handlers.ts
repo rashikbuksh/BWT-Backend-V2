@@ -611,6 +611,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   if (work_in_hand === 'true') {
     filters.push(
       and(
+        is_received === 'true'
+          ? eq(info.is_product_received, true)
+          : is_received === 'false'
+            ? eq(info.is_product_received, false)
+            : sql`1=1`,
         eq(orderTable.is_return, false),
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
@@ -659,14 +664,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // Engineer-specific orders
   if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     filters.push(eq(orderTable.engineer_uuid, engineer_uuid));
-  }
-
-  // Received orders
-  if (is_received === 'true') {
-    filters.push(eq(info.is_product_received, true));
-  }
-  else if (is_received === 'false') {
-    filters.push(eq(info.is_product_received, false));
   }
 
   // Apply filters if any exist
