@@ -620,6 +620,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
         eq(orderTable.is_proceed_to_repair, false),
+        sql`${deliverySchema.challan_entry.uuid} IS NULL`,
       ),
     );
   }
