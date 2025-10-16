@@ -1367,8 +1367,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                               ) sg_sel ON TRUE
                               LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                               WHERE pl.punch_time IS NOT NULL 
-                                AND pl.punch_time >= ${from_date}::date 
-                                AND pl.punch_time <= ${to_date}::date
+                                AND pl.punch_time::date >= ${from_date}::date 
+                                AND pl.punch_time::date <= ${to_date}::date
                               GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time, s.early_exit_before, shift_group_uuid
                             )
                             SELECT 
@@ -1527,8 +1527,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                     AND sp.is_special IS NULL 
                                     AND sod.is_offday IS DISTINCT FROM TRUE 
                                     AND t.last_punch IS NOT NULL 
-                                    AND t.last_punch::time > t.early_exit_before::time
-                                  THEN (EXTRACT(EPOCH FROM (t.last_punch::time - t.early_exit_before::time)) / 3600)::float8
+                                    AND t.last_punch::time < t.early_exit_before::time
+                                  THEN (EXTRACT(EPOCH FROM (t.early_exit_before::time - t.last_punch::time)) / 3600)::float8
                                   ELSE 0
                                 END
                               ) AS total_early_exit_hours,
@@ -1539,7 +1539,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                       AND sod.is_offday IS DISTINCT FROM TRUE 
                                       AND t.first_punch IS NOT NULL 
                                       AND t.last_punch IS NOT NULL
-                                    THEN (EXTRACT(EPOCH FROM (t.last_punch - t.first_punch)) / 3600)::float8
+                                    THEN (EXTRACT(EPOCH FROM (t.last_punch::time - t.first_punch::time)) / 3600)::float8
                                     ELSE 0
                                   END
                                 ) AS total_working_hours
@@ -1598,8 +1598,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                               ) sg_sel ON TRUE
                               LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                               WHERE pl.punch_time IS NOT NULL 
-                                AND pl.punch_time >= ${from_date}::date 
-                                AND pl.punch_time <= ${to_date}::date
+                                AND pl.punch_time::date >= ${from_date}::date 
+                                AND pl.punch_time::date <= ${to_date}::date
                               GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time, s.early_exit_before, shift_group_uuid
                             ) t
                             LEFT JOIN hr.general_holidays gh ON gh.date = t.punch_date
