@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -65,6 +65,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { engineer_uuid } = c.req.valid('query');
+
   const resultPromise = db.select({
     uuid: diagnosis.uuid,
     id: diagnosis.id,
@@ -130,7 +132,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(brand, eq(order_table.brand_uuid, brand.uuid))
     .leftJoin(reclaimedOrderTable, eq(order_table.reclaimed_order_uuid, reclaimedOrderTable.uuid))
     .leftJoin(engineerUser, eq(order_table.engineer_uuid, engineerUser.uuid))
-    .where(eq(diagnosis.is_proceed_to_repair, false))
+    .where(and(
+      eq(diagnosis.is_proceed_to_repair, false),
+      engineer_uuid ? eq(order_table.engineer_uuid, engineer_uuid) : sql`TRUE`,
+    ))
     .orderBy(desc(diagnosis.created_at));
 
   const data = await resultPromise;
