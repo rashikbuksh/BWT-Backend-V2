@@ -1,16 +1,30 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { getHolidayCountsDateRange } from '@/lib/variables';
+import { employee } from '@/routes/hr/schema';
 import { createApi } from '@/utils/api';
 
 import type { GetDailyEmployeeAttendanceReportRoute, GetDepartmentAttendanceReportRoute, GetEmployeeAttendanceReportRoute, GetMonthlyAttendanceReportRoute } from './routes';
 
 export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceReportRoute> = async (c: any) => {
-  const { from_date, to_date, employee_uuid } = c.req.valid('query');
+  let { from_date, to_date, employee_uuid } = c.req.valid('query');
+
+  if (employee_uuid) {
+    const employeeData = await db.select().from(employee).where(eq(employee.uuid, employee_uuid));
+
+    const joiningDate = employeeData[0]?.start_date;
+    if (joiningDate) {
+      const jd = new Date(joiningDate);
+      const localDate = `${jd.getFullYear()}-${String(jd.getMonth() + 1).padStart(2, '0')}-${String(jd.getDate()).padStart(2, '0')}`;
+      if (new Date(from_date) < new Date(localDate)) {
+        from_date = localDate;
+      }
+    }
+  }
 
   const query = sql`
                 WITH date_series AS (
@@ -163,15 +177,15 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     uuid,
                     user_uuid,
                     employee_name,
-                    shift_name,
                     department_name,
                     designation_name,
                     employment_type_name,
-                    JSON_BUILD_OBJECT(
+                    JSON_AGG(JSON_BUILD_OBJECT(
                         'name', shift_name,
                         'start_time', start_time,
-                        'end_time', end_time
-                    ) AS shift_details,
+                        'end_time', end_time,
+                        'punch_date', punch_date
+                    ) ORDER BY punch_date) AS shift_details, 
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
                         'punch_date', punch_date,
@@ -192,7 +206,8 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         ) ORDER BY punch_date
                     ) AS attendance_records
                 FROM attendance_data
-                GROUP BY user_uuid, employee_name, shift_name, start_time, end_time, department_name, designation_name, employment_type_name, uuid
+                -- group only by stable identifiers so all dates aggregate into one employee row
+                GROUP BY user_uuid, employee_name, department_name, designation_name, employment_type_name, uuid
                 ORDER BY employee_name;
               `;
 
@@ -281,36 +296,6 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
 
   return c.json(formattedData || [], HSCode.OK);
 };
-// not completed
-
-// Helper function to get holiday counts
-// async function getHolidayCounts(from_date: string, to_date: string) {
-//   const specialHolidaysQuery = sql`
-//     SELECT COALESCE(SUM(
-//       CASE
-//         WHEN sh.from_date::date <= ${to_date}::date AND sh.to_date::date >= ${from_date}::date
-//         THEN LEAST(sh.to_date::date, ${to_date}::date) - GREATEST(sh.from_date::date, ${from_date}::date) + 1
-//         ELSE 0
-//       END
-//     ), 0) AS total_special_holidays
-//     FROM hr.special_holidays sh
-//     WHERE sh.from_date::date <= ${to_date}::date AND sh.to_date::date >= ${from_date}::date`;
-
-//   const generalHolidayQuery = sql`
-//     SELECT COALESCE(COUNT(*), 0) AS total_general_holidays
-//     FROM hr.general_holidays gh
-//     WHERE gh.date >= ${from_date}::date AND gh.date <= ${to_date}::date`;
-
-//   const [specialResult, generalResult] = await Promise.all([
-//     db.execute(specialHolidaysQuery),
-//     db.execute(generalHolidayQuery),
-//   ]);
-
-//   return {
-//     special: specialResult.rows[0]?.total_special_holidays || 0,
-//     general: generalResult.rows[0]?.total_general_holidays || 0,
-//   };
-// }
 
 export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttendanceReportRoute> = async (c: any) => {
   const { department_uuid, from_date, to_date } = c.req.valid('query');
