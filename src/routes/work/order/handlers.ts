@@ -624,6 +624,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     filters.push(
       and(
         eq(orderTable.is_ready_for_delivery, true),
+        eq(orderTable.is_delivery_without_challan, false),
         sql`${deliverySchema.challan_entry.uuid} IS NULL`,
       ),
     );
@@ -665,6 +666,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         or(
           eq(orderTable.is_ready_for_delivery, true),
           eq(orderTable.is_challan_needed, true),
+          eq(orderTable.is_delivery_without_challan, false),
         ),
         not(
           exists(

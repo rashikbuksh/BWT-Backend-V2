@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -150,16 +150,17 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
-      and(
-        eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_ready_for_delivery, true),
+      or(
+        and(
+          eq(orderTable.is_proceed_to_repair, true),
+          eq(orderTable.is_ready_for_delivery, true),
+          eq(challan.is_delivery_complete, true),
+          eq(orderTable.is_return, false),
+          engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
+        ),
         eq(orderTable.is_delivery_without_challan, true),
-        eq(challan.is_delivery_complete, true),
-        eq(orderTable.is_return, false),
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
     );
-
   const data = await resultPromise;
 
   return c.json(data[0] || {}, HSCode.OK);
