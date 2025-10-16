@@ -31,6 +31,7 @@ export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = 
       AND wo.is_proceed_to_repair = FALSE
       AND wo.is_transferred_for_qc = FALSE
       AND wo.is_ready_for_delivery = FALSE
+      AND wo.is_delivery_without_challan = FALSE
       AND ch.uuid IS NULL
       AND wo.is_return = FALSE
       ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
@@ -58,6 +59,7 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
       AND wo.is_proceed_to_repair = FALSE
       AND wo.is_transferred_for_qc = FALSE
       AND wo.is_ready_for_delivery = FALSE
+      AND wo.is_delivery_without_challan = FALSE
       AND ch.uuid IS NULL
       AND wo.is_return = FALSE
       ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
@@ -81,6 +83,7 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
+        eq(orderTable.is_delivery_without_challan, false),
         eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
@@ -104,6 +107,7 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_transferred_for_qc, true),
         eq(orderTable.is_ready_for_delivery, false),
+        eq(orderTable.is_delivery_without_challan, false),
         eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
@@ -128,6 +132,7 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
       and(
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_ready_for_delivery, true),
+        eq(orderTable.is_delivery_without_challan, false),
         sql`${challan_entry.uuid} IS NULL`,
         eq(orderTable.is_return, false),
         engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
