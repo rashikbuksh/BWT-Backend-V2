@@ -237,13 +237,11 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                         WHERE el.employee_uuid = employee.uuid
                         AND el.type = 'shift_group' AND (
                           el.effective_date <= date_series.generated_date
-                          AND el.effective_date >= ${from_date}::date
                         )
                         ORDER BY el.effective_date DESC
                         LIMIT 1) = roster.shift_group_uuid
                       AND (
                         roster.effective_date <= date_series.generated_date
-                        AND roster.effective_date >= ${from_date}::date
                       )
                     )
                   LEFT JOIN
