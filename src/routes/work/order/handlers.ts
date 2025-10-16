@@ -467,7 +467,17 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { qc, is_delivered, work_in_hand, customer_uuid, is_repair, is_return, is_delivery_complete, engineer_uuid, is_received } = c.req.valid('query');
+  const {
+    qc,
+    is_delivered,
+    work_in_hand,
+    customer_uuid,
+    is_repair,
+    is_return,
+    is_delivery_complete,
+    engineer_uuid,
+    is_received,
+  } = c.req.valid('query');
 
   const orderPromise = db
     .select({
