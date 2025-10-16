@@ -8,7 +8,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, GetRosterCalenderByEmployeeUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { roster, shift_group, shifts, users } from '../schema';
+import { employee, roster, shift_group, shifts, users } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -119,6 +119,29 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderByEmployeeUuidRoute> = async (c: any) => {
   const { employee_uuid, year, month } = c.req.valid('param');
 
+  const employeeData = await db.select().from(employee).where(eq(employee.uuid, employee_uuid));
+
+  const joiningDate = employeeData[0]?.start_date;
+
+  // console.log('joiningDate', joiningDate);
+
+  let from_date = '';
+  let to_date = '';
+
+  if (joiningDate) {
+    const parsedJoiningDate = new Date(joiningDate);
+    const joiningYear = parsedJoiningDate.getFullYear();
+    const joiningMonth = parsedJoiningDate.getMonth() + 1;
+
+    if (Number(year) === joiningYear && Number(month) === joiningMonth) {
+      from_date = `${year}-${String(month).padStart(2, '0')}-${String(parsedJoiningDate.getDate()).padStart(2, '0')}`;
+    }
+    else {
+      from_date = `${year}-${String(month).padStart(2, '0')}-01`;
+    }
+    to_date = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+  }
+
   const specialHolidaysQuery = sql`
                                 SELECT
                                   gs.generated_date::date AS holiday_date,
@@ -134,7 +157,8 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                   ) AS generated_date
                                 ) gs ON TRUE
                                 WHERE
-                                  (
+                                  gs.generated_date >= ${from_date}::date AND gs.generated_date <= ${to_date}::date
+                                  AND (
                                     EXTRACT(YEAR FROM sh.to_date) > ${year}
                                     OR (EXTRACT(YEAR FROM sh.to_date) = ${year} AND EXTRACT(MONTH FROM sh.to_date) >= ${month})
                                   )
@@ -152,11 +176,17 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                                   FROM 
                                     hr.general_holidays gh
                                   WHERE
-                                    EXTRACT(YEAR FROM gh.date) = ${year}
-                                    AND EXTRACT(MONTH FROM gh.date) = ${month}
+                                    gh.date >= ${from_date}::date AND gh.date <= ${to_date}::date
                                 `;
 
   const query = sql`
+                  WITH date_series AS (
+                    SELECT generate_series(
+                      ${from_date}::date,
+                      ${to_date}::date,
+                      INTERVAL '1 day'
+                    )::date AS generated_date
+                  )
                   SELECT 
                     employee.uuid as employee_uuid,
                     users.name as employee_name,
@@ -193,47 +223,40 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                         WHERE
                             apply_leave.from_date IS NOT NULL
                             AND apply_leave.to_date IS NOT NULL
+                            AND apply_leave.from_date <= date_series.generated_date
+                            AND apply_leave.to_date >= date_series.generated_date
                     ), '[]') as applied_leaves
                   FROM 
-                    hr.employee 
+                    date_series
+                  CROSS JOIN hr.employee 
                   LEFT JOIN
                     hr.users ON employee.user_uuid = users.uuid
-                  LEFT JOIN 
-                    hr.shift_group ON (SELECT el.type_uuid FROM hr.employee_log el
-                      WHERE el.employee_uuid = employee.uuid
-                      AND el.type = 'shift_group' AND (
-                        EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
-                      )
-                      ORDER BY el.effective_date DESC
-                      LIMIT 1) = shift_group.uuid
-                  LEFT JOIN 
-                    hr.shifts AS shifts ON shift_group.shifts_uuid = shifts.uuid
                   LEFT JOIN
                     hr.roster ON (
                       (SELECT el.type_uuid FROM hr.employee_log el
                         WHERE el.employee_uuid = employee.uuid
                         AND el.type = 'shift_group' AND (
-                          EXTRACT(YEAR FROM el.effective_date) <= ${year} AND EXTRACT(MONTH FROM el.effective_date) <= ${month}
+                          el.effective_date <= date_series.generated_date
+                          AND el.effective_date >= ${from_date}::date
                         )
                         ORDER BY el.effective_date DESC
                         LIMIT 1) = roster.shift_group_uuid
                       AND (
-                        EXTRACT(YEAR FROM roster.effective_date) <= ${year} AND EXTRACT(MONTH FROM roster.effective_date) <= ${month}
+                        roster.effective_date <= date_series.generated_date
+                        AND roster.effective_date >= ${from_date}::date
                       )
                     )
-                      LEFT JOIN
-                          hr.apply_leave ON (
-                              employee.uuid = apply_leave.employee_uuid
-                              AND apply_leave.year = ${year}
-                              AND (
-                                  EXTRACT(YEAR FROM apply_leave.to_date) > ${year}
-                                  OR (EXTRACT(YEAR FROM apply_leave.to_date) = ${year} AND EXTRACT(MONTH FROM apply_leave.to_date) >= ${month})
-                              )
-                              AND (
-                                  EXTRACT(YEAR FROM apply_leave.from_date) < ${year}
-                                  OR (EXTRACT(YEAR FROM apply_leave.from_date) = ${year} AND EXTRACT(MONTH FROM apply_leave.from_date) <= ${month})
-                              )
-                          )
+                  LEFT JOIN
+                    hr.shift_group ON roster.shift_group_uuid = shift_group.uuid
+                  LEFT JOIN
+                    hr.shifts ON roster.shifts_uuid = shifts.uuid
+                  LEFT JOIN
+                    hr.apply_leave ON (
+                      employee.uuid = apply_leave.employee_uuid
+                      AND apply_leave.year = ${year}
+                      AND apply_leave.from_date <= date_series.generated_date
+                      AND apply_leave.to_date >= date_series.generated_date
+                    )
                   WHERE 
                     employee.uuid = ${employee_uuid}
                   GROUP BY
