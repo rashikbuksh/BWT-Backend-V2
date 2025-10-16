@@ -134,6 +134,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(engineerUser, eq(order_table.engineer_uuid, engineerUser.uuid))
     .where(and(
       eq(diagnosis.is_proceed_to_repair, false),
+      eq(order_table.is_ready_for_delivery, false),
       engineer_uuid ? eq(order_table.engineer_uuid, engineer_uuid) : sql`TRUE`,
     ))
     .orderBy(desc(diagnosis.created_at));
