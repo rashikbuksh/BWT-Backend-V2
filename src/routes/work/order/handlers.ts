@@ -895,6 +895,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       engineer_name: engineerUser.name,
       advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
       is_return: orderTable.is_return,
+      is_return_date: orderTable.is_return_date,
       return_comment: orderTable.return_comment,
     })
     .from(orderTable)

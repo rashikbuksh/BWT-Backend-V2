@@ -67,7 +67,8 @@ BEGIN
        AND NEW.is_diagnosis_need = TRUE 
        AND info_product_received = TRUE THEN
         UPDATE work.diagnosis
-        SET is_proceed_to_repair = NEW.is_proceed_to_repair
+        SET is_proceed_to_repair = NEW.is_proceed_to_repair,
+            is_proceed_to_repair_date = CASE WHEN NEW.is_proceed_to_repair = TRUE THEN NEW.is_proceed_to_repair_date END
         WHERE order_uuid = NEW.uuid AND is_proceed_to_repair IS DISTINCT FROM NEW.is_proceed_to_repair;
     END IF;
 
@@ -78,8 +79,8 @@ BEGIN
     IF NEW.is_diagnosis_need = TRUE 
        AND info_product_received = TRUE 
        AND (TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND OLD.is_diagnosis_need = FALSE)) THEN
-        INSERT INTO work.diagnosis (order_uuid, uuid, is_proceed_to_repair, created_by, created_at, updated_at)
-        VALUES (NEW.uuid, generate_15_digit_uuid(), NEW.is_proceed_to_repair, NEW.created_by, NEW.created_at, NEW.updated_at);
+        INSERT INTO work.diagnosis (order_uuid, uuid, is_proceed_to_repair, is_proceed_to_repair_date, created_by, created_at, updated_at)
+        VALUES (NEW.uuid, generate_15_digit_uuid(), NEW.is_proceed_to_repair, NEW.is_proceed_to_repair_date, NEW.created_by, NEW.created_at, NEW.updated_at);
     END IF;
 
     RETURN NEW;
@@ -108,11 +109,12 @@ BEGIN
     
     -- When is_product_received changes from false to true, create diagnosis records for orders that need it
     IF TG_OP = 'UPDATE' AND OLD.is_product_received = FALSE AND NEW.is_product_received = TRUE THEN
-        INSERT INTO work.diagnosis (order_uuid, uuid, is_proceed_to_repair, created_by, created_at, updated_at)
+        INSERT INTO work.diagnosis (order_uuid, uuid, is_proceed_to_repair, is_proceed_to_repair_date, created_by, created_at, updated_at)
         SELECT 
             o.uuid,
             generate_15_digit_uuid(),
             o.is_proceed_to_repair,
+            o.is_proceed_to_repair_date,
             o.created_by,
             o.created_at,
             o.updated_at
