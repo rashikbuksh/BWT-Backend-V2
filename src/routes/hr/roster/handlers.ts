@@ -207,7 +207,14 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                             'start_time',
                             shifts.start_time,
                             'end_time',
-                            shifts.end_time
+                            shifts.end_time,
+                            'shift_name',
+                            shifts.name,
+                            'late_time',
+                            shifts.late_time,
+                            'early_exit_before',
+                            shifts.early_exit_before
+                          
                         )
                     ) FILTER (
                         WHERE
