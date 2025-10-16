@@ -138,16 +138,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
       from_date = `${year}-${String(month).padStart(2, '0')}-01`;
     }
 
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
-
-    if (Number(year) === currentYear && Number(month) === currentMonth) {
-      to_date = currentDate.toISOString().split('T')[0]; // Set to current date
-    }
-    else {
-      to_date = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
-    }
+    to_date = `${year}-${String(month).padStart(2, '0')}-${String(new Date(Number(year), Number(month), 0).getDate()).padStart(2, '0')}`;
   }
 
   const specialHolidaysQuery = sql`
