@@ -632,7 +632,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   // Delivery completed
   if (is_delivery_complete === 'true') {
-    filters.push(eq(deliverySchema.challan.is_delivery_complete, true));
+    filters.push(
+      or(
+        eq(deliverySchema.challan.is_delivery_complete, true),
+        eq(orderTable.is_delivery_without_challan, true),
+      ),
+    );
   }
 
   // Work in progress (no action taken yet)

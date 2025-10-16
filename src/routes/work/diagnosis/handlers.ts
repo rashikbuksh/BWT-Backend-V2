@@ -137,6 +137,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(diagnosis.is_proceed_to_repair, false),
       eq(order_table.is_ready_for_delivery, false),
       eq(order_table.is_return, false),
+      eq(order_table.is_delivery_without_challan, false),
       engineer_uuid ? eq(order_table.engineer_uuid, engineer_uuid) : sql`TRUE`,
     ))
     .orderBy(desc(diagnosis.created_at));
