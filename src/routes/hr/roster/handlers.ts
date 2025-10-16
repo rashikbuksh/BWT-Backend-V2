@@ -238,7 +238,7 @@ export const getRosterCalenderByEmployeeUuid: AppRouteHandler<GetRosterCalenderB
                       WHERE roster.shift_group_uuid = (
                         SELECT el.type_uuid
                         FROM hr.employee_log el
-                        WHERE el.employee_uuid = employee.uuid
+                        WHERE el.employee_uuid = ${employee_uuid}
                           AND el.type = 'shift_group'
                           AND el.effective_date <= date_series.generated_date
                         ORDER BY el.effective_date DESC
