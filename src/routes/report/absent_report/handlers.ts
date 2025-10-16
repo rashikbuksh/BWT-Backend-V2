@@ -241,12 +241,22 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                       LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                       LEFT JOIN LATERAL (
-                                SELECT
-                                  COALESCE(
-                                    (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = e.shift_group_uuid AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
-                                    (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = e.shift_group_uuid AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
-                                  ) AS shifts_uuid
-                              ) AS sg_sel ON TRUE
+                              SELECT
+                                COALESCE(
+                                  (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid =  (SELECT el.type_uuid
+                                                              FROM hr.employee_log el
+                                                              WHERE el.employee_uuid = e.uuid
+                                                              AND el.type = 'shift_group' AND el.effective_date::date <= ud.punch_date::date
+                                                              ORDER BY el.effective_date DESC
+                                                              LIMIT 1) AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
+                                  (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid =  (SELECT el.type_uuid
+                                                              FROM hr.employee_log el
+                                                              WHERE el.employee_uuid = e.uuid
+                                                              AND el.type = 'shift_group' AND el.effective_date::date <= ud.punch_date::date
+                                                              ORDER BY el.effective_date DESC
+                                                              LIMIT 1) AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
+                                ) AS shifts_uuid
+                            ) AS sg_sel ON TRUE
                       LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                       LEFT JOIN hr.general_holidays gh ON gh.date = ud.punch_date
                       LEFT JOIN hr.users u ON e.user_uuid = u.uuid
@@ -263,12 +273,18 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                         AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                         AND al.approval = 'approved'
-                      LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = e.shift_group_uuid
+                      LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = (SELECT el.type_uuid 
+                                                                      FROM hr.employee_log el
+                                                                      WHERE el.employee_uuid = e.uuid
+                                                                      AND el.type = 'shift_group'
+                                                                      AND el.effective_date::date <= ud.punch_date::date
+                                                                      ORDER BY el.effective_date DESC
+                                                                      LIMIT 1)
                         AND sod.day = ud.punch_date
                       WHERE 
                         ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`} 
                         ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}
-                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,e.shift_group_uuid, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name
+                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name
                     )
                     SELECT
                           uuid,
