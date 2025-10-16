@@ -614,6 +614,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     filters.push(
       and(
         eq(orderTable.is_transferred_for_qc, true),
+        eq(orderTable.is_delivery_without_challan, false),
         eq(orderTable.is_ready_for_delivery, false),
       ),
     );
@@ -653,6 +654,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
         eq(orderTable.is_proceed_to_repair, false),
+        eq(orderTable.is_delivery_without_challan, false),
         sql`${deliverySchema.challan_entry.uuid} IS NULL`,
       ),
     );
@@ -692,6 +694,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_transferred_for_qc, false),
         eq(orderTable.is_ready_for_delivery, false),
+        eq(orderTable.is_delivery_without_challan, false),
       ),
     );
   }
