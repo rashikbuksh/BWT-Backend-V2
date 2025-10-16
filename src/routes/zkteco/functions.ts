@@ -283,7 +283,7 @@ export async function insertBiometricData(biometricItems: any[]) {
     return { inserted: 0, updated: 0, skipped: 0, errors: 0, total: 0 };
   }
 
-  console.warn(`[insert-biometric] Processing ${biometricItems.length} biometric records`);
+  // console.warn(biometricItems);
 
   const insertPromises = biometricItems.map(async (item) => {
     try {
@@ -320,7 +320,7 @@ export async function insertBiometricData(biometricItems: any[]) {
         }
       }
 
-      const templateData = item.Template || item.template || item.Size || item.Content || '';
+      const templateData = item.Template || item.template || item.Size || item.Content || item.Tmp || '';
 
       // Create a hash of the template data for efficient comparison
       const templateHash = crypto.createHash('sha256').update(templateData).digest('hex');

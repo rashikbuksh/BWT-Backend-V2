@@ -103,7 +103,7 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
 
 export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
-  const table = c.req.valid('query').table || c.req.valid('query').options || '';
+  // const table = c.req.valid('query').table || c.req.valid('query').options || '';
 
   // Get raw text body for ZKTeco device data
   const raw = await c.req.text();
@@ -113,11 +113,11 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
 
   // Debug summary of payload
   const rawLines = String(raw || '').replace(/\r/g, '\n').split('\n').filter(Boolean);
-  console.warn(
-    `[cdata] SN=${sn} table=${table} lines=${rawLines.length} bytes=${Buffer.byteLength(
-      String(raw || ''),
-    )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`,
-  );
+  // console.warn(
+  //   `[cdata] SN=${sn} table=${table} lines=${rawLines.length} bytes=${Buffer.byteLength(
+  //     String(raw || ''),
+  //   )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`,
+  // );
 
   recordCDataEvent(sn, {
     at: new Date().toISOString(),
