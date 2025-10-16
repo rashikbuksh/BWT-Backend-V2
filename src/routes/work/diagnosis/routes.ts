@@ -14,6 +14,11 @@ export const list = createRoute({
   path: '/work/diagnosis',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      engineer_uuid: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
