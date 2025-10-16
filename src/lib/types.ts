@@ -63,7 +63,13 @@ export interface ColumnProps {
     | 'temporary_to_date'
     | 'punch_time'
     | 'entry_time'
-    | 'exit_time';
+    | 'exit_time'
+    | 'is_return_date'
+    | 'is_reclaimed_date'
+    | 'is_diagnosis_need_date'
+    | 'is_transferred_for_qc_date'
+    | 'is_proceed_to_repair_date'
+    | 'is_delivery_complete_date';
 }
 
 export interface PublicUrlProps { url: string; method: string }

@@ -63,7 +63,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const {
     is_diagnosis_need,
+    is_diagnosis_need_date,
     is_proceed_to_repair,
+    is_proceed_to_repair_date,
     is_challan_needed,
     is_home_repair,
     brand_uuid,
@@ -88,20 +90,23 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     created_at,
     created_by,
     is_reclaimed,
+    is_reclaimed_date,
     reclaimed_order_uuid,
     updated_at,
     is_transferred_for_qc,
+    is_transferred_for_qc_date,
     is_ready_for_delivery,
+    ready_for_delivery_date,
     repairing_problems_uuid,
     qc_problems_uuid,
     delivery_problems_uuid,
     repairing_problem_statement,
     qc_problem_statement,
     delivery_problem_statement,
-    ready_for_delivery_date,
     engineer_uuid,
     advance_pay,
     is_return,
+    is_return_date,
     return_comment,
   } = formData;
 
@@ -161,6 +166,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     problems_uuid: processedProblemsUuid,
     accessories: processedAccessories,
     is_diagnosis_need: defaultIfEmpty(is_diagnosis_need, false),
+    is_diagnosis_need_date: defaultIfEmpty(is_diagnosis_need_date, null),
     warehouse_uuid: defaultIfEmpty(warehouse_uuid, null),
     rack_uuid: defaultIfEmpty(rack_uuid, null),
     floor_uuid: defaultIfEmpty(floor_uuid, null),
@@ -168,9 +174,11 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     updated_at: defaultIfEmpty(updated_at, null),
     remarks: defaultIfEmpty(remarks, null),
     is_transferred_for_qc: defaultIfEmpty(is_transferred_for_qc, false),
+    is_transferred_for_qc_date: defaultIfEmpty(is_transferred_for_qc_date, null),
     is_ready_for_delivery: defaultIfEmpty(is_ready_for_delivery, false),
     brand_uuid: defaultIfEmpty(brand_uuid, null),
     is_proceed_to_repair: defaultIfEmpty(is_proceed_to_repair, false),
+    is_proceed_to_repair_date: defaultIfEmpty(is_proceed_to_repair_date, null),
     repairing_problems_uuid: defaultIfEmpty(repairing_problems_uuid, []),
     qc_problems_uuid: defaultIfEmpty(qc_problems_uuid, []),
     delivery_problems_uuid: defaultIfEmpty(delivery_problems_uuid, []),
@@ -186,6 +194,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     image_2: imagePath_2,
     image_3: imagePath_3,
     is_reclaimed: defaultIfEmpty(is_reclaimed, false),
+    is_reclaimed_date: defaultIfEmpty(is_reclaimed_date, null),
     reclaimed_order_uuid: defaultIfEmpty(reclaimed_order_uuid, null),
     created_by: defaultIfEmpty(created_by, null),
     created_at,
@@ -195,6 +204,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     engineer_uuid: defaultIfEmpty(engineer_uuid, null),
     advance_pay: defaultIfEmpty(advance_pay, 0),
     is_return,
+    is_return_date: defaultIfEmpty(is_return_date, null),
     return_comment,
   };
 
@@ -330,6 +340,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.problems_uuid = defaultIfEmpty(formData.problems_uuid, []);
   formData.accessories = defaultIfEmpty(formData.accessories, []);
   formData.is_diagnosis_need = defaultIfEmpty(formData.is_diagnosis_need, false);
+  formData.is_diagnosis_need_date = defaultIfEmpty(formData.is_diagnosis_need_date, null);
   formData.warehouse_uuid = defaultIfEmpty(formData.warehouse_uuid, null);
   formData.rack_uuid = defaultIfEmpty(formData.rack_uuid, null);
   formData.floor_uuid = defaultIfEmpty(formData.floor_uuid, null);
@@ -337,26 +348,30 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.updated_at = defaultIfEmpty(formData.updated_at, null);
   formData.remarks = defaultIfEmpty(formData.remarks, null);
   formData.is_transferred_for_qc = defaultIfEmpty(formData.is_transferred_for_qc, false);
+  formData.is_transferred_for_qc_date = defaultIfEmpty(formData.is_transferred_for_qc_date, null);
   formData.is_ready_for_delivery = defaultIfEmpty(formData.is_ready_for_delivery, false);
+  formData.ready_for_delivery_date = defaultIfEmpty(formData.ready_for_delivery_date, null);
   formData.brand_uuid = defaultIfEmpty(formData.brand_uuid, null);
   formData.is_proceed_to_repair = defaultIfEmpty(formData.is_proceed_to_repair, false);
+  formData.is_proceed_to_repair_date = defaultIfEmpty(formData.is_proceed_to_repair_date, null);
   formData.repairing_problems_uuid = defaultIfEmpty(formData.repairing_problems_uuid, []);
   formData.qc_problems_uuid = defaultIfEmpty(formData.qc_problems_uuid, []);
   formData.delivery_problems_uuid = defaultIfEmpty(formData.delivery_problems_uuid, []);
   formData.repairing_problem_statement = defaultIfEmpty(formData.repairing_problem_statement, null);
   formData.qc_problem_statement = defaultIfEmpty(formData.qc_problem_statement, null);
   formData.delivery_problem_statement = defaultIfEmpty(formData.delivery_problem_statement, null);
-  formData.ready_for_delivery_date = defaultIfEmpty(formData.ready_for_delivery_date, null);
   formData.bill_amount = defaultIfEmpty(formData.bill_amount, 0);
   formData.is_home_repair = defaultIfEmpty(formData.is_home_repair, false);
   formData.proposed_cost = defaultIfEmpty(formData.proposed_cost, 0);
   formData.is_challan_needed = defaultIfEmpty(formData.is_challan_needed, false);
   formData.is_reclaimed = defaultIfEmpty(formData.is_reclaimed, false);
+  formData.is_reclaimed_date = defaultIfEmpty(formData.is_reclaimed_date, null);
   formData.reclaimed_order_uuid = defaultIfEmpty(formData.reclaimed_order_uuid, null);
   formData.created_by = defaultIfEmpty(formData.created_by, null);
   formData.engineer_uuid = defaultIfEmpty(formData.engineer_uuid, null);
   formData.advance_pay = defaultIfEmpty(formData.advance_pay, 0);
   formData.is_return = defaultIfEmpty(formData.is_return, false);
+  formData.is_return_date = defaultIfEmpty(formData.is_return_date, null);
   formData.return_comment = defaultIfEmpty(formData.return_comment, null);
 
   console.warn(formData, 'Final formData before update');
@@ -443,13 +458,14 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
     const reclaimedOrderExists = await db.select({
       uuid: orderTable.uuid,
       is_reclaimed: orderTable.is_reclaimed,
+      is_reclaimed_date: orderTable.is_reclaimed_date,
     })
       .from(orderTable)
       .where(eq(orderTable.uuid, orderData.reclaimed_order_uuid));
 
     if (reclaimedOrderExists.length > 0) {
       await db.update(orderTable)
-        .set({ is_reclaimed: false })
+        .set({ is_reclaimed: false, is_reclaimed_date: null })
         .where(eq(orderTable.uuid, orderData.reclaimed_order_uuid));
     }
   }
@@ -513,11 +529,15 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_at: orderTable.updated_at,
       remarks: orderTable.remarks,
       is_diagnosis_need: orderTable.is_diagnosis_need,
+      is_diagnosis_need_date: orderTable.is_diagnosis_need_date,
       quantity: orderTable.quantity,
       info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       is_transferred_for_qc: orderTable.is_transferred_for_qc,
+      is_transferred_for_qc_date: orderTable.is_transferred_for_qc_date,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
+      ready_for_delivery_date: orderTable.ready_for_delivery_date,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
+      is_proceed_to_repair_date: orderTable.is_proceed_to_repair_date,
       branch_uuid: storeSchema.warehouse.branch_uuid,
       branch_name: storeSchema.branch.name,
       repairing_problems_uuid: orderTable.repairing_problems_uuid,
@@ -526,7 +546,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       repairing_problem_statement: orderTable.repairing_problem_statement,
       qc_problem_statement: orderTable.qc_problem_statement,
       delivery_problem_statement: orderTable.delivery_problem_statement,
-      ready_for_delivery_date: orderTable.ready_for_delivery_date,
       diagnosis_problems_uuid: diagnosis.problems_uuid,
       diagnosis_problem_statement: diagnosis.problem_statement,
       bill_amount: PG_DECIMAL_TO_FLOAT(orderTable.bill_amount),
@@ -537,6 +556,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       image_2: orderTable.image_2,
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
+      is_reclaimed_date: orderTable.is_reclaimed_date,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
       reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
@@ -545,6 +565,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       engineer_name: engineerUser.name,
       advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
       is_return: orderTable.is_return,
+      is_return_date: orderTable.is_return_date,
       return_comment: orderTable.return_comment,
     })
     .from(orderTable)
@@ -836,21 +857,25 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       updated_at: orderTable.updated_at,
       remarks: orderTable.remarks,
       is_diagnosis_need: orderTable.is_diagnosis_need,
+      is_diagnosis_need_date: orderTable.is_diagnosis_need_date,
       quantity: orderTable.quantity,
       info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       is_transferred_for_qc: orderTable.is_transferred_for_qc,
+      is_transferred_for_qc_date: orderTable.is_transferred_for_qc_date,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
+      ready_for_delivery_date: orderTable.ready_for_delivery_date,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
+      is_proceed_to_repair_date: orderTable.is_proceed_to_repair_date,
       branch_uuid: storeSchema.warehouse.branch_uuid,
       branch_name: storeSchema.branch.name,
       is_delivery_complete: sql`CASE WHEN ${deliverySchema.challan.is_delivery_complete} IS NULL THEN false ELSE ${deliverySchema.challan.is_delivery_complete} END`,
+      is_delivery_complete_date: deliverySchema.challan.is_delivery_complete_date,
       repairing_problems_uuid: orderTable.repairing_problems_uuid,
       qc_problems_uuid: orderTable.qc_problems_uuid,
       delivery_problems_uuid: orderTable.delivery_problems_uuid,
       repairing_problem_statement: orderTable.repairing_problem_statement,
       qc_problem_statement: orderTable.qc_problem_statement,
       delivery_problem_statement: orderTable.delivery_problem_statement,
-      ready_for_delivery_date: orderTable.ready_for_delivery_date,
       diagnosis_problems_uuid: diagnosis.problems_uuid,
       diagnosis_problem_statement: diagnosis.problem_statement,
       bill_amount: PG_DECIMAL_TO_FLOAT(orderTable.bill_amount),
@@ -861,6 +886,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       image_2: orderTable.image_2,
       image_3: orderTable.image_3,
       is_reclaimed: orderTable.is_reclaimed,
+      is_reclaimed_date: orderTable.is_reclaimed_date,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
       reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
@@ -1141,12 +1167,16 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       updated_at: orderTable.updated_at,
       remarks: orderTable.remarks,
       is_diagnosis_need: orderTable.is_diagnosis_need,
+      is_diagnosis_need_date: orderTable.is_diagnosis_need_date,
       quantity: orderTable.quantity,
       info_id: sql`CONCAT('WI', TO_CHAR(${info.created_at}::timestamp, 'YY'), '-', ${info.id})`,
       is_transferred_for_qc: orderTable.is_transferred_for_qc,
+      is_transferred_for_qc_date: orderTable.is_transferred_for_qc_date,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       is_delivery_complete: sql`COALESCE(${deliverySchema.challan.is_delivery_complete}, false)`,
+      is_delivery_complete_date: deliverySchema.challan.is_delivery_complete_date,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
+      is_proceed_to_repair_date: orderTable.is_proceed_to_repair_date,
       branch_uuid: storeSchema.warehouse.branch_uuid,
       branch_name: storeSchema.branch.name,
       repairing_problems_uuid: orderTable.repairing_problems_uuid,
@@ -1171,6 +1201,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       challan_uuid: deliverySchema.challan.uuid,
       challan_type: deliverySchema.challan.challan_type,
       is_reclaimed: orderTable.is_reclaimed,
+      is_reclaimed_date: orderTable.is_reclaimed_date,
       reclaimed_order_uuid: orderTable.reclaimed_order_uuid,
       reclaimed_order_id: sql`CASE WHEN ${reclaimedOrderTable.reclaimed_order_uuid} IS NULL THEN CONCAT('WO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) ELSE CONCAT('RWO', TO_CHAR(${reclaimedOrderTable.created_at}, 'YY'), '-', ${reclaimedOrderTable.id}) END`,
       new_order_uuid: sql`(SELECT o.uuid FROM work.order o WHERE o.reclaimed_order_uuid = ${orderTable.uuid} AND ${orderTable.is_reclaimed} = true LIMIT 1)`,
@@ -1179,6 +1210,7 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       engineer_name: engineerUser.name,
       advance_pay: PG_DECIMAL_TO_FLOAT(orderTable.advance_pay),
       is_return: orderTable.is_return,
+      is_return_date: orderTable.is_return_date,
       return_comment: orderTable.return_comment,
     })
     .from(orderTable)

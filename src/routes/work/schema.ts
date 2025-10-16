@@ -113,6 +113,7 @@ export const order = work.table('order', {
   problem_statement: text('problem_statement').notNull(),
   accessories: text('accessories').array().default(sql`null`),
   is_diagnosis_need: boolean('is_diagnosis_need').default(false),
+  is_diagnosis_need_date: DateTime('is_diagnosis_need_date').default(sql`null`),
   warehouse_uuid: defaultUUID('warehouse_uuid').references(
     () => storeSchema.warehouse.uuid,
   ),
@@ -126,11 +127,14 @@ export const order = work.table('order', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
   is_transferred_for_qc: boolean('is_transferred_for_qc').default(false),
+  is_transferred_for_qc_date: DateTime('is_transferred_for_qc_date').default(sql`null`),
   is_ready_for_delivery: boolean('is_ready_for_delivery').default(false),
+  ready_for_delivery_date: DateTime('ready_for_delivery_date').default(sql`null`),
   brand_uuid: defaultUUID('brand_uuid').references(
     () => storeSchema.brand.uuid,
   ),
   is_proceed_to_repair: boolean('is_proceed_to_repair').default(false),
+  is_proceed_to_repair_date: DateTime('is_proceed_to_repair_date').default(sql`null`),
   repairing_problems_uuid: text('repairing_problems_uuid')
     .array()
     .default([]),
@@ -143,7 +147,6 @@ export const order = work.table('order', {
   delivery_problem_statement: text('delivery_problem_statement').default(
     sql`null`,
   ),
-  ready_for_delivery_date: DateTime('ready_for_delivery_date').default(sql`null`),
   bill_amount: PG_DECIMAL('bill_amount').default(sql`0`),
   is_home_repair: boolean('is_home_repair').default(false),
   proposed_cost: PG_DECIMAL('proposed_cost').default(sql`0`),
@@ -152,6 +155,7 @@ export const order = work.table('order', {
   image_2: text('image_2').default(sql`null`),
   image_3: text('image_3').default(sql`null`),
   is_reclaimed: boolean('is_reclaimed').default(false),
+  is_reclaimed_date: DateTime('is_reclaimed_date').default(sql`null`),
   reclaimed_order_uuid: defaultUUID('reclaimed_order_uuid').references(
     (): any => order.uuid,
   ).default(sql`null`),
@@ -160,6 +164,7 @@ export const order = work.table('order', {
   ).default(sql`null`),
   advance_pay: PG_DECIMAL('advance_pay').default(sql`0`),
   is_return: boolean('is_return').default(false),
+  is_return_date: DateTime('is_return_date').default(sql`null`),
   return_comment: text('return_comment').default(sql`null`),
 });
 export const statusEnum = pgEnum('status', [
@@ -180,6 +185,7 @@ export const diagnosis = work.table('diagnosis', {
   status_update_date: DateTime('status_update_date').default(sql`null`),
   proposed_cost: PG_DECIMAL('proposed_cost').default(sql`0`),
   is_proceed_to_repair: boolean('is_proceed_to_repair').default(false),
+  is_proceed_to_repair_date: DateTime('is_proceed_to_repair_date').default(sql`null`),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),

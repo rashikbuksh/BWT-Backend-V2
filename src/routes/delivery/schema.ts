@@ -68,6 +68,7 @@ export const challan = delivery.table('challan', {
   vehicle_uuid: defaultUUID('vehicle_uuid').references(() => vehicle.uuid),
   courier_uuid: defaultUUID('courier_uuid').references(() => courier.uuid),
   is_delivery_complete: boolean('is_delivery_complete').default(false),
+  is_delivery_complete_date: DateTime('is_delivery_complete_date').default(sql`null`),
   created_by: defaultUUID('created_by').references(() => users.uuid),
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),

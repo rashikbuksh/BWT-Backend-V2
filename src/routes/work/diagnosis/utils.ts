@@ -19,6 +19,9 @@ export const insertSchema = createInsertSchema(
     status_update_date: schema => schema.status_update_date.optional(),
     proposed_cost: z.number().optional().default(0),
     is_proceed_to_repair: schema => schema.is_proceed_to_repair.optional(),
+    is_proceed_to_repair_date: schema => schema.is_proceed_to_repair_date.regex(dateTimePattern, {
+      message: 'is_proceed_to_repair_date must be in the format "YYYY-MM-DD HH:MM:SS"',
+    }).optional(),
     created_by: schema => schema.created_by.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
@@ -42,6 +45,7 @@ export const insertSchema = createInsertSchema(
   status_update_date: true,
   proposed_cost: true,
   is_proceed_to_repair: true,
+  is_proceed_to_repair_date: true,
   customer_problem_statement: true,
   customer_remarks: true,
   updated_at: true,
