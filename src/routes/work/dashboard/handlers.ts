@@ -33,7 +33,7 @@ export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = 
       AND wo.is_ready_for_delivery = FALSE
       AND ch.uuid IS NULL
       AND wo.is_return = FALSE
-      ${engineer_uuid ? sql`AND (wo.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
+      ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
   `;
 
   const data = await db.execute(resultPromise);
@@ -60,7 +60,7 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
       AND wo.is_ready_for_delivery = FALSE
       AND ch.uuid IS NULL
       AND wo.is_return = FALSE
-      ${engineer_uuid ? sql`AND (wo.engineer_uuid = ${engineer_uuid} OR ${engineer_uuid} IS NULL)` : sql`AND TRUE`}
+      ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
   `;
 
   const data = await db.execute(resultPromise);
