@@ -108,6 +108,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     is_return,
     is_return_date,
     return_comment,
+    is_delivery_without_challan,
+    is_delivery_without_challan_date,
   } = formData;
 
   let imagePath_1 = null;
@@ -206,6 +208,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     is_return,
     is_return_date: defaultIfEmpty(is_return_date, null),
     return_comment,
+    is_delivery_without_challan: defaultIfEmpty(is_delivery_without_challan, false),
+    is_delivery_without_challan_date: defaultIfEmpty(is_delivery_without_challan_date, null),
   };
 
   try {
@@ -567,6 +571,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_return: orderTable.is_return,
       is_return_date: orderTable.is_return_date,
       return_comment: orderTable.return_comment,
+      is_delivery_without_challan: orderTable.is_delivery_without_challan,
+      is_delivery_without_challan_date: orderTable.is_delivery_without_challan_date,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -897,6 +903,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_return: orderTable.is_return,
       is_return_date: orderTable.is_return_date,
       return_comment: orderTable.return_comment,
+      is_delivery_without_challan: orderTable.is_delivery_without_challan,
+      is_delivery_without_challan_date: orderTable.is_delivery_without_challan_date,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
@@ -1213,6 +1221,8 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       is_return: orderTable.is_return,
       is_return_date: orderTable.is_return_date,
       return_comment: orderTable.return_comment,
+      is_delivery_without_challan: orderTable.is_delivery_without_challan,
+      is_delivery_without_challan_date: orderTable.is_delivery_without_challan_date,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))

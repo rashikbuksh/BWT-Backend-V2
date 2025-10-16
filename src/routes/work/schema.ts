@@ -166,6 +166,8 @@ export const order = work.table('order', {
   is_return: boolean('is_return').default(false),
   is_return_date: DateTime('is_return_date').default(sql`null`),
   return_comment: text('return_comment').default(sql`null`),
+  is_delivery_without_challan: boolean('is_delivery_without_challan').default(false),
+  is_delivery_without_challan_date: DateTime('is_delivery_without_challan_date').default(sql`null`),
 });
 export const statusEnum = pgEnum('status', [
   'pending',

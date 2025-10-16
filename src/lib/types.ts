@@ -69,7 +69,8 @@ export interface ColumnProps {
     | 'is_diagnosis_need_date'
     | 'is_transferred_for_qc_date'
     | 'is_proceed_to_repair_date'
-    | 'is_delivery_complete_date';
+    | 'is_delivery_complete_date'
+    | 'is_delivery_without_challan_date';
 }
 
 export interface PublicUrlProps { url: string; method: string }

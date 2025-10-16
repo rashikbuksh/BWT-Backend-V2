@@ -109,6 +109,8 @@ export const insertSchema = createInsertSchema(
   advance_pay: true,
   is_return: true,
   return_comment: true,
+  is_delivery_without_challan: true,
+  is_delivery_without_challan_date: true,
 }).omit({
   id: true,
 });
