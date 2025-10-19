@@ -372,6 +372,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
         s.late_time,
         s.early_exit_before,
         sg.name AS shift_group_name,
+        e.start_date::date,
         d.punch_date,
         MIN(pl.punch_time) AS entry_time,
         MAX(pl.punch_time) AS exit_time,
@@ -492,7 +493,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
         ORDER BY el.effective_date DESC
         LIMIT 1
       ) AND sod.day = d.punch_date
-      GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special, sod.is_offday, al.reason, dept.department, des.designation, et.name, w.name, me_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name
+      GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special, sod.is_offday, al.reason, dept.department, des.designation, et.name, w.name, me_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date
     )
     SELECT
       ad.employee_uuid,
@@ -502,6 +503,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
       ad.department_name,
       ad.workplace_name,
       ad.employment_type_name,
+      ad.start_date,
       (SELECT COUNT(*) FROM dates)::int AS total_days,
       COUNT(*) FILTER (WHERE ad.is_present)::float8    AS present_days,
       COUNT(*) FILTER (WHERE ad.is_late)::float8        AS late_days,
@@ -523,7 +525,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
       COALESCE(SUM(ad.overtime_hours), 0)::float8  AS overtime_hours
     FROM attendance_data ad
     WHERE ${employee_uuid ? sql`ad.employee_uuid = ${employee_uuid}` : sql`TRUE`}
-    GROUP BY ad.employee_uuid, ad.user_uuid, ad.employee_name, ad.designation_name, ad.department_name, ad.workplace_name, ad.employment_type_name
+    GROUP BY ad.employee_uuid, ad.user_uuid, ad.employee_name, ad.designation_name, ad.department_name, ad.workplace_name, ad.employment_type_name, ad.start_date
     ORDER BY ad.employee_name
   `;
   const result = await db.execute(query);
