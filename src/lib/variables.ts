@@ -469,7 +469,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
       LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
       LEFT JOIN hr.apply_late ap_late ON ap_late.employee_uuid = e.uuid
           AND ap_late.date::date = d.punch_date
-          AND ap_late.approval = 'approved'
+          AND ap_late.status = 'approved'
       LEFT JOIN hr.manual_entry me_field ON me_field.employee_uuid = e.uuid
         AND me_field.entry_time::date = d.punch_date
         AND me_field.approval = 'approved'
@@ -492,7 +492,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
         ORDER BY el.effective_date DESC
         LIMIT 1
       ) AND sod.day = d.punch_date
-      GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special, sod.is_offday, al.reason, dept.department, des.designation, et.name, w.name, me_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date
+      GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special, sod.is_offday, al.reason, dept.department, des.designation, et.name, w.name, ap_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date
     )
     SELECT
       ad.employee_uuid,
