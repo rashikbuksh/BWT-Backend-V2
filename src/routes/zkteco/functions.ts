@@ -315,7 +315,7 @@ export async function insertBiometricData(biometricItems: any[]) {
         // Check if it's fingerprint data
         if (item.TmpType && (item.TmpType === '1' || item.TmpType === '9')) {
           biometricType = 'fingerprint';
-          fingerIndex = Number(item.TmpIndex || item.FingerID || item.No || 0);
+          fingerIndex = Number(item.No || 0);
         }
         else if (item.TmpType === '7' || item.TmpType === '8') {
           biometricType = 'face';
