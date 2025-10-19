@@ -377,7 +377,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             w.name AS workplace_name,
                             et.uuid AS employment_type_uuid,
                             et.name AS employment_type_name,
-                            COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 - COALESCE(leave_summary.total_leave_days, 0)::float8 AS present_days,
+                            COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
                             COALESCE((${to_date}::date - ${from_date}::date + 1), 0) - (
                                 COALESCE(attendance_summary.present_days, 0) + 
                                 COALESCE(attendance_summary.late_days, 0) + 
@@ -459,33 +459,59 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             SELECT 
                                 da.employee_uuid,
                                 COUNT(
-                                    CASE 
-                                        WHEN gh.date IS NULL 
-                                            AND sp.is_special IS NULL 
-                                            AND sod.is_offday IS DISTINCT FROM TRUE 
-                                            AND da.first_punch::time < da.late_time::time THEN 1
-                                        ELSE NULL
-                                    END
-                                ) AS present_days,
+                                      CASE
+                                        WHEN gh.date IS NULL
+                                          AND sp.is_special IS NULL
+                                          AND sod.is_offday IS DISTINCT FROM TRUE
+                                          AND NOT EXISTS(
+                                            SELECT 1 FROM hr.apply_leave al2
+                                            WHERE al2.employee_uuid = da.employee_uuid
+                                              AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
+                                              AND al2.approval = 'approved'
+                                          )
+                                          AND da.first_punch::time < da.late_time::time
+                                        THEN 1 ELSE NULL
+                                      END
+                                    ) AS present_days,
                                 COUNT(
-                                    CASE
-                                        WHEN gh.date IS NULL 
+                                    CASE 
+                                        WHEN gh.date IS NULL
                                             AND sp.is_special IS NULL 
                                             AND sod.is_offday IS DISTINCT FROM TRUE 
-                                            AND da.first_punch::time > da.late_time::time THEN 1
+                                            AND NOT EXISTS( 
+                                                SELECT 1 FROM hr.apply_leave al2
+                                                WHERE al2.employee_uuid = da.employee_uuid
+                                                  AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
+                                                  AND al2.approval = 'approved'
+                                            )
+                                            AND da.first_punch::time >= da.late_time::time THEN 1
                                         ELSE NULL
                                     END
                                 ) AS late_days,
                                 COUNT(
                                     CASE 
-                                        WHEN gh.date IS NULL 
+                                        WHEN gh.date IS NULL
                                             AND sp.is_special IS NULL 
                                             AND sod.is_offday IS DISTINCT FROM TRUE 
-                                            AND da.last_punch::time < da.early_exit_before::time THEN 1
+                                            AND NOT EXISTS( 
+                                                SELECT 1 FROM hr.apply_leave al2
+                                                WHERE al2.employee_uuid = da.employee_uuid
+                                                  AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
+                                                  AND al2.approval = 'approved'
+                                            )
+                                            AND da.last_punch::time <= da.early_exit_before::time THEN 1
                                         ELSE NULL
                                     END
                                 ) AS early_exit_days
                             FROM daily_attendance da
+                            LEFT JOIN LATERAL (
+                                                SELECT 1 AS is_leave
+                                                FROM hr.apply_leave al
+                                                WHERE al.employee_uuid = da.employee_uuid
+                                                  AND da.attendance_date BETWEEN al.from_date::date AND al.to_date::date
+                                                  AND al.approval = 'approved'
+                                                LIMIT 1
+                                              ) al ON TRUE
                             LEFT JOIN hr.general_holidays gh ON gh.date = da.attendance_date
                             LEFT JOIN LATERAL (
                                 SELECT 1 AS is_special
