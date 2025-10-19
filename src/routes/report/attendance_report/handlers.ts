@@ -377,7 +377,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             w.name AS workplace_name,
                             et.uuid AS employment_type_uuid,
                             et.name AS employment_type_name,
-                            COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
+                            COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 - COALESCE(leave_summary.total_leave_days, 0)::float8 AS present_days,
                             COALESCE((${to_date}::date - ${from_date}::date + 1), 0) - (
                                 COALESCE(attendance_summary.present_days, 0) + 
                                 COALESCE(attendance_summary.late_days, 0) + 
@@ -426,30 +426,30 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                                     shifts.late_time,
                                     shifts.early_exit_before,
                                     (SELECT el.type_uuid
-                                    FROM hr.employee_log el
-                                    WHERE el.employee_uuid = pl.employee_uuid
-                                    AND el.type = 'shift_group'
-                                    AND el.effective_date::date <= DATE(pl.punch_time)
-                                    ORDER BY el.effective_date DESC
-                                    LIMIT 1) AS shift_group_uuid
+                                            FROM hr.employee_log el
+                                            WHERE el.employee_uuid = pl.employee_uuid
+                                            AND el.type = 'shift_group'
+                                            AND el.effective_date::date <= DATE(pl.punch_time)
+                                            ORDER BY el.effective_date DESC
+                                            LIMIT 1) AS shift_group_uuid
                                 FROM hr.punch_log pl
                                 LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                               LEFT JOIN LATERAL (
-                                    SELECT r.shifts_uuid AS shifts_uuid
-                                    FROM hr.roster r
-                                    WHERE r.shift_group_uuid = (
-                                      SELECT el.type_uuid
-                                      FROM hr.employee_log el
-                                      WHERE el.employee_uuid = e.uuid
-                                        AND el.type = 'shift_group'
-                                        AND el.effective_date::date <= DATE(pl.punch_time)
-                                      ORDER BY el.effective_date DESC
+                                LEFT JOIN LATERAL (
+                                      SELECT r.shifts_uuid AS shifts_uuid
+                                      FROM hr.roster r
+                                      WHERE r.shift_group_uuid = (
+                                        SELECT el.type_uuid
+                                        FROM hr.employee_log el
+                                        WHERE el.employee_uuid = e.uuid
+                                          AND el.type = 'shift_group'
+                                          AND el.effective_date::date <= DATE(pl.punch_time)
+                                        ORDER BY el.effective_date DESC
+                                        LIMIT 1
+                                      )
+                                      AND r.effective_date <= DATE(pl.punch_time)
+                                      ORDER BY r.effective_date DESC
                                       LIMIT 1
-                                    )
-                                    AND r.effective_date <= DATE(pl.punch_time)
-                                    ORDER BY r.effective_date DESC
-                                    LIMIT 1
-                                  ) sg_sel ON TRUE
+                                    ) sg_sel ON TRUE
                                 LEFT JOIN hr.shifts shifts ON shifts.uuid = sg_sel.shifts_uuid
                                 WHERE pl.punch_time IS NOT NULL
                                     AND DATE(pl.punch_time) >= ${from_date}::date
@@ -1415,8 +1415,6 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
   // For each date, determine attendance status
   for (const date of dates) {
     const dailyStatus = await getEmployeeAttendanceForDate(employee_uuid, date);
-
-    console.log(`Date: ${date}, Status:`, dailyStatus);
 
     if (dailyStatus) {
       if (dailyStatus.is_present) {
