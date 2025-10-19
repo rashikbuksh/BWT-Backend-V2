@@ -291,12 +291,12 @@ export async function insertBiometricData(biometricItems: any[]) {
       const employeeRecord = await db
         .select()
         .from(employee)
-        .where(eq(employee.pin, item.PIN || item.pin || ''))
+        .where(eq(employee.pin, item.PIN || item.pin || item.Pin || ''))
         .limit(1);
 
       if (employeeRecord.length === 0) {
-        console.warn(`[insert-biometric] Employee not found for PIN: ${item.PIN || item.pin} - Type: ${item.type} - Skipping this record`);
-        return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin}`, pin: item.PIN || item.pin, type: item.type };
+        console.warn(`[insert-biometric] Employee not found for PIN: ${item.PIN || item.pin || item.Pin} - Type: ${item.type} - Skipping this record`);
+        return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin || item.Pin}`, pin: item.PIN || item.pin || item.Pin, type: item.type };
       }
 
       // Determine biometric type based on the data type
