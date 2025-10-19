@@ -57,12 +57,11 @@ export function parseLine(line: string) {
   // Also by first space-separated token
   const firstSpace = raw.split(' ', 1)[0];
 
-  console.warn('First token:', firstToken, ' - First space:', firstSpace);
-
   switch (true) {
     // USER profile
     case firstSpace === 'USER': {
       const kv = kvPairs(raw.substring(5));
+      console.warn('Parsed USER kv: ', kv);
       return { type: 'USER', ...kv };
     }
 
