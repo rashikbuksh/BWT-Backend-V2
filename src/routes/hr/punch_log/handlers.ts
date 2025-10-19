@@ -316,6 +316,11 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                             AND pl.entry_time::time > s.late_time::time AND pl.punch_date NOT IN (
                               SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL AND (${apply_late_uuid ? sql`uuid != ${apply_late_uuid}` : sql`true`})
                             )
+                            AND (
+                              (SELECT is_general_holiday FROM hr.is_general_holiday(pl.punch_date)) IS false
+                              AND (SELECT is_special_holiday FROM hr.is_special_holiday(pl.punch_date)) IS false
+                              AND hr.is_employee_off_day(e.uuid, pl.punch_date) = false
+                            )
                             GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time, d.department, des.designation, e.uuid
                             ORDER BY pl.punch_date DESC
                             `;
