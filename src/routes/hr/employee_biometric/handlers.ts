@@ -173,13 +173,13 @@ export const getByEmployeeUuid: AppRouteHandler<GetByEmployeeUuidRoute> = async 
   }, {});
 
   // Process fingerprint records with individual finger status
-  const processedFingerprintData = fingerprintData.map(record => ({
-    ...record,
-    finger_status:
-    (record.finger_index !== null && record.finger_index !== undefined)
-      ? getFingerDetails(record.finger_index)
-      : null,
-  }));
+  // const processedFingerprintData = fingerprintData.map(record => ({
+  //   ...record,
+  //   finger_status:
+  //   (record.finger_index !== null && record.finger_index !== undefined)
+  //     ? getFingerDetails(record.finger_index)
+  //     : null,
+  // }));
 
   // Create comprehensive biometric info
   const employeeInfo = data[0]
@@ -193,10 +193,10 @@ export const getByEmployeeUuid: AppRouteHandler<GetByEmployeeUuidRoute> = async 
           face_count: faceData.length,
           rfid_count: rfidData.length,
         },
-        fingerprint_info: {
-          finger_statuses: fingerprintStatuses || {},
-          records: processedFingerprintData || [],
-        },
+        // fingerprint_info: {
+        //   finger_statuses: fingerprintStatuses || {},
+        //   // records: processedFingerprintData || [],
+        // },
         face_info: {
           records: faceData || [],
         },
