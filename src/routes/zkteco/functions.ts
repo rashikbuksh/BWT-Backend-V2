@@ -308,9 +308,10 @@ export async function insertBiometricData(biometricItems: any[]) {
       if (item.type === 'BIOPHOTO') {
         biometricType = 'face';
       }
-      else if (item.type === 'USERPIC') {
-        biometricType = 'face'; // User picture is typically a face photo
-      }
+      // else
+      // if (item.type === 'USERPIC') {
+      //   biometricType = 'face'; // User picture is typically a face photo
+      // }
       else if (item.type === 'BIODATA') {
         // Check if it's fingerprint data
         if (item.Type && (item.Type === '1')) {

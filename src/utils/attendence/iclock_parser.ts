@@ -57,6 +57,8 @@ export function parseLine(line: string) {
   // Also by first space-separated token
   const firstSpace = raw.split(' ', 1)[0];
 
+  console.warn('First token:', firstToken, ' - First space:', firstSpace);
+
   switch (true) {
     // USER profile
     case firstSpace === 'USER': {

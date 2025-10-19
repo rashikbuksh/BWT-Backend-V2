@@ -482,18 +482,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   // Clear the usersByDevice cache to force refresh from device
   usersByDevice.delete(sn);
 
-  // Schedule a delayed user fetch to get updated user list after device processes the commands
-  setTimeout(async () => {
-    try {
-      console.warn(`[bulk-add-users] SN=${sn} fetching updated user list after ${commands.length} user additions`);
-      await ensureUsersFetched(sn, usersByDevice, commandQueue);
-      const umap = ensureUserMap(sn, usersByDevice);
-      console.warn(`[bulk-add-users] SN=${sn} user fetch completed, total users now: ${umap?.size ?? 0}`);
-    }
-    catch (error) {
-      console.error(`[bulk-add-users] SN=${sn} failed to fetch users after bulk addition:`, error);
-    }
-  }, 5000); // Wait 5 seconds for device to process the user addition commands
+  await ensureUsersFetched(sn, usersByDevice, commandQueue);
 
   return c.json({
     ok: true,
