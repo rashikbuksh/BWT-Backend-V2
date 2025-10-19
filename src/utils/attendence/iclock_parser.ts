@@ -61,7 +61,6 @@ export function parseLine(line: string) {
     // USER profile
     case firstSpace === 'USER': {
       const kv = kvPairs(raw.substring(5));
-      console.warn('Parsed USER kv: ', kv);
       return { type: 'USER', ...kv };
     }
 

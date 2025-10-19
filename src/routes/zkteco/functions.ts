@@ -326,7 +326,14 @@ export async function insertBiometricData(biometricItems: any[]) {
         }
       }
 
-      const templateData = item.Template || item.template || item.Size || item.Content || item.Tmp || '';
+      else if (item.type === 'USER') {
+        // USER type may contain RFID card data
+        if (item.CardNo || item.Card) {
+          biometricType = 'rfid';
+        }
+      }
+
+      const templateData = biometricType === 'rfid' ? item.Card : item.Template || item.template || item.Size || item.Content || item.Tmp || item.Card || '';
 
       // Create a hash of the template data for efficient comparison
       const templateHash = crypto.createHash('sha256').update(templateData).digest('hex');
@@ -346,6 +353,7 @@ export async function insertBiometricData(biometricItems: any[]) {
           tmp_type: item.TmpType || item.Type,
           tmp_index: item.TmpIndex || item.No,
           finger_id: item.FingerID,
+          card_no: item.CardNo || item.Card,
           size: item.Size,
           valid: item.Valid,
           duress: item.Duress,

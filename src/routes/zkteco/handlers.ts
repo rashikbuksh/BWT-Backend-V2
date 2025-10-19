@@ -168,6 +168,7 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
     else {
       informationLogs.push(items);
       if (items.type === 'USER') {
+        biometricItems.push(items);
         // Auto-detect PIN key from the first USER with PIN-like fields
         const pinKeys = ['PIN', 'Badgenumber', 'EnrollNumber', 'CardNo', 'Card'];
         let userPin = null;
