@@ -309,8 +309,10 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                             LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                             LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid AND pl.punch_date::date BETWEEN al.from_date::date AND al.to_date::date
                                       AND al.approval = 'approved'
+                            LEFT JOIN hr.apply_late al2 ON al2.employee_uuid = e.uuid AND pl.punch_date::date = al2.date::date
                             WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`true`}
                             AND al.uuid IS NULL
+                            AND (al2.uuid IS NULL OR al2.status = 'rejected')
                             AND pl.entry_time::time > s.late_time::time AND pl.punch_date NOT IN (
                               SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL AND (${apply_late_uuid ? sql`uuid != ${apply_late_uuid}` : sql`true`})
                             )
