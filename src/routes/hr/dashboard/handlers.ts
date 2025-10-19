@@ -125,7 +125,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                       -- attendance for day (today) - used to return rows (all fields filtered to today)
                       attendance_data_day AS (
                         SELECT
-                          e.uuid as employee_uuid,
+                          e.uuid,
                           ud.user_uuid,
                           ud.employee_name,
                           s.name AS shift_name,
@@ -265,7 +265,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                       )
 
                       SELECT
-                        ad.uuid,
+                        ad.uuid as employee_uuid,
                         ad.user_uuid,
                         ad.employee_name,
                         ad.shift_name,
@@ -1046,7 +1046,7 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                         ),
                 attendance_data AS (
                   SELECT
-                    e.uuid as employee_uuid,
+                    e.uuid,
                     ud.user_uuid,
                     ud.employee_name,
                     s.name AS shift_name,
