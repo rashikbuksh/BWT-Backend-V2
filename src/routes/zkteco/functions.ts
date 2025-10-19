@@ -305,6 +305,10 @@ export async function insertBiometricData(biometricItems: any[]) {
       let biometricType = 'fingerprint'; // default
       let fingerIndex = 0;
 
+      if (item.type === 'USERPIC') {
+        return { action: 'skipped', uuid: null, pin: item.PIN || item.pin || item.Pin, type: item.type };
+      }
+
       if (item.type === 'BIOPHOTO') {
         biometricType = 'face';
       }
