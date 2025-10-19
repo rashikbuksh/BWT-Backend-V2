@@ -379,7 +379,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
         CASE WHEN gh.date IS NOT NULL THEN TRUE ELSE FALSE END AS is_general_holiday,
         CASE WHEN sp.is_special = 1 THEN TRUE ELSE FALSE END AS is_special_holiday,
         CASE WHEN sod.is_offday THEN TRUE ELSE FALSE END AS is_off_day,
-         CASE 
+        CASE 
           WHEN gh.date IS NULL AND sp.is_special IS NULL AND sod.is_offday IS NOT TRUE AND al.reason IS NULL 
             AND MIN(pl.punch_time) IS NOT NULL THEN TRUE
           ELSE FALSE
@@ -401,7 +401,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
         w.name AS workplace_name,
         CASE 
           WHEN gh.date IS NULL AND sp.is_special IS NULL AND sod.is_offday IS NOT TRUE AND al.reason IS NULL 
-            AND (MIN(pl.punch_time) IS NULL OR MIN(pl.punch_time)::time > s.late_time::time OR MAX(pl.punch_time)::time < s.early_exit_before::time) THEN TRUE
+            AND MIN(pl.punch_time) IS NULL THEN TRUE
           ELSE FALSE
         END AS is_absent,
         CASE WHEN me_late.employee_uuid IS NOT NULL THEN TRUE ELSE FALSE END AS is_late_application,
@@ -460,14 +460,42 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
         ORDER BY el.effective_date DESC
         LIMIT 1
       ) AND sod.day = d.punch_date
-      WHERE e.uuid = ${employee_uuid}
       GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special, sod.is_offday, al.reason, dept.department, des.designation, et.name, w.name, me_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name
     )
-    SELECT * FROM attendance_data
-    ORDER BY punch_date ASC
+    SELECT
+      ad.employee_uuid,
+      ad.user_uuid,
+      ad.employee_name,
+      ad.designation_name,
+      ad.department_name,
+      ad.workplace_name,
+      ad.employment_type_name,
+      (SELECT COUNT(*) FROM dates)::int AS total_days,
+      COUNT(*) FILTER (WHERE ad.is_present)::float8    AS present_days,
+      COUNT(*) FILTER (WHERE ad.is_late)::float8        AS late_days,
+      COUNT(*) FILTER (WHERE ad.is_early_exit)::float8   AS early_exit_days,
+      COUNT(*) FILTER (WHERE ad.leave_reason IS NOT NULL)::float8  AS leave_days,
+      COUNT(*) FILTER (WHERE ad.is_off_day)::float8      AS off_days,
+      COUNT(*) FILTER (WHERE ad.is_general_holiday)::float8  AS general_holidays,
+      COUNT(*) FILTER (WHERE ad.is_special_holiday)::float8  AS special_holidays,
+      ((SELECT COUNT(*) FROM dates) - COUNT(*) FILTER (WHERE ad.is_off_day OR ad.is_general_holiday OR ad.is_special_holiday OR ad.leave_reason IS NOT NULL))::int AS working_days,
+      COUNT(*) FILTER (WHERE ad.is_absent)::float8       AS absent_days,
+      COUNT(*) FILTER (WHERE ad.is_late_application)::float8  AS approved_lates,
+      COUNT(*) FILTER (WHERE ad.is_field_visit)::float8  AS field_visit_days,
+      -- Sum late_hours only for rows flagged as is_late
+      COALESCE(SUM(ad.late_hours) FILTER (WHERE ad.is_late), 0)::float8      AS total_late_hours,
+      -- Sum early_exit_hours only for rows flagged as is_early_exit
+      COALESCE(SUM(ad.early_exit_hours) FILTER (WHERE ad.is_early_exit), 0)::float8 AS total_early_exit_hours,
+      COALESCE(SUM(ad.working_hours), 0)::float8   AS working_hours,
+      COALESCE(SUM(ad.expected_working_hours), 0)::float8 AS expected_hours,
+      COALESCE(SUM(ad.overtime_hours), 0)::float8  AS overtime_hours
+    FROM attendance_data ad
+    WHERE ${employee_uuid ? sql`ad.employee_uuid = ${employee_uuid}` : sql`TRUE`}
+    GROUP BY ad.employee_uuid, ad.user_uuid, ad.employee_name, ad.designation_name, ad.department_name, ad.workplace_name, ad.employment_type_name
+    ORDER BY ad.employee_name
   `;
-
   const result = await db.execute(query);
+
   return result.rows || [];
 }
 
