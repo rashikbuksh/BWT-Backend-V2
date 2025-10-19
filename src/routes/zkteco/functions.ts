@@ -299,8 +299,6 @@ export async function insertBiometricData(biometricItems: any[]) {
         return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin || item.Pin}`, pin: item.PIN || item.pin || item.Pin, type: item.type };
       }
 
-      console.warn(item, ' :item');
-
       // Determine biometric type based on the data type
       let biometricType = 'fingerprint'; // default
       let fingerIndex = 0;
@@ -313,12 +311,15 @@ export async function insertBiometricData(biometricItems: any[]) {
       }
       else if (item.type === 'BIODATA') {
         // Check if it's fingerprint data
-        if (item.Type && (item.Type === '1' || item.Type === '9')) {
+        if (item.Type && (item.Type === '1')) {
           biometricType = 'fingerprint';
           fingerIndex = Number(item.No || 0);
         }
-        else if (item.Type === '7' || item.Type === '8') {
+        else if (item.Type === '8' || item.Type === '9') {
           biometricType = 'face';
+        }
+        else if (item.Type === '3') {
+          biometricType = 'rfid';
         }
       }
 
@@ -338,9 +339,9 @@ export async function insertBiometricData(biometricItems: any[]) {
         remarks: JSON.stringify({
           source: 'zkteco_device',
           original_data: item,
-          pin: item.PIN || item.pin,
-          tmp_type: item.TmpType,
-          tmp_index: item.TmpIndex,
+          pin: item.PIN || item.pin || item.Pin,
+          tmp_type: item.TmpType || item.Type,
+          tmp_index: item.TmpIndex || item.No,
           finger_id: item.FingerID,
           size: item.Size,
           valid: item.Valid,

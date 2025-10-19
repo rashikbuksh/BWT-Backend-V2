@@ -10,6 +10,34 @@ import type { CreateRoute, GetByEmployeeUuidRoute, GetOneRoute, ListRoute, Patch
 
 import { employee, employee_biometric, users } from '../schema';
 
+// get hand_type and Finger_name from finger_index
+// need the data like this
+// 'left-index': 'active',
+//  'left-thumb': 'active',
+//  'right-index': 'active',
+//  'right-thumb': 'active',
+function getFingerDetails(fingerIndex: number) {
+  const fingerMap: Record<number, { hand_type: string; finger_name: string }> = {
+    0: { hand_type: 'left', finger_name: 'pinky' },
+    1: { hand_type: 'left', finger_name: 'ring' },
+    2: { hand_type: 'left', finger_name: 'middle' },
+    3: { hand_type: 'left', finger_name: 'index' },
+    4: { hand_type: 'left', finger_name: 'thumb' },
+    5: { hand_type: 'right', finger_name: 'thumb' },
+    6: { hand_type: 'right', finger_name: 'index' },
+    7: { hand_type: 'right', finger_name: 'middle' },
+    8: { hand_type: 'right', finger_name: 'ring' },
+    9: { hand_type: 'right', finger_name: 'pinky' },
+  };
+
+  const entry = fingerMap[fingerIndex];
+  if (!entry) {
+    return { [`unknown-${fingerIndex}`]: 'active' };
+  }
+
+  return { [`${entry.hand_type}-${entry.finger_name}`]: 'active' };
+}
+
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
@@ -130,5 +158,53 @@ export const getByEmployeeUuid: AppRouteHandler<GetByEmployeeUuidRoute> = async 
 
   const data = await employeeBiometricPromise;
 
-  return c.json(data || [], HSCode.OK);
+  // Separate data by biometric type
+  const fingerprintData = data.filter(record => record.biometric_type === 'fingerprint');
+  const faceData = data.filter(record => record.biometric_type === 'face');
+  const rfidData = data.filter(record => record.biometric_type === 'rfid');
+
+  // Process fingerprint data to get finger statuses
+  const fingerprintStatuses = fingerprintData.reduce((acc, record) => {
+    if (record.finger_index) {
+      const fingerDetails = getFingerDetails(record.finger_index);
+      return { ...acc, ...fingerDetails };
+    }
+    return acc;
+  }, {});
+
+  // Process fingerprint records with individual finger status
+  const processedFingerprintData = fingerprintData.map(record => ({
+    ...record,
+    finger_status:
+    (record.finger_index !== null && record.finger_index !== undefined)
+      ? getFingerDetails(record.finger_index)
+      : null,
+  }));
+
+  // Create comprehensive biometric info
+  const employeeInfo = data[0]
+    ? {
+        employee_uuid: data[0].employee_uuid,
+        employee_name: data[0].employee_name,
+        finger_statuses: fingerprintStatuses || {},
+        biometric_summary: {
+          total_records: data.length,
+          fingerprint_count: fingerprintData.length,
+          face_count: faceData.length,
+          rfid_count: rfidData.length,
+        },
+        fingerprint_info: {
+          finger_statuses: fingerprintStatuses || {},
+          records: processedFingerprintData || [],
+        },
+        face_info: {
+          records: faceData || [],
+        },
+        rfid_info: {
+          records: rfidData || [],
+        },
+      }
+    : null;
+
+  return c.json(employeeInfo, HSCode.OK);
 };

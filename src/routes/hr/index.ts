@@ -10,6 +10,7 @@ import device_list from './device_list';
 import device_permission from './device_permission';
 import employee from './employee';
 import employee_address from './employee_address';
+import employee_biometric from './employee_biometric';
 import employee_document from './employee_document';
 import employee_education from './employee_education';
 import employee_history from './employee_history';
@@ -70,4 +71,5 @@ export default [
   dashboard,
   employee_log,
   apply_late,
+  employee_biometric,
 ];
