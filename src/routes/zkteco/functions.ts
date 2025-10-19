@@ -333,7 +333,13 @@ export async function insertBiometricData(biometricItems: any[]) {
         }
       }
 
-      const templateData = biometricType === 'rfid' ? item.Card : item.Template || item.template || item.Size || item.Content || item.Tmp || item.Card || '';
+      const templateData = biometricType === 'rfid' ? item.Card : item.Template || item.template || item.Content || item.Tmp || item.Card || '';
+
+      // Skip if template data is null, undefined, or empty
+      if (!templateData || templateData.trim() === '') {
+        console.warn(`[insert-biometric] Template data is null/empty for employee PIN: ${item.PIN || item.pin || item.Pin} (${biometricType}) - skipping`);
+        return { action: 'skipped_empty_template', uuid: null, pin: item.PIN || item.pin || item.Pin, type: item.type, reason: 'Template data is null or empty' };
+      }
 
       // Create a hash of the template data for efficient comparison
       const templateHash = crypto.createHash('sha256').update(templateData).digest('hex');
@@ -429,11 +435,13 @@ export async function insertBiometricData(biometricItems: any[]) {
   // Count different action types
   const inserted = successfulResults.filter(result => result.action === 'inserted').length;
   const updated = successfulResults.filter(result => result.action === 'updated').length;
-  const skipped = successfulResults.filter(result => result.action === 'skipped').length;
+  const skipped = successfulResults.filter(result => result.action === 'skipped' || result.action === 'skipped_empty_template').length;
   const errors = successfulResults.filter(result => result.action === 'error' || result.action === 'employee_not_found').length;
 
   // Log details about failed records
   const failedRecords = successfulResults.filter(result => result.action === 'error' || result.action === 'employee_not_found');
+  const skippedRecords = successfulResults.filter(result => result.action === 'skipped_empty_template');
+
   if (failedRecords.length > 0) {
     console.warn(`[insert-biometric] Failed records details:`);
     failedRecords.forEach((record) => {
@@ -441,13 +449,25 @@ export async function insertBiometricData(biometricItems: any[]) {
     });
   }
 
+  if (skippedRecords.length > 0) {
+    console.warn(`[insert-biometric] Skipped records due to empty template:`);
+    skippedRecords.forEach((record) => {
+      console.warn(`  - PIN: ${record.pin}, Type: ${record.type}, Reason: ${record.reason}`);
+    });
+  }
+
   // Log successful records summary
-  const successfulRecords = successfulResults.filter(result => result.action === 'inserted' || result.action === 'updated' || result.action === 'skipped');
+  const successfulRecords = successfulResults.filter(result =>
+    result.action === 'inserted'
+    || result.action === 'updated'
+    || result.action === 'skipped'
+    || result.action === 'skipped_empty_template',
+  );
   if (successfulRecords.length > 0) {
     const pinsByAction = {
       inserted: successfulRecords.filter(r => r.action === 'inserted').map(r => r.pin),
       updated: successfulRecords.filter(r => r.action === 'updated').map(r => r.pin),
-      skipped: successfulRecords.filter(r => r.action === 'skipped').map(r => r.pin),
+      skipped: successfulRecords.filter(r => r.action === 'skipped' || r.action === 'skipped_empty_template').map(r => r.pin),
     };
     console.warn(`[insert-biometric] Successful records: Inserted PINs=[${pinsByAction.inserted.join(',')}], Updated PINs=[${pinsByAction.updated.join(',')}], Skipped PINs=[${pinsByAction.skipped.join(',')}]`);
   }
