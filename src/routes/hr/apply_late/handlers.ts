@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -63,7 +63,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
-  const { status } = c.req.valid('query');
+  const { status, employee_uuid } = c.req.valid('query');
 
   const applyLatePromise = db
     .select({
@@ -92,10 +92,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .orderBy(desc(apply_late.created_at));
 
+  const filters = [];
+
+  if (employee_uuid) {
+    filters.push(eq(apply_late.employee_uuid, employee_uuid));
+  }
+
   if (status) {
-    applyLatePromise.where(
-      eq(apply_late.status, status),
-    );
+    filters.push(eq(apply_late.status, status));
+  }
+
+  if (filters.length > 0) {
+    applyLatePromise.where(and(...filters));
   }
 
   const data = await applyLatePromise;
