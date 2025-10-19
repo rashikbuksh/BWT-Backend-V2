@@ -1379,7 +1379,11 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
 };
 
 export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
-  const { from_date, to_date, employee_uuid } = c.req.valid('query');
+  let { from_date, to_date, employee_uuid } = c.req.valid('query');
+
+  if (employee_uuid === '' || employee_uuid === null || employee_uuid === undefined) {
+    employee_uuid = null;
+  }
 
   const holidays = await getHolidayCountsDateRange(from_date, to_date);
   const totalOffDays = await getOffDayCountsDateRange(employee_uuid, from_date, to_date);
@@ -1411,6 +1415,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
   // For each date, determine attendance status
   for (const date of dates) {
     const dailyStatus = await getEmployeeAttendanceForDate(employee_uuid, date);
+
+    console.log(`Date: ${date}, Status:`, dailyStatus);
 
     if (dailyStatus) {
       if (dailyStatus.is_present) {
