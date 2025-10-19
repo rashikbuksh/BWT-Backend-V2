@@ -204,7 +204,7 @@ export const getByEmployeeUuid: AppRouteHandler<GetByEmployeeUuidRoute> = async 
           records: rfidData || [],
         },
       }
-    : null;
+    : {};
 
   return c.json(employeeInfo, HSCode.OK);
 };
