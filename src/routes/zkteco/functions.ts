@@ -299,6 +299,8 @@ export async function insertBiometricData(biometricItems: any[]) {
         return { action: 'employee_not_found', uuid: null, error: `Employee not found for PIN: ${item.PIN || item.pin || item.Pin}`, pin: item.PIN || item.pin || item.Pin, type: item.type };
       }
 
+      console.warn(`[insert-biometric] item: `, item);
+
       // Determine biometric type based on the data type
       let biometricType = 'fingerprint'; // default
       let fingerIndex = 0;
