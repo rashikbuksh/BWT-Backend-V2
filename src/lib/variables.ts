@@ -437,7 +437,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
             AND MIN(pl.punch_time) IS NULL THEN TRUE
           ELSE FALSE
         END AS is_absent,
-        CASE WHEN me_late.employee_uuid IS NOT NULL THEN TRUE ELSE FALSE END AS is_late_application,
+        CASE WHEN ap_late.employee_uuid IS NOT NULL THEN TRUE ELSE FALSE END AS is_late_application,
         CASE WHEN me_field.employee_uuid IS NOT NULL THEN TRUE ELSE FALSE END AS is_field_visit
       FROM hr.employee e
       CROSS JOIN dates d
@@ -467,10 +467,9 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
       LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
       LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
       LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
-      LEFT JOIN hr.manual_entry me_late ON me_late.employee_uuid = e.uuid
-          AND me_late.entry_time::date = d.punch_date
-          AND me_late.approval = 'approved'
-          AND me_late.type = 'late_application'
+      LEFT JOIN hr.apply_late ap_late ON ap_late.employee_uuid = e.uuid
+          AND ap_late.date::date = d.punch_date
+          AND ap_late.approval = 'approved'
       LEFT JOIN hr.manual_entry me_field ON me_field.employee_uuid = e.uuid
         AND me_field.entry_time::date = d.punch_date
         AND me_field.approval = 'approved'
