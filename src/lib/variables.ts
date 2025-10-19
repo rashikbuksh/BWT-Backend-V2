@@ -471,7 +471,7 @@ export async function getEmployeeAttendanceForDateRange(employee_uuid: string, f
   return result.rows || [];
 }
 
-export async function getEmployeeAttendanceForDate(employee_uuid: string, date: string) {
+export async function getEmployeeAttendanceForDate(employee_uuid: string | null, date: string) {
   const db = (await import('@/db')).default;
 
   const query = sql`
@@ -640,7 +640,7 @@ export async function getEmployeeAttendanceForDate(employee_uuid: string, date: 
         ORDER BY el.effective_date DESC
         LIMIT 1
       ) AND sod.day = ${date}::date
-      WHERE e.uuid = ${employee_uuid}
+      ${employee_uuid ? sql`WHERE e.uuid = ${employee_uuid}` : sql``}
       GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special, sod.is_offday, al.reason, dept.department, des.designation, et.name, w.name, me_late.employee_uuid, me_field.employee_uuid
     )
     SELECT * FROM attendance_data
