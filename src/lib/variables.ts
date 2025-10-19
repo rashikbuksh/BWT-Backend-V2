@@ -219,6 +219,39 @@ export async function getHolidayCountsDateRange(from_date: string, to_date: stri
   };
 }
 
+export async function getHolidayStatus(date: string) {
+  const db = (await import('@/db')).default;
+
+  const generalQ = sql`
+    SELECT gh.name
+    FROM hr.general_holidays gh
+    WHERE gh.date = ${date}::date
+    LIMIT 1
+  `;
+
+  const specialQ = sql`
+    SELECT sh.name
+    FROM hr.special_holidays sh
+    WHERE ${date}::date BETWEEN sh.from_date::date AND sh.to_date::date
+    LIMIT 1
+  `;
+
+  const [generalRes, specialRes] = await Promise.all([
+    db.execute(generalQ),
+    db.execute(specialQ),
+  ]);
+
+  const general_name = generalRes.rows[0]?.name ?? null;
+  const special_name = specialRes.rows[0]?.name ?? null;
+
+  return {
+    is_general_holiday: general_name !== null,
+    general_holiday_name: general_name,
+    is_special_holiday: special_name !== null,
+    special_holiday_name: special_name,
+  };
+}
+
 export async function getOffDayCountsDateRange(employee_uuid: string, from_date: string, to_date: string) {
   const db = (await import('@/db')).default;
 
@@ -279,7 +312,6 @@ export async function getOffDayCountsDateRange(employee_uuid: string, from_date:
   return result.rows[0]?.total_off_days || 0;
 }
 
-// ...existing code...
 export async function getEmployeeAttendanceForDateRange(employee_uuid: string, from_date: string, to_date: string) {
   const db = (await import('@/db')).default;
 
@@ -677,6 +709,40 @@ export async function getEmployeeAttendanceForDate(employee_uuid: string | null,
   const result = await db.execute(query);
 
   return result.rows[0] || null;
+}
+
+export async function isEmployeeOffDay(employee_uuid: string, date: string): Promise<boolean> {
+  const db = (await import('@/db')).default;
+
+  const query = sql`
+    WITH sg AS (
+      SELECT el.type_uuid AS shift_group_uuid
+      FROM hr.employee_log el
+      WHERE el.employee_uuid = ${employee_uuid}
+        AND el.type = 'shift_group'
+        AND el.effective_date::date <= ${date}::date
+      ORDER BY el.effective_date DESC
+      LIMIT 1
+    ),
+    roster_sel AS (
+      SELECT r.off_days::jsonb AS off_days
+      FROM hr.roster r
+      JOIN sg ON r.shift_group_uuid = sg.shift_group_uuid
+      WHERE r.effective_date <= ${date}::date
+      ORDER BY r.effective_date DESC
+      LIMIT 1
+    ),
+    expanded AS (
+      SELECT od.dname
+      FROM roster_sel rs
+      CROSS JOIN LATERAL jsonb_array_elements_text(rs.off_days) AS od(dname)
+      WHERE lower(od.dname) = lower(to_char(${date}::date, 'Dy'))
+    )
+    SELECT CASE WHEN EXISTS (SELECT 1 FROM expanded) THEN TRUE ELSE FALSE END AS is_off_day;
+  `;
+
+  const result = await db.execute(query);
+  return result.rows[0]?.is_off_day === true;
 }
 
 export async function handleImagePatch(newImage: any, oldImagePath: string | undefined, folder: string) {

@@ -84,6 +84,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     s.end_time,
                     s.late_time,
                     s.early_exit_before,
+                    e.start_date::date,
                     DATE(ud.punch_date) AS punch_date,
                     MIN(pl.punch_time) AS entry_time,
                     MAX(pl.punch_time) AS exit_time,
@@ -175,7 +176,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, shift_group.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, shift_group.name, e.start_date
                 )
                 SELECT
                     uuid,
@@ -184,6 +185,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     department_name,
                     designation_name,
                     employment_type_name,
+                    start_date,
                     JSON_AGG(JSON_BUILD_OBJECT(
                         'name', shift_name,
                         'start_time', start_time,
@@ -212,7 +214,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     ) AS attendance_records
                 FROM attendance_data
                 -- group only by stable identifiers so all dates aggregate into one employee row
-                GROUP BY user_uuid, employee_name, department_name, designation_name, employment_type_name, uuid
+                GROUP BY user_uuid, employee_name, department_name, designation_name, employment_type_name, uuid, start_date
                 ORDER BY employee_name;
               `;
 
@@ -297,6 +299,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
       department_name: row.department_name,
       designation_name: row.designation_name,
       employment_type: row.employment_type_name,
+      start_date: row.start_date,
       shift_details: row.shift_details,
       monthly_details: monthlyReportByEmployee[0],
       monthly_data,
