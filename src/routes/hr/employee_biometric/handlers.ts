@@ -187,6 +187,7 @@ export const getByEmployeeUuid: AppRouteHandler<GetByEmployeeUuidRoute> = async 
         employee_uuid: data[0].employee_uuid,
         employee_name: data[0].employee_name,
         finger_statuses: fingerprintStatuses || {},
+        rfid_number: rfidData.length > 0 ? rfidData[0].template : null,
         biometric_summary: {
           total_records: data.length,
           fingerprint_count: fingerprintData.length,
@@ -197,12 +198,12 @@ export const getByEmployeeUuid: AppRouteHandler<GetByEmployeeUuidRoute> = async 
         //   finger_statuses: fingerprintStatuses || {},
         //   // records: processedFingerprintData || [],
         // },
-        face_info: {
-          records: faceData || [],
-        },
-        rfid_info: {
-          records: rfidData || [],
-        },
+        // face_info: {
+        //   records: faceData || [],
+        // },
+        // rfid_info: {
+        //   records: rfidData || [],
+        // },
       }
     : {};
 
