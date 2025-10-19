@@ -17,7 +17,7 @@ import type {
   SelectLateEntryDateByEmployeeUuidRoute,
 } from './routes';
 
-import { department, designation, device_list, employee, punch_log, shift_group, shifts, users } from '../schema';
+import { department, designation, device_list, employee, punch_log, shifts, users } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -145,8 +145,6 @@ export const selectLateEntryDateByEmployeeUuid: AppRouteHandler<SelectLateEntryD
     .leftJoin(device_list, eq(punch_log.device_list_uuid, device_list.uuid))
     .leftJoin(employee, eq(punch_log.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
-    .leftJoin(shift_group, eq(employee.shift_group_uuid, shift_group.uuid))
-    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
     .where(
       and(
         eq(punch_log.employee_uuid, employee_uuid),
@@ -309,8 +307,11 @@ export const selectEmployeeLateDayByEmployeeUuid: AppRouteHandler<SelectEmployee
                                                            ORDER BY el.effective_date DESC
                                                            LIMIT 1) = sg.uuid
                             LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                            LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid AND pl.punch_date::date BETWEEN al.from_date::date AND al.to_date::date
+                                      AND al.approval = 'approved'
                             WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`true`}
-                            AND pl.entry_time::time > s.late_time::time AND pl.entry_time NOT IN (
+                            AND al.uuid IS NULL
+                            AND pl.entry_time::time > s.late_time::time AND pl.punch_date NOT IN (
                               SELECT date FROM hr.apply_late WHERE employee_uuid = e.uuid AND date IS NOT NULL AND (${apply_late_uuid ? sql`uuid != ${apply_late_uuid}` : sql`true`})
                             )
                             GROUP BY e.user_uuid, u.name, pl.punch_date, pl.entry_time, pl.exit_time, s.late_time, d.department, des.designation, e.uuid
