@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { getHolidayCountsDateRange } from '@/lib/variables';
+import { getEmployeeAttendanceForDate, getHolidayCountsDateRange, getOffDayCountsDateRange } from '@/lib/variables';
 import { employee } from '@/routes/hr/schema';
 import { createApi } from '@/utils/api';
 
@@ -792,7 +792,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
   return c.json(formattedData || [], HSCode.OK);
 };
 
-export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
+export const getMonthlyAttendanceReport2: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
   const { from_date, to_date, employee_uuid } = c.req.valid('query');
 
   const holidays = await getHolidayCountsDateRange(from_date, to_date);
@@ -846,7 +846,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           dep.department AS department_name,
                           w.name AS workplace_name,
                           et.name AS employment_type_name,
-                          
+
                           -- Calculate days
                           (${to_date}::date - ${from_date}::date + 1)::float8 AS total_days,
                           COALESCE(att_summary.present_days, 0)::float8 + COALESCE(att_summary.late_days, 0)::float8 AS present_days,
@@ -856,39 +856,38 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           COALESCE(off_days_summary.total_off_days, 0)::float8 AS off_days,
                           ${holidays.general}::float8 AS general_holidays,
                           ${holidays.special}::float8 AS special_holidays,
-                          
+
                           -- Calculate working days
-                          ((${to_date}::date - ${from_date}::date + 1) - 
-                          (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) + 
+                          ((${to_date}::date - ${from_date}::date + 1) -
+                          (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) +
                             ${holidays.general} + ${holidays.special}))::float8 AS working_days,
-                            
+
                           -- Calculate absent days
-                           ((${to_date}::date - ${from_date}::date + 1) - 
-                          (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) + 
+                           ((${to_date}::date - ${from_date}::date + 1) -
+                          (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) +
                             ${holidays.general} + ${holidays.special}))::float8 - ( COALESCE(att_summary.present_days, 0)::float8 + COALESCE(att_summary.late_days, 0)::float8) AS absent_days,
-                            
+
                           -- Additional metrics
                           COALESCE(late_app_summary.total_late_approved, 0)::float8 AS approved_lates,
                           COALESCE(field_visit_summary.total_field_visits_days, 0)::float8 AS field_visit_days,
                           COALESCE(late_hours_summary.total_late_hours, 0)::float8 AS total_late_hours,
                           COALESCE(late_hours_summary.total_early_exit_hours, 0)::float8 AS total_early_exit_hours,
-                          
+
                           -- Calculate working hours
                            COALESCE(late_hours_summary.total_working_hours, 0)::float8 AS working_hours,
 
                           -- Expected hours calculation
-                          (((${to_date}::date - ${from_date}::date + 1) - 
-                            (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) + 
+                          (((${to_date}::date - ${from_date}::date + 1) -
+                            (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) +
                             ${holidays.general} + ${holidays.special})) * 8)::float8 AS expected_hours,
 
-
                          -- Overtime hours (non-negative): max(working_hours - expected_hours, 0)
-                         
+
                           GREATEST(
                             COALESCE(late_hours_summary.total_working_hours, 0)::float8
                             -
-                            (((${to_date}::date - ${from_date}::date + 1) - 
-                              (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) + 
+                            (((${to_date}::date - ${from_date}::date + 1) -
+                              (COALESCE(leave_summary.total_leave_days, 0) + COALESCE(off_days_summary.total_off_days, 0) +
                                ${holidays.general} + ${holidays.special})) * 8)::float8,
                             0
                           )::float8 AS overtime_hours
@@ -899,11 +898,11 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                     LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
                     LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
                     LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-                    
+
                     -- Attendance summary
                    LEFT JOIN (
                             WITH daily_attendance AS (
-                              SELECT 
+                              SELECT
                                 pl.employee_uuid,
                                 DATE(pl.punch_time) AS attendance_date,
                                 MIN(pl.punch_time) AS first_punch,
@@ -936,36 +935,36 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                       LIMIT 1
                                     ) sg_sel ON TRUE
                               LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
-                              WHERE pl.punch_time IS NOT NULL 
-                                AND pl.punch_time::date >= ${from_date}::date 
+                              WHERE pl.punch_time IS NOT NULL
+                                AND pl.punch_time::date >= ${from_date}::date
                                 AND pl.punch_time::date <= ${to_date}::date
                               GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time, s.early_exit_before, shift_group_uuid
                             )
-                            SELECT 
+                            SELECT
                               da.employee_uuid,
                               COUNT(
-                                CASE 
-                                  WHEN gh.date IS NULL 
-                                    AND sp.is_special IS NULL 
-                                    AND sod.is_offday IS DISTINCT FROM TRUE 
+                                CASE
+                                  WHEN gh.date IS NULL
+                                    AND sp.is_special IS NULL
+                                    AND sod.is_offday IS DISTINCT FROM TRUE
                                     AND da.first_punch::time < da.late_time::time THEN 1
                                   ELSE NULL
                                 END
                               ) AS present_days,
                               COUNT(
                                 CASE
-                                  WHEN gh.date IS NULL 
-                                    AND sp.is_special IS NULL 
-                                    AND sod.is_offday IS DISTINCT FROM TRUE 
+                                  WHEN gh.date IS NULL
+                                    AND sp.is_special IS NULL
+                                    AND sod.is_offday IS DISTINCT FROM TRUE
                                     AND da.first_punch::time > da.late_time::time THEN 1
                                   ELSE NULL
                                 END
                               ) AS late_days,
                               COUNT(
-                                CASE 
-                                  WHEN gh.date IS NULL 
-                                    AND sp.is_special IS NULL 
-                                    AND sod.is_offday IS DISTINCT FROM TRUE 
+                                CASE
+                                  WHEN gh.date IS NULL
+                                    AND sp.is_special IS NULL
+                                    AND sod.is_offday IS DISTINCT FROM TRUE
                                     AND da.last_punch::time < da.early_exit_before::time THEN 1
                                   ELSE NULL
                                 END
@@ -981,13 +980,13 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                             LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = da.shift_group_uuid AND sod.day = da.attendance_date
                             GROUP BY da.employee_uuid
                           ) att_summary ON e.uuid = att_summary.employee_uuid
-                    
+
                     -- Leave summary
                     LEFT JOIN (
                       SELECT
                         al.employee_uuid,
                         SUM(
-                          LEAST(al.to_date::date, ${to_date}::date) - 
+                          LEAST(al.to_date::date, ${to_date}::date) -
                           GREATEST(al.from_date::date, ${from_date}::date) + 1
                         ) AS total_leave_days
                       FROM hr.apply_leave al
@@ -996,7 +995,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         AND al.from_date <= ${to_date}::date
                       GROUP BY al.employee_uuid
                     ) leave_summary ON e.uuid = leave_summary.employee_uuid
-                    
+
                     -- Off days summary (per-employee)
                     LEFT JOIN (
                         WITH params AS (
@@ -1052,72 +1051,72 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                       WHERE lower(to_char(day, 'Dy')) = lower(dname)
                                       GROUP BY employee_uuid
                     ) AS off_days_summary ON e.uuid = off_days_summary.employee_uuid
-                    
+
                     -- Late applications
                     LEFT JOIN (
                               SELECT
                                 me.employee_uuid,
                                 COUNT(*) AS total_late_approved
                               FROM hr.manual_entry me
-                              WHERE me.approval = 'approved' 
+                              WHERE me.approval = 'approved'
                                 AND me.type = 'late_application'
-                                AND me.entry_time >= ${from_date}::date 
+                                AND me.entry_time >= ${from_date}::date
                                 AND me.entry_time <= ${to_date}::date
                               GROUP BY me.employee_uuid
                             ) late_app_summary ON e.uuid = late_app_summary.employee_uuid
-                    
+
                     -- Field visits
                     LEFT JOIN (
                             SELECT
                               me.employee_uuid,
                               COUNT(*) AS total_field_visits_days
                             FROM hr.manual_entry me
-                            WHERE me.approval = 'approved' 
+                            WHERE me.approval = 'approved'
                               AND me.type = 'field_visit'
-                              AND me.entry_time >= ${from_date}::date 
+                              AND me.entry_time >= ${from_date}::date
                               AND me.entry_time <= ${to_date}::date
                             GROUP BY me.employee_uuid
                           ) field_visit_summary ON e.uuid = field_visit_summary.employee_uuid
-                    
+
                     -- Late hours calculation
                   LEFT JOIN (
-                            SELECT 
+                            SELECT
                               t.employee_uuid,
                               SUM(
-                                CASE 
-                                  WHEN gh.date IS NULL 
-                                    AND sp.is_special IS NULL 
-                                    AND sod.is_offday IS DISTINCT FROM TRUE 
-                                    AND t.first_punch IS NOT NULL 
-                                    AND t.first_punch::time > t.late_time::time 
+                                CASE
+                                  WHEN gh.date IS NULL
+                                    AND sp.is_special IS NULL
+                                    AND sod.is_offday IS DISTINCT FROM TRUE
+                                    AND t.first_punch IS NOT NULL
+                                    AND t.first_punch::time > t.late_time::time
                                   THEN (EXTRACT(EPOCH FROM (t.first_punch::time - t.late_time::time)) / 3600)::float8
                                   ELSE 0
                                 END
                               ) AS total_late_hours,
                               SUM(
-                                CASE 
-                                  WHEN gh.date IS NULL 
-                                    AND sp.is_special IS NULL 
-                                    AND sod.is_offday IS DISTINCT FROM TRUE 
-                                    AND t.last_punch IS NOT NULL 
+                                CASE
+                                  WHEN gh.date IS NULL
+                                    AND sp.is_special IS NULL
+                                    AND sod.is_offday IS DISTINCT FROM TRUE
+                                    AND t.last_punch IS NOT NULL
                                     AND t.last_punch::time < t.early_exit_before::time
                                   THEN (EXTRACT(EPOCH FROM (t.early_exit_before::time - t.last_punch::time)) / 3600)::float8
                                   ELSE 0
                                 END
                               ) AS total_early_exit_hours,
                                SUM(
-                                  CASE 
-                                    WHEN gh.date IS NULL 
-                                      AND sp.is_special IS NULL 
-                                      AND sod.is_offday IS DISTINCT FROM TRUE 
-                                      AND t.first_punch IS NOT NULL 
+                                  CASE
+                                    WHEN gh.date IS NULL
+                                      AND sp.is_special IS NULL
+                                      AND sod.is_offday IS DISTINCT FROM TRUE
+                                      AND t.first_punch IS NOT NULL
                                       AND t.last_punch IS NOT NULL
                                     THEN (EXTRACT(EPOCH FROM (t.last_punch::time - t.first_punch::time)) / 3600)::float8
                                     ELSE 0
                                   END
                                 ) AS total_working_hours
                             FROM (
-                              SELECT 
+                              SELECT
                                 pl.employee_uuid,
                                 MIN(pl.punch_time) AS first_punch,
                                 MAX(pl.punch_time) AS last_punch,
@@ -1150,8 +1149,8 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                       LIMIT 1
                                     ) sg_sel ON TRUE
                               LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
-                              WHERE pl.punch_time IS NOT NULL 
-                                AND pl.punch_time::date >= ${from_date}::date 
+                              WHERE pl.punch_time IS NOT NULL
+                                AND pl.punch_time::date >= ${from_date}::date
                                 AND pl.punch_time::date <= ${to_date}::date
                               GROUP BY pl.employee_uuid, DATE(pl.punch_time), s.late_time, s.early_exit_before, shift_group_uuid
                             ) t
@@ -1167,9 +1166,6 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           ) late_hours_summary ON e.uuid = late_hours_summary.employee_uuid
                     WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
                   `;
-
-  // Execute the query
-
   const data = await db.execute(query);
 
   return c.json(data.rows || [], HSCode.OK);
@@ -1380,4 +1376,119 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
   const data = await employeeAttendanceReportPromise;
 
   return c.json(data.rows || [], HSCode.OK);
+};
+
+export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
+  const { from_date, to_date, employee_uuid } = c.req.valid('query');
+
+  const holidays = await getHolidayCountsDateRange(from_date, to_date);
+  const totalOffDays = await getOffDayCountsDateRange(employee_uuid, from_date, to_date);
+
+  // Generate all dates in the range
+  const startDate = new Date(from_date.replace(/\//g, '-'));
+  const endDate = new Date(to_date.replace(/\//g, '-'));
+  const dates: string[] = [];
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+
+  let presentDays = 0;
+  let lateDays = 0;
+  let earlyExitDays = 0;
+  let leaveDays = 0;
+  let absentDays = 0;
+  let totalLateHours = 0;
+  let totalEarlyExitHours = 0;
+  let totalWorkingHours = 0;
+  let totalExpectedHours = 0;
+  let overtimeHours = 0;
+  let approvedLates = 0;
+  let fieldVisitDays = 0;
+
+  // For each date, determine attendance status
+  for (const date of dates) {
+    const dailyStatus = await getEmployeeAttendanceForDate(employee_uuid, date);
+
+    if (dailyStatus) {
+      if (dailyStatus.is_present) {
+        presentDays += 1;
+      }
+      if (dailyStatus.is_late) {
+        lateDays += 1;
+        totalLateHours += Number(dailyStatus.late_hours || 0);
+      }
+      if (dailyStatus.is_early_exit) {
+        earlyExitDays += 1;
+        totalEarlyExitHours += Number(dailyStatus.early_exit_hours || 0);
+      }
+      if (dailyStatus.leave_reason) {
+        leaveDays += 1;
+      }
+      if (dailyStatus.is_absent) {
+        absentDays += 1;
+      }
+      if (dailyStatus.working_hours) {
+        totalWorkingHours += Number(dailyStatus.working_hours || 0);
+      }
+      if (dailyStatus.expected_working_hours) {
+        totalExpectedHours += Number(dailyStatus.expected_working_hours || 0);
+      }
+      if (dailyStatus.overtime_hours) {
+        overtimeHours += Number(dailyStatus.overtime_hours || 0);
+      }
+      if (dailyStatus.is_field_visit) {
+        fieldVisitDays += 1;
+      }
+      if (dailyStatus.is_late_application) {
+        approvedLates += 1;
+      }
+    }
+  }
+
+  const employeeQuery = sql`
+    SELECT e.uuid AS employee_uuid, u.uuid AS user_uuid, u.name AS employee_name,
+           d.designation AS designation_name, dep.department AS department_name,
+           w.name AS workplace_name, et.name AS employment_type_name
+    FROM hr.employee e
+    LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+    LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
+    LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
+    LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
+    LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
+    WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
+  `;
+  const employeeData = await db.execute(employeeQuery);
+
+  // Format the result (single row per employee)
+  const formattedData = employeeData.rows.map((emp: any) => ({
+    employee_uuid: emp.employee_uuid,
+    user_uuid: emp.user_uuid,
+    employee_name: emp.employee_name,
+    designation_name: emp.designation_name,
+    department_name: emp.department_name,
+    workplace_name: emp.workplace_name,
+    employment_type_name: emp.employment_type_name,
+    total_days: totalDays,
+    present_days: presentDays,
+    late_days: lateDays,
+    early_exit_days: earlyExitDays,
+    leave_days: leaveDays,
+    off_days: Number(totalOffDays),
+    general_holidays: Number(holidays.general),
+    special_holidays: Number(holidays.special),
+    working_days: totalDays - Number(holidays.general) - Number(holidays.special) - Number(totalOffDays) - Number(leaveDays),
+    absent_days: absentDays,
+    approved_lates: approvedLates,
+    field_visit_days: fieldVisitDays,
+    total_late_hours: totalLateHours,
+    total_early_exit_hours: totalEarlyExitHours,
+    working_hours: totalWorkingHours,
+    expected_hours: totalExpectedHours,
+    overtime_hours: overtimeHours,
+  }));
+
+  return c.json(formattedData || [], HSCode.OK);
 };
