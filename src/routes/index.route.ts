@@ -1,3 +1,4 @@
+import acc from './acc';
 import delivery from './delivery';
 import hr from './hr';
 import other from './other';
@@ -14,6 +15,7 @@ const routes = [
   ...work,
   ...other,
   ...publicRoute,
+  ...acc,
 ] as const;
 
 export default routes;
