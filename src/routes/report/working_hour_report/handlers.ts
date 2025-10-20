@@ -26,8 +26,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
         SELECT 
             e.uuid AS employee_uuid,
             u.uuid AS user_uuid,
-            u.name AS employee_name,
-            e.shift_group_uuid
+            u.name AS employee_name
         FROM hr.employee e
         JOIN hr.users u ON e.user_uuid = u.uuid
         WHERE ${department_uuid !== 'undefined' && department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
