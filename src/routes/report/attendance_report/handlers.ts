@@ -314,6 +314,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
   const { department_uuid, from_date, to_date } = c.req.valid('query');
 
   const holidays = await getHolidayCountsDateRange(from_date, to_date);
+  // const offDays = await getOffDayCountsDateRange(from_date, to_date);
 
   const query = sql`
                     WITH 
@@ -392,12 +393,12 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                                 COALESCE(leave_summary.total_leave_days, 0) + 
                                 COALESCE(${holidays.general}::int, 0) + 
                                 COALESCE(${holidays.special}::int, 0) + 
-                                COALESCE(off_days_summary.total_off_days, 0)
+                                hr.get_offday_count(e.uuid, ${from_date}, ${to_date})
                             )::float8 AS absent_days,
                             COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
                             COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
                             COALESCE(attendance_summary.early_exit_days, 0)::float8 AS early_leaves,
-                            COALESCE(off_days_summary.total_off_days, 0)::float8 AS off_days,
+                            hr.get_offday_count(e.uuid, ${from_date}, ${to_date}) AS off_days,
                             s.name AS shift_name,
                             s.start_time AS shift_start_time,
                             s.end_time AS shift_end_time
