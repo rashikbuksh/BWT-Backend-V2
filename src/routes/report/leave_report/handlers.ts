@@ -47,8 +47,7 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                 ELSE
                     (apply_leave.to_date::date - apply_leave.from_date::date + 1)::FLOAT
             END
-        `} as days,
-        (EXTRACT(EPOCH FROM (shifts.end_time::time - shifts.start_time::time)) / 3600)::float8 as expected_hours
+        `} as days
     FROM
         hr.apply_leave
     LEFT JOIN
@@ -65,10 +64,6 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
         hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
     LEFT JOIN 
         hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
-    LEFT JOIN
-        hr.shift_group ON employee.shift_group_uuid = shift_group.uuid
-    LEFT JOIN
-        hr.shifts ON shift_group.shifts_uuid = shifts.uuid
     WHERE 
         ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
         ${from_date && to_date
