@@ -80,6 +80,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       punch_time: punch_log.punch_time,
       department_name: department.department,
       designation_name: designation.designation,
+      profile_picture: employee.profile_picture,
     })
     .from(punch_log)
     .leftJoin(device_list, eq(punch_log.device_list_uuid, device_list.uuid))
