@@ -47,53 +47,122 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             et.uuid AS employment_type_uuid,
             et.name AS employment_type_name,
             COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
-            COALESCE((${to_date}::date - ${from_date}::date + 1), 0) - (COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) + COALESCE(${holidays.general}::int, 0) + COALESCE(${holidays.special}::int, 0) + COALESCE(off_days_summary.total_off_days, 0))::float8 AS absent_days,
+            COALESCE((${to_date}::date - ${from_date}::date + 1), 0) - (COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) + COALESCE(${holidays.general}::int, 0) + COALESCE(${holidays.special}::int, 0) + hr.get_offday_count(e.uuid, ${from_date}::date, ${to_date}::date))::float8 AS absent_days,
             COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
             COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
-            COALESCE(attendance_summary.early_leaves, 0)::float8 AS early_leaves,
-            COALESCE(off_days_summary.total_off_days, 0)::float8 AS off_days
+            COALESCE(attendance_summary.early_exit_days, 0)::float8 AS early_exit_days,
+            hr.get_offday_count(e.uuid, ${from_date}::date, ${to_date}::date) AS off_days
         FROM hr.employee e
         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
         LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
         LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
         LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
         LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-        LEFT JOIN
-        (
-            WITH daily_attendance AS (
+        LEFT JOIN (
+                WITH daily_attendance AS (
+                    SELECT 
+                        pl.employee_uuid,
+                        DATE(pl.punch_time) AS attendance_date,
+                        MIN(pl.punch_time) AS first_punch,
+                        MAX(pl.punch_time) AS last_punch,
+                        shifts.late_time,
+                        shifts.early_exit_before,
+                        (SELECT el.type_uuid
+                                FROM hr.employee_log el
+                                WHERE el.employee_uuid = pl.employee_uuid
+                                AND el.type = 'shift_group'
+                                AND el.effective_date::date <= DATE(pl.punch_time)
+                                ORDER BY el.effective_date DESC
+                                LIMIT 1) AS shift_group_uuid
+                    FROM hr.punch_log pl
+                    LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+                    LEFT JOIN LATERAL (
+                            SELECT r.shifts_uuid AS shifts_uuid
+                            FROM hr.roster r
+                            WHERE r.shift_group_uuid = (
+                            SELECT el.type_uuid
+                            FROM hr.employee_log el
+                            WHERE el.employee_uuid = e.uuid
+                                AND el.type = 'shift_group'
+                                AND el.effective_date::date <= DATE(pl.punch_time)
+                            ORDER BY el.effective_date DESC
+                            LIMIT 1
+                            )
+                            AND r.effective_date <= DATE(pl.punch_time)
+                            ORDER BY r.effective_date DESC
+                            LIMIT 1
+                        ) sg_sel ON TRUE
+                    LEFT JOIN hr.shifts shifts ON shifts.uuid = sg_sel.shifts_uuid
+                    WHERE pl.punch_time IS NOT NULL
+                        AND DATE(pl.punch_time) >= ${from_date}::date
+                        AND DATE(pl.punch_time) <= ${to_date}::date
+                    GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before, shift_group_uuid
+                )
                 SELECT 
-                    pl.employee_uuid,
-                    DATE(pl.punch_time) AS attendance_date,
-                    MIN(pl.punch_time) AS first_punch,
-                    MAX(pl.punch_time) AS last_punch,
-                    shifts.late_time,
-                    shifts.early_exit_before
-                FROM hr.punch_log pl
-                LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
-                LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
-                WHERE pl.punch_time IS NOT NULL
-                    AND DATE(pl.punch_time) >= ${from_date}::date
-                    AND DATE(pl.punch_time) <= ${to_date}::date
-                GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before
-            )
-            SELECT 
-                employee_uuid,
-                COUNT(CASE 
-                    WHEN TO_CHAR(first_punch, 'HH24:MI') < TO_CHAR(late_time, 'HH24:MI') 
-                    THEN 1 
-                END) AS present_days,
-                COUNT(CASE 
-                    WHEN TO_CHAR(first_punch, 'HH24:MI') >= TO_CHAR(late_time, 'HH24:MI') 
-                    THEN 1 
-                END) AS late_days,
-                COUNT(CASE 
-                    WHEN TO_CHAR(last_punch, 'HH24:MI') < TO_CHAR(early_exit_before, 'HH24:MI') 
-                    THEN 1 
-                END) AS early_leaves
-            FROM daily_attendance
-            GROUP BY employee_uuid
-        ) AS attendance_summary ON e.uuid = attendance_summary.employee_uuid
+                    da.employee_uuid,
+                    COUNT(
+                            CASE
+                            WHEN gh.date IS NULL
+                                AND sp.is_special IS NULL
+                                AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                AND NOT EXISTS(
+                                SELECT 1 FROM hr.apply_leave al2
+                                WHERE al2.employee_uuid = da.employee_uuid
+                                    AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
+                                    AND al2.approval = 'approved'
+                                )
+                                AND da.first_punch::time < da.late_time::time
+                            THEN 1 ELSE NULL
+                            END
+                        ) AS present_days,
+                    COUNT(
+                        CASE 
+                            WHEN gh.date IS NULL
+                                AND sp.is_special IS NULL 
+                                AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                AND NOT EXISTS( 
+                                    SELECT 1 FROM hr.apply_leave al2
+                                    WHERE al2.employee_uuid = da.employee_uuid
+                                        AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
+                                        AND al2.approval = 'approved'
+                                )
+                                AND da.first_punch::time >= da.late_time::time THEN 1
+                            ELSE NULL
+                        END
+                    ) AS late_days,
+                    COUNT(
+                        CASE 
+                            WHEN gh.date IS NULL
+                                AND sp.is_special IS NULL 
+                                AND hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                AND NOT EXISTS( 
+                                    SELECT 1 FROM hr.apply_leave al2
+                                    WHERE al2.employee_uuid = da.employee_uuid
+                                        AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
+                                        AND al2.approval = 'approved'
+                                )
+                                AND da.last_punch::time <= da.early_exit_before::time THEN 1
+                            ELSE NULL
+                        END
+                    ) AS early_exit_days
+                FROM daily_attendance da
+                LEFT JOIN LATERAL (
+                                    SELECT 1 AS is_leave
+                                    FROM hr.apply_leave al
+                                    WHERE al.employee_uuid = da.employee_uuid
+                                        AND da.attendance_date BETWEEN al.from_date::date AND al.to_date::date
+                                        AND al.approval = 'approved'
+                                    LIMIT 1
+                                    ) al ON TRUE
+                LEFT JOIN hr.general_holidays gh ON gh.date = da.attendance_date
+                LEFT JOIN LATERAL (
+                    SELECT 1 AS is_special
+                    FROM hr.special_holidays sh
+                    WHERE da.attendance_date BETWEEN sh.from_date::date AND sh.to_date::date
+                    LIMIT 1
+                ) sp ON TRUE
+                GROUP BY employee_uuid
+            ) AS attendance_summary ON e.uuid = attendance_summary.employee_uuid
         LEFT JOIN
             (
                 SELECT al.employee_uuid,
@@ -110,59 +179,6 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                     AND al.from_date <= ${to_date}::date
                 GROUP BY al.employee_uuid
             ) AS leave_summary ON e.uuid = leave_summary.employee_uuid
-        LEFT JOIN
-        (
-            WITH params AS
-                (
-                    SELECT ${from_date}::date AS start_date, ${to_date}::date AS end_date
-                ),
-            shift_group_periods AS
-            (
-                SELECT sg.uuid AS shift_group_uuid,
-                    sg.effective_date,
-                    sg.off_days::JSONB AS off_days,
-                    LEAD(sg.effective_date) OVER (PARTITION BY sg.uuid
-                                                ORDER BY sg.effective_date) AS next_effective_date
-                FROM hr.shift_group sg
-                CROSS JOIN params p
-                WHERE sg.effective_date <= p.end_date
-            ),
-            date_ranges AS
-            (
-                SELECT shift_group_uuid,
-                    GREATEST(effective_date,
-                            (SELECT start_date
-                                FROM params)) AS period_start,
-                    LEAST(COALESCE(next_effective_date - INTERVAL '1 day',
-                                    (SELECT end_date
-                                    FROM params)),
-                            (SELECT end_date
-                            FROM params)) AS period_end,
-                    off_days
-                FROM shift_group_periods
-                WHERE GREATEST(effective_date,
-                            (SELECT start_date
-                            FROM params)) <= LEAST(COALESCE(next_effective_date - INTERVAL '1 day',
-                                                                (SELECT end_date
-                                                                FROM params)),
-                                                        (SELECT end_date
-                                                        FROM params))
-            ),
-            all_offset_days AS
-            (
-                SELECT dr.shift_group_uuid,
-                    gs::date AS DAY,
-                    od.dname
-                FROM date_ranges dr
-                CROSS JOIN LATERAL generate_series(dr.period_start, dr.period_end, INTERVAL '1 day') AS gs
-                CROSS JOIN LATERAL jsonb_array_elements_text(dr.off_days) AS od(dname)
-            ) 
-            SELECT shift_group_uuid,
-                COUNT(*) AS total_off_days
-            FROM all_offset_days
-            WHERE lower(to_char(DAY, 'Dy')) = lower(dname)
-            GROUP BY shift_group_uuid
-        ) AS off_days_summary ON e.shift_group_uuid = off_days_summary.shift_group_uuid
         WHERE 
             ${department_uuid !== 'undefined' && department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
             AND ${status === 'active'
@@ -173,65 +189,6 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                   ? sql`e.is_resign = true`
                   : sql`e.status = true`}
             ), 
-        -- 3a) expand each shift_group’s configured off_days into concrete dates
-        sg_off_days AS
-        (
-            WITH params AS
-            (
-                SELECT ${from_date}::date AS start_date, ${to_date}::date AS end_date
-            ),
-            shift_group_periods AS
-            (
-                SELECT sg.uuid AS shift_group_uuid,
-                    sg.effective_date,
-                    sg.off_days::JSONB AS off_days,
-                    LEAD(sg.effective_date) OVER (PARTITION BY sg.uuid
-                                            ORDER BY sg.effective_date) AS next_effective_date
-                FROM hr.shift_group sg
-                CROSS JOIN params p
-                WHERE sg.effective_date <= p.end_date
-            ),
-            date_ranges AS
-            (
-                SELECT shift_group_uuid,
-                    GREATEST(effective_date,
-                            (SELECT start_date
-                            FROM params)) AS period_start,
-                LEAST(COALESCE(next_effective_date - INTERVAL '1 day',
-                                (SELECT end_date
-                                FROM params)),
-                        (SELECT end_date
-                        FROM params)) AS period_end,
-                off_days
-                FROM shift_group_periods
-                WHERE GREATEST(effective_date,
-                        (SELECT start_date
-                            FROM params)) <= LEAST(COALESCE(next_effective_date - INTERVAL '1 day',
-                                                            (SELECT end_date
-                                                            FROM params)),
-                                                    (SELECT end_date
-                                                    FROM params))
-            ),
-            all_days AS
-            (
-                SELECT dr.shift_group_uuid,
-                    gs::date AS DAY,
-                    dr.off_days
-                FROM date_ranges dr
-                CROSS JOIN LATERAL generate_series(dr.period_start, dr.period_end, INTERVAL '1 day') AS gs
-            ),
-            expanded AS
-            (
-                SELECT shift_group_uuid,
-                    DAY,
-                    TRUE AS is_offday
-                FROM all_days
-                CROSS JOIN LATERAL jsonb_array_elements_text(off_days) AS od(dname) -- lower-case both sides so "Fri" = "fri"
-                WHERE lower(to_char(DAY, 'Dy')) = lower(od.dname)
-            )
-        SELECT * FROM expanded
-    ), 
-    -- 4) detailed date-wise per employee
     attendance_data AS
         (
             SELECT de.employee_uuid,
@@ -241,6 +198,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 s.name AS shift_name,
                 s.start_time,
                 s.end_time,
+                sg.name AS shift_group_name,
                 MIN(pl.punch_time) AS entry_time,
                 MAX(pl.punch_time) AS exit_time,
                 CASE
@@ -248,7 +206,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                     AND MAX(pl.punch_time) IS NOT NULL THEN (
                         EXTRACT(
                             EPOCH
-                            FROM MAX(pl.punch_time) - MIN(pl.punch_time)
+                            FROM MAX(pl.punch_time)::time - MIN(pl.punch_time)::time
                         ) / 3600
                     )::float8
                     ELSE 0
@@ -270,7 +228,8 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 CASE
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
-                        OR sod.is_offday THEN 0
+                        OR hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true
+                        OR al.reason IS NOT NULL THEN 0
                     ELSE (
                         EXTRACT(
                             EPOCH
@@ -281,7 +240,8 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 CASE
                     WHEN gh.date IS NOT NULL
                         OR sp.is_special = 1
-                        OR sod.is_offday THEN 'Off Day'
+                        OR hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true THEN 'Off Day'
+                    WHEN al.reason IS NOT NULL THEN 'On Leave'
                     WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                     WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                     WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
@@ -292,8 +252,25 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             CROSS JOIN date_series ds
             LEFT JOIN hr.punch_log pl ON pl.employee_uuid = de.employee_uuid
             AND DATE(pl.punch_time) = ds.punch_date
-            LEFT JOIN hr.shift_group sg ON de.shift_group_uuid = sg.uuid
-            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+            LEFT JOIN LATERAL (
+                SELECT r.shifts_uuid AS shifts_uuid,
+                       r.shift_group_uuid AS shift_group_uuid
+                FROM hr.roster r
+                WHERE r.shift_group_uuid = (
+                    SELECT el.type_uuid
+                    FROM hr.employee_log el
+                    WHERE el.employee_uuid = de.employee_uuid
+                        AND el.type = 'shift_group'
+                        AND el.effective_date::date <= ds.punch_date
+                    ORDER BY el.effective_date DESC
+                    LIMIT 1
+                )
+                AND r.effective_date <= ds.punch_date
+                ORDER BY r.effective_date DESC
+                LIMIT 1
+            ) sg_sel ON TRUE
+            LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
+            LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
             LEFT JOIN hr.general_holidays gh ON gh.date = ds.punch_date
             LEFT JOIN LATERAL
                 (SELECT 1 AS is_special
@@ -303,8 +280,6 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             LEFT JOIN hr.apply_leave al ON al.employee_uuid = de.employee_uuid
             AND ds.punch_date BETWEEN al.from_date::date AND al.to_date::date
             AND al.approval = 'approved'
-            LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = de.shift_group_uuid
-            AND sod.day = ds.punch_date
             GROUP BY de.employee_uuid,
                 de.user_uuid,
                 de.employee_name,
@@ -313,14 +288,14 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 s.end_time,
                 gh.date,
                 sp.is_special,
-                sod.is_offday,
                 al.employee_uuid,
                 al.reason,
                 s.late_time,
                 s.early_exit_before,
                 s.name,
                 s.start_time,
-                s.end_time
+                s.end_time,
+                sg.name
         ) 
     -- 5) final SELECT …
         SELECT 
@@ -340,7 +315,11 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                     'early_exit_hours', ad.early_exit_hours,
                     'late_hours', ad.late_hours,
                     'status', ad.status, 
-                    'leave_reason', ad.leave_reason
+                    'leave_reason', ad.leave_reason,
+                    'shift_group_name', ad.shift_group_name,
+                    'shift_name', ad.shift_name,
+                    'start_time', ad.start_time,
+                    'end_time', ad.end_time
                 )
                 ORDER BY ad.punch_date
             ) AS attendance_records
@@ -364,7 +343,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             sd.absent_days,
             sd.leave_days,
             sd.late_days,
-            sd.early_leaves,
+            sd.early_exit_days,
             sd.off_days,
             ad.shift_name,
             ad.start_time,
@@ -395,6 +374,10 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             late_hours: record.late_hours,
             status: record.status,
             leave_reason: record.leave_reason,
+            shift_group_name: record.shift_group_name,
+            shift_name: record.shift_name,
+            start_time: record.start_time,
+            end_time: record.end_time,
           };
           // Sum up hours worked and expected hours
           hours_worked_sum += record.hours_worked || 0;
