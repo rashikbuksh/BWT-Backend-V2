@@ -22,6 +22,7 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                 attendance_data AS (
                   SELECT
                     ud.user_uuid,
+                    e.profile_picture,
                     e.employee_id AS employee_id,
                     e.uuid AS employee_uuid,
                     ud.employee_name,
@@ -80,6 +81,9 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         'm'
                     ) AS expected_hours,
                     CASE
+                      WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
+                      WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)=true THEN 'Off Day'
+                      WHEN al.reason IS NOT NULL THEN 'Leave'
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                       WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                       WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
@@ -91,11 +95,40 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                   LEFT JOIN hr.department d ON u.department_uuid = d.uuid
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
-                  LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-                  LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                  LEFT JOIN LATERAL (
+                                    SELECT 
+                                        r.shifts_uuid AS shifts_uuid,
+                                        r.shift_group_uuid AS shift_group_uuid
+                                    FROM hr.roster r
+                                    WHERE r.shift_group_uuid = (
+                                      SELECT el.type_uuid
+                                      FROM hr.employee_log el
+                                      WHERE el.employee_uuid = e.uuid
+                                        AND el.type = 'shift_group'
+                                        AND el.effective_date::date <= ud.punch_date::date
+                                      ORDER BY el.effective_date DESC
+                                      LIMIT 1
+                                    )
+                                    AND r.effective_date::date <= ud.punch_date::date
+                                    ORDER BY r.effective_date DESC
+                                    LIMIT 1
+                                  ) sg_sel ON TRUE
+                  LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
+                  LEFT JOIN hr.shift_group ON shift_group.uuid = sg_sel.shift_group_uuid
+                  LEFT JOIN hr.general_holidays gh ON gh.date::date = ud.punch_date::date
+                  LEFT JOIN LATERAL (
+                    SELECT 1 AS is_special
+                    FROM hr.special_holidays sh
+                    WHERE ud.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
+                    LIMIT 1
+                  ) AS sp ON TRUE
+                  LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
+                    AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
+                    AND al.approval = 'approved'
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid,
+                    gh.date, sp.is_special, al.reason
                 )
                SELECT
                     ad.punch_date AS date,
@@ -110,7 +143,8 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         'employee_designation', ad.employee_designation,
                         'shift',         ad.shift_name,
                         'entry_time',    ad.entry_time,
-                        'late_hours',    ad.late_hours
+                        'late_hours',    ad.late_hours,
+                        'profile_picture', ad.profile_picture
                         ) ORDER BY ad.employee_name
                     ) AS late_records
                     FROM attendance_data ad
@@ -139,6 +173,7 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                 attendance_data AS (
                   SELECT
                     e.uuid,
+                    e.profile_picture,
                     ud.user_uuid,
                     ud.employee_name,
                     e.employee_id AS employee_id,
@@ -198,6 +233,9 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                         'm'
                     ) AS expected_hours,
                     CASE
+                      WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
+                      WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)=true THEN 'Off Day'
+                      WHEN al.reason IS NOT NULL THEN 'Leave'
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                       WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
                       WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
@@ -216,12 +254,40 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                   LEFT JOIN hr.users lm ON e.line_manager_uuid = lm.uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
-                  LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-                  LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                  LEFT JOIN LATERAL (
+                                  SELECT 
+                                      r.shifts_uuid AS shifts_uuid,
+                                      r.shift_group_uuid AS shift_group_uuid
+                                  FROM hr.roster r
+                                  WHERE r.shift_group_uuid = (
+                                    SELECT el.type_uuid
+                                    FROM hr.employee_log el
+                                    WHERE el.employee_uuid = e.uuid
+                                      AND el.type = 'shift_group'
+                                      AND el.effective_date::date <= ud.punch_date::date
+                                    ORDER BY el.effective_date DESC
+                                    LIMIT 1
+                                  )
+                                  AND r.effective_date::date <= ud.punch_date::date
+                                  ORDER BY r.effective_date DESC
+                                  LIMIT 1
+                                ) sg_sel ON TRUE
+                  LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
+                  LEFT JOIN hr.shift_group ON shift_group.uuid = sg_sel.shift_group_uuid
+                  LEFT JOIN hr.general_holidays gh ON gh.date::date = ud.punch_date::date
+                  LEFT JOIN LATERAL (
+                    SELECT 1 AS is_special
+                    FROM hr.special_holidays sh
+                    WHERE ud.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
+                    LIMIT 1
+                  ) AS sp ON TRUE
+                  LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
+                    AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
+                    AND al.approval = 'approved'
                   LEFT JOIN hr.manual_entry me ON e.uuid = me.employee_uuid
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, me.type, me.approval, lm.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, me.type, me.approval, lm.name, e.profile_picture, gh.date, sp.is_special, al.reason
                 ),
                   monthly_late AS (
                                 SELECT
@@ -235,6 +301,7 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                 )
                 SELECT DISTINCT
                     uuid AS employee_uuid,
+                    profile_picture,
                     user_uuid AS employee_user_uuid,
                     employee_name,
                     employee_id,
