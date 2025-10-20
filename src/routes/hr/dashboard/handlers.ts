@@ -126,6 +126,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                       attendance_data_day AS (
                         SELECT
                           e.uuid,
+                          e.profile_picture,
                           ud.user_uuid,
                           ud.employee_name,
                           s.name AS shift_name,
@@ -207,7 +208,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
                         LEFT JOIN sg_off_days_day sod ON sod.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1)
                           AND sod.day = ud.punch_date
                         WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                        GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, lineManager.name
+                        GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason, (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, lineManager.name, e.profile_picture
                       ),
 
                       -- attendance for month range (1st .. today) used only to compute total late count per user
@@ -266,6 +267,7 @@ export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAtt
 
                       SELECT
                         ad.uuid as employee_uuid,
+                        ad.profile_picture,
                         ad.user_uuid,
                         ad.employee_name,
                         ad.shift_name,
@@ -1047,6 +1049,7 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                 attendance_data AS (
                   SELECT
                     e.uuid,
+                    e.profile_picture,
                     ud.user_uuid,
                     ud.employee_name,
                     s.name AS shift_name,
@@ -1153,10 +1156,11 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                     AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,(SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,(SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name, e.profile_picture
                 )
                 SELECT
                     uuid,
+                    profile_picture,
                     user_uuid,
                     employee_name,
                     shift_name,
