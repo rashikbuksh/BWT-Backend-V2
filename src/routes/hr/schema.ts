@@ -52,6 +52,7 @@ export const businessTypeEnum = pgEnum('business_type', [
   'user',
   'tv_company',
   'corporate',
+  'technician',
 ]);
 
 export const whereTheyFindUsEnum = pgEnum('where_they_find_us', [
