@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { getEmployeeAttendanceForDate, getHolidayCountsDateRange, getOffDayCountsDateRange } from '@/lib/variables';
+import { getHolidayCountsDateRange } from '@/lib/variables';
 import { employee } from '@/routes/hr/schema';
 import { createApi } from '@/utils/api';
 
@@ -997,123 +997,123 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
   return c.json(data.rows || [], HSCode.OK);
 };
 
-export const getMonthlyAttendanceReport2: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
-  let { from_date, to_date, employee_uuid } = c.req.valid('query');
+// export const getMonthlyAttendanceReport2: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
+//   let { from_date, to_date, employee_uuid } = c.req.valid('query');
 
-  if (employee_uuid === '' || employee_uuid === null || employee_uuid === undefined) {
-    employee_uuid = null;
-  }
+//   if (employee_uuid === '' || employee_uuid === null || employee_uuid === undefined) {
+//     employee_uuid = null;
+//   }
 
-  const holidays = await getHolidayCountsDateRange(from_date, to_date);
-  const totalOffDays = await getOffDayCountsDateRange(employee_uuid, from_date, to_date);
+//   const holidays = await getHolidayCountsDateRange(from_date, to_date);
+//   const totalOffDays = await getOffDayCountsDateRange(employee_uuid, from_date, to_date);
 
-  // Generate all dates in the range
-  const startDate = new Date(from_date.replace(/\//g, '-'));
-  const endDate = new Date(to_date.replace(/\//g, '-'));
-  const dates: string[] = [];
-  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  for (let i = 0; i < totalDays; i++) {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + i);
-    dates.push(d.toISOString().split('T')[0]);
-  }
+//   // Generate all dates in the range
+//   const startDate = new Date(from_date.replace(/\//g, '-'));
+//   const endDate = new Date(to_date.replace(/\//g, '-'));
+//   const dates: string[] = [];
+//   const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+//   for (let i = 0; i < totalDays; i++) {
+//     const d = new Date(startDate);
+//     d.setDate(d.getDate() + i);
+//     dates.push(d.toISOString().split('T')[0]);
+//   }
 
-  let presentDays = 0;
-  let lateDays = 0;
-  let earlyExitDays = 0;
-  let leaveDays = 0;
-  let absentDays = 0;
-  let totalLateHours = 0;
-  let totalEarlyExitHours = 0;
-  let totalWorkingHours = 0;
-  let totalExpectedHours = 0;
-  let overtimeHours = 0;
-  let approvedLates = 0;
-  let fieldVisitDays = 0;
+//   let presentDays = 0;
+//   let lateDays = 0;
+//   let earlyExitDays = 0;
+//   let leaveDays = 0;
+//   let absentDays = 0;
+//   let totalLateHours = 0;
+//   let totalEarlyExitHours = 0;
+//   let totalWorkingHours = 0;
+//   let totalExpectedHours = 0;
+//   let overtimeHours = 0;
+//   let approvedLates = 0;
+//   let fieldVisitDays = 0;
 
-  // For each date, determine attendance status
-  for (const date of dates) {
-    const dailyStatus = await getEmployeeAttendanceForDate(employee_uuid, date);
+//   // For each date, determine attendance status
+//   for (const date of dates) {
+//     const dailyStatus = await getEmployeeAttendanceForDate(employee_uuid, date);
 
-    // console.log(`Date: ${date}, Status:`, dailyStatus);
+//     // console.log(`Date: ${date}, Status:`, dailyStatus);
 
-    if (dailyStatus) {
-      if (dailyStatus.is_present) {
-        presentDays += 1;
-      }
-      if (dailyStatus.is_late) {
-        lateDays += 1;
-        totalLateHours += Number(dailyStatus.late_hours || 0);
-      }
-      if (dailyStatus.is_early_exit) {
-        earlyExitDays += 1;
-        totalEarlyExitHours += Number(dailyStatus.early_exit_hours || 0);
-      }
-      if (dailyStatus.leave_reason) {
-        leaveDays += 1;
-      }
-      if (dailyStatus.is_absent) {
-        absentDays += 1;
-      }
-      if (dailyStatus.working_hours) {
-        totalWorkingHours += Number(dailyStatus.working_hours || 0);
-      }
-      if (dailyStatus.expected_working_hours) {
-        totalExpectedHours += Number(dailyStatus.expected_working_hours || 0);
-      }
-      if (dailyStatus.overtime_hours) {
-        overtimeHours += Number(dailyStatus.overtime_hours || 0);
-      }
-      if (dailyStatus.is_field_visit) {
-        fieldVisitDays += 1;
-      }
-      if (dailyStatus.is_late_application) {
-        approvedLates += 1;
-      }
-    }
-  }
+//     if (dailyStatus) {
+//       if (dailyStatus.is_present) {
+//         presentDays += 1;
+//       }
+//       if (dailyStatus.is_late) {
+//         lateDays += 1;
+//         totalLateHours += Number(dailyStatus.late_hours || 0);
+//       }
+//       if (dailyStatus.is_early_exit) {
+//         earlyExitDays += 1;
+//         totalEarlyExitHours += Number(dailyStatus.early_exit_hours || 0);
+//       }
+//       if (dailyStatus.leave_reason) {
+//         leaveDays += 1;
+//       }
+//       if (dailyStatus.is_absent) {
+//         absentDays += 1;
+//       }
+//       if (dailyStatus.working_hours) {
+//         totalWorkingHours += Number(dailyStatus.working_hours || 0);
+//       }
+//       if (dailyStatus.expected_working_hours) {
+//         totalExpectedHours += Number(dailyStatus.expected_working_hours || 0);
+//       }
+//       if (dailyStatus.overtime_hours) {
+//         overtimeHours += Number(dailyStatus.overtime_hours || 0);
+//       }
+//       if (dailyStatus.is_field_visit) {
+//         fieldVisitDays += 1;
+//       }
+//       if (dailyStatus.is_late_application) {
+//         approvedLates += 1;
+//       }
+//     }
+//   }
 
-  const employeeQuery = sql`
-    SELECT e.uuid AS employee_uuid, u.uuid AS user_uuid, u.name AS employee_name,
-           d.designation AS designation_name, dep.department AS department_name,
-           w.name AS workplace_name, et.name AS employment_type_name
-    FROM hr.employee e
-    LEFT JOIN hr.users u ON e.user_uuid = u.uuid
-    LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
-    LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
-    LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
-    LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-    WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-  `;
-  const employeeData = await db.execute(employeeQuery);
+//   const employeeQuery = sql`
+//     SELECT e.uuid AS employee_uuid, u.uuid AS user_uuid, u.name AS employee_name,
+//            d.designation AS designation_name, dep.department AS department_name,
+//            w.name AS workplace_name, et.name AS employment_type_name
+//     FROM hr.employee e
+//     LEFT JOIN hr.users u ON e.user_uuid = u.uuid
+//     LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
+//     LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
+//     LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
+//     LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
+//     WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
+//   `;
+//   const employeeData = await db.execute(employeeQuery);
 
-  // Format the result (single row per employee)
-  const formattedData = employeeData.rows.map((emp: any) => ({
-    employee_uuid: emp.employee_uuid,
-    user_uuid: emp.user_uuid,
-    employee_name: emp.employee_name,
-    designation_name: emp.designation_name,
-    department_name: emp.department_name,
-    workplace_name: emp.workplace_name,
-    employment_type_name: emp.employment_type_name,
-    total_days: totalDays,
-    present_days: presentDays,
-    late_days: lateDays,
-    early_exit_days: earlyExitDays,
-    leave_days: leaveDays,
-    off_days: Number(totalOffDays),
-    general_holidays: Number(holidays.general),
-    special_holidays: Number(holidays.special),
-    working_days: totalDays - Number(holidays.general) - Number(holidays.special) - Number(totalOffDays) - Number(leaveDays),
-    absent_days: absentDays,
-    approved_lates: approvedLates,
-    field_visit_days: fieldVisitDays,
-    total_late_hours: totalLateHours,
-    total_early_exit_hours: totalEarlyExitHours,
-    working_hours: totalWorkingHours,
-    expected_hours: totalExpectedHours,
-    overtime_hours: overtimeHours,
-  }));
+//   // Format the result (single row per employee)
+//   const formattedData = employeeData.rows.map((emp: any) => ({
+//     employee_uuid: emp.employee_uuid,
+//     user_uuid: emp.user_uuid,
+//     employee_name: emp.employee_name,
+//     designation_name: emp.designation_name,
+//     department_name: emp.department_name,
+//     workplace_name: emp.workplace_name,
+//     employment_type_name: emp.employment_type_name,
+//     total_days: totalDays,
+//     present_days: presentDays,
+//     late_days: lateDays,
+//     early_exit_days: earlyExitDays,
+//     leave_days: leaveDays,
+//     off_days: Number(totalOffDays),
+//     general_holidays: Number(holidays.general),
+//     special_holidays: Number(holidays.special),
+//     working_days: totalDays - Number(holidays.general) - Number(holidays.special) - Number(totalOffDays) - Number(leaveDays),
+//     absent_days: absentDays,
+//     approved_lates: approvedLates,
+//     field_visit_days: fieldVisitDays,
+//     total_late_hours: totalLateHours,
+//     total_early_exit_hours: totalEarlyExitHours,
+//     working_hours: totalWorkingHours,
+//     expected_hours: totalExpectedHours,
+//     overtime_hours: overtimeHours,
+//   }));
 
-  return c.json(formattedData || [], HSCode.OK);
-};
+//   return c.json(formattedData || [], HSCode.OK);
+// };
