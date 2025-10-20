@@ -239,8 +239,8 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 END AS expected_hours,
                 CASE
                     WHEN gh.date IS NOT NULL
-                        OR sp.is_special = 1
-                        OR hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true THEN 'Off Day'
+                        OR sp.is_special = 1 THEN 'Holiday'
+                    WHEN hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true THEN 'Off Day'
                     WHEN al.reason IS NOT NULL THEN 'On Leave'
                     WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                     WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
