@@ -43,7 +43,10 @@ export function initializeSocket(server: HttpServer) {
     cors: {
       origin: '*', // Configure this properly for production
       methods: ['GET', 'POST'],
+      credentials: true,
     },
+    transports: ['websocket', 'polling'],
+    allowEIO3: true,
   });
 
   io.on('connection', (socket) => {
