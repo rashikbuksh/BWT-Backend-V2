@@ -1208,5 +1208,5 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
   const resultPromise = db.execute(query);
 
   const data = await resultPromise;
-  return c.json(data.rows || [], HSCode.OK);
+  return c.json({ entry: data.rows ?? {} }, HSCode.OK);
 };
