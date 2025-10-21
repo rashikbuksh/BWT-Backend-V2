@@ -11,6 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type {
   CreateRoute,
+  GetBulkShiftForEmployeeRoute,
   GetEmployeeAttendanceReportRoute,
   GetEmployeeLeaveInformationDetailsRoute,
   GetEmployeeSummaryDetailsByEmployeeUuidRoute,
@@ -1100,4 +1101,112 @@ export const updateProfilePicture: AppRouteHandler<UpdateProfilePictureRoute> = 
   await db.execute(query);
 
   return c.json({ message: 'Profile picture updated successfully' }, HSCode.OK);
+};
+
+export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRoute> = async (c: any) => {
+  const query = sql`
+                    SELECT
+                      e.uuid AS employee_uuid,
+                      employeeUser.name AS employee_name,
+                      e.start_date::date,
+                      e.profile_picture,
+                      dept.department AS department_name,
+                      des.designation AS designation_name,
+                      current_shift_info.current_shift,
+                      next_shift_info.next_shifts
+                    FROM hr.employee e
+                    LEFT JOIN hr.users employeeUser ON e.user_uuid = employeeUser.uuid
+                    LEFT JOIN hr.department dept ON employeeUser.department_uuid = dept.uuid
+                    LEFT JOIN hr.designation des ON employeeUser.designation_uuid = des.uuid
+                    LEFT JOIN (  
+                                WITH LatestEmployeeLog AS (
+                                    SELECT
+                                        el.employee_uuid,
+                                        el.type_uuid,
+                                        el.effective_date,
+                                        ROW_NUMBER() OVER(PARTITION BY el.employee_uuid ORDER BY el.effective_date DESC) as rn
+                                    FROM
+                                        hr.employee_log el
+                                    WHERE
+                                        el.type = 'shift_group'
+                                        AND el.effective_date::date <= CURRENT_DATE
+                                ),
+                                LatestRoster AS (
+                                    SELECT
+                                        r.shift_group_uuid,
+                                        r.shifts_uuid,
+                                        r.effective_date,
+                                        ROW_NUMBER() OVER(PARTITION BY r.shift_group_uuid ORDER BY r.effective_date DESC) as rn
+                                    FROM
+                                        hr.roster r
+                                    WHERE
+                                        r.effective_date::date <= CURRENT_DATE
+                                )
+                                SELECT
+                                    lel.employee_uuid,
+                                    JSONB_BUILD_OBJECT(
+                                        'shift_name', s.name,
+                                        'start_time', s.start_time,
+                                        'end_time', s.end_time,
+                                        'late_time', s.late_time,
+                                        'effective_date', lr.effective_date,
+                                        'shift_group_name', sg.name
+                                    ) AS current_shift
+                                FROM
+                                    LatestEmployeeLog lel
+                                LEFT JOIN hr.shift_group sg ON lel.type_uuid = sg.uuid
+                                LEFT JOIN LatestRoster lr ON lel.type_uuid = lr.shift_group_uuid AND lr.rn = 1
+                                LEFT JOIN hr.shifts s ON lr.shifts_uuid = s.uuid
+                                WHERE
+                                    lel.rn = 1
+                             ) AS current_shift_info
+                    ON e.uuid = current_shift_info.employee_uuid
+                    LEFT JOIN 
+                           (
+                            WITH NextEmployeeLog AS (
+                                SELECT
+                                    el.employee_uuid,
+                                    el.type_uuid AS shift_group_uuid,
+                                    el.effective_date
+                                FROM hr.employee_log el
+                                WHERE el.type = 'shift_group'
+                                  AND el.effective_date::date > CURRENT_DATE
+                            ),
+                            NextRoster AS (
+                                SELECT
+                                    r.shift_group_uuid,
+                                    r.shifts_uuid,
+                                    r.effective_date
+                                FROM hr.roster r
+                                WHERE r.effective_date::date > CURRENT_DATE
+                            )
+                            SELECT
+                                nel.employee_uuid,
+                                COALESCE(
+                                    JSONB_AGG(
+                                        JSONB_BUILD_OBJECT(
+                                            'shift_name', s.name,
+                                            'start_time', s.start_time,
+                                            'end_time', s.end_time,
+                                            'late_time', s.late_time,
+                                            'effective_date', nr.effective_date,
+                                            'shift_group_name', sg.name
+                                        ) ORDER BY nr.effective_date ASC
+                                    ),
+                                    '[]'::jsonb
+                                ) AS next_shifts
+                            FROM NextEmployeeLog nel
+                            LEFT JOIN hr.shift_group sg ON nel.shift_group_uuid = sg.uuid
+                            LEFT JOIN NextRoster nr ON nel.shift_group_uuid = nr.shift_group_uuid AND nr.effective_date = nel.effective_date
+                            LEFT JOIN hr.shifts s ON nr.shifts_uuid = s.uuid
+                            GROUP BY nel.employee_uuid
+                            ORDER BY nel.employee_uuid ASC
+                            ) AS next_shift_info
+                    ON e.uuid = next_shift_info.employee_uuid
+                 ORDER BY employeeUser.name ASC                
+  `;
+  const resultPromise = db.execute(query);
+
+  const data = await resultPromise;
+  return c.json(data.rows || [], HSCode.OK);
 };

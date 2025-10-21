@@ -267,6 +267,18 @@ export const updateProfilePicture = createRoute({
   },
 });
 
+export const getBulkShiftForEmployee = createRoute({
+  path: '/hr/employee-bulk-shift',
+  method: 'get',
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The bulk shift for employee',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -277,3 +289,4 @@ export type GetEmployeeLeaveInformationDetailsRoute = typeof getEmployeeLeaveInf
 export type GetEmployeeAttendanceReportRoute = typeof getEmployeeAttendanceReport;
 export type GetEmployeeSummaryDetailsByEmployeeUuidRoute = typeof getEmployeeSummaryDetailsByEmployeeUuid;
 export type UpdateProfilePictureRoute = typeof updateProfilePicture;
+export type GetBulkShiftForEmployeeRoute = typeof getBulkShiftForEmployee;
