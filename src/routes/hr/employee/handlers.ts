@@ -1195,7 +1195,7 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                             'end_time', s.end_time,
                                             'late_time', s.late_time,
                                             'roster_effective_date', nr.effective_date,
-                                            'shift_group_effective_date', nel.effective_date,
+                                            'effective_date', nel.effective_date,
                                             'shift_group_name', sg.name,
                                             'off_days', nr.off_days
                                         ) ORDER BY nr.effective_date ASC
