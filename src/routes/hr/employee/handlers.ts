@@ -1112,8 +1112,8 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                       e.profile_picture,
                       dept.department AS department_name,
                       des.designation AS designation_name,
-                      current_shift_info.current_shift,
-                      next_shift_info.next_shifts
+                      COALESCE(current_shift_info.current_shift, '[]'::jsonb) AS current_shift,
+                      COALESCE(next_shift_info.next_shifts, '[]'::jsonb) AS next_shifts
                     FROM hr.employee e
                     LEFT JOIN hr.users employeeUser ON e.user_uuid = employeeUser.uuid
                     LEFT JOIN hr.department dept ON employeeUser.department_uuid = dept.uuid
