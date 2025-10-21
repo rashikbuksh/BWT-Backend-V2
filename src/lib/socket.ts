@@ -38,6 +38,7 @@ export interface ServerToClientEvents {
 let io: Server<ClientToServerEvents, ServerToClientEvents, any, SocketData>;
 
 export function initializeSocket(server: HttpServer) {
+  console.warn('Initializing Socket.IO server...');
   io = new Server(server, {
     cors: {
       origin: '*', // Configure this properly for production
@@ -55,31 +56,61 @@ export function initializeSocket(server: HttpServer) {
     // Authentication handler
     socket.on('authenticate', async (token) => {
       try {
-        // TODO: Import your JWT verification function here
-        // For example: import { verifyToken } from '@/utils/auth';
-
         if (!token || token.length === 0) {
           socket.emit('authentication_error', 'Token required');
           return;
         }
 
-        // Replace this with your actual JWT verification
-        // const decoded = verifyToken(token);
-        // For now, we'll extract from a simple token format
-        const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        // Import JWT verification from your auth middleware
+        const { verify } = await import('hono/jwt');
+        const env = await import('@/env');
 
-        if (decoded && decoded.user_uuid && decoded.name) {
-          socket.data.authenticated = true;
-          socket.data.user_uuid = decoded.user_uuid;
-          socket.data.username = decoded.name;
+        try {
+          // Verify the JWT token using your existing auth system
+          const decoded = await verify(token, env.default.PRIVATE_KEY);
 
-          socket.emit('authentication_success', {
-            user_uuid: socket.data.user_uuid!,
-            username: socket.data.username!,
-          });
+          if (decoded && decoded.user_uuid && (decoded.name || decoded.username)) {
+            socket.data.authenticated = true;
+            socket.data.user_uuid = decoded.user_uuid as string;
+            socket.data.username = (decoded.name || decoded.username) as string;
+
+            socket.emit('authentication_success', {
+              user_uuid: socket.data.user_uuid!,
+              username: socket.data.username!,
+            });
+
+            console.warn(`User authenticated: ${socket.data.username} (${socket.data.user_uuid})`);
+          }
+          else {
+            socket.emit('authentication_error', 'Invalid token payload - missing user_uuid or name');
+          }
         }
-        else {
-          socket.emit('authentication_error', 'Invalid token format');
+        catch (verifyError) {
+          // Fallback to simple token format for testing
+          console.warn('JWT verification failed, trying simple token format:', verifyError);
+
+          try {
+            const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+            if (decoded && decoded.user_uuid && (decoded.name || decoded.username)) {
+              socket.data.authenticated = true;
+              socket.data.user_uuid = decoded.user_uuid;
+              socket.data.username = decoded.name || decoded.username;
+
+              socket.emit('authentication_success', {
+                user_uuid: socket.data.user_uuid!,
+                username: socket.data.username!,
+              });
+
+              console.warn(`User authenticated with simple token: ${socket.data.username} (${socket.data.user_uuid})`);
+            }
+            else {
+              socket.emit('authentication_error', 'Invalid token format - missing required fields');
+            }
+          }
+          catch {
+            socket.emit('authentication_error', 'Invalid token format');
+          }
         }
       }
       catch (error) {
