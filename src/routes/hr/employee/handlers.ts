@@ -1136,6 +1136,7 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                         r.shift_group_uuid,
                                         r.shifts_uuid,
                                         r.effective_date,
+                                        r.off_days,
                                         ROW_NUMBER() OVER(PARTITION BY r.shift_group_uuid ORDER BY r.effective_date DESC) as rn
                                     FROM
                                         hr.roster r
@@ -1150,7 +1151,8 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                         'end_time', s.end_time,
                                         'late_time', s.late_time,
                                         'effective_date', lr.effective_date,
-                                        'shift_group_name', sg.name
+                                        'shift_group_name', sg.name,
+                                        'off_days', lr.off_days
                                     ) AS current_shift
                                 FROM
                                     LatestEmployeeLog lel
@@ -1176,7 +1178,8 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                 SELECT
                                     r.shift_group_uuid,
                                     r.shifts_uuid,
-                                    r.effective_date
+                                    r.effective_date,
+                                    r.off_days
                                 FROM hr.roster r
                                 WHERE r.effective_date::date > CURRENT_DATE
                             )
@@ -1190,7 +1193,8 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                             'end_time', s.end_time,
                                             'late_time', s.late_time,
                                             'effective_date', nr.effective_date,
-                                            'shift_group_name', sg.name
+                                            'shift_group_name', sg.name,
+                                            'off_days', nr.off_days
                                         ) ORDER BY nr.effective_date ASC
                                     ),
                                     '[]'::jsonb
