@@ -1166,6 +1166,7 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                     LEFT JOIN (
                                 WITH NextEmployeeLog AS (
                                   SELECT
+                                    el.uuid,
                                     el.employee_uuid,
                                     el.type_uuid AS shift_group_uuid,
                                     el.effective_date
@@ -1203,6 +1204,7 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                   COALESCE(
                                     JSONB_AGG(
                                       JSONB_BUILD_OBJECT(
+                                        'uuid', nel.uuid,
                                         'shift_name', s.name,
                                         'start_time', s.start_time,
                                         'end_time', s.end_time,
