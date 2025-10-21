@@ -121,7 +121,7 @@
       </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
       let socket = null;
       let connectionTimeout = null;
@@ -152,15 +152,21 @@
         addLog(`🌐 Checking if server is reachable...`);
 
         // Test basic HTTP connectivity first
-        fetch(serverUrl.replace('http://', 'http://').replace('https://', 'https://') + '/socket.io/')
+        fetch(serverUrl + '/socket.io/?EIO=4&transport=polling')
           .then((response) => {
-            addLog(`✅ HTTP connectivity test passed (Status: ${response.status})`);
+            if (response.status === 400) {
+              addLog(`✅ Server is reachable (Status: ${response.status})`);
+              addLog(`ℹ️  Status 400 is normal for Socket.IO endpoint without proper handshake`);
+            } else {
+              addLog(`✅ HTTP connectivity test passed (Status: ${response.status})`);
+            }
             startSocketConnection(serverUrl);
           })
           .catch((error) => {
             addLog(`❌ HTTP connectivity test failed: ${error.message}`);
             addLog(`⚠️  Server might not be running or not accessible`);
-            startSocketConnection(serverUrl); // Try socket anyway
+            addLog(`🔄 Trying Socket.IO connection anyway...`);
+            startSocketConnection(serverUrl);
           });
       }
 
@@ -183,12 +189,28 @@
           }
         }, 10000);
 
-        socket = io(serverUrl, {
-          autoConnect: true,
-          reconnection: false, // Disable auto-reconnection for testing
-          timeout: 5000,
-          transports: ['polling', 'websocket'], // Try polling first
-        });
+        // Check if Socket.IO client is available
+        if (typeof io === 'undefined') {
+          clearTimeout(connectionTimeout);
+          addLog(`❌ Socket.IO client library not loaded!`);
+          addLog(`🔧 Using CDN fallback...`);
+          updateStatus('disconnected', '❌ Socket.IO Client Missing');
+          return;
+        }
+
+        try {
+          socket = io(serverUrl, {
+            autoConnect: true,
+            reconnection: false, // Disable auto-reconnection for testing
+            timeout: 5000,
+            transports: ['polling', 'websocket'], // Try polling first
+          });
+        } catch (error) {
+          clearTimeout(connectionTimeout);
+          addLog(`❌ Failed to create Socket.IO connection: ${error.message}`);
+          updateStatus('disconnected', '❌ Socket.IO Error');
+          return;
+        }
 
         // Connection events with detailed logging
         socket.on('connect', () => {

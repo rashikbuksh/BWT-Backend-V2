@@ -48,6 +48,27 @@ app.get('/socket-diagnostic', (c) => {
   return c.redirect('/diagnostic.html');
 });
 
+// Health check endpoint (outside v1 path)
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: new Date().toISOString(), port: 5090 });
+});
+
+// Socket.IO status endpoint (outside v1 path)
+app.get('/socket-status', async (c) => {
+  try {
+    const { getIO, getOnlineUsersCount } = await import('./lib/socket');
+    const io = getIO();
+    return c.json({
+      status: 'connected',
+      online_users: getOnlineUsersCount(),
+      engine_connected: io.engine.clientsCount || 0,
+    });
+  }
+  catch (error) {
+    return c.json({ status: 'disconnected', error: (error as Error).message }, 500);
+  }
+});
+
 // Direct routes for test pages
 app.get('/socket-test', (c) => {
   return c.html(`<!DOCTYPE html>

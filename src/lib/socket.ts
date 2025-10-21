@@ -39,17 +39,35 @@ export function initializeSocket(server: HttpServer) {
   console.warn('Initializing Socket.IO server...');
   io = new Server(server, {
     cors: {
-      origin: '*', // Configure this properly for production
-      methods: ['GET', 'POST'],
+      origin: '*', // Allow all origins for development
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'], // Try polling first for better compatibility
     allowEIO3: true,
+    pingTimeout: 60000, // 60 seconds
+    pingInterval: 25000, // 25 seconds
+    upgradeTimeout: 30000, // 30 seconds
+    maxHttpBufferSize: 1e6, // 1MB
   });
 
-  // Add debugging for connection attempts
+  // Enhanced debugging for connection attempts
   io.engine.on('connection_error', (err) => {
-    console.warn('Socket.IO connection error:', err.req, err.code, err.message, err.context);
+    console.warn('Socket.IO connection error:');
+    console.warn('- Request URL:', err.req?.url);
+    console.warn('- Error Code:', err.code);
+    console.warn('- Error Message:', err.message);
+    console.warn('- Context:', err.context);
+    console.warn('- Headers:', err.req?.headers);
+  });
+
+  io.engine.on('initial_headers', (headers, request) => {
+    console.warn('Socket.IO initial headers for:', request.url);
+  });
+
+  io.engine.on('headers', (headers, request) => {
+    console.warn('Socket.IO headers for:', request.url);
   });
 
   io.on('connection', (socket) => {
