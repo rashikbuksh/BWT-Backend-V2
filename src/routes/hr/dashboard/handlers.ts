@@ -824,44 +824,6 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                   FROM hr.users u
                   CROSS JOIN date_series d
                 ),
-                sg_off_days AS (
-                          WITH params AS (
-                            SELECT ${date}::date AS start_date, ${date}::date AS end_date
-                          ),
-                          shift_group_periods AS (
-                            SELECT sg.uuid AS shift_group_uuid,
-                              sg.effective_date,
-                              sg.off_days::JSONB AS off_days,
-                              LEAD(sg.effective_date) OVER (PARTITION BY sg.uuid ORDER BY sg.effective_date) AS next_effective_date
-                            FROM hr.shift_group sg
-                            CROSS JOIN params p
-                            WHERE sg.effective_date <= p.end_date
-                          ),
-                          date_ranges AS (
-                            SELECT shift_group_uuid,
-                              GREATEST(effective_date, (SELECT start_date FROM params)) AS period_start,
-                              LEAST(COALESCE(next_effective_date - INTERVAL '1 day', (SELECT end_date FROM params)), (SELECT end_date FROM params)) AS period_end,
-                              off_days
-                            FROM shift_group_periods
-                            WHERE GREATEST(effective_date, (SELECT start_date FROM params)) <= LEAST(COALESCE(next_effective_date - INTERVAL '1 day', (SELECT end_date FROM params)), (SELECT end_date FROM params))
-                          ),
-                          all_days AS (
-                            SELECT dr.shift_group_uuid,
-                              gs::date AS day,
-                              dr.off_days
-                            FROM date_ranges dr
-                            CROSS JOIN LATERAL generate_series(dr.period_start, dr.period_end, INTERVAL '1 day') AS gs
-                          ),
-                          expanded AS (
-                            SELECT shift_group_uuid,
-                              day,
-                              TRUE AS is_offday
-                            FROM all_days
-                            CROSS JOIN LATERAL jsonb_array_elements_text(off_days) AS od(dname)
-                            WHERE lower(to_char(day, 'Dy')) = lower(od.dname)
-                          )
-                          SELECT * FROM expanded
-                        ),
                 attendance_data AS (
                   SELECT
                     e.uuid,
@@ -901,7 +863,7 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                     CASE
                         WHEN gh.date IS NOT NULL
                           OR sp.is_special = 1
-                          OR sod.is_offday
+                          OR hr.is_employee_off_day(e.uuid, ud.punch_date)=true
                           OR al.reason IS NOT NULL THEN 0
                         ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                     END AS expected_hours,
@@ -918,7 +880,7 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                         CASE
                           WHEN gh.date IS NOT NULL
                             OR sp.is_special = 1
-                            OR sod.is_offday
+                            OR hr.is_employee_off_day(e.uuid, ud.punch_date)=true
                             OR al.reason IS NOT NULL THEN 0
                           ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                         END
@@ -926,7 +888,7 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                     , 0)::float8 AS overtime_hours,
                     CASE
                         WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
-                        WHEN sod.is_offday THEN 'Off Day'
+                        WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)=true THEN 'Off Day'
                         WHEN al.reason IS NOT NULL THEN 'Leave'
                         WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
                         WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
@@ -945,12 +907,15 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                   LEFT JOIN LATERAL (
-                            SELECT
-                              COALESCE(
-                                (SELECT sg2.shifts_uuid FROM hr.shift_group sg2 WHERE sg2.uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND sg2.effective_date <= ud.punch_date ORDER BY sg2.effective_date DESC LIMIT 1),
-                                (SELECT r.shifts_uuid FROM hr.roster r WHERE r.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1) AND r.effective_date <= ud.punch_date ORDER BY r.effective_date DESC LIMIT 1)
-                              ) AS shifts_uuid
-                          ) AS sg_sel ON TRUE
+                                    SELECT
+                                        r.shifts_uuid AS shifts_uuid,
+                                        r.shift_group_uuid AS shift_group_uuid
+                                    FROM hr.roster r
+                                    WHERE r.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1)
+                                      AND r.effective_date <= ud.punch_date
+                                    ORDER BY r.effective_date DESC
+                                    LIMIT 1
+                                  ) AS sg_sel ON TRUE
                   LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                   LEFT JOIN hr.general_holidays gh ON gh.date = ud.punch_date
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
@@ -968,11 +933,9 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                   LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                     AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                     AND al.approval = 'approved'
-                  LEFT JOIN sg_off_days sod ON sod.shift_group_uuid = (SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1)
-                    AND sod.day = ud.punch_date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, sod.is_offday, gh.date, al.reason,(SELECT el.type_uuid FROM hr.employee_log el WHERE el.type = 'shift_group' AND el.employee_uuid=e.uuid AND el.effective_date <=  ud.punch_date ORDER BY el.effective_date DESC LIMIT 1), dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name, e.profile_picture
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name, e.profile_picture
                 )
                 SELECT
                     uuid,
