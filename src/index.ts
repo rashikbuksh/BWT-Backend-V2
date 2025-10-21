@@ -6,14 +6,9 @@ import env from './env';
 import { initializeSocket } from './lib/socket';
 
 const port = env.PORT;
-// Create HTTP server using Hono's serve function
-const httpServer = createServer();
 
-// Initialize Socket.IO on the HTTP server first
-initializeSocket(httpServer);
-
-// Handle HTTP requests with Hono app
-httpServer.on('request', async (req, res) => {
+// Create HTTP server that handles requests
+const httpServer = createServer(async (req, res) => {
   const url = `http://${req.headers.host}${req.url}`;
 
   // Handle body properly for POST/PUT/PATCH requests
@@ -56,6 +51,9 @@ httpServer.on('request', async (req, res) => {
     res.end();
   }
 });
+
+// Initialize Socket.IO on the HTTP server
+initializeSocket(httpServer);
 
 // Start the server
 httpServer.listen(port, () => {
