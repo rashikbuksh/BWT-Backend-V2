@@ -1,4 +1,5 @@
 import acc from './acc';
+import chat from './chat';
 import delivery from './delivery';
 import hr from './hr';
 import other from './other';
@@ -18,6 +19,7 @@ const routes = [
   ...publicRoute,
   ...acc,
   socket,
+  chat,
 ] as const;
 
 export default routes;

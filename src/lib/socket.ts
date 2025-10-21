@@ -1,5 +1,6 @@
 import type { Server as HttpServer } from 'node:http';
 
+import { Buffer } from 'node:buffer';
 import { Server } from 'socket.io';
 
 export interface SocketData {
@@ -13,22 +14,24 @@ export interface SocketData {
 export interface ClientToServerEvents {
   join_room: (room: string) => void;
   leave_room: (room: string) => void;
-  send_message: (data: { order_uuid: string; message: string; user_uuid: string }) => void;
+  send_message: (data: { message: string; room?: string; to_user_uuid?: string }) => void;
   authenticate: (token: string) => void;
-  typing: (data: { room: string; user_uuid: string }) => void;
-  user_status: (data: { room: string; user_uuid: string }) => void;
-  request_online_users: (room: string) => void;
+  typing: (data: { room?: string; to_user_uuid?: string }) => void;
+  request_online_users: (room?: string) => void;
+  private_message: (data: { to_user_uuid: string; message: string }) => void;
 }
 
 export interface ServerToClientEvents {
   new_message: (data: any) => void;
-  user_joined: (data: { username: string; room: string; user_uuid?: string }) => void;
-  user_left: (data: { username: string; room: string; user_uuid?: string }) => void;
+  message_sent: (data: any) => void;
+  user_joined: (data: { username: string; user_uuid?: string; room?: string }) => void;
+  user_left: (data: { username: string; user_uuid?: string; room?: string }) => void;
   authentication_success: (data: { user_uuid: string; username: string }) => void;
   authentication_error: (message: string) => void;
-  typing: (data: { user_uuid: string; username: string; room: string }) => void;
-  user_status: (data: { user_uuid: string; username: string; room: string }) => void;
-  online_users: (data: { room: string; users: Array<{ user_uuid: string; username: string; socket_id: string }> }) => void;
+  typing: (data: { from_user_uuid: string; from_username: string; room?: string }) => void;
+  online_users: (data: { users: Array<{ user_uuid: string; username: string; socket_id: string }>; room?: string }) => void;
+  user_online: (data: { user_uuid: string; username: string }) => void;
+  user_offline: (data: { user_uuid: string; username: string }) => void;
   error: (message: string) => void;
 }
 
@@ -52,31 +55,40 @@ export function initializeSocket(server: HttpServer) {
     // Authentication handler
     socket.on('authenticate', async (token) => {
       try {
-        // TODO: Implement token verification logic here
-        // For now, we'll assume the token contains user info
-        // In a real implementation, you'd verify the JWT token
+        // TODO: Import your JWT verification function here
+        // For example: import { verifyToken } from '@/utils/auth';
 
-        // Mock authentication - replace with your actual auth logic
-        if (token && token.length > 0) {
+        if (!token || token.length === 0) {
+          socket.emit('authentication_error', 'Token required');
+          return;
+        }
+
+        // Replace this with your actual JWT verification
+        // const decoded = verifyToken(token);
+        // For now, we'll extract from a simple token format
+        const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+        if (decoded && decoded.user_uuid && decoded.name) {
           socket.data.authenticated = true;
-          socket.data.user_uuid = 'extracted_from_token'; // Extract from actual token
-          socket.data.username = 'username_from_token'; // Extract from actual token
+          socket.data.user_uuid = decoded.user_uuid;
+          socket.data.username = decoded.name;
 
           socket.emit('authentication_success', {
-            user_uuid: socket.data.user_uuid,
-            username: socket.data.username,
+            user_uuid: socket.data.user_uuid!,
+            username: socket.data.username!,
           });
         }
         else {
-          socket.emit('authentication_error', 'Invalid token');
+          socket.emit('authentication_error', 'Invalid token format');
         }
       }
-      catch {
+      catch (error) {
+        console.warn('Authentication error:', error);
         socket.emit('authentication_error', 'Authentication failed');
       }
     });
 
-    // Room management
+    // Room management for group chat
     socket.on('join_room', (room) => {
       if (!socket.data.authenticated) {
         socket.emit('error', 'Authentication required');
@@ -108,7 +120,7 @@ export function initializeSocket(server: HttpServer) {
       console.warn(`User ${socket.data.username} (${socket.id}) left room: ${room}`);
     });
 
-    // Message handling
+    // Message handling for both room chat and private messages
     socket.on('send_message', async (data) => {
       if (!socket.data.authenticated) {
         socket.emit('error', 'Authentication required');
@@ -116,81 +128,120 @@ export function initializeSocket(server: HttpServer) {
       }
 
       try {
-        // TODO: Save message to database here
-        // This should integrate with your existing chat creation logic
         console.warn('Message received:', data);
 
-        // Emit to room members
-        socket.to(`order_${data.order_uuid}`).emit('new_message', {
-          ...data,
-          username: socket.data.username,
+        // Create message data
+        const messageData = {
+          id: Date.now(), // Simple ID for testing
+          message: data.message,
+          from_user_uuid: socket.data.user_uuid,
+          from_username: socket.data.username,
+          to_user_uuid: data.to_user_uuid || null,
+          room: data.room || null,
           timestamp: new Date().toISOString(),
-        });
+        };
+
+        if (data.room) {
+          // Room chat - broadcast to all users in the room
+          socket.to(data.room).emit('new_message', messageData);
+          console.warn(`Message sent to room: ${data.room}`);
+        }
+        else if (data.to_user_uuid) {
+          // Private message - send to specific user
+          for (const [_, targetSocket] of io.sockets.sockets) {
+            if (targetSocket.data.user_uuid === data.to_user_uuid && targetSocket.data.authenticated) {
+              targetSocket.emit('new_message', messageData);
+              console.warn(`Private message sent to user: ${data.to_user_uuid}`);
+              break;
+            }
+          }
+        }
+        else {
+          socket.emit('error', 'Must specify either room or to_user_uuid');
+          return;
+        }
+
+        // Confirm message was sent to sender
+        socket.emit('message_sent', messageData);
       }
-      catch {
+      catch (error) {
+        console.warn('Failed to send message:', error);
         socket.emit('error', 'Failed to send message');
       }
-    });
-
-    // Typing indicators
+    }); // Typing indicators for both room chat and private messages
     socket.on('typing', (data) => {
       if (!socket.data.authenticated)
         return;
 
-      socket.to(data.room).emit('typing', {
-        user_uuid: socket.data.user_uuid || data.user_uuid,
-        username: socket.data.username || 'Anonymous',
-        room: data.room,
-      });
+      const typingData = {
+        from_user_uuid: socket.data.user_uuid || 'unknown',
+        from_username: socket.data.username || 'Anonymous',
+        room: data.room || undefined,
+      };
+
+      if (data.room) {
+        // Room typing indicator - broadcast to all users in the room
+        socket.to(data.room).emit('typing', typingData);
+      }
+      else if (data.to_user_uuid) {
+        // Private typing indicator - send to specific user
+        for (const [_, targetSocket] of io.sockets.sockets) {
+          if (targetSocket.data.user_uuid === data.to_user_uuid && targetSocket.data.authenticated) {
+            targetSocket.emit('typing', typingData);
+            break;
+          }
+        }
+      }
     });
 
-    // Handle user status
-    socket.on('user_status', (data) => {
-      if (!socket.data.authenticated)
-        return;
-      socket.to(data.room).emit('user_status', {
-        user_uuid: socket.data.user_uuid || data.user_uuid,
-        username: socket.data.username || 'Anonymous',
-        room: data.room,
-      });
-    });
-
-    // Online users request
+    // Get online users (all users or users in a specific room)
     socket.on('request_online_users', (room) => {
       if (!socket.data.authenticated)
         return;
 
-      const roomSockets = io.sockets.adapter.rooms.get(room);
       const onlineUsers: Array<{ user_uuid: string; username: string; socket_id: string }> = [];
 
-      if (roomSockets) {
-        roomSockets.forEach((socketId) => {
-          const roomSocket = io.sockets.sockets.get(socketId);
-          if (roomSocket && roomSocket.data.authenticated) {
+      if (room) {
+        // Get users in a specific room
+        const roomSockets = io.sockets.adapter.rooms.get(room);
+        if (roomSockets) {
+          roomSockets.forEach((socketId) => {
+            const roomSocket = io.sockets.sockets.get(socketId);
+            if (roomSocket && roomSocket.data.authenticated) {
+              onlineUsers.push({
+                user_uuid: roomSocket.data.user_uuid || 'unknown',
+                username: roomSocket.data.username || 'Anonymous',
+                socket_id: socketId,
+              });
+            }
+          });
+        }
+      }
+      else {
+        // Get all online users
+        for (const [socketId, connectedSocket] of io.sockets.sockets) {
+          if (connectedSocket.data.authenticated) {
             onlineUsers.push({
-              user_uuid: roomSocket.data.user_uuid || 'unknown',
-              username: roomSocket.data.username || 'Anonymous',
+              user_uuid: connectedSocket.data.user_uuid || 'unknown',
+              username: connectedSocket.data.username || 'Anonymous',
               socket_id: socketId,
             });
           }
-        });
+        }
       }
 
-      socket.emit('online_users', { room, users: onlineUsers });
+      socket.emit('online_users', { users: onlineUsers, room });
     });
 
     // Cleanup on disconnect
     socket.on('disconnect', () => {
       console.warn('User disconnected:', socket.id, socket.data.username);
 
-      // Notify all rooms that user left
-      if (socket.data.rooms) {
-        socket.data.rooms.forEach((room) => {
-          socket.to(room).emit('user_left', {
-            username: socket.data.username || 'Anonymous',
-            user_uuid: socket.data.user_uuid,
-            room,
-          });
+      // Notify all users that this user went offline
+      if (socket.data.authenticated) {
+        io.emit('user_offline', {
+          user_uuid: socket.data.user_uuid || 'unknown',
+          username: socket.data.username || 'Anonymous',
         });
       }
     });
