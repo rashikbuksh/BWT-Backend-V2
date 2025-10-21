@@ -1,6 +1,5 @@
 import type { Server as HttpServer } from 'node:http';
 
-import { Buffer } from 'node:buffer';
 import { Server } from 'socket.io';
 
 export interface SocketData {
@@ -15,7 +14,7 @@ export interface ClientToServerEvents {
   join_room: (room: string) => void;
   leave_room: (room: string) => void;
   send_message: (data: { message: string; room?: string; to_user_uuid?: string }) => void;
-  authenticate: (token: string) => void;
+  set_user: (data: { user_uuid?: string; username?: string }) => void;
   typing: (data: { room?: string; to_user_uuid?: string }) => void;
   request_online_users: (room?: string) => void;
   private_message: (data: { to_user_uuid: string; message: string }) => void;
@@ -26,8 +25,7 @@ export interface ServerToClientEvents {
   message_sent: (data: any) => void;
   user_joined: (data: { username: string; user_uuid?: string; room?: string }) => void;
   user_left: (data: { username: string; user_uuid?: string; room?: string }) => void;
-  authentication_success: (data: { user_uuid: string; username: string }) => void;
-  authentication_error: (message: string) => void;
+  user_set: (data: { user_uuid: string; username: string }) => void;
   typing: (data: { from_user_uuid: string; from_username: string; room?: string }) => void;
   online_users: (data: { users: Array<{ user_uuid: string; username: string; socket_id: string }>; room?: string }) => void;
   user_online: (data: { user_uuid: string; username: string }) => void;
@@ -52,83 +50,31 @@ export function initializeSocket(server: HttpServer) {
   io.on('connection', (socket) => {
     console.warn('User connected:', socket.id);
 
-    // Initialize socket data
-    socket.data.authenticated = false;
+    // Initialize socket data with default values
+    socket.data.authenticated = true; // Always authenticated for simplicity
     socket.data.rooms = new Set();
+    socket.data.user_uuid = socket.id; // Use socket ID as user ID
+    socket.data.username = `User_${socket.id.substring(0, 8)}`; // Generate simple username
 
-    // Authentication handler
-    socket.on('authenticate', async (token) => {
-      try {
-        if (!token || token.length === 0) {
-          socket.emit('authentication_error', 'Token required');
-          return;
-        }
-
-        // Import JWT verification from your auth middleware
-        const { verify } = await import('hono/jwt');
-        const env = await import('@/env');
-
-        try {
-          // Verify the JWT token using your existing auth system
-          const decoded = await verify(token, env.default.PRIVATE_KEY);
-
-          if (decoded && decoded.user_uuid && (decoded.name || decoded.username)) {
-            socket.data.authenticated = true;
-            socket.data.user_uuid = decoded.user_uuid as string;
-            socket.data.username = (decoded.name || decoded.username) as string;
-
-            socket.emit('authentication_success', {
-              user_uuid: socket.data.user_uuid!,
-              username: socket.data.username!,
-            });
-
-            console.warn(`User authenticated: ${socket.data.username} (${socket.data.user_uuid})`);
-          }
-          else {
-            socket.emit('authentication_error', 'Invalid token payload - missing user_uuid or name');
-          }
-        }
-        catch (verifyError) {
-          // Fallback to simple token format for testing
-          console.warn('JWT verification failed, trying simple token format:', verifyError);
-
-          try {
-            const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-
-            if (decoded && decoded.user_uuid && (decoded.name || decoded.username)) {
-              socket.data.authenticated = true;
-              socket.data.user_uuid = decoded.user_uuid;
-              socket.data.username = decoded.name || decoded.username;
-
-              socket.emit('authentication_success', {
-                user_uuid: socket.data.user_uuid!,
-                username: socket.data.username!,
-              });
-
-              console.warn(`User authenticated with simple token: ${socket.data.username} (${socket.data.user_uuid})`);
-            }
-            else {
-              socket.emit('authentication_error', 'Invalid token format - missing required fields');
-            }
-          }
-          catch {
-            socket.emit('authentication_error', 'Invalid token format');
-          }
-        }
+    // Simple user setup handler (optional - for setting custom username)
+    socket.on('set_user', (data: { user_uuid?: string; username?: string }) => {
+      if (data.user_uuid) {
+        socket.data.user_uuid = data.user_uuid;
       }
-      catch (error) {
-        console.warn('Authentication error:', error);
-        socket.emit('authentication_error', 'Authentication failed');
+      if (data.username) {
+        socket.data.username = data.username;
       }
+
+      socket.emit('user_set', {
+        user_uuid: socket.data.user_uuid!,
+        username: socket.data.username!,
+      });
+
+      console.warn(`User info set: ${socket.data.username} (${socket.data.user_uuid})`);
     });
 
     // Room management for group chat
     socket.on('join_room', (room) => {
-      if (!socket.data.authenticated) {
-        socket.emit('error', 'Authentication required');
-        return;
-      }
-
       socket.join(room);
       socket.data.rooms?.add(room);
 
@@ -156,11 +102,6 @@ export function initializeSocket(server: HttpServer) {
 
     // Message handling for both room chat and private messages
     socket.on('send_message', async (data) => {
-      if (!socket.data.authenticated) {
-        socket.emit('error', 'Authentication required');
-        return;
-      }
-
       try {
         console.warn('Message received:', data);
 
@@ -183,7 +124,7 @@ export function initializeSocket(server: HttpServer) {
         else if (data.to_user_uuid) {
           // Private message - send to specific user
           for (const [_, targetSocket] of io.sockets.sockets) {
-            if (targetSocket.data.user_uuid === data.to_user_uuid && targetSocket.data.authenticated) {
+            if (targetSocket.data.user_uuid === data.to_user_uuid) {
               targetSocket.emit('new_message', messageData);
               console.warn(`Private message sent to user: ${data.to_user_uuid}`);
               break;
@@ -202,11 +143,10 @@ export function initializeSocket(server: HttpServer) {
         console.warn('Failed to send message:', error);
         socket.emit('error', 'Failed to send message');
       }
-    }); // Typing indicators for both room chat and private messages
-    socket.on('typing', (data) => {
-      if (!socket.data.authenticated)
-        return;
+    });
 
+    // Typing indicators for both room chat and private messages
+    socket.on('typing', (data) => {
       const typingData = {
         from_user_uuid: socket.data.user_uuid || 'unknown',
         from_username: socket.data.username || 'Anonymous',
@@ -220,7 +160,7 @@ export function initializeSocket(server: HttpServer) {
       else if (data.to_user_uuid) {
         // Private typing indicator - send to specific user
         for (const [_, targetSocket] of io.sockets.sockets) {
-          if (targetSocket.data.user_uuid === data.to_user_uuid && targetSocket.data.authenticated) {
+          if (targetSocket.data.user_uuid === data.to_user_uuid) {
             targetSocket.emit('typing', typingData);
             break;
           }
@@ -230,9 +170,6 @@ export function initializeSocket(server: HttpServer) {
 
     // Get online users (all users or users in a specific room)
     socket.on('request_online_users', (room) => {
-      if (!socket.data.authenticated)
-        return;
-
       const onlineUsers: Array<{ user_uuid: string; username: string; socket_id: string }> = [];
 
       if (room) {
@@ -241,7 +178,7 @@ export function initializeSocket(server: HttpServer) {
         if (roomSockets) {
           roomSockets.forEach((socketId) => {
             const roomSocket = io.sockets.sockets.get(socketId);
-            if (roomSocket && roomSocket.data.authenticated) {
+            if (roomSocket) {
               onlineUsers.push({
                 user_uuid: roomSocket.data.user_uuid || 'unknown',
                 username: roomSocket.data.username || 'Anonymous',
@@ -254,13 +191,11 @@ export function initializeSocket(server: HttpServer) {
       else {
         // Get all online users
         for (const [socketId, connectedSocket] of io.sockets.sockets) {
-          if (connectedSocket.data.authenticated) {
-            onlineUsers.push({
-              user_uuid: connectedSocket.data.user_uuid || 'unknown',
-              username: connectedSocket.data.username || 'Anonymous',
-              socket_id: socketId,
-            });
-          }
+          onlineUsers.push({
+            user_uuid: connectedSocket.data.user_uuid || 'unknown',
+            username: connectedSocket.data.username || 'Anonymous',
+            socket_id: socketId,
+          });
         }
       }
 
@@ -272,12 +207,10 @@ export function initializeSocket(server: HttpServer) {
       console.warn('User disconnected:', socket.id, socket.data.username);
 
       // Notify all users that this user went offline
-      if (socket.data.authenticated) {
-        io.emit('user_offline', {
-          user_uuid: socket.data.user_uuid || 'unknown',
-          username: socket.data.username || 'Anonymous',
-        });
-      }
+      io.emit('user_offline', {
+        user_uuid: socket.data.user_uuid || 'unknown',
+        username: socket.data.username || 'Anonymous',
+      });
     });
   });
 
@@ -320,7 +253,7 @@ export function getRoomUsers(room: string): Array<{ user_uuid: string; username:
   if (roomSockets) {
     roomSockets.forEach((socketId) => {
       const socket = io.sockets.sockets.get(socketId);
-      if (socket && socket.data.authenticated) {
+      if (socket) {
         users.push({
           user_uuid: socket.data.user_uuid || 'unknown',
           username: socket.data.username || 'Anonymous',
@@ -338,7 +271,7 @@ export function isUserOnline(userId: string): boolean {
     return false;
 
   for (const [_socketId, socket] of io.sockets.sockets) {
-    if (socket.data.user_uuid === userId && socket.data.authenticated) {
+    if (socket.data.user_uuid === userId) {
       return true;
     }
   }
@@ -349,11 +282,5 @@ export function getOnlineUsersCount(): number {
   if (!io)
     return 0;
 
-  let count = 0;
-  for (const [_socketId, socket] of io.sockets.sockets) {
-    if (socket.data.authenticated) {
-      count++;
-    }
-  }
-  return count;
+  return io.sockets.sockets.size;
 }
