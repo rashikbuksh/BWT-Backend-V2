@@ -1201,7 +1201,7 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                 ) AS next_shifts
                             FROM NextEmployeeLog nel
                             LEFT JOIN hr.shift_group sg ON nel.shift_group_uuid = sg.uuid
-                            LEFT JOIN NextRoster nr ON nel.shift_group_uuid = nr.shift_group_uuid AND nr.effective_date = nel.effective_date
+                            LEFT JOIN NextRoster nr ON nel.shift_group_uuid = nr.shift_group_uuid 
                             LEFT JOIN hr.shifts s ON nr.shifts_uuid = s.uuid
                             GROUP BY nel.employee_uuid
                             ORDER BY nel.employee_uuid ASC
