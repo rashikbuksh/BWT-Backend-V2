@@ -11,70 +11,93 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
   const { employee_uuid, from_date, to_date, category_uuid, approval } = c.req.valid('query');
 
   const query = sql`
-    SELECT
-        employee.uuid as employee_uuid,
-        employee.employee_id as employee_id,
-        users.name as employee_name,
-        designation.designation as employee_designation,
-        department.department as employee_department,
-        leave_category.uuid as leave_category_uuid,
-        leave_category.name as leave_category_name,
-        apply_leave.year as year,
-        apply_leave.type as type,
-        apply_leave.from_date as from_date,
-        apply_leave.to_date as to_date,
-        apply_leave.reason,
-        (apply_leave.to_date::date - apply_leave.from_date::date + 1) as total_days,
-        employment_type.name as employment_type_name,
-        leave_policy.uuid as leave_policy_uuid,
-        leave_policy.name as leave_policy_name,
-        apply_leave.approval as approval,
-        ${from_date && to_date
-          ? sql`
-            CASE 
-                WHEN apply_leave.type = 'half' THEN
-                    (GREATEST(0, (LEAST(apply_leave.to_date::date, ${to_date}::date) 
-                    - GREATEST(apply_leave.from_date::date, ${from_date}::date) + 1)) * 0.5)::FLOAT
-                ELSE
-                    GREATEST(0, (LEAST(apply_leave.to_date::date, ${to_date}::date) 
-                    - GREATEST(apply_leave.from_date::date, ${from_date}::date) + 1))::FLOAT
-            END
-        `
-          : sql`
-            CASE 
-                WHEN apply_leave.type = 'half' THEN
-                    ((apply_leave.to_date::date - apply_leave.from_date::date + 1) * 0.5)::FLOAT
-                ELSE
-                    (apply_leave.to_date::date - apply_leave.from_date::date + 1)::FLOAT
-            END
-        `} as days
-    FROM
-        hr.apply_leave
-    LEFT JOIN
-        hr.employee ON employee.uuid = apply_leave.employee_uuid
-    LEFT JOIN
-        hr.users ON employee.user_uuid = users.uuid
-    LEFT JOIN
-        hr.department ON users.department_uuid = department.uuid
-    LEFT JOIN
-        hr.designation ON users.designation_uuid = designation.uuid
-    LEFT JOIN
-        hr.leave_category ON apply_leave.leave_category_uuid = leave_category.uuid
-    LEFT JOIN
-        hr.leave_policy ON employee.leave_policy_uuid = leave_policy.uuid
-    LEFT JOIN 
-        hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
-    WHERE 
-        ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
-        ${from_date && to_date
-          ? sql`AND (
-            apply_leave.from_date::date <= ${to_date}::date
-            AND apply_leave.to_date::date >= ${from_date}::date
-        )`
-          : sql``}
-        ${category_uuid ? sql`AND leave_category.uuid = ${category_uuid}` : sql``}
-        ${approval ? sql`AND apply_leave.approval = ${approval}` : sql``}
-  `;
+                SELECT
+                    employee.uuid as employee_uuid,
+                    employee.employee_id as employee_id,
+                    users.name as employee_name,
+                    designation.designation as employee_designation,
+                    department.department as employee_department,
+                    leave_category.uuid as leave_category_uuid,
+                    leave_category.name as leave_category_name,
+                    apply_leave.year as year,
+                    apply_leave.type as type,
+                    apply_leave.from_date as from_date,
+                    apply_leave.to_date as to_date,
+                    apply_leave.reason,
+                    (apply_leave.to_date::date - apply_leave.from_date::date + 1) as total_days,
+                    employment_type.name as employment_type_name,
+                    (
+                           SELECT JSON_AGG(
+                                    JSON_BUILD_OBJECT(
+                                        'leave_policy_uuid', el_distinct.type_uuid,
+                                        'leave_policy_name', lp.name
+                                    )
+                                )
+                                FROM (
+                                    SELECT DISTINCT
+                                        el.type_uuid
+                                    FROM
+                                        GENERATE_SERIES(${from_date}::date, ${to_date}::date, INTERVAL '1 day') AS d
+                                    LEFT JOIN LATERAL (
+                                        SELECT
+                                            employee_log.type_uuid
+                                        FROM hr.employee_log
+                                        WHERE
+                                            employee_log.employee_uuid = employee.uuid
+                                            AND employee_log.type = 'leave_policy'
+                                            AND employee_log.effective_date <= d
+                                        ORDER BY employee_log.effective_date DESC
+                                        LIMIT 1
+                                    ) el ON TRUE
+                                    WHERE el.type_uuid IS NOT NULL
+                                ) AS el_distinct
+                                LEFT JOIN hr.leave_policy lp ON el_distinct.type_uuid = lp.uuid
+                        ) AS leave_policies,
+                    apply_leave.approval as approval,
+                    ${from_date && to_date
+                      ? sql`
+                        CASE 
+                            WHEN apply_leave.type = 'half' THEN
+                                (GREATEST(0, (LEAST(apply_leave.to_date::date, ${to_date}::date) 
+                                - GREATEST(apply_leave.from_date::date, ${from_date}::date) + 1)) * 0.5)::FLOAT
+                            ELSE
+                                GREATEST(0, (LEAST(apply_leave.to_date::date, ${to_date}::date) 
+                                - GREATEST(apply_leave.from_date::date, ${from_date}::date) + 1))::FLOAT
+                        END
+                    `
+                      : sql`
+                        CASE 
+                            WHEN apply_leave.type = 'half' THEN
+                                ((apply_leave.to_date::date - apply_leave.from_date::date + 1) * 0.5)::FLOAT
+                            ELSE
+                                (apply_leave.to_date::date - apply_leave.from_date::date + 1)::FLOAT
+                        END
+                    `} as days
+                FROM
+                    hr.apply_leave
+                LEFT JOIN
+                    hr.employee ON employee.uuid = apply_leave.employee_uuid
+                LEFT JOIN
+                    hr.users ON employee.user_uuid = users.uuid
+                LEFT JOIN
+                    hr.department ON users.department_uuid = department.uuid
+                LEFT JOIN
+                    hr.designation ON users.designation_uuid = designation.uuid
+                LEFT JOIN
+                    hr.leave_category ON apply_leave.leave_category_uuid = leave_category.uuid
+                LEFT JOIN 
+                    hr.employment_type ON employee.employment_type_uuid = employment_type.uuid
+                WHERE 
+                    ${employee_uuid ? sql`employee.uuid = ${employee_uuid}` : sql`TRUE`}
+                    ${from_date && to_date
+                      ? sql`AND (
+                        apply_leave.from_date::date <= ${to_date}::date
+                        AND apply_leave.to_date::date >= ${from_date}::date
+                    )`
+                      : sql``}
+                    ${category_uuid ? sql`AND leave_category.uuid = ${category_uuid}` : sql``}
+                    ${approval ? sql`AND apply_leave.approval = ${approval}` : sql``}
+            `;
 
   const data = await db.execute(query);
 
