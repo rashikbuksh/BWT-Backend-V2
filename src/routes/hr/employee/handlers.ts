@@ -1183,7 +1183,6 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                 FROM hr.roster r
                                 WHERE r.effective_date::date > CURRENT_DATE
                                 ORDER BY r.effective_date ASC
-                                LIMIT 1 
                             )
                             SELECT
                                 nel.employee_uuid,
