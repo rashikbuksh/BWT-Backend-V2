@@ -140,7 +140,7 @@ app.get('/socket-test', (c) => {
 
         <div class="form-group">
             <label>Server URL:</label>
-            <input type="text" id="serverUrl" value="http://localhost:5090" placeholder="Server URL">
+            <input type="text" id="serverUrl" value="${env.SERVER_URL}" placeholder="Server URL">
             <button onclick="connect()">Connect</button>
             <button onclick="disconnect()">Disconnect</button>
         </div>
