@@ -41,7 +41,7 @@ const isVps = env.NODE_ENV === 'vps';
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
 // Serve diagnostic file
-app.use('/diagnostic.html', serveStatic({ root: isDev ? './' : './' }));
+app.use('/diagnostic.html', serveStatic({ root: isDev ? './' : './dist/' }));
 
 // Socket diagnostic route
 app.get('/socket-diagnostic', (c) => {
@@ -169,7 +169,7 @@ app.get('/socket-test', (c) => {
 
         <div class="form-group">
             <label>Server URL:</label>
-            <input type="text" id="serverUrl" value="${env.SERVER_URL}" placeholder="Server URL">
+            <input type="text" id="serverUrl" value="${isDev ? 'http://localhost:5090' : `http://${c.req.header('host') || '103.147.163.46:5090'}`}" placeholder="Server URL">
             <button onclick="connect()">Connect</button>
             <button onclick="disconnect()">Disconnect</button>
         </div>
@@ -185,7 +185,7 @@ app.get('/socket-test', (c) => {
         </div>
 
         <div class="form-group">
-            <button onclick="authenticate()" id="authBtn" disabled>🔐 Authenticate</button>
+            <button onclick="authenticate()" id="authBtn" disabled>� Set User Info</button>
             <button onclick="joinRoom()" id="joinBtn" disabled>🏠 Join Room</button>
             <button onclick="leaveRoom()" id="leaveBtn" disabled>🚪 Leave Room</button>
         </div>
@@ -210,8 +210,46 @@ app.get('/socket-test', (c) => {
         <div id="log" class="log">Ready to connect...\\n</div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Check if Socket.IO client is loaded, if not load from CDN
+        function loadSocketIO() {
+            if (typeof io !== 'undefined') {
+                initializeApp();
+                return;
+            }
+            
+            // Try loading from server first
+            const serverScript = document.createElement('script');
+            serverScript.src = '/socket.io/socket.io.js';
+            serverScript.onload = () => {
+                if (typeof io !== 'undefined') {
+                    console.log('Socket.IO loaded from server');
+                    initializeApp();
+                } else {
+                    loadFromCDN();
+                }
+            };
+            serverScript.onerror = () => {
+                console.warn('Failed to load Socket.IO from server, trying CDN...');
+                loadFromCDN();
+            };
+            document.head.appendChild(serverScript);
+        }
+        
+        function loadFromCDN() {
+            const cdnScript = document.createElement('script');
+            cdnScript.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+            cdnScript.onload = () => {
+                console.log('Socket.IO loaded from CDN');
+                initializeApp();
+            };
+            cdnScript.onerror = () => {
+                document.getElementById('log').textContent += 'FATAL: Could not load Socket.IO client library\\n';
+            };
+            document.head.appendChild(cdnScript);
+        }
+        
+        function initializeApp() {
         let socket = null;
         let isConnected = false;
         let isAuthenticated = false;
@@ -252,33 +290,56 @@ app.get('/socket-test', (c) => {
             }
 
             // Update buttons
-            document.getElementById('authBtn').disabled = !isConnected || isAuthenticated;
-            document.getElementById('joinBtn').disabled = !isAuthenticated;
-            document.getElementById('leaveBtn').disabled = !isAuthenticated || !currentRoom;
-            document.getElementById('sendBtn').disabled = !isAuthenticated || !currentRoom;
-            document.getElementById('onlineBtn').disabled = !isAuthenticated;
+            document.getElementById('authBtn').disabled = !isConnected;
+            document.getElementById('joinBtn').disabled = !isConnected;
+            document.getElementById('leaveBtn').disabled = !isConnected || !currentRoom;
+            document.getElementById('sendBtn').disabled = !isConnected || !currentRoom;
+            document.getElementById('onlineBtn').disabled = !isConnected;
         }
 
-        function connect() {
+        async function connect() {
             const serverUrl = document.getElementById('serverUrl').value;
             
             if (socket) {
                 socket.disconnect();
             }
 
-            addLog(\`Connecting to \${serverUrl}...\`);
+            // Test basic HTTP connectivity first
+            addLog(\`Testing connectivity to \${serverUrl}...\`);
+            try {
+                const response = await fetch(\`\${serverUrl}/health\`, { 
+                    method: 'GET',
+                    mode: 'cors',
+                    timeout: 5000 
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog(\`✅ HTTP connectivity OK: \${JSON.stringify(data)}\`);
+                } else {
+                    addLog(\`⚠️ HTTP response not OK: \${response.status} \${response.statusText}\`);
+                }
+            } catch (error) {
+                addLog(\`❌ HTTP connectivity test failed: \${error.message}\`);
+                addLog(\`   This might indicate network issues or CORS problems\`);
+            }
+
+            addLog(\`Connecting to Socket.IO at \${serverUrl}...\`);
             
             socket = io(serverUrl, {
                 autoConnect: true,
                 reconnection: true,
                 reconnectionAttempts: 5,
                 reconnectionDelay: 1000,
+                timeout: 10000, // 10 second connection timeout
+                transports: ['polling', 'websocket'], // Try polling first
             });
 
             // Connection events
             socket.on('connect', () => {
                 isConnected = true;
+                isAuthenticated = true; // Auto-authenticate since server doesn't require auth
                 addLog(\`✅ Connected! Socket ID: \${socket.id}\`);
+                addLog(\`🔓 Auto-authenticated as User_\${socket.id.substring(0, 8)}\`);
                 updateUI();
             });
 
@@ -292,20 +353,17 @@ app.get('/socket-test', (c) => {
 
             socket.on('connect_error', (error) => {
                 addLog(\`❌ Connection Error: \${error.message}\`);
+                addLog(\`   Error Type: \${error.type || 'unknown'}\`);
+                addLog(\`   Error Description: \${error.description || 'none'}\`);
+                if (error.context) {
+                    addLog(\`   Context: \${JSON.stringify(error.context)}\`);
+                }
                 updateUI();
             });
 
-            // Authentication events
-            socket.on('authentication_success', (data) => {
-                isAuthenticated = true;
-                addLog(\`🔓 Authentication successful! User: \${data.username} (\${data.user_uuid})\`);
-                updateUI();
-            });
-
-            socket.on('authentication_error', (message) => {
-                isAuthenticated = false;
-                addLog(\`🔐 Authentication failed: \${message}\`);
-                updateUI();
+            // User info events
+            socket.on('user_set', (data) => {
+                addLog(\`✅ User info set: \${data.username} (\${data.user_uuid})\`);
             });
 
             // Chat events
@@ -376,20 +434,16 @@ app.get('/socket-test', (c) => {
                 return;
             }
 
-            // Create a simple JWT-like token for testing
-            const token = \`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\${btoa(JSON.stringify({
+            addLog(\`🔐 Setting user info as \${username} (\${userUuid})...\`);
+            socket.emit('set_user', {
                 user_uuid: userUuid,
-                name: username,
-                exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour from now
-            }))}.fake_signature\`;
-
-            addLog(\`🔐 Authenticating as \${username} (\${userUuid})...\`);
-            socket.emit('authenticate', token);
+                username: username
+            });
         }
 
         function joinRoom() {
-            if (!socket || !isAuthenticated) {
-                addLog('❌ Must be connected and authenticated');
+            if (!socket || !isConnected) {
+                addLog('❌ Must be connected to server');
                 return;
             }
 
@@ -411,7 +465,7 @@ app.get('/socket-test', (c) => {
         }
 
         function leaveRoom() {
-            if (!socket || !isAuthenticated || !currentRoom) {
+            if (!socket || !isConnected || !currentRoom) {
                 addLog('❌ Not in any room');
                 return;
             }
@@ -423,8 +477,8 @@ app.get('/socket-test', (c) => {
         }
 
         function sendMessage() {
-            if (!socket || !isAuthenticated) {
-                addLog('❌ Must be connected and authenticated');
+            if (!socket || !isConnected) {
+                addLog('❌ Must be connected to server');
                 return;
             }
 
@@ -450,8 +504,8 @@ app.get('/socket-test', (c) => {
         }
 
         function getOnlineUsers() {
-            if (!socket || !isAuthenticated) {
-                addLog('❌ Must be connected and authenticated');
+            if (!socket || !isConnected) {
+                addLog('❌ Must be connected to server');
                 return;
             }
 
@@ -475,6 +529,10 @@ app.get('/socket-test', (c) => {
         setTimeout(() => {
             connect();
         }, 500);
+        } // End of initializeApp function
+        
+        // Load Socket.IO and initialize app
+        loadSocketIO();
     </script>
 </body>
 </html>`);
