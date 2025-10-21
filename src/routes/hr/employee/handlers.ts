@@ -1197,14 +1197,14 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                             'effective_date', nel.effective_date,
                                             'shift_group_name', sg.name,
                                             'off_days', nr.off_days
-                                        ) ORDER BY nr.effective_date ASC
+                                        ) ORDER BY nel.effective_date ASC
                                     ),
                                     '[]'::jsonb
                                 ) AS next_shifts
                             FROM NextEmployeeLog nel
                             LEFT JOIN hr.shift_group sg ON nel.shift_group_uuid = sg.uuid
                             LEFT JOIN NextRoster nr ON nel.shift_group_uuid = nr.shift_group_uuid AND nr.effective_date >= nel.effective_date
-                            LEFT JOIN hr.shifts s ON nr.shifts_uuid = s.uuid
+                            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
                             GROUP BY nel.employee_uuid
                             ORDER BY nel.employee_uuid ASC
                             ) AS next_shift_info
