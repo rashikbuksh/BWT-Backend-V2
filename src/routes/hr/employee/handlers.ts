@@ -1182,6 +1182,8 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                     r.off_days
                                 FROM hr.roster r
                                 WHERE r.effective_date::date > CURRENT_DATE
+                                ORDER BY r.effective_date ASC
+                                LIMIT 1 
                             )
                             SELECT
                                 nel.employee_uuid,
@@ -1192,7 +1194,8 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
                                             'start_time', s.start_time,
                                             'end_time', s.end_time,
                                             'late_time', s.late_time,
-                                            'effective_date', nr.effective_date,
+                                            'roster_effective_date', nr.effective_date,
+                                            'shift_group_effective_date', nel.effective_date,
                                             'shift_group_name', sg.name,
                                             'off_days', nr.off_days
                                         ) ORDER BY nr.effective_date ASC
