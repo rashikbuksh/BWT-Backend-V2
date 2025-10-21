@@ -40,12 +40,6 @@ const isVps = env.NODE_ENV === 'vps';
 // Serve static files from the 'uploads' directory
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
-// Serve socket.io client for testing
-app.use('/socket.io/*', serveStatic({ root: './node_modules/socket.io/client-dist/' }));
-
-// Serve public static files (test pages, etc.)
-app.use('/public/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
-
 // Direct routes for test pages
 app.get('/socket-test', (c) => {
   return c.html(`<!DOCTYPE html>
