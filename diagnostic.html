@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socket.IO Connection Diagnostic</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+      .connected {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .disconnected {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      input {
+        padding: 8px;
+        margin: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-width: 300px;
+      }
+      .log {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .form-group {
+        margin: 15px 0;
+      }
+      label {
+        display: inline-block;
+        width: 100px;
+        font-weight: bold;
+      }
+      .test-info {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 15px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔧 Socket.IO Connection Diagnostic</h1>
+
+      <div class="test-info">
+        <h3>🎯 Connection Test for Remote Server</h3>
+        <p>This page helps diagnose Socket.IO connection issues to remote servers.</p>
+        <p><strong>Common Issues:</strong></p>
+        <ul>
+          <li>Server not running on the specified port</li>
+          <li>Firewall blocking connections</li>
+          <li>CORS configuration issues</li>
+          <li>Network connectivity problems</li>
+        </ul>
+      </div>
+
+      <div id="connectionStatus" class="status disconnected">❌ Not Connected</div>
+
+      <div class="form-group">
+        <label>Server URL:</label>
+        <input type="text" id="serverUrl" value="http://103.147.163.46:5090" placeholder="Server URL" />
+        <button onclick="testConnection()">🔍 Test Connection</button>
+        <button onclick="disconnect()">❌ Disconnect</button>
+      </div>
+
+      <div class="form-group">
+        <button onclick="testLocalhost()">🏠 Test Localhost</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+      </div>
+
+      <h3>📊 Diagnostic Log:</h3>
+      <div id="log" class="log">
+        Socket.IO Connection Diagnostic Tool Ready... Trying to connect to: http://103.147.163.46:5090
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      let socket = null;
+      let connectionTimeout = null;
+
+      const log = document.getElementById('log');
+      const connectionStatus = document.getElementById('connectionStatus');
+
+      function addLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        log.textContent += `[${timestamp}] ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function updateStatus(status, message) {
+        connectionStatus.textContent = message;
+        connectionStatus.className = `status ${status}`;
+      }
+
+      function testConnection() {
+        const serverUrl = document.getElementById('serverUrl').value;
+
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+
+        addLog(`🔍 Testing connection to: ${serverUrl}`);
+        addLog(`🌐 Checking if server is reachable...`);
+
+        // Test basic HTTP connectivity first
+        fetch(serverUrl.replace('http://', 'http://').replace('https://', 'https://') + '/socket.io/')
+          .then((response) => {
+            addLog(`✅ HTTP connectivity test passed (Status: ${response.status})`);
+            startSocketConnection(serverUrl);
+          })
+          .catch((error) => {
+            addLog(`❌ HTTP connectivity test failed: ${error.message}`);
+            addLog(`⚠️  Server might not be running or not accessible`);
+            startSocketConnection(serverUrl); // Try socket anyway
+          });
+      }
+
+      function startSocketConnection(serverUrl) {
+        addLog(`🔌 Attempting Socket.IO connection...`);
+        updateStatus('warning', '⏳ Connecting...');
+
+        // Set a connection timeout
+        connectionTimeout = setTimeout(() => {
+          addLog(`⏰ Connection timeout after 10 seconds`);
+          addLog(`❌ Possible issues:`);
+          addLog(`   - Server not running`);
+          addLog(`   - Port blocked by firewall`);
+          addLog(`   - CORS configuration issue`);
+          addLog(`   - Network connectivity problem`);
+          updateStatus('disconnected', '❌ Connection Timeout');
+
+          if (socket) {
+            socket.disconnect();
+          }
+        }, 10000);
+
+        socket = io(serverUrl, {
+          autoConnect: true,
+          reconnection: false, // Disable auto-reconnection for testing
+          timeout: 5000,
+          transports: ['polling', 'websocket'], // Try polling first
+        });
+
+        // Connection events with detailed logging
+        socket.on('connect', () => {
+          clearTimeout(connectionTimeout);
+          addLog(`✅ Successfully connected!`);
+          addLog(`📋 Socket ID: ${socket.id}`);
+          addLog(`🚀 Transport: ${socket.io.engine.transport.name}`);
+          updateStatus('connected', '✅ Connected Successfully');
+
+          // Test basic functionality
+          testBasicFunctionality();
+        });
+
+        socket.on('disconnect', (reason) => {
+          clearTimeout(connectionTimeout);
+          addLog(`❌ Disconnected: ${reason}`);
+          updateStatus('disconnected', '❌ Disconnected');
+        });
+
+        socket.on('connect_error', (error) => {
+          clearTimeout(connectionTimeout);
+          addLog(`❌ Connection Error: ${error.message}`);
+          addLog(`🔍 Error Type: ${error.type || 'Unknown'}`);
+          addLog(`📝 Description: ${error.description || 'No description'}`);
+          updateStatus('disconnected', '❌ Connection Failed');
+        });
+
+        socket.io.on('error', (error) => {
+          addLog(`❌ Socket.IO Error: ${error}`);
+        });
+
+        socket.on('user_joined', (data) => {
+          addLog(`👋 User joined: ${data.username} in room ${data.room}`);
+        });
+
+        socket.on('new_message', (data) => {
+          addLog(`💬 Message received: ${data.from_username}: ${data.message}`);
+        });
+      }
+
+      function testBasicFunctionality() {
+        addLog(`🧪 Testing basic Socket.IO functionality...`);
+
+        // Test user setup
+        socket.emit('set_user', { username: 'TestUser_' + Date.now() });
+
+        socket.on('user_set', (data) => {
+          addLog(`✅ User setup successful: ${data.username}`);
+
+          // Test room join
+          socket.emit('join_room', 'test_room');
+          addLog(`🏠 Attempting to join test room...`);
+        });
+
+        socket.on('user_joined', (data) => {
+          if (data.username.startsWith('TestUser_')) {
+            addLog(`✅ Room join successful!`);
+
+            // Test message sending
+            socket.emit('send_message', {
+              message: 'Test message from diagnostic tool',
+              room: 'test_room',
+            });
+            addLog(`📤 Sending test message...`);
+          }
+        });
+
+        socket.on('message_sent', (data) => {
+          addLog(`✅ Message sent successfully! ID: ${data.id}`);
+          addLog(`🎉 All basic functionality tests passed!`);
+        });
+      }
+
+      function testLocalhost() {
+        document.getElementById('serverUrl').value = 'http://localhost:5090';
+        testConnection();
+      }
+
+      function disconnect() {
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+        }
+        addLog(`🔌 Manually disconnected`);
+        updateStatus('disconnected', '❌ Disconnected');
+      }
+
+      function clearLog() {
+        log.textContent = 'Log cleared...\n';
+      }
+
+      // Auto-start diagnostic on page load
+      setTimeout(() => {
+        addLog(`🚀 Starting automatic connection test...`);
+        testConnection();
+      }, 1000);
+    </script>
+  </body>
+</html>

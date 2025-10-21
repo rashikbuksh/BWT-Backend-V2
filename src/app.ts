@@ -40,6 +40,14 @@ const isVps = env.NODE_ENV === 'vps';
 // Serve static files from the 'uploads' directory
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
+// Serve diagnostic file
+app.use('/diagnostic.html', serveStatic({ root: isDev ? './' : './' }));
+
+// Socket diagnostic route
+app.get('/socket-diagnostic', (c) => {
+  return c.redirect('/diagnostic.html');
+});
+
 // Direct routes for test pages
 app.get('/socket-test', (c) => {
   return c.html(`<!DOCTYPE html>

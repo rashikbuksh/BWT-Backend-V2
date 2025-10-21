@@ -47,6 +47,11 @@ export function initializeSocket(server: HttpServer) {
     allowEIO3: true,
   });
 
+  // Add debugging for connection attempts
+  io.engine.on('connection_error', (err) => {
+    console.warn('Socket.IO connection error:', err.req, err.code, err.message, err.context);
+  });
+
   io.on('connection', (socket) => {
     console.warn('User connected:', socket.id);
 
