@@ -30,7 +30,19 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                            SELECT JSON_AGG(
                                     JSON_BUILD_OBJECT(
                                         'leave_policy_uuid', el_distinct.type_uuid,
-                                        'leave_policy_name', lp.name
+                                        'leave_policy_name', lp.name,
+                                        'effective_date', (
+                                            SELECT
+                                                employee_log.effective_date
+                                            FROM hr.employee_log
+                                            WHERE
+                                                employee_log.employee_uuid = employee.uuid
+                                                AND employee_log.type = 'leave_policy'
+                                                AND employee_log.type_uuid = el_distinct.type_uuid
+                                            ORDER BY employee_log.effective_date DESC
+                                            LIMIT 1
+                                            )
+                                        
                                     )
                                 )
                                 FROM (
@@ -40,12 +52,13 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                                         GENERATE_SERIES(${from_date}::date, ${to_date}::date, INTERVAL '1 day') AS d
                                     LEFT JOIN LATERAL (
                                         SELECT
-                                            employee_log.type_uuid
+                                            employee_log.type_uuid,
+                                            employee_log.effective_date
                                         FROM hr.employee_log
                                         WHERE
                                             employee_log.employee_uuid = employee.uuid
                                             AND employee_log.type = 'leave_policy'
-                                            AND employee_log.effective_date <= d
+                                            AND employee_log.effective_date ::date <= d
                                         ORDER BY employee_log.effective_date DESC
                                         LIMIT 1
                                     ) el ON TRUE
