@@ -172,8 +172,18 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                         JSON_BUILD_OBJECT(
                             'leave_policy_uuid', lp.uuid,
                             'leave_policy_name', lp.name,
+                            'effective_date', (
+                                SELECT employee_log.effective_date::date
+                                FROM hr.employee_log
+                                WHERE employee_log.employee_uuid = e.uuid
+                                  AND employee_log.type = 'leave_policy'
+                                  AND employee_log.type_uuid = lp.uuid
+                                ORDER BY employee_log.effective_date DESC
+                                LIMIT 1
+                            ),
                             'leave_categories', (
-                            SELECT JSON_AGG(
+                            SELECT COALESCE(
+                                JSON_AGG(
                                 JSON_BUILD_OBJECT(
                                 'leave_category_uuid', lc.uuid,
                                 'leave_category_name', lc.name,
@@ -181,7 +191,7 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                                 'used_days', COALESCE(uda.used_days, 0)::float8,
                                 'remaining_days', (ce.maximum_number_of_allowed_leaves - COALESCE(uda.used_days, 0))::float8
                                 ) ORDER BY lc.name
-                            )
+                            ), '[]'::json)
                             FROM hr.configuration_entry ce
                             JOIN hr.leave_category lc ON ce.leave_category_uuid = lc.uuid
                             WHERE ce.configuration_uuid = c.uuid
