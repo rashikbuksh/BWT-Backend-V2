@@ -168,35 +168,38 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                         emp_sum.start_date,
                         emp_sum.profile_picture,
                         et.name AS employment_type_name,
-                        JSON_AGG(
-                        JSON_BUILD_OBJECT(
-                            'leave_policy_uuid', lp.uuid,
-                            'leave_policy_name', lp.name,
-                            'effective_date', (
-                                SELECT employee_log.effective_date::date
-                                FROM hr.employee_log
-                                WHERE employee_log.employee_uuid = e.uuid
-                                  AND employee_log.type = 'leave_policy'
-                                  AND employee_log.type_uuid = lp.uuid
-                                ORDER BY employee_log.effective_date DESC
-                                LIMIT 1
-                            ),
-                            'leave_categories', (
-                            SELECT COALESCE(
-                                JSON_AGG(
-                                JSON_BUILD_OBJECT(
-                                'leave_category_uuid', lc.uuid,
-                                'leave_category_name', lc.name,
-                                'allowed_leaves', ce.maximum_number_of_allowed_leaves::float8,
-                                'used_days', COALESCE(uda.used_days, 0)::float8,
-                                'remaining_days', (ce.maximum_number_of_allowed_leaves - COALESCE(uda.used_days, 0))::float8
-                                ) ORDER BY lc.name
-                            ), '[]'::json)
-                            FROM hr.configuration_entry ce
-                            JOIN hr.leave_category lc ON ce.leave_category_uuid = lc.uuid
-                            WHERE ce.configuration_uuid = c.uuid
-                            )
-                        ) ORDER BY lp.name
+                        COALESCE(
+                                    JSON_AGG(
+                                        JSON_BUILD_OBJECT(
+                                        'leave_policy_uuid', lp.uuid,
+                                        'leave_policy_name', lp.name,
+                                        'effective_date', (
+                                            SELECT employee_log.effective_date::date
+                                            FROM hr.employee_log
+                                            WHERE employee_log.employee_uuid = e.uuid
+                                            AND employee_log.type = 'leave_policy'
+                                            AND employee_log.type_uuid = lp.uuid
+                                            ORDER BY employee_log.effective_date DESC
+                                            LIMIT 1
+                                        ),
+                                        'leave_categories', (
+                                            SELECT COALESCE(
+                                            JSON_AGG(
+                                                JSON_BUILD_OBJECT(
+                                                'leave_category_uuid', lc.uuid,
+                                                'leave_category_name', lc.name,
+                                                'allowed_leaves', ce.maximum_number_of_allowed_leaves::float8,
+                                                'used_days', COALESCE(uda.used_days, 0)::float8,
+                                                'remaining_days', (ce.maximum_number_of_allowed_leaves - COALESCE(uda.used_days, 0))::float8
+                                                ) ORDER BY lc.name
+                                            ), '[]'::json)
+                                            FROM hr.configuration_entry ce
+                                            JOIN hr.leave_category lc ON ce.leave_category_uuid = lc.uuid
+                                            WHERE ce.configuration_uuid = c.uuid
+                                        )
+                                        ) ORDER BY lp.name
+                                    ) FILTER (WHERE lp.uuid IS NOT NULL),
+                                    '[]'::json
                         ) AS leave_policies
                     FROM hr.employee e
                     LEFT JOIN LATERAL hr.get_employee_summary(e.uuid) emp_sum ON TRUE
