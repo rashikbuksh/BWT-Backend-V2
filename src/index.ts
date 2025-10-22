@@ -3,8 +3,7 @@ import { createServer } from 'node:http';
 
 import app from './app';
 import env from './env';
-// Import the separate socket server (this will start it automatically)
-import './socket_server';
+import { initializeSocket } from './lib/socket';
 
 const port = env.PORT;
 
@@ -53,8 +52,10 @@ const httpServer = createServer(async (req, res) => {
   }
 });
 
-// Start the API server (Socket.IO runs on separate port)
-console.warn('🚀 Starting API server...');
+// Initialize Socket.IO on the HTTP server
+initializeSocket(httpServer);
+
+// Start the server
 httpServer.listen(port, () => {
   // eslint-disable-next-line no-console
   console.log(`Server is running on port ${env.SERVER_URL}`);

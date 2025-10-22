@@ -19,7 +19,6 @@ const EnvSchema = z.object({
   PRODUCTION_URL_2: z.string().default('http://103.147.163.46:5090'),
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(9999),
-  SOCKET_PORT: z.coerce.number().default(5091),
   LOG_LEVEL: z.enum(logLevel).default('silent'),
   DATABASE_URL: z.string().url().default('postgres://postgres:PG0987654321@localhost:5432/bwt'),
   PRIVATE_KEY: z.string().default('12'),
