@@ -14,9 +14,11 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                 SELECT
                     employee.uuid as employee_uuid,
                     employee.employee_id as employee_id,
-                    users.name as employee_name,
-                    designation.designation as employee_designation,
-                    department.department as employee_department,
+                    emp_sum.employee_name,
+                    emp_sum.designation,
+                    emp_sum.department,
+                    emp_sum.start_date,
+                    emp_sum.profile_picture,
                     leave_category.uuid as leave_category_uuid,
                     leave_category.name as leave_category_name,
                     apply_leave.year as year,
@@ -91,12 +93,8 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                     hr.apply_leave
                 LEFT JOIN
                     hr.employee ON employee.uuid = apply_leave.employee_uuid
-                LEFT JOIN
-                    hr.users ON employee.user_uuid = users.uuid
-                LEFT JOIN
-                    hr.department ON users.department_uuid = department.uuid
-                LEFT JOIN
-                    hr.designation ON users.designation_uuid = designation.uuid
+                LEFT JOIN LATERAL
+                    hr.get_employee_summary(employee.uuid) emp_sum ON TRUE
                 LEFT JOIN
                     hr.leave_category ON apply_leave.leave_category_uuid = leave_category.uuid
                 LEFT JOIN 
@@ -161,12 +159,14 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                         FROM leave_policy_per_date
                         GROUP BY employee_uuid, leave_policy_uuid, leave_category_uuid
                     )
-                    SELECT
+                      SELECT
                         e.uuid AS employee_uuid,
                         e.employee_id,
-                        u.name AS employee_name,
-                        d.department AS employee_department,
-                        des.designation AS employee_designation,
+                        emp_sum.employee_name,
+                        emp_sum.designation,
+                        emp_sum.department,
+                        emp_sum.start_date,
+                        emp_sum.profile_picture,
                         et.name AS employment_type_name,
                         JSON_AGG(
                         JSON_BUILD_OBJECT(
@@ -189,18 +189,16 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                         ) ORDER BY lp.name
                         ) AS leave_policies
                     FROM hr.employee e
-                    LEFT JOIN hr.users u ON e.user_uuid = u.uuid
-                    LEFT JOIN hr.department d ON u.department_uuid = d.uuid
-                    LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
+                    LEFT JOIN LATERAL hr.get_employee_summary(e.uuid) emp_sum ON TRUE
                     LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                     LEFT JOIN used_days_agg uda ON e.uuid = uda.employee_uuid
                     LEFT JOIN hr.leave_policy lp ON uda.leave_policy_uuid = lp.uuid
                     LEFT JOIN hr.configuration c ON c.leave_policy_uuid = lp.uuid
                     WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                    GROUP BY e.uuid, e.employee_id, u.name, d.department, des.designation, et.name
-                    ORDER BY u.name;
+                    GROUP BY e.uuid, e.employee_id, emp_sum.employee_name, emp_sum.designation, emp_sum.department,
+                        emp_sum.start_date, emp_sum.profile_picture, et.name
+                    ORDER BY emp_sum.employee_name;
 `;
-  // ...existing code...
 
   const data = await db.execute(query);
 
