@@ -43,14 +43,17 @@ app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src
 // Socket.IO status endpoint (outside v1 path)
 app.get('/socket-status', async (c) => {
   try {
-    const { getIO, getOnlineUsersCount } = await import('./lib/socket');
+    const { getIO, getOnlineUsersCount } = await import('./socket_server');
     const io = getIO();
     return c.json({
       status: 'connected',
       online_users: getOnlineUsersCount(),
       engine_connected: io.engine.clientsCount || 0,
       environment: env.NODE_ENV,
-      server_url: isDev ? 'http://localhost:5090' : `http://${c.req.header('host') || '103.147.163.46:5090'}`,
+      socket_port: env.SOCKET_PORT,
+      api_port: env.PORT,
+      socket_url: isDev ? `http://localhost:${env.SOCKET_PORT}` : `http://103.147.163.46:${env.SOCKET_PORT}`,
+      api_url: isDev ? `http://localhost:${env.PORT}` : `http://${c.req.header('host') || '103.147.163.46:5090'}`,
       transport_options: ['polling', 'websocket'],
       cors_origin: '*',
     });
@@ -60,33 +63,52 @@ app.get('/socket-status', async (c) => {
       status: 'disconnected',
       error: (error as Error).message,
       environment: env.NODE_ENV,
+      socket_port: env.SOCKET_PORT,
+      api_port: env.PORT,
     }, 500);
   }
 });
 
 // Production diagnostics endpoint
 app.get('/socket-diagnostics', async (c) => {
-  const serverUrl = isDev ? 'http://localhost:5090' : `http://${c.req.header('host') || '103.147.163.46:5090'}`;
+  const apiUrl = isDev ? `http://localhost:${env.PORT}` : `http://${c.req.header('host') || '103.147.163.46:5090'}`;
+  const socketUrl = isDev ? `http://localhost:${env.SOCKET_PORT}` : `http://103.147.163.46:${env.SOCKET_PORT}`;
 
   return c.json({
     environment: env.NODE_ENV,
-    server_url: serverUrl,
+    api_server: {
+      url: apiUrl,
+      port: env.PORT,
+      status: 'running',
+    },
+    socket_server: {
+      url: socketUrl,
+      port: env.SOCKET_PORT,
+      status: 'separate_process',
+    },
     host_header: c.req.header('host'),
     user_agent: c.req.header('user-agent'),
     origin: c.req.header('origin'),
     connection: c.req.header('connection'),
     upgrade: c.req.header('upgrade'),
     socket_io_path: '/socket.io/',
-    socket_io_test_url: `${serverUrl}/socket.io/?EIO=4&transport=polling`,
+    socket_io_test_url: `${socketUrl}/socket.io/?EIO=4&transport=polling`,
     recommended_client_config: {
+      url: socketUrl,
       transports: ['polling', 'websocket'],
       upgrade: true,
       timeout: 10000,
       forceNew: true,
     },
+    separation_benefits: [
+      'Socket.IO runs on dedicated port (no conflicts with API)',
+      'Easier proxy configuration (separate upstream)',
+      'Better resource isolation',
+      'Simplified debugging and monitoring',
+    ],
     common_production_issues: [
       'Reverse proxy not configured for WebSocket upgrade',
-      'Firewall blocking WebSocket connections',
+      'Firewall blocking WebSocket connections on socket port',
       'Load balancer not supporting sticky sessions',
       'CORS headers not properly configured',
       'Client timeout too short for production latency',
@@ -194,7 +216,7 @@ app.get('/socket-test', (c) => {
 
         <div class="form-group">
             <label>Server URL:</label>
-            <input type="text" id="serverUrl" value="${isDev ? 'http://localhost:5090' : `http://${c.req.header('host') || '103.147.163.46:5090'}`}" placeholder="Server URL">
+            <input type="text" id="serverUrl" value="${isDev ? 'http://localhost:5091' : `http://${c.req.header('host') || '103.147.163.46:5090'}`}" placeholder="Server URL">
             <button onclick="connect()">Connect</button>
             <button onclick="disconnect()">Disconnect</button>
         </div>
