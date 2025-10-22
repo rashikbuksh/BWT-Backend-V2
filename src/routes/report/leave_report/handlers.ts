@@ -200,7 +200,7 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
                             JOIN hr.leave_category lc ON ce.leave_category_uuid = lc.uuid
                             WHERE ce.configuration_uuid = c.uuid
                             )
-                        ) ORDER BY lp.name
+                        ) ORDER BY ep.effective_date DESC
                         ) FILTER (WHERE lp.uuid IS NOT NULL),
                         '[]'::json
                     ) AS leave_policies
