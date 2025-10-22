@@ -817,7 +817,14 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         COALESCE(SUM(ad.late_hours) FILTER (WHERE ad.is_late), 0)::float8      AS total_late_hours,
                         -- Sum early_exit_hours only for rows flagged as is_early_exit
                         COALESCE(SUM(ad.early_exit_hours) FILTER (WHERE ad.is_early_exit), 0)::float8 AS total_early_exit_hours,
-                        COALESCE(SUM(ad.working_hours), 0)::float8   AS working_hours,
+                        COALESCE(
+                          SUM(ad.working_hours) FILTER (
+                            WHERE NOT ad.is_off_day
+                              AND NOT ad.is_general_holiday
+                              AND NOT ad.is_special_holiday
+                              AND ad.leave_reason IS NULL
+                          ), 0
+                        )::float8 AS working_hours,
                         COALESCE(SUM(ad.expected_working_hours), 0)::float8 AS expected_hours,
                         COALESCE(SUM(ad.overtime_hours), 0)::float8  AS overtime_hours
                       FROM attendance_data ad
