@@ -121,97 +121,103 @@ export const leaveBalanceReport: AppRouteHandler<LeaveBalanceReportRoute> = asyn
 
   const query = sql`
                     WITH leave_dates AS (
-                        SELECT
+                    SELECT
                         al.employee_uuid,
                         al.leave_category_uuid,
                         d::date AS leave_date,
                         al.type,
                         CASE WHEN al.type = 'half' THEN 0.5 ELSE 1 END AS day_value
-                        FROM hr.apply_leave al
-                        JOIN GENERATE_SERIES(al.from_date::date, al.to_date::date, INTERVAL '1 day') AS d ON TRUE
-                        WHERE al.approval = 'approved'
-                        ${from_date && to_date ? sql`AND d::date >= ${from_date}::date AND d::date <= ${to_date}::date` : sql``}
+                    FROM hr.apply_leave al
+                    JOIN GENERATE_SERIES(al.from_date::date, al.to_date::date, INTERVAL '1 day') AS d ON TRUE
+                    WHERE al.approval = 'approved'
+                    ${from_date && to_date ? sql`AND d::date >= ${from_date}::date AND d::date <= ${to_date}::date` : sql``}
                     ),
                     leave_policy_per_date AS (
-                        SELECT
-                            ld.employee_uuid,
-                            ld.leave_category_uuid,
-                            ld.leave_date,
-                            ld.day_value,
-                            el.type_uuid AS leave_policy_uuid
-                        FROM leave_dates ld
-                        LEFT JOIN LATERAL (
-                                        SELECT employee_log.type_uuid
-                                                FROM hr.employee_log
-                                                WHERE employee_log.employee_uuid = ld.employee_uuid
-                                                    AND employee_log.type = 'leave_policy'
-                                                    AND employee_log.effective_date <= ld.leave_date
-                                                ORDER BY employee_log.effective_date DESC
-                                                LIMIT 1
-                                        ) el ON TRUE
+                    SELECT
+                        ld.employee_uuid,
+                        ld.leave_category_uuid,
+                        ld.leave_date,
+                        ld.day_value,
+                        el.type_uuid AS leave_policy_uuid
+                    FROM leave_dates ld
+                    LEFT JOIN LATERAL (
+                        SELECT employee_log.type_uuid
+                        FROM hr.employee_log
+                        WHERE employee_log.employee_uuid = ld.employee_uuid
+                        AND employee_log.type = 'leave_policy'
+                        AND employee_log.effective_date <= ld.leave_date
+                        ORDER BY employee_log.effective_date DESC
+                        LIMIT 1
+                    ) el ON TRUE
                     ),
                     used_days_agg AS (
-                        SELECT
+                    SELECT
                         employee_uuid,
                         leave_policy_uuid,
                         leave_category_uuid,
                         SUM(day_value) AS used_days
-                        FROM leave_policy_per_date
-                        GROUP BY employee_uuid, leave_policy_uuid, leave_category_uuid
+                    FROM leave_policy_per_date
+                    GROUP BY employee_uuid, leave_policy_uuid, leave_category_uuid
+                    ),
+                    -- New CTE: gather all leave policies that have been effective for the employee up to the to_date
+                    employee_policies AS (
+                    SELECT
+                        el.employee_uuid,
+                        el.type_uuid AS leave_policy_uuid,
+                        MAX(el.effective_date)::date AS effective_date
+                    FROM hr.employee_log el
+                    WHERE el.type = 'leave_policy'
+                        AND el.effective_date <= COALESCE(${to_date}::date, NOW()::date)
+                    GROUP BY el.employee_uuid, el.type_uuid
                     )
-                      SELECT
-                        e.uuid AS employee_uuid,
-                        e.employee_id,
-                        emp_sum.employee_name,
-                        emp_sum.designation,
-                        emp_sum.department,
-                        emp_sum.start_date,
-                        emp_sum.profile_picture,
-                        et.name AS employment_type_name,
-                        COALESCE(
-                                    JSON_AGG(
-                                        JSON_BUILD_OBJECT(
-                                        'leave_policy_uuid', lp.uuid,
-                                        'leave_policy_name', lp.name,
-                                        'effective_date', (
-                                            SELECT employee_log.effective_date::date
-                                            FROM hr.employee_log
-                                            WHERE employee_log.employee_uuid = e.uuid
-                                            AND employee_log.type = 'leave_policy'
-                                            AND employee_log.type_uuid = lp.uuid
-                                            ORDER BY employee_log.effective_date DESC
-                                            LIMIT 1
-                                        ),
-                                        'leave_categories', (
-                                            SELECT COALESCE(
-                                            JSON_AGG(
-                                                JSON_BUILD_OBJECT(
-                                                'leave_category_uuid', lc.uuid,
-                                                'leave_category_name', lc.name,
-                                                'allowed_leaves', ce.maximum_number_of_allowed_leaves::float8,
-                                                'used_days', COALESCE(uda.used_days, 0)::float8,
-                                                'remaining_days', (ce.maximum_number_of_allowed_leaves - COALESCE(uda.used_days, 0))::float8
-                                                ) ORDER BY lc.name
-                                            ), '[]'::json)
-                                            FROM hr.configuration_entry ce
-                                            JOIN hr.leave_category lc ON ce.leave_category_uuid = lc.uuid
-                                            WHERE ce.configuration_uuid = c.uuid
-                                        )
-                                        ) ORDER BY lp.name
-                                    ) FILTER (WHERE lp.uuid IS NOT NULL),
-                                    '[]'::json
-                        ) AS leave_policies
+                    SELECT
+                    e.uuid AS employee_uuid,
+                    e.employee_id,
+                    emp_sum.employee_name,
+                    emp_sum.designation,
+                    emp_sum.department,
+                    emp_sum.start_date,
+                    emp_sum.profile_picture,
+                    et.name AS employment_type_name,
+                    COALESCE(
+                        JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'leave_policy_uuid', lp.uuid,
+                            'leave_policy_name', lp.name,
+                            'effective_date', ep.effective_date,
+                            'leave_categories', (
+                            SELECT COALESCE(
+                                JSON_AGG(
+                                JSON_BUILD_OBJECT(
+                                    'leave_category_uuid', lc.uuid,
+                                    'leave_category_name', lc.name,
+                                    'allowed_leaves', ce.maximum_number_of_allowed_leaves::float8,
+                                    'used_days', COALESCE(uda.used_days, 0)::float8,
+                                    'remaining_days', (ce.maximum_number_of_allowed_leaves - COALESCE(uda.used_days, 0))::float8
+                                ) ORDER BY lc.name
+                                ), '[]'::json)
+                            FROM hr.configuration_entry ce
+                            JOIN hr.leave_category lc ON ce.leave_category_uuid = lc.uuid
+                            WHERE ce.configuration_uuid = c.uuid
+                            )
+                        ) ORDER BY lp.name
+                        ) FILTER (WHERE lp.uuid IS NOT NULL),
+                        '[]'::json
+                    ) AS leave_policies
                     FROM hr.employee e
                     LEFT JOIN LATERAL hr.get_employee_summary(e.uuid) emp_sum ON TRUE
                     LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-                    LEFT JOIN used_days_agg uda ON e.uuid = uda.employee_uuid
-                    LEFT JOIN hr.leave_policy lp ON uda.leave_policy_uuid = lp.uuid
+                    -- join the discovered policies for the employee
+                    LEFT JOIN employee_policies ep ON e.uuid = ep.employee_uuid
+                    LEFT JOIN hr.leave_policy lp ON ep.leave_policy_uuid = lp.uuid
                     LEFT JOIN hr.configuration c ON c.leave_policy_uuid = lp.uuid
+                    -- left join used days per employee+policy so policies with no used days still appear (used days NULL -> 0)
+                    LEFT JOIN used_days_agg uda ON e.uuid = uda.employee_uuid AND lp.uuid = uda.leave_policy_uuid
                     WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
                     GROUP BY e.uuid, e.employee_id, emp_sum.employee_name, emp_sum.designation, emp_sum.department,
-                        emp_sum.start_date, emp_sum.profile_picture, et.name
+                    emp_sum.start_date, emp_sum.profile_picture, et.name
                     ORDER BY emp_sum.employee_name;
-`;
+                `;
 
   const data = await db.execute(query);
 
