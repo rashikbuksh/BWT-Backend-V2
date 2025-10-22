@@ -27,23 +27,24 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                     (apply_leave.to_date::date - apply_leave.from_date::date + 1) as total_days,
                     employment_type.name as employment_type_name,
                     (
-                           SELECT JSON_AGG(
-                                    JSON_BUILD_OBJECT(
-                                        'leave_policy_uuid', el_distinct.type_uuid,
-                                        'leave_policy_name', lp.name,
-                                        'effective_date', (
-                                            SELECT
-                                                employee_log.effective_date
-                                            FROM hr.employee_log
-                                            WHERE
-                                                employee_log.employee_uuid = employee.uuid
-                                                AND employee_log.type = 'leave_policy'
-                                                AND employee_log.type_uuid = el_distinct.type_uuid
-                                            ORDER BY employee_log.effective_date DESC
-                                            LIMIT 1
+                            SELECT COALESCE(
+                                    JSON_AGG(
+                                        JSON_BUILD_OBJECT(
+                                            'leave_policy_uuid', el_distinct.type_uuid,
+                                            'leave_policy_name', lp.name,
+                                            'effective_date', (
+                                                SELECT
+                                                    employee_log.effective_date
+                                                FROM hr.employee_log
+                                                WHERE
+                                                    employee_log.employee_uuid = employee.uuid
+                                                    AND employee_log.type = 'leave_policy'
+                                                    AND employee_log.type_uuid = el_distinct.type_uuid
+                                                ORDER BY employee_log.effective_date DESC
+                                                LIMIT 1
                                             )
-                                        
-                                    )
+                                        )
+                                    ), '[]'::json
                                 )
                                 FROM (
                                     SELECT DISTINCT
