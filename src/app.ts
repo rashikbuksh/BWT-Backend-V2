@@ -40,19 +40,6 @@ const isVps = env.NODE_ENV === 'vps';
 // Serve static files from the 'uploads' directory
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
-// Serve diagnostic file
-app.use('/diagnostic.html', serveStatic({ root: isDev ? './' : './dist/' }));
-
-// Socket diagnostic route
-app.get('/socket-diagnostic', (c) => {
-  return c.redirect('/diagnostic.html');
-});
-
-// Health check endpoint (outside v1 path)
-app.get('/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString(), port: 5090 });
-});
-
 // Socket.IO status endpoint (outside v1 path)
 app.get('/socket-status', async (c) => {
   try {
@@ -62,11 +49,49 @@ app.get('/socket-status', async (c) => {
       status: 'connected',
       online_users: getOnlineUsersCount(),
       engine_connected: io.engine.clientsCount || 0,
+      environment: env.NODE_ENV,
+      server_url: isDev ? 'http://localhost:5090' : `http://${c.req.header('host') || '103.147.163.46:5090'}`,
+      transport_options: ['polling', 'websocket'],
+      cors_origin: '*',
     });
   }
   catch (error) {
-    return c.json({ status: 'disconnected', error: (error as Error).message }, 500);
+    return c.json({
+      status: 'disconnected',
+      error: (error as Error).message,
+      environment: env.NODE_ENV,
+    }, 500);
   }
+});
+
+// Production diagnostics endpoint
+app.get('/socket-diagnostics', async (c) => {
+  const serverUrl = isDev ? 'http://localhost:5090' : `http://${c.req.header('host') || '103.147.163.46:5090'}`;
+
+  return c.json({
+    environment: env.NODE_ENV,
+    server_url: serverUrl,
+    host_header: c.req.header('host'),
+    user_agent: c.req.header('user-agent'),
+    origin: c.req.header('origin'),
+    connection: c.req.header('connection'),
+    upgrade: c.req.header('upgrade'),
+    socket_io_path: '/socket.io/',
+    socket_io_test_url: `${serverUrl}/socket.io/?EIO=4&transport=polling`,
+    recommended_client_config: {
+      transports: ['polling', 'websocket'],
+      upgrade: true,
+      timeout: 10000,
+      forceNew: true,
+    },
+    common_production_issues: [
+      'Reverse proxy not configured for WebSocket upgrade',
+      'Firewall blocking WebSocket connections',
+      'Load balancer not supporting sticky sessions',
+      'CORS headers not properly configured',
+      'Client timeout too short for production latency',
+    ],
+  });
 });
 
 // Direct routes for test pages

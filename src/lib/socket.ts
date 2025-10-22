@@ -2,6 +2,8 @@ import type { Server as HttpServer } from 'node:http';
 
 import { Server } from 'socket.io';
 
+import env from '../env';
+
 export interface SocketData {
   userId?: string;
   username?: string;
@@ -37,19 +39,38 @@ let io: Server<ClientToServerEvents, ServerToClientEvents, any, SocketData>;
 
 export function initializeSocket(server: HttpServer) {
   console.warn('Initializing Socket.IO server...');
+
+  const isDev = env.NODE_ENV === 'development';
+
   io = new Server(server, {
     cors: {
-      origin: '*', // Allow all origins for development
+      origin: '*', // Allow all origins - you can restrict this in production
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization'],
     },
-    transports: ['polling', 'websocket'], // Try polling first for better compatibility
+    // Production-optimized transport settings
+    transports: ['polling', 'websocket'], // Polling first for better compatibility
     allowEIO3: true,
-    pingTimeout: 60000, // 60 seconds
-    pingInterval: 25000, // 25 seconds
-    upgradeTimeout: 30000, // 30 seconds
+
+    // Extended timeouts for production environments
+    pingTimeout: isDev ? 60000 : 120000, // 60s dev, 120s prod
+    pingInterval: isDev ? 25000 : 30000, // 25s dev, 30s prod
+    upgradeTimeout: isDev ? 30000 : 60000, // 30s dev, 60s prod
+
+    // Increased buffer size for production
     maxHttpBufferSize: 1e6, // 1MB
+
+    // Additional production settings
+    allowUpgrades: true,
+    perMessageDeflate: false, // Disable compression for better performance
+    httpCompression: true,
+
+    // Connection state recovery for better reliability
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+      skipMiddlewares: true,
+    },
   });
 
   // Enhanced debugging for connection attempts

@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Quick Socket.IO Production Test</title>
+  </head>
+  <body>
+    <h1>Quick Socket.IO Test</h1>
+    <div id="status">Testing...</div>
+    <div id="log"></div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+      const status = document.getElementById('status');
+      const log = document.getElementById('log');
+
+      function addLog(msg) {
+        log.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>';
+      }
+
+      addLog('Testing Socket.IO connection to production server...');
+
+      const socket = io('http://103.147.163.46:5090', {
+        transports: ['polling', 'websocket'],
+        timeout: 10000,
+        forceNew: true,
+      });
+
+      socket.on('connect', () => {
+        status.innerHTML = '✅ CONNECTED! Socket.IO is working in production.';
+        status.style.color = 'green';
+        addLog('Connected with ID: ' + socket.id);
+        addLog('Transport: ' + socket.io.engine.transport.name);
+      });
+
+      socket.on('connect_error', (error) => {
+        status.innerHTML = '❌ CONNECTION FAILED: ' + error.message;
+        status.style.color = 'red';
+        addLog('Connection error: ' + error.message);
+        addLog('Error type: ' + (error.type || 'unknown'));
+      });
+
+      socket.on('disconnect', (reason) => {
+        addLog('Disconnected: ' + reason);
+      });
+
+      // Test timeout
+      setTimeout(() => {
+        if (!socket.connected) {
+          status.innerHTML = '❌ CONNECTION TIMEOUT - Server may not be responding';
+          status.style.color = 'red';
+          addLog('Connection timed out after 15 seconds');
+        }
+      }, 15000);
+    </script>
+  </body>
+</html>
