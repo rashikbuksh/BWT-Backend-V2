@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  index,
   integer,
   json,
   pgEnum,
@@ -771,8 +772,9 @@ export const employee_log = hr.table('employee_log', {
   remarks: text('remarks').default(sql`null`),
   uuid: uuid_primary,
   effective_date: DateTime('effective_date').default(sql`null`),
-
-});
+}, table => [
+  index('type_index').on(table.type),
+]);
 
 export const late_approval_status_enum = pgEnum('late_approval_status_enum', [
   'pending',

@@ -13,6 +13,11 @@ export const list = createRoute({
   path: '/hr/employee-log',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      type: z.enum(['leave_policy', 'shift_group']).optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
