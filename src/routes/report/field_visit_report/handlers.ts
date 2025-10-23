@@ -32,7 +32,9 @@ export const fieldVisitReport: AppRouteHandler<FieldVisitReportRoute> = async (c
                     me.approval AS status,
                     me.created_by AS applied_by_uuid,
                     appliedBy.name AS applied_by_name,
-                    me.created_at::date AS applied_date
+                    me.created_at::date AS applied_date,
+                    e.profile_picture,
+                    e.start_date::date
                 FROM hr.manual_entry me
                 LEFT JOIN hr.employee e ON me.employee_uuid = e.uuid
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
