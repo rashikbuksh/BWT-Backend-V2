@@ -23,22 +23,57 @@ let io: Server | null = null;
 export function initializeSocketIO(httpServer: any) {
   console.warn('🔌 Initializing Socket.IO server...');
 
+  // Check environment
+  const isDevelopment = env.NODE_ENV === 'development';
+
+  // Get allowed origins from environment
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'http://localhost:3004',
+    'http://localhost:3005',
+    'http://localhost:4000',
+    'http://192.168.10.175:5090',
+    'http://103.147.163.46:5090',
+    'http://192.168.10.175:4070',
+    'http://103.147.163.46:4070',
+    'http://192.168.10.175:4076',
+    'http://103.147.163.46:4076',
+    'http://103.147.163.46:5095',
+    'https://synap-erp-starter.vercel.app',
+    'https://bwt-frontend.fortunezip.com',
+    'https://bwt-web.fortunezip.com',
+    'https://bwt-admin.synaptech.cloud',
+    'https://bwt-web.synaptech.cloud',
+  ];
+
+  console.warn(`🌐 Socket.IO CORS origins: ${isDevelopment ? '*' : allowedOrigins.join(', ')}`);
+
   io = new Server(httpServer, {
     cors: {
-      origin: '*', // Allow all origins - you can restrict this in production
+      origin: isDevelopment ? '*' : allowedOrigins, // Restrict origins in production
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization'],
     },
-    // Socket.IO configuration
-    transports: ['polling', 'websocket'], // Support both polling and websocket
-    pingTimeout: 60000, // 60 seconds
-    pingInterval: 25000, // 25 seconds
-    upgradeTimeout: 30000, // 30 seconds
+    // Enhanced Socket.IO configuration for production
+    transports: ['polling', 'websocket'], // Start with polling for better compatibility
+    pingTimeout: isDevelopment ? 60000 : 120000, // Longer timeout in production
+    pingInterval: isDevelopment ? 25000 : 30000, // Less frequent pings in production
+    upgradeTimeout: isDevelopment ? 30000 : 60000, // More time for upgrade in production
     maxHttpBufferSize: 1e6, // 1MB
     allowUpgrades: true,
     perMessageDeflate: false,
     httpCompression: true,
+    // Additional production settings
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+      skipMiddlewares: true,
+    },
+    // Enable detailed logging for debugging
+    path: '/socket.io/',
   });
 
   // Connection handling
@@ -192,15 +227,37 @@ export function initializeSocketIO(httpServer: any) {
     });
   });
 
-  // Server-level error handling
+  // Server-level error handling and debugging
   io.engine.on('connection_error', (err) => {
     console.error('❌ Socket.IO connection error:');
     console.error('- Request URL:', err.req?.url);
     console.error('- Error Code:', err.code);
     console.error('- Error Message:', err.message);
+    console.error('- Headers:', err.req?.headers);
+    console.error('- Origin:', err.req?.headers?.origin);
+    console.error('- User-Agent:', err.req?.headers?.['user-agent']);
+  });
+
+  // Enhanced debugging
+  io.engine.on('initial_headers', (headers, request) => {
+    console.warn('📡 Socket.IO initial headers:', {
+      url: request.url,
+      origin: request.headers.origin,
+      host: request.headers.host,
+    });
+  });
+
+  io.engine.on('connection', (_socket) => {
+    console.warn('🔗 Socket.IO engine connection established');
+  });
+
+  io.engine.on('disconnect', (reason) => {
+    console.warn('💔 Socket.IO engine disconnection:', reason);
   });
 
   console.warn('✅ Socket.IO server initialized successfully');
+  console.warn(`🔧 Environment: ${env.NODE_ENV}`);
+  console.warn(`🌐 CORS origins: ${isDevelopment ? 'All (*) - Development Mode' : `${allowedOrigins.length} specific origins`}`);
   return io;
 }
 
@@ -239,26 +296,103 @@ const isVps = env.NODE_ENV === 'vps';
 // Serve static files from the 'uploads' directory
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
+// Serve Socket.IO client library explicitly (in case it's not auto-served)
+app.get('/socket.io/socket.io.js', async (c) => {
+  try {
+    // Try to get the Socket.IO client script from the server
+    const socketIO = getSocketIO();
+    if (socketIO) {
+      // Socket.IO automatically serves the client script at this path
+      // If this endpoint is being hit, it means auto-serving might not be working
+      console.warn('[socket.io.js] Client script requested - Socket.IO should auto-serve this');
+    }
+
+    // Fallback: redirect to CDN
+    return c.redirect('https://cdn.socket.io/4.7.2/socket.io.min.js');
+  }
+  catch (error) {
+    console.error('[socket.io.js] Error serving client script:', error);
+    return c.redirect('https://cdn.socket.io/4.7.2/socket.io.min.js');
+  }
+});
+
 // Socket.IO status endpoint (outside v1 path)
 app.get('/socket-status', (c) => {
   try {
     const socketIO = getSocketIO();
-    return c.json({
+    const response = {
       socket_initialized: socketIO !== null,
       status: socketIO ? 'connected' : 'disconnected',
       online_users: getOnlineUsersCount(),
       engine_connected: socketIO?.engine?.clientsCount || 0,
+      environment: env.NODE_ENV,
+      server_url: env.NODE_ENV === 'development' ? env.SERVER_URL : env.PRODUCTION_URL,
+      port: env.PORT,
+      cors_enabled: true,
+      allowed_origins: env.NODE_ENV === 'development'
+        ? ['*']
+        : [
+            'https://bwt-frontend.fortunezip.com',
+            'https://bwt-web.fortunezip.com',
+            'https://bwt-admin.synaptech.cloud',
+            'https://bwt-web.synaptech.cloud',
+            'http://103.147.163.46:5090',
+          ],
+      socket_path: '/socket.io/',
+      transports: ['polling', 'websocket'],
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    console.warn(`[socket-status] Request from origin: ${c.req.header('origin') || 'unknown'}`);
+    console.warn(`[socket-status] Socket initialized: ${response.socket_initialized}`);
+
+    return c.json(response);
   }
   catch (error) {
-    return c.json({
+    const errorResponse = {
       socket_initialized: false,
       status: 'error',
       error: (error as Error).message,
+      environment: env.NODE_ENV,
       timestamp: new Date().toISOString(),
-    }, 500);
+    };
+
+    console.error(`[socket-status] Error:`, error);
+    return c.json(errorResponse, 500);
   }
+});
+
+// Debug endpoint for Socket.IO connectivity
+app.get('/socket-debug', (c) => {
+  const origin = c.req.header('origin');
+  const host = c.req.header('host');
+  const userAgent = c.req.header('user-agent');
+
+  return c.json({
+    debug: {
+      origin,
+      host,
+      userAgent,
+      environment: env.NODE_ENV,
+      socket_url: `${env.NODE_ENV === 'development' ? env.SERVER_URL : `http://${host}`}/socket.io/`,
+      test_urls: {
+        status: `${env.NODE_ENV === 'development' ? env.SERVER_URL : `http://${host}`}/socket-status`,
+        socket_client: `${env.NODE_ENV === 'development' ? env.SERVER_URL : `http://${host}`}/socket.io/socket.io.js`,
+        test_page: `${env.NODE_ENV === 'development' ? env.SERVER_URL : `http://${host}`}/socket-test`,
+      },
+      cors_check: {
+        origin_allowed: env.NODE_ENV === 'development' || [
+          'https://bwt-frontend.fortunezip.com',
+          'https://bwt-web.fortunezip.com',
+          'https://bwt-admin.synaptech.cloud',
+          'https://bwt-web.synaptech.cloud',
+          'http://103.147.163.46:5090',
+        ].includes(origin || ''),
+        origin_received: origin,
+      },
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Emit test message endpoint
