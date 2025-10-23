@@ -319,7 +319,8 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             hr.get_offday_count(e.uuid, ${from_date}, ${to_date}) AS off_days,
                             s.name AS shift_name,
                             s.start_time AS shift_start_time,
-                            s.end_time AS shift_end_time
+                            s.end_time AS shift_end_time,
+                            e.profile_picture
                         FROM hr.employee e
                         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                         LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
@@ -586,7 +587,8 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                         sd.shift_name,
                         sd.shift_start_time,
                         sd.shift_end_time,
-                        sd.start_date 
+                        sd.start_date ,
+                        sd.profile_picture
                     `;
   const data = await db.execute(query);
 
