@@ -330,15 +330,24 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     line_manager_name,
                     profile_picture,
                     start_date,
-                    JSON_AGG(
-                        JSON_BUILD_OBJECT(
-                            'shift_name', shift_name,
-                            'start_time', start_time,
-                            'end_time', end_time,
-                            'punch_date', punch_date,
-                            'shift_group_name', shift_group_name
-                        )
-                        ) AS absent_days
+                    COALESCE(
+                            JSON_AGG(
+                              JSON_BUILD_OBJECT(
+                                'shift_name', shift_name,
+                                'start_time', start_time,
+                                'end_time', end_time,
+                                'punch_date', punch_date,
+                                'shift_group_name', shift_group_name
+                              )
+                              ORDER BY punch_date
+                            ) FILTER (
+                              WHERE shift_name IS NOT NULL
+                                OR start_time IS NOT NULL
+                                OR end_time IS NOT NULL
+                                OR shift_group_name IS NOT NULL
+                            ),
+                            '[]'::json
+                          ) AS absent_days
                 FROM attendance_data
                 WHERE status = 'Absent'
                 GROUP BY uuid, user_uuid, employee_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, profile_picture, start_date
