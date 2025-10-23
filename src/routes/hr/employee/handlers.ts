@@ -876,13 +876,30 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   DATE(ud.punch_date) AS punch_date,
                   MIN(pl.punch_time) AS entry_time,
                   MAX(pl.punch_time) AS exit_time,
-                  (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8 AS hours_worked,
-                  (EXTRACT(EPOCH FROM MAX(s.end_time) - MIN(s.start_time)) / 3600)::float8 AS expected_hours
+                  (EXTRACT(EPOCH FROM MAX(pl.punch_time)::time - MIN(pl.punch_time)::time) / 3600)::float8 AS hours_worked,
+                  (EXTRACT(EPOCH FROM MAX(s.end_time)::time - MIN(s.start_time)::time) / 3600)::float8 AS expected_hours
                 FROM hr.employee e
                 LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                 LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
-                LEFT JOIN hr.shift_group sg ON e.shift_group_uuid = sg.uuid
-                LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
+                LEFT JOIN LATERAL (
+                                        SELECT r.shifts_uuid AS shifts_uuid,
+                                              r.shift_group_uuid AS shift_group_uuid
+                                        FROM hr.roster r
+                                        WHERE r.shift_group_uuid = (
+                                          SELECT el.type_uuid
+                                          FROM hr.employee_log el
+                                          WHERE el.employee_uuid = e.uuid
+                                            AND el.type = 'shift_group'
+                                            AND el.effective_date::date <= ud.punch_date::date
+                                          ORDER BY el.effective_date DESC
+                                          LIMIT 1
+                                        )
+                                        AND r.effective_date <= ud.punch_date::date
+                                        ORDER BY r.effective_date DESC
+                                        LIMIT 1
+                                      ) sg_sel ON TRUE
+                LEFT JOIN hr.shifts s ON sg_sel.shifts_uuid = s.uuid
+                LEFT JOIN hr.shift_group sg ON sg_sel.shift_group_uuid = sg.uuid
                 WHERE 
                   e.uuid = ${employee_uuid}
                 GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date
