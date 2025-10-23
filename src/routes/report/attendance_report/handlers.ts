@@ -90,7 +90,8 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     dept.department AS department_name,
                     des.designation AS designation_name,
                     et.name AS employment_type_name,
-                    shift_group.name AS shift_group_name
+                    shift_group.name AS shift_group_name,
+                    e.profile_picture
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -130,7 +131,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     AND al.approval = 'approved'
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, shift_group.name, e.start_date
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, shift_group.name, e.start_date, e.profile_picture
                 )
                 SELECT
                     uuid,
@@ -140,6 +141,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     designation_name,
                     employment_type_name,
                     start_date,
+                    profile_picture,
                     JSON_AGG(JSON_BUILD_OBJECT(
                         'name', shift_name,
                         'start_time', start_time,
@@ -168,7 +170,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                     ) AS attendance_records
                 FROM attendance_data
                 -- group only by stable identifiers so all dates aggregate into one employee row
-                GROUP BY user_uuid, employee_name, department_name, designation_name, employment_type_name, uuid, start_date
+                GROUP BY user_uuid, employee_name, department_name, designation_name, employment_type_name, uuid, start_date, profile_picture
                 ORDER BY employee_name;
               `;
 
@@ -254,6 +256,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
       designation_name: row.designation_name,
       employment_type: row.employment_type_name,
       start_date: row.start_date,
+      profile_picture: row.profile_picture,
       shift_details: row.shift_details,
       monthly_details: monthlyReportByEmployee[0],
       monthly_data,
@@ -739,6 +742,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           des.designation AS designation_name,
                           et.name AS employment_type_name,
                           w.name AS workplace_name,
+                          e.profile_picture,
                           CASE 
                             WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
                               AND MIN(pl.punch_time) IS NULL THEN TRUE
@@ -790,7 +794,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                           AND d.punch_date BETWEEN al.from_date::date AND al.to_date::date
                           AND al.approval = 'approved'
-                        GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special,al.reason, dept.department, des.designation, et.name, w.name, ap_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date
+                        GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special,al.reason, dept.department, des.designation, et.name, w.name, ap_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date, e.profile_picture
                       )
                       SELECT
                         ad.employee_uuid,
@@ -801,6 +805,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         ad.workplace_name,
                         ad.employment_type_name,
                         ad.start_date,
+                        ad.profile_picture,
                         (SELECT COUNT(*) FROM dates)::int AS total_days,
                         COUNT(*) FILTER (WHERE ad.is_present)::float8    AS present_days,
                         COUNT(*) FILTER (WHERE ad.is_late)::float8        AS late_days,
@@ -829,7 +834,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         COALESCE(SUM(ad.overtime_hours), 0)::float8  AS overtime_hours
                       FROM attendance_data ad
                       WHERE ${employee_uuid ? sql`ad.employee_uuid = ${employee_uuid}` : sql`TRUE`}
-                      GROUP BY ad.employee_uuid, ad.user_uuid, ad.employee_name, ad.designation_name, ad.department_name, ad.workplace_name, ad.employment_type_name, ad.start_date
+                      GROUP BY ad.employee_uuid, ad.user_uuid, ad.employee_name, ad.designation_name, ad.department_name, ad.workplace_name, ad.employment_type_name, ad.start_date, ad.profile_picture
                       ORDER BY ad.employee_name
                     `;
 
@@ -925,7 +930,8 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     des.designation AS designation_name,
                     et.name AS employment_type_name,
                     w.name AS workplace_name,
-                    sg.name AS shift_group_name
+                    sg.name AS shift_group_name,
+                    e.profile_picture
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -965,7 +971,7 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     AND al.approval = 'approved'
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special,gh.date, al.reason,dept.department, des.designation, et.name, e.uuid, w.name, sg.name, e.start_date
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special,gh.date, al.reason,dept.department, des.designation, et.name, e.uuid, w.name, sg.name, e.start_date, e.profile_picture
                 )
                 SELECT
                     uuid,
@@ -975,6 +981,7 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     department_name,
                     designation_name,
                     employment_type_name,
+                    profile_picture,
                     workplace_name,
                     start_time,
                     end_time,
