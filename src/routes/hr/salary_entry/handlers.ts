@@ -161,65 +161,25 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
 
   const { employee_uuid } = c.req.valid('query');
 
-  // console.log(`Fetching salary details for year: ${year}, month: ${month}, employee_uuid: ${employee_uuid}`);
+  const now = new Date();
+  let to_date: Date;
 
-  const totalDays = new Date(year, month, 0).getDate();
-  // console.log(`Total days in month: ${totalDays}`);
-  const date = new Date(year, month - 1, 1); // JS months are 0-based
-  date.setMonth(date.getMonth() - 1);
-  // const prevMonth = date.getMonth() + 1; // back to 1-based
-  // const prevYear = date.getFullYear();
+  const yearNum = Number(year);
+  const monthNum = Number(month);
+  const from_date = new Date(Date.UTC(yearNum, monthNum - 1, 1));
 
-  // console.log(prevMonth, prevYear);
+  if (monthNum - 1 === now.getUTCMonth() && yearNum === now.getUTCFullYear()) {
+    to_date = new Date(Date.UTC(yearNum, monthNum - 1, now.getUTCDate()));
+  }
+  else {
+    to_date = new Date(Date.UTC(yearNum, monthNum, 0));
+  }
 
-  const SpecialHolidaysQuery = sql`
-                SELECT
-                  SUM(sh.to_date::date - sh.from_date::date + 1) -
-                  SUM(
-                    CASE
-                      WHEN sh.to_date::date > (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date
-                        THEN sh.to_date::date - (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date
-                      ELSE 0
-                    END
-                    +
-                    CASE
-                      WHEN sh.from_date::date < TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date
-                        THEN TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date - sh.from_date::date
-                      ELSE 0
-                    END
-                  ) AS total_special_holidays
-                FROM hr.special_holidays sh
-                WHERE
-                (
-                  EXTRACT(YEAR FROM sh.to_date) > ${year}
-                  OR (EXTRACT(YEAR FROM sh.to_date) = ${year} AND EXTRACT(MONTH FROM sh.to_date) >= ${month})
-                )
-                AND (
-                  EXTRACT(YEAR FROM sh.from_date) < ${year}
-                  OR (EXTRACT(YEAR FROM sh.from_date) = ${year} AND EXTRACT(MONTH FROM sh.from_date) <= ${month})
-                )
-            `;
-
-  const generalHolidayQuery = sql`
-            SELECT
-              COUNT(*) AS total_off_days
-            FROM 
-              hr.general_holidays gh
-            WHERE
-              EXTRACT(YEAR FROM gh.date) = ${year}
-              AND EXTRACT(MONTH FROM gh.date) = ${month}
-            `;
-
-  const specialHolidaysPromise = db.execute(SpecialHolidaysQuery);
-  const generalHolidaysPromise = db.execute(generalHolidayQuery);
-
-  const [specialHolidaysResult, generalHolidaysResult] = await Promise.all([
-    specialHolidaysPromise,
-    generalHolidaysPromise,
-  ]);
-
-  const total_special_holidays = specialHolidaysResult.rows[0]?.total_special_holidays || 0;
-  const total_general_holidays = generalHolidaysResult.rows[0]?.total_off_days || 0;
+  const totalDays = Math.floor(
+    (Date.UTC(to_date.getUTCFullYear(), to_date.getUTCMonth(), to_date.getUTCDate())
+      - Date.UTC(from_date.getUTCFullYear(), from_date.getUTCMonth(), from_date.getUTCDate()))
+    / (24 * 60 * 60 * 1000),
+  ) + 1;
 
   const query = sql`
             SELECT 
@@ -239,11 +199,11 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
                 COALESCE(leave_summary.total_leave_days, 0)::float8 AS total_leave_days,
                 (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0))::float8 AS total_salary,
-                hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8 AS week_days,
-                COALESCE(${total_general_holidays}, 0)::float8 AS total_general_holidays,
-                COALESCE(${total_special_holidays}, 0)::float8 AS total_special_holidays,
+                hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date) AS week_days,
+                hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date) AS total_general_holidays,
+                hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date) AS total_special_holidays,
                 COALESCE(
-                  hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8 + ${total_general_holidays} + ${total_special_holidays},
+                  hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date) + hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date) + hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date),
                   0
                 )::float8 AS total_off_days_including_holidays,
                 COALESCE(
@@ -256,9 +216,9 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                       COALESCE(attendance_summary.present_days, 0) + 
                       COALESCE(attendance_summary.late_days, 0) + 
                       COALESCE(leave_summary.total_leave_days, 0) + 
-                      COALESCE(${total_general_holidays}::int, 0) + 
-                      COALESCE(${total_special_holidays}::int, 0) +
-                      hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8
+                      hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date)+
+                      hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date)+
+                      hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date)
                     )::float8 AS absent_days,
                 ${totalDays}::int AS total_days,
                COALESCE((employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / 30, 0)::float8 AS daily_salary,
@@ -268,10 +228,10 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                           *
                           (
                             COALESCE(attendance_summary.present_days, 0)
-                            + hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8
+                            + hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date)
                             + COALESCE(leave_summary.total_leave_days, 0)
-                            + COALESCE(${total_general_holidays}, 0)
-                            + COALESCE(${total_special_holidays}, 0)
+                            + hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date)
+                            + hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date)
                           )
                         ),
                         0
@@ -285,10 +245,10 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30) *
                     (
                       COALESCE(attendance_summary.present_days, 0)
-                      + hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8
+                      + hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date)
                       + COALESCE(leave_summary.total_leave_days, 0)
-                      + COALESCE(${total_general_holidays}, 0)
-                      + COALESCE(${total_special_holidays}, 0)
+                      + hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date)
+                      + hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date)
                     )
                   , 0)
                   -
@@ -344,8 +304,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     LEFT JOIN hr.shifts shifts ON sg_sel.shifts_uuid = shifts.uuid
                     LEFT JOIN hr.shift_group sg ON sg_sel.shift_group_uuid = sg.uuid
                   WHERE pl.punch_time IS NOT NULL
-                    AND EXTRACT(YEAR FROM pl.punch_time) = ${year}
-                    AND EXTRACT(MONTH FROM pl.punch_time) = ${month}
+                    AND pl.punch_time::date BETWEEN ${from_date}::date AND ${to_date}::date
                   GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before
                     )
                       SELECT 
@@ -401,8 +360,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     l.employee_uuid,
                     SUM(l.amount) AS total_loan_salary_amount
                   FROM hr.loan l
-                  WHERE EXTRACT(YEAR FROM l.date) <= ${year}
-                    AND EXTRACT(MONTH FROM l.date) <= ${month}
+                  WHERE l.date::date <= ${to_date}::date
                   GROUP BY employee_uuid
                 ) AS loan_summary
             ON employee.uuid = loan_summary.employee_uuid
