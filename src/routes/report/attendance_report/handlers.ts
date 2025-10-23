@@ -757,22 +757,22 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         CROSS JOIN dates d
                         LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = d.punch_date
                         LEFT JOIN LATERAL (
-                          SELECT r.shifts_uuid AS shifts_uuid,
-                                r.shift_group_uuid AS shift_group_uuid
-                          FROM hr.roster r
-                          WHERE r.shift_group_uuid = (
-                            SELECT el.type_uuid
-                            FROM hr.employee_log el
-                            WHERE el.employee_uuid = e.uuid
-                              AND el.type = 'shift_group'
-                              AND el.effective_date::date <= d.punch_date
-                            ORDER BY el.effective_date DESC
-                            LIMIT 1
-                          )
-                          AND r.effective_date <= d.punch_date
-                          ORDER BY r.effective_date DESC
-                          LIMIT 1
-                        ) sg_sel ON TRUE
+                                          SELECT r.shifts_uuid AS shifts_uuid,
+                                                r.shift_group_uuid AS shift_group_uuid
+                                          FROM hr.roster r
+                                          WHERE r.shift_group_uuid = (
+                                            SELECT el.type_uuid
+                                            FROM hr.employee_log el
+                                            WHERE el.employee_uuid = e.uuid
+                                              AND el.type = 'shift_group'
+                                              AND el.effective_date::date <= d.punch_date
+                                            ORDER BY el.effective_date DESC
+                                            LIMIT 1
+                                          )
+                                          AND r.effective_date <= d.punch_date
+                                          ORDER BY r.effective_date DESC
+                                          LIMIT 1
+                                        ) sg_sel ON TRUE
                         LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
                         LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                         LEFT JOIN hr.general_holidays gh ON gh.date = d.punch_date
