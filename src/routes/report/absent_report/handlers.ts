@@ -79,7 +79,9 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                         et.name AS employment_type_name,
                         e.employee_id,
                         line_manager.name AS line_manager_name,
-                        workplace.name AS workplace_name
+                        workplace.name AS workplace_name,
+                        e.profile_picture,
+                        e.start_date
                       FROM hr.employee e
                       LEFT JOIN
                         hr.workplace ON e.workplace_uuid = workplace.uuid
@@ -121,7 +123,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       WHERE 
                         ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`} 
                         ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}
-                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name
+                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name, e.profile_picture, e.start_date
                     )
                     SELECT
                           uuid,
@@ -138,6 +140,8 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                           end_time,
                           punch_date,
                           workplace_name,
+                          profile_picture,
+                          start_date,
                           -- last date the employee had any punch (last present)
                           (
                             SELECT MAX(DATE(pl2.punch_time))
@@ -190,7 +194,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                           ) AS absent_last_30_days_count
                         FROM attendance_data
                         WHERE status = 'Absent'
-                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date, workplace_name
+                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date, workplace_name, profile_picture, start_date
                         ORDER BY employee_name;
                   `;
 
@@ -270,7 +274,9 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     et.name AS employment_type_name,
                     e.employee_id,
                     line_manager.name AS line_manager_name,
-                    sg.name AS shift_group_name
+                    sg.name AS shift_group_name,
+                    e.profile_picture,
+                    e.start_date
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -311,7 +317,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`} 
                     ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, sg.name
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, sg.name, e.profile_picture, e.start_date
                 )
                 SELECT
                     uuid,
@@ -323,6 +329,8 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     employment_type_name, 
                     employee_id,
                     line_manager_name,
+                    profile_picture,
+                    start_date,
                     JSON_AGG(
                         JSON_BUILD_OBJECT(
                             'shift_name', shift_name,
@@ -334,7 +342,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                         ) AS absent_days
                 FROM attendance_data
                 WHERE status = 'Absent'
-                GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name
+                GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, profile_picture, start_date
                 ORDER BY employee_name;
               `;
   const data = await db.execute(query);
