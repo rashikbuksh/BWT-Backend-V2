@@ -651,6 +651,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
       start_time: row.shift_start_time,
       end_time: row.shift_end_time,
       start_date: row.start_date,
+      profile_picture: row.profile_picture,
       ...attendanceByDate,
       total_hours_worked: hours_worked_sum,
       total_expected_hours: expected_hours_sum,
