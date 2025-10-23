@@ -23,6 +23,7 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                   SELECT
                     ud.user_uuid,
                     e.profile_picture,
+                    e.start_date:date,
                     e.employee_id AS employee_id,
                     e.uuid AS employee_uuid,
                     ud.employee_name,
@@ -128,7 +129,7 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
                   GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid,
-                    gh.date, sp.is_special, al.reason
+                    gh.date, sp.is_special, al.reason, e.profile_picture, e.start_date:date
                 )
                SELECT
                     ad.punch_date AS date,
@@ -144,7 +145,8 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         'shift',         ad.shift_name,
                         'entry_time',    ad.entry_time,
                         'late_hours',    ad.late_hours,
-                        'profile_picture', ad.profile_picture
+                        'profile_picture', ad.profile_picture,
+                        'start_date',    ad.start_date:date
                         ) ORDER BY ad.employee_name
                     ) AS late_records
                     FROM attendance_data ad
@@ -174,6 +176,7 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                   SELECT
                     e.uuid,
                     e.profile_picture,
+                    e.start_date:date,
                     ud.user_uuid,
                     ud.employee_name,
                     e.employee_id AS employee_id,
@@ -288,7 +291,7 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     AND ud.punch_date = alm.date::date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, gh.date, sp.is_special, al.reason, alm.status
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, gh.date, sp.is_special, al.reason, alm.status, e.start_date:date
                 ),
                   monthly_late AS (
                                 SELECT
@@ -303,6 +306,7 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                 SELECT DISTINCT
                     uuid AS employee_uuid,
                     profile_picture,
+                    start_date:date,
                     user_uuid AS employee_user_uuid,
                     employee_name,
                     employee_id,
