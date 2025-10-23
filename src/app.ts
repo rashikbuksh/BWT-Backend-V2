@@ -381,13 +381,7 @@ app.get('/socket-debug', (c) => {
         test_page: `${env.NODE_ENV === 'development' ? env.SERVER_URL : `http://${host}`}/socket-test`,
       },
       cors_check: {
-        origin_allowed: env.NODE_ENV === 'development' || [
-          'https://bwt-frontend.fortunezip.com',
-          'https://bwt-web.fortunezip.com',
-          'https://bwt-admin.synaptech.cloud',
-          'https://bwt-web.synaptech.cloud',
-          'http://103.147.163.46:5090',
-        ].includes(origin || ''),
+        origin_allowed: env.NODE_ENV === 'development' || ALLOWED_ROUTES.includes(origin || ''),
         origin_received: origin,
       },
     },
