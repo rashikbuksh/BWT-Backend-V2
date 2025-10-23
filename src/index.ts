@@ -1,9 +1,8 @@
 import { Buffer } from 'node:buffer';
 import { createServer } from 'node:http';
 
-import app from './app';
+import app, { initializeSocketIO } from './app';
 import env from './env';
-import { initializeSocket } from './lib/socket';
 
 const port = env.PORT;
 
@@ -52,8 +51,8 @@ const httpServer = createServer(async (req, res) => {
   }
 });
 
-// Initialize Socket.IO on the HTTP server
-initializeSocket(httpServer);
+// Initialize Socket.IO
+initializeSocketIO(httpServer);
 
 // Start the server
 httpServer.listen(port, () => {

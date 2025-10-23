@@ -1,6 +1,7 @@
 import { bearerAuth } from 'hono/bearer-auth';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
+import { Server } from 'socket.io';
 
 import { configureOpenAPI } from '@/lib/configure_open_api';
 import createApp from '@/lib/create_app';
@@ -14,6 +15,204 @@ import routes from './routes/index.route';
 const app = createApp();
 
 configureOpenAPI(app);
+
+// Socket.IO will be initialized in index.ts with the HTTP server
+let io: Server | null = null;
+
+// Function to initialize Socket.IO with HTTP server
+export function initializeSocketIO(httpServer: any) {
+  console.warn('🔌 Initializing Socket.IO server...');
+
+  io = new Server(httpServer, {
+    cors: {
+      origin: '*', // Allow all origins - you can restrict this in production
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    },
+    // Socket.IO configuration
+    transports: ['polling', 'websocket'], // Support both polling and websocket
+    pingTimeout: 60000, // 60 seconds
+    pingInterval: 25000, // 25 seconds
+    upgradeTimeout: 30000, // 30 seconds
+    maxHttpBufferSize: 1e6, // 1MB
+    allowUpgrades: true,
+    perMessageDeflate: false,
+    httpCompression: true,
+  });
+
+  // Connection handling
+  io.on('connection', (socket) => {
+    console.warn(`✅ User connected: ${socket.id}`);
+
+    // Initialize socket data
+    socket.data = {
+      user_uuid: socket.id,
+      username: `User_${socket.id.substring(0, 8)}`,
+      authenticated: true,
+      rooms: new Set(),
+    };
+
+    // Set user information
+    socket.on('set_user', (data) => {
+      socket.data.user_uuid = data.user_uuid || socket.id;
+      socket.data.username = data.username || `User_${socket.id.substring(0, 8)}`;
+
+      console.warn(`👤 User info set: ${socket.data.username} (${socket.data.user_uuid})`);
+
+      socket.emit('user_set', {
+        user_uuid: socket.data.user_uuid,
+        username: socket.data.username,
+      });
+
+      // Notify all clients about new user
+      socket.broadcast.emit('user_online', {
+        user_uuid: socket.data.user_uuid,
+        username: socket.data.username,
+      });
+    });
+
+    // Room management
+    socket.on('join_room', (room) => {
+      socket.join(room);
+      socket.data.rooms?.add(room);
+
+      console.warn(`🏠 ${socket.data.username} joined room: ${room}`);
+
+      socket.to(room).emit('user_joined', {
+        username: socket.data.username,
+        user_uuid: socket.data.user_uuid,
+        room,
+      });
+    });
+
+    socket.on('leave_room', (room) => {
+      socket.leave(room);
+      socket.data.rooms?.delete(room);
+
+      console.warn(`🚪 ${socket.data.username} left room: ${room}`);
+
+      socket.to(room).emit('user_left', {
+        username: socket.data.username,
+        user_uuid: socket.data.user_uuid,
+        room,
+      });
+    });
+
+    // Message handling
+    socket.on('send_message', (data) => {
+      const messageData = {
+        id: `msg_${Date.now()}_${socket.id}`,
+        message: data.message,
+        from_user_uuid: socket.data.user_uuid,
+        from_username: socket.data.username,
+        room: data.room,
+        timestamp: new Date().toISOString(),
+      };
+
+      if (data.room) {
+        // Send to room
+        socket.to(data.room).emit('new_message', messageData);
+        console.warn(`💬 Message sent to room ${data.room}: ${data.message}`);
+      }
+      else if (data.to_user_uuid) {
+        // Private message - find target socket
+        const targetSocket = Array.from(io?.sockets.sockets.values() || [])
+          .find(s => s.data.user_uuid === data.to_user_uuid);
+
+        if (targetSocket) {
+          targetSocket.emit('new_message', messageData);
+          console.warn(`💬 Private message sent to ${data.to_user_uuid}: ${data.message}`);
+        }
+      }
+
+      socket.emit('message_sent', { id: messageData.id });
+    });
+
+    // Typing indicator
+    socket.on('typing', (data) => {
+      const typingData = {
+        from_user_uuid: socket.data.user_uuid,
+        from_username: socket.data.username,
+        room: data.room,
+      };
+
+      if (data.room) {
+        socket.to(data.room).emit('typing', typingData);
+      }
+    });
+
+    // Get online users
+    socket.on('request_online_users', (room) => {
+      let sockets;
+
+      if (room) {
+        // Get users in specific room
+        sockets = Array.from(io?.sockets.adapter.rooms.get(room) || [])
+          .map(socketId => io?.sockets.sockets.get(socketId))
+          .filter(Boolean);
+      }
+      else {
+        // Get all connected users
+        sockets = Array.from(io?.sockets.sockets.values() || []);
+      }
+
+      const users = sockets.map(s => ({
+        user_uuid: s?.data.user_uuid || s?.id,
+        username: s?.data.username || 'Unknown',
+        socket_id: s?.id,
+      }));
+
+      socket.emit('online_users', { users, room });
+    });
+
+    // Handle chat message (backward compatibility)
+    socket.on('chat message', (msg) => {
+      io?.emit('chat message', {
+        message: msg,
+        from: socket.data.username,
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    // Handle disconnection
+    socket.on('disconnect', (reason) => {
+      console.warn(`❌ User disconnected: ${socket.data.username} (${reason})`);
+
+      // Notify all clients about user going offline
+      socket.broadcast.emit('user_offline', {
+        user_uuid: socket.data.user_uuid,
+        username: socket.data.username,
+      });
+    });
+
+    // Error handling
+    socket.on('error', (error) => {
+      console.error(`❌ Socket error for ${socket.data.username}:`, error);
+    });
+  });
+
+  // Server-level error handling
+  io.engine.on('connection_error', (err) => {
+    console.error('❌ Socket.IO connection error:');
+    console.error('- Request URL:', err.req?.url);
+    console.error('- Error Code:', err.code);
+    console.error('- Error Message:', err.message);
+  });
+
+  console.warn('✅ Socket.IO server initialized successfully');
+  return io;
+}
+
+// Export function to get Socket.IO instance
+export function getSocketIO(): Server | null {
+  return io;
+}
+
+// Export function to get online users count
+export function getOnlineUsersCount(): number {
+  return io?.sockets.sockets.size || 0;
+}
 
 // log all the requests
 app.use(async (c, next) => {
@@ -41,18 +240,54 @@ const isVps = env.NODE_ENV === 'vps';
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
 
 // Socket.IO status endpoint (outside v1 path)
-app.get('/socket-status', async (c) => {
+app.get('/socket-status', (c) => {
   try {
-    const { getIO, getOnlineUsersCount } = await import('./lib/socket');
-    const io = getIO();
+    const socketIO = getSocketIO();
     return c.json({
-      status: 'connected',
+      socket_initialized: socketIO !== null,
+      status: socketIO ? 'connected' : 'disconnected',
       online_users: getOnlineUsersCount(),
-      engine_connected: io.engine.clientsCount || 0,
+      engine_connected: socketIO?.engine?.clientsCount || 0,
+      timestamp: new Date().toISOString(),
     });
   }
   catch (error) {
-    return c.json({ status: 'disconnected', error: (error as Error).message }, 500);
+    return c.json({
+      socket_initialized: false,
+      status: 'error',
+      error: (error as Error).message,
+      timestamp: new Date().toISOString(),
+    }, 500);
+  }
+});
+
+// Emit test message endpoint
+app.post('/socket-emit', async (c) => {
+  try {
+    const { message, room } = await c.req.json();
+    const socketIO = getSocketIO();
+
+    if (!socketIO) {
+      return c.json({ error: 'Socket.IO not initialized' }, 500);
+    }
+
+    const eventData = {
+      message: message || 'Test message from server',
+      timestamp: new Date().toISOString(),
+      from_server: true,
+    };
+
+    if (room) {
+      socketIO.to(room).emit('server_message', eventData);
+      return c.json({ success: true, message: `Message sent to room: ${room}`, data: eventData });
+    }
+    else {
+      socketIO.emit('server_message', eventData);
+      return c.json({ success: true, message: 'Message broadcasted to all clients', data: eventData });
+    }
+  }
+  catch (error) {
+    return c.json({ error: (error as Error).message }, 500);
   }
 });
 
