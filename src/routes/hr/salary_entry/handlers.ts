@@ -224,15 +224,16 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
   const query = sql`
             SELECT 
                 employee.uuid as employee_uuid,
-                employeeUser.uuid as employee_user_uuid,
-                employeeUser.name as employee_name,
+                employee.user_uuid as employee_user_uuid,
                 employee.joining_amount::float8,
-                employee.start_date as joining_date,
                 employee.created_at,
                 employee.updated_at,
                 employee.remarks,
-                employeeDepartment.department as employee_department_name,
-                employeeDesignation.designation as employee_designation_name,
+                emp_sum.employee_name,
+                emp_sum.designation,
+                emp_sum.department,
+                emp_sum.start_date,
+                emp_sum.profile_picture,
                 COALESCE(total_increment.total_salary_increment, 0)::float8 AS total_incremented_salary,
                 COALESCE(attendance_summary.present_days, 0)::float8 AS present_days,
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
@@ -300,14 +301,8 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0)::float8 AS total_paid_loan_salary_amount,
                 (COALESCE(loan_summary.total_loan_salary_amount, 0) - COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0))::float8 AS due_loan_salary_amount
             FROM  hr.employee
-            LEFT JOIN hr.users employeeUser
-              ON employee.user_uuid = employeeUser.uuid
-            LEFT JOIN hr.users createdByUser
-              ON employee.created_by = createdByUser.uuid
-            LEFT JOIN hr.designation employeeDesignation
-              ON employeeUser.designation_uuid = employeeDesignation.uuid
-            LEFT JOIN hr.department employeeDepartment
-              ON employeeUser.department_uuid = employeeDepartment.uuid
+            LEFT JOIN LATERAL
+                    hr.get_employee_summary(employee.uuid) emp_sum ON TRUE
             LEFT JOIN (
               SELECT 
                 si.employee_uuid, 
