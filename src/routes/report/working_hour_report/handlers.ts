@@ -42,12 +42,12 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             d.designation AS designation_name,
             dep.uuid AS department_uuid,
             dep.department AS department_name,
-            e.profile_picture,
-            e.start_date:date,
             w.uuid AS workplace_uuid,
             w.name AS workplace_name,
             et.uuid AS employment_type_uuid,
             et.name AS employment_type_name,
+            e.profile_picture,
+            e.start_date::date,
             COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
             COALESCE((${to_date}::date - ${from_date}::date + 1), 0) - (COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) + COALESCE(${holidays.general}::int, 0) + COALESCE(${holidays.special}::int, 0) + hr.get_offday_count(e.uuid, ${from_date}::date, ${to_date}::date))::float8 AS absent_days,
             COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
@@ -348,7 +348,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             sd.early_exit_days,
             sd.off_days,
             sd.profile_picture,
-            sd.start_date:date
+            sd.start_date
         `;
 
   // Execute the simplified query
