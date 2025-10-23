@@ -242,10 +242,10 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                       ELSE 'Present'
                     END as status,
                     CASE 
-                        WHEN me.type != 'late_application' 
+                        WHEN alm.status IS NULL
                             THEN 'Not Applied'
                         ELSE 
-                            me.approval::text
+                            alm.status::text
                     END AS late_application_status
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
@@ -284,10 +284,11 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                   LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                     AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                     AND al.approval = 'approved'
-                  LEFT JOIN hr.manual_entry me ON e.uuid = me.employee_uuid
+                  LEFT JOIN hr.apply_late alm ON e.uuid = alm.employee_uuid
+                    AND ud.punch_date = alm.date::date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, me.type, me.approval, lm.name, e.profile_picture, gh.date, sp.is_special, al.reason
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, gh.date, sp.is_special, al.reason, alm.status
                 ),
                   monthly_late AS (
                                 SELECT
