@@ -42,6 +42,8 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             d.designation AS designation_name,
             dep.uuid AS department_uuid,
             dep.department AS department_name,
+            e.profile_picture,
+            e.start_date:date,
             w.uuid AS workplace_uuid,
             w.name AS workplace_name,
             et.uuid AS employment_type_uuid,
@@ -344,7 +346,9 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             sd.leave_days,
             sd.late_days,
             sd.early_exit_days,
-            sd.off_days
+            sd.off_days,
+            sd.profile_picture,
+            sd.start_date:date
         `;
 
   // Execute the simplified query
