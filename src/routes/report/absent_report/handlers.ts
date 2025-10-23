@@ -323,7 +323,6 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                     uuid,
                     user_uuid,
                     employee_name,
-                    shift_name,
                     department_name,
                     designation_name,
                     employment_type_name, 
@@ -342,7 +341,7 @@ export const absentSummaryReport: AppRouteHandler<AbsentSummaryReportRoute> = as
                         ) AS absent_days
                 FROM attendance_data
                 WHERE status = 'Absent'
-                GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, profile_picture, start_date
+                GROUP BY uuid, user_uuid, employee_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, profile_picture, start_date
                 ORDER BY employee_name;
               `;
   const data = await db.execute(query);
