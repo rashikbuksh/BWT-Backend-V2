@@ -871,13 +871,23 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                   CROSS JOIN date_series d
                 )
                 SELECT
+                  e.uuid,
                   ud.user_uuid,
                   ud.employee_name,
                   DATE(ud.punch_date) AS punch_date,
                   MIN(pl.punch_time) AS entry_time,
                   MAX(pl.punch_time) AS exit_time,
                   (EXTRACT(EPOCH FROM MAX(pl.punch_time)::time - MIN(pl.punch_time)::time) / 3600)::float8 AS hours_worked,
-                  (EXTRACT(EPOCH FROM MAX(s.end_time)::time - MIN(s.start_time)::time) / 3600)::float8 AS expected_hours
+                  CASE
+                    WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)
+                      OR (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date))
+                      OR (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date))
+                    THEN 0
+                    ELSE (EXTRACT(EPOCH FROM MAX(s.end_time)::time - MIN(s.start_time)::time) / 3600)::float8
+                  END AS expected_hours,
+                  s.start_time AS shift_start_time,
+                  s.end_time AS shift_end_time,
+                  sg.name AS shift_group_name
                 FROM hr.employee e
                 LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                 LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
@@ -902,7 +912,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                 LEFT JOIN hr.shift_group sg ON sg_sel.shift_group_uuid = sg.uuid
                 WHERE 
                   e.uuid = ${employee_uuid}
-                GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date
+                GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, e.uuid, s.start_time, s.end_time, sg.name
                 ORDER BY ud.user_uuid, ud.punch_date;
               `;
 
