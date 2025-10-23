@@ -238,11 +238,11 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
                 COALESCE(leave_summary.total_leave_days, 0)::float8 AS total_leave_days,
                 (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0))::float8 AS total_salary,
-                COALESCE(off_days_summary.total_off_days, 0)::float8 AS week_days,
+                hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8 AS week_days,
                 COALESCE(${total_general_holidays}, 0)::float8 AS total_general_holidays,
                 COALESCE(${total_special_holidays}, 0)::float8 AS total_special_holidays,
                 COALESCE(
-                  off_days_summary.total_off_days + ${total_general_holidays} + ${total_special_holidays},
+                  hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8 + ${total_general_holidays} + ${total_special_holidays},
                   0
                 )::float8 AS total_off_days_including_holidays,
                 COALESCE(
@@ -257,7 +257,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                       COALESCE(leave_summary.total_leave_days, 0) + 
                       COALESCE(${total_general_holidays}::int, 0) + 
                       COALESCE(${total_special_holidays}::int, 0) +
-                      COALESCE(off_days_summary.total_off_days, 0)
+                      hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8
                     )::float8 AS absent_days,
                 ${totalDays}::int AS total_days,
                COALESCE((employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0)) / 30, 0)::float8 AS daily_salary,
@@ -267,7 +267,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                           *
                           (
                             COALESCE(attendance_summary.present_days, 0)
-                            + COALESCE(off_days_summary.total_off_days, 0)
+                            + hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8
                             + COALESCE(leave_summary.total_leave_days, 0)
                             + COALESCE(${total_general_holidays}, 0)
                             + COALESCE(${total_special_holidays}, 0)
@@ -284,7 +284,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30) *
                     (
                       COALESCE(attendance_summary.present_days, 0)
-                      + COALESCE(off_days_summary.total_off_days, 0)
+                      + hr.get_offday_count(employee.uuid, TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date, (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date)::float8
                       + COALESCE(leave_summary.total_leave_days, 0)
                       + COALESCE(${total_general_holidays}, 0)
                       + COALESCE(${total_special_holidays}, 0)
@@ -329,8 +329,25 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                         shifts.early_exit_before
                     FROM hr.punch_log pl
                     LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                    LEFT JOIN hr.shift_group ON e.shift_group_uuid = shift_group.uuid
-                    LEFT JOIN hr.shifts ON shift_group.shifts_uuid = shifts.uuid
+                    LEFT JOIN LATERAL (
+                          SELECT r.shifts_uuid AS shifts_uuid,
+                                r.shift_group_uuid AS shift_group_uuid
+                          FROM hr.roster r
+                          WHERE r.shift_group_uuid = (
+                            SELECT el.type_uuid
+                            FROM hr.employee_log el
+                            WHERE el.employee_uuid = e.uuid
+                              AND el.type = 'shift_group'
+                              AND el.effective_date::date <= pl.punch_time::date
+                            ORDER BY el.effective_date DESC
+                            LIMIT 1
+                          )
+                          AND r.effective_date::date <= pl.punch_time::date
+                          ORDER BY r.effective_date DESC
+                          LIMIT 1
+                        ) sg_sel ON TRUE
+                    LEFT JOIN hr.shifts shifts ON sg_sel.shifts_uuid = shifts.uuid
+                    LEFT JOIN hr.shift_group sg ON sg_sel.shift_group_uuid = sg.uuid
                   WHERE pl.punch_time IS NOT NULL
                     AND EXTRACT(YEAR FROM pl.punch_time) = ${year}
                     AND EXTRACT(MONTH FROM pl.punch_time) = ${month}
@@ -383,64 +400,6 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 GROUP BY al.employee_uuid
             ) AS leave_summary
               ON employee.uuid = leave_summary.employee_uuid
-            LEFT JOIN (
-                  WITH params AS (
-                            SELECT 
-                              ${year}::int AS y, 
-                              ${month}::int AS m,
-                              make_date(${year}::int, ${month}::int, 1) AS month_start,
-                              (make_date(${year}::int, ${month}::int, 1) + INTERVAL '1 month - 1 day')::date AS month_end
-                          ),
-                          days_in_month AS (
-                            SELECT d::date AS day
-                            FROM generate_series(
-                              (SELECT month_start FROM params),
-                              (SELECT month_end FROM params),
-                              INTERVAL '1 day'
-                            ) AS d
-                          ),
-                          shift_group_period AS (
-                            SELECT
-                              sg.uuid AS shift_group_uuid,
-                              sg.effective_date,
-                              sg.off_days::jsonb
-                            FROM hr.shift_group sg
-                          ),
-                          roster_periods AS (
-                            SELECT
-                              r.shift_group_uuid,
-                              r.effective_date,
-                              r.off_days::jsonb
-                            FROM hr.roster r
-                          ),
-                          day_periods AS (
-                            SELECT
-                              d.day,
-                              sgp.shift_group_uuid,
-                              CASE
-                                WHEN d.day >= sgp.effective_date THEN sgp.off_days
-                                ELSE (
-                                  SELECT rp.off_days
-                                  FROM roster_periods rp
-                                  WHERE rp.shift_group_uuid = sgp.shift_group_uuid
-                                    AND rp.effective_date <= d.day
-                                  ORDER BY rp.effective_date DESC
-                                  LIMIT 1
-                                )
-                              END AS off_days
-                            FROM days_in_month d
-                            CROSS JOIN shift_group_period sgp
-                          )
-                          SELECT
-                            shift_group_uuid,
-                            COUNT(*) AS total_off_days
-                          FROM day_periods
-                          WHERE lower(to_char(day, 'Dy')) = ANY (
-                            SELECT jsonb_array_elements_text(off_days)
-                          )
-                          GROUP BY shift_group_uuid
-            ) AS off_days_summary
-              ON employee.shift_group_uuid = off_days_summary.shift_group_uuid
             LEFT JOIN 
                 (
                   SELECT 
