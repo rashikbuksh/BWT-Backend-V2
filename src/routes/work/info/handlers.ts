@@ -274,18 +274,26 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'brand_uuid', m.brand_uuid,
                     'brand_name', b.name,
                     'is_return', o.is_return,
+                    'is_return_date', o.is_return_date,
                     'is_diagnosis_need', o.is_diagnosis_need,
+                    'is_diagnosis_need_date', o.is_diagnosis_need_date,
                     'is_proceed_to_repair', o.is_proceed_to_repair,
+                    'is_proceed_to_repair_date', o.is_proceed_to_repair_date,
                     'is_transferred_for_qc', o.is_transferred_for_qc,
+                    'is_transferred_for_qc_date', o.is_transferred_for_qc_date,
                     'is_ready_for_delivery', o.is_ready_for_delivery,
+                    'ready_for_delivery_date', o.ready_for_delivery_date,
                     'is_delivery_without_challan', o.is_delivery_without_challan,
-                    'is_delivered', CASE WHEN ce.uuid IS NOT NULL THEN true ELSE false END
+                    'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
+                    'is_delivered', CASE WHEN ce.uuid IS NOT NULL THEN true ELSE false END,
+                    'is_delivered_date', ch.is_delivery_complete_date
                   )), '[]'::json
                 )
                 FROM work.order o
                 LEFT JOIN store.model m ON o.model_uuid = m.uuid
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
                 LEFT JOIN delivery.challan_entry ce ON o.uuid = ce.order_uuid
+                LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid AND ch.is_delivery_complete = 'true'
                 WHERE o.info_uuid = ${info.uuid}
               )`,
       receive_type: info.receive_type,
