@@ -8,7 +8,7 @@ export function pinoLogger() {
   return logger({
     pino: pino({
       level: env.LOG_LEVEL || 'info',
-    }, env.NODE_ENV === 'production' ? undefined : pretty()),
+    }, env.NODE_ENV === 'production' || env.NODE_ENV === 'vps' ? undefined : pretty()),
     http: {
       reqId: () => crypto.randomUUID(),
     },

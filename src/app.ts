@@ -271,11 +271,11 @@ export function getOnlineUsersCount(): number {
   return io?.sockets.sockets.size || 0;
 }
 
-// log all the requests
-app.use(async (c, next) => {
-  console.warn(`[${new Date().toISOString()}] ${c.req.method} ${c.req.url}`);
-  await next();
-});
+// // log all the requests
+// app.use(async (c, next) => {
+//   console.warn(`[${new Date().toISOString()}] ${c.req.method} ${c.req.url}`);
+//   await next();
+// });
 
 // Apply 50 MB limit to all routes
 app.use('*', bodyLimit({
