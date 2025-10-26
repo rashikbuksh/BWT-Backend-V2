@@ -45,6 +45,8 @@ export const insertSchema = createInsertSchema(
   payment_method: true,
   updated_at: true,
   remarks: true,
+  convince_bill_amount: true,
+  add_convince_bill_amount: true,
 });
 
 export const patchSchema = insertSchema.partial();
