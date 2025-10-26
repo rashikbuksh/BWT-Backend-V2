@@ -272,12 +272,19 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'model_uuid', o.model_uuid,
                     'model_name', m.name,
                     'brand_uuid', m.brand_uuid,
-                    'brand_name', b.name 
+                    'brand_name', b.name,
+                    'is_diagnosis_need', o.is_diagnosis_needed,
+                    'is_proceed_to_repair', o.is_proceed_to_repair,
+                    'is_transferred_for_qc', o.is_transferred_for_qc,
+                    'is_ready_for_delivery', o.is_ready_for_delivery,
+                    'is_delivery_without_challan', o.is_delivery_without_challan,
+                    'is_delivered', CASE WHEN ce.uuid IS NOT NULL THEN true ELSE false END
                   )), '[]'::json
                 )
                 FROM work.order o
                 LEFT JOIN store.model m ON o.model_uuid = m.uuid
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
+                LEFT JOIN delivery.challan_entry ce ON o.uuid = ce.order_uuid
                 WHERE o.info_uuid = ${info.uuid}
               )`,
     })
