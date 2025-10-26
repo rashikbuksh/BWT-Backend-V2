@@ -274,56 +274,80 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
             ) AS total_increment
               ON employee.uuid = total_increment.employee_uuid
             LEFT JOIN (
-                  WITH daily_attendance AS (
-                    SELECT 
-                        pl.employee_uuid,
-                        DATE(pl.punch_time) AS attendance_date,
-                        MIN(pl.punch_time) AS first_punch,
-                        MAX(pl.punch_time) AS last_punch,
-                        shifts.late_time,
-                        shifts.early_exit_before
-                    FROM hr.punch_log pl
-                    LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
-                    LEFT JOIN LATERAL (
-                          SELECT r.shifts_uuid AS shifts_uuid,
-                                r.shift_group_uuid AS shift_group_uuid
-                          FROM hr.roster r
-                          WHERE r.shift_group_uuid = (
-                            SELECT el.type_uuid
-                            FROM hr.employee_log el
-                            WHERE el.employee_uuid = e.uuid
-                              AND el.type = 'shift_group'
-                              AND el.effective_date::date <= pl.punch_time::date
-                            ORDER BY el.effective_date DESC
-                            LIMIT 1
-                          )
-                          AND r.effective_date::date <= pl.punch_time::date
-                          ORDER BY r.effective_date DESC
-                          LIMIT 1
-                        ) sg_sel ON TRUE
-                    LEFT JOIN hr.shifts shifts ON sg_sel.shifts_uuid = shifts.uuid
-                    LEFT JOIN hr.shift_group sg ON sg_sel.shift_group_uuid = sg.uuid
-                  WHERE pl.punch_time IS NOT NULL
-                    AND pl.punch_time::date BETWEEN ${from_date}::date AND ${to_date}::date
-                  GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before
-                    )
-                      SELECT 
-                        employee_uuid,
-                        COUNT(CASE 
-                            WHEN TO_CHAR(first_punch, 'HH24:MI') < TO_CHAR(late_time, 'HH24:MI') 
-                            THEN 1 
-                        END) AS present_days,
-                        COUNT(CASE 
-                            WHEN TO_CHAR(first_punch, 'HH24:MI') >= TO_CHAR(late_time, 'HH24:MI') 
-                            THEN 1 
-                        END) AS late_days,
-                        COUNT(CASE 
-                            WHEN TO_CHAR(last_punch, 'HH24:MI') < TO_CHAR(early_exit_before, 'HH24:MI') 
-                            THEN 1 
-                        END) AS early_leaves
-                    FROM daily_attendance
-                    GROUP BY employee_uuid
-              ) AS attendance_summary ON employee.uuid = attendance_summary.employee_uuid
+                 WITH daily_attendance AS (
+                            SELECT 
+                                pl.employee_uuid,
+                                DATE(pl.punch_time) AS attendance_date,
+                                MIN(pl.punch_time) AS first_punch,
+                                MAX(pl.punch_time) AS last_punch,
+                                shifts.late_time,
+                                shifts.early_exit_before,
+                                (SELECT el.type_uuid
+                                        FROM hr.employee_log el
+                                        WHERE el.employee_uuid = pl.employee_uuid
+                                        AND el.type = 'shift_group'
+                                        AND el.effective_date::date <= DATE(pl.punch_time)
+                                        ORDER BY el.effective_date DESC
+                                        LIMIT 1) AS shift_group_uuid
+                            FROM hr.punch_log pl
+                            LEFT JOIN hr.employee e ON pl.employee_uuid = e.uuid
+                            LEFT JOIN LATERAL (
+                                  SELECT r.shifts_uuid AS shifts_uuid
+                                  FROM hr.roster r
+                                  WHERE r.shift_group_uuid = (
+                                    SELECT el.type_uuid
+                                    FROM hr.employee_log el
+                                    WHERE el.employee_uuid = e.uuid
+                                      AND el.type = 'shift_group'
+                                      AND el.effective_date::date <= DATE(pl.punch_time)
+                                    ORDER BY el.effective_date DESC
+                                    LIMIT 1
+                                  )
+                                  AND r.effective_date <= DATE(pl.punch_time)
+                                  ORDER BY r.effective_date DESC
+                                  LIMIT 1
+                                ) sg_sel ON TRUE
+                            LEFT JOIN hr.shifts shifts ON shifts.uuid = sg_sel.shifts_uuid
+                            WHERE pl.punch_time IS NOT NULL
+                                AND DATE(pl.punch_time) >= ${from_date}::date
+                                AND DATE(pl.punch_time) <= ${to_date}::date
+                            GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before, shift_group_uuid
+                        )
+                        SELECT 
+                            da.employee_uuid,
+                            COUNT(
+                                  CASE
+                                    WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false  
+                                      AND (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
+                                      AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                      AND  hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
+                                      AND da.first_punch::time < da.late_time::time
+                                    THEN 1 ELSE NULL
+                                  END
+                                ) AS present_days,
+                            COUNT(
+                                CASE 
+                                    WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false
+                                        AND  (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
+                                        AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                        AND  hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false 
+                                        AND da.first_punch::time >= da.late_time::time THEN 1
+                                    ELSE NULL
+                                END
+                            ) AS late_days,
+                            COUNT(
+                                CASE 
+                                    WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false
+                                        AND (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
+                                        AND hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                        AND hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
+                                        AND da.last_punch::time <= da.early_exit_before::time THEN 1
+                                    ELSE NULL
+                                END
+                            ) AS early_exit_days
+                        FROM daily_attendance da
+                        GROUP BY employee_uuid
+                    ) AS attendance_summary ON employee.uuid = attendance_summary.employee_uuid
             LEFT JOIN 
                 (
                   SELECT 
