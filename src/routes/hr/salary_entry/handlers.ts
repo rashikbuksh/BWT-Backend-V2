@@ -321,7 +321,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                                       AND (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
                                       AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
                                       AND  hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
-                                      AND da.first_punch::time < da.late_time::time
+                                      AND ((da.first_punch::time < da.late_time::time) OR (hr.is_employee_applied_late(da.employee_uuid, da.attendance_date) = true))
                                     THEN 1 ELSE NULL
                                   END
                                 ) AS present_days,
@@ -330,8 +330,9 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                                     WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false
                                         AND  (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
                                         AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
-                                        AND  hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false 
-                                        AND da.first_punch::time >= da.late_time::time THEN 1
+                                        AND  hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
+                                        AND  hr.is_employee_applied_late(da.employee_uuid, da.attendance_date)=false
+                                        AND  da.first_punch::time >= da.late_time::time THEN 1
                                     ELSE NULL
                                 END
                             ) AS late_days,
