@@ -197,7 +197,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 COALESCE(total_increment.total_salary_increment, 0)::float8 AS total_incremented_salary,
                 COALESCE(attendance_summary.present_days, 0)::float8 AS present_days,
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
-                COALESCE(leave_summary.total_leave_days, 0)::float8 AS total_leave_days,
+                hr.get_total_leave_days(employee.uuid, ${from_date}::date, ${to_date}::date) AS total_leave_days,
                 (employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0))::float8 AS total_salary,
                 hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date) AS week_days,
                 hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date) AS total_general_holidays,
@@ -207,7 +207,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   0
                 )::float8 AS total_off_days_including_holidays,
                 COALESCE(
-                  attendance_summary.present_days + attendance_summary.late_days + leave_summary.total_leave_days,
+                  attendance_summary.present_days + attendance_summary.late_days + hr.get_total_leave_days(employee.uuid, ${from_date}::date, ${to_date}::date),
                   0
                 )::float8 AS total_present_days,
                 
@@ -215,7 +215,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     (
                       COALESCE(attendance_summary.present_days, 0) + 
                       COALESCE(attendance_summary.late_days, 0) + 
-                      COALESCE(leave_summary.total_leave_days, 0) + 
+                      hr.get_total_leave_days(employee.uuid, ${from_date}::date, ${to_date}::date)+ 
                       hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date)+
                       hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date)+
                       hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date)
@@ -229,7 +229,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                           (
                             COALESCE(attendance_summary.present_days, 0)
                             + hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date)
-                            + COALESCE(leave_summary.total_leave_days, 0)
+                            + hr.get_total_leave_days(employee.uuid, ${from_date}::date, ${to_date}::date)
                             + hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date)
                             + hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date)
                           )
@@ -246,7 +246,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     (
                       COALESCE(attendance_summary.present_days, 0)
                       + hr.get_offday_count(employee.uuid, ${from_date}::date, ${to_date}::date)
-                      + COALESCE(leave_summary.total_leave_days, 0)
+                      + hr.get_total_leave_days(employee.uuid, ${from_date}::date, ${to_date}::date)
                       + hr.get_general_holidays_count( ${from_date}::date, ${to_date}::date)
                       + hr.get_special_holidays_count( ${from_date}::date, ${to_date}::date)
                     )
@@ -324,36 +324,6 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                     FROM daily_attendance
                     GROUP BY employee_uuid
               ) AS attendance_summary ON employee.uuid = attendance_summary.employee_uuid
-            LEFT JOIN (
-              SELECT
-                  al.employee_uuid,
-                  SUM(al.to_date::date - al.from_date::date + 1) -
-                  SUM(
-                    CASE
-                      WHEN al.to_date::date > (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date
-                        THEN al.to_date::date - (TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD') + INTERVAL '1 month - 1 day')::date
-                      ELSE 0
-                    END
-                    +
-                    CASE
-                      WHEN al.from_date::date < TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date
-                        THEN TO_TIMESTAMP(CAST(${year} AS TEXT) || '-' || LPAD(CAST(${month} AS TEXT), 2, '0') || '-01', 'YYYY-MM-DD')::date - al.from_date::date
-                      ELSE 0
-                    END
-                  ) AS total_leave_days
-                FROM hr.apply_leave al
-                WHERE al.approval = 'approved'
-                AND (
-                  EXTRACT(YEAR FROM al.to_date) > ${year}
-                  OR (EXTRACT(YEAR FROM al.to_date) = ${year} AND EXTRACT(MONTH FROM al.to_date) >= ${month})
-                )
-                AND (
-                  EXTRACT(YEAR FROM al.from_date) < ${year}
-                  OR (EXTRACT(YEAR FROM al.from_date) = ${year} AND EXTRACT(MONTH FROM al.from_date) <= ${month})
-                )
-                GROUP BY al.employee_uuid
-            ) AS leave_summary
-              ON employee.uuid = leave_summary.employee_uuid
             LEFT JOIN 
                 (
                   SELECT 
