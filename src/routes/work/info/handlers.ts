@@ -293,7 +293,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 LEFT JOIN store.model m ON o.model_uuid = m.uuid
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
                 LEFT JOIN delivery.challan_entry ce ON o.uuid = ce.order_uuid
-                LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid AND ch.is_delivery_complete = 'true'
+                LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
                 WHERE o.info_uuid = ${info.uuid}
               )`,
       receive_type: info.receive_type,
