@@ -273,7 +273,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'model_name', m.name,
                     'brand_uuid', m.brand_uuid,
                     'brand_name', b.name,
-                    'is_diagnosis_need', o.is_diagnosis_needed,
+                    'is_diagnosis_need', o.is_diagnosis_need,
                     'is_proceed_to_repair', o.is_proceed_to_repair,
                     'is_transferred_for_qc', o.is_transferred_for_qc,
                     'is_ready_for_delivery', o.is_ready_for_delivery,
