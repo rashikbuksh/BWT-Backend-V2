@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -28,6 +29,7 @@ export const insertSchema = createInsertSchema(
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     remarks: schema => schema.remarks.optional(),
+    convince_bill_amount: z.number().default(0),
   },
 ).required({
   uuid: true,
