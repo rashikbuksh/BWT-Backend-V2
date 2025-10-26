@@ -67,6 +67,12 @@ export const serviceTypeEnum = pgEnum('service_type', [
   'tv',
 ]);
 
+export const receiveTypeEnum = pgEnum('receive_type', [
+  'customer_drop_off',
+  'home_received',
+  'courier_received',
+]);
+
 export const info = work.table('info', {
   id: serial('id').notNull().unique(),
   uuid: uuid_primary,
@@ -98,6 +104,7 @@ export const info = work.table('info', {
   where_they_find_us: whereTheyFindUsEnum('where_they_find_us').default('none'),
   is_fronted_user: boolean('is_fronted_user').default(false),
   service_type: serviceTypeEnum('service_type').default('monitor'),
+  receive_type: receiveTypeEnum('receive_type').default('customer_drop_off'),
 });
 
 export const order = work.table('order', {

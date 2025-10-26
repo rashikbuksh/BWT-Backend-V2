@@ -287,6 +287,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 LEFT JOIN delivery.challan_entry ce ON o.uuid = ce.order_uuid
                 WHERE o.info_uuid = ${info.uuid}
               )`,
+      receive_type: info.receive_type,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -399,6 +400,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
                 WHERE o.info_uuid = ${info.uuid}
               )`,
+      receive_type: info.receive_type,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -563,6 +565,7 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
                 WHERE o.info_uuid = ${info.uuid}
               )`,
+      receive_type: info.receive_type,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))

@@ -57,6 +57,7 @@ export const insertSchema = createInsertSchema(
   phone: true,
   where_they_find_us: true,
   service_type: true,
+  receive_type: true,
 }).omit({
   id: true,
 }).extend({
