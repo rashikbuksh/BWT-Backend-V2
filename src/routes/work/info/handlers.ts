@@ -268,7 +268,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 SELECT COALESCE(
                   json_agg(json_build_object(
                     'order_uuid', o.uuid,
-                    'order_id', CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.reclaimed_order_uuid) END,
+                    'order_id', CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END,
                     'serial_no', o.serial_no, 
                     'model_uuid', o.model_uuid,
                     'model_name', m.name,
@@ -289,7 +289,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'is_delivered', CASE WHEN ce.uuid IS NOT NULL THEN true ELSE false END,
                     'is_delivered_date', ch.is_delivery_complete_date,
                     'reclaimed_order_uuid', o.reclaimed_order_uuid,
-                    'reclaimed_order_id', CASE WHEN ro.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.reclaimed_order_uuid) END,
+                    'reclaimed_order_id', CASE WHEN ro.uuid IS NULL THEN NULL WHEN ro.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) END
                   )), '[]'::json
                 )
                 FROM work.order o
