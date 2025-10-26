@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import * as storeSchema from '@/routes/store/schema';
 import * as workSchema from '@/routes/work/schema';
@@ -109,7 +110,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       payment_method: challan.payment_method,
       branch_uuid: challan.branch_uuid,
       branch_name: storeSchema.branch.name,
-      convince_bill_amount: challan.convince_bill_amount,
+      convince_bill_amount: PG_DECIMAL_TO_FLOAT(challan.convince_bill_amount),
       add_convince_bill_amount: challan.add_convince_bill_amount,
     })
     .from(challan)
@@ -163,7 +164,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       payment_method: challan.payment_method,
       branch_uuid: challan.branch_uuid,
       branch_name: storeSchema.branch.name,
-      convince_bill_amount: challan.convince_bill_amount,
+      convince_bill_amount: PG_DECIMAL_TO_FLOAT(challan.convince_bill_amount),
       add_convince_bill_amount: challan.add_convince_bill_amount,
     })
     .from(challan)
