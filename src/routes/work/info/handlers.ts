@@ -268,6 +268,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 SELECT COALESCE(
                   json_agg(json_build_object(
                     'order_uuid', o.uuid,
+                    'order_id', CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.reclaimed_order_uuid) END,
                     'serial_no', o.serial_no, 
                     'model_uuid', o.model_uuid,
                     'model_name', m.name,
