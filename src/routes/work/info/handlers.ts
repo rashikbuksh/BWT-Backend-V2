@@ -287,7 +287,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'is_delivery_without_challan', o.is_delivery_without_challan,
                     'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
                     'is_delivered', CASE WHEN ce.uuid IS NOT NULL THEN true ELSE false END,
-                    'is_delivered_date', ch.is_delivery_complete_date
+                    'is_delivered_date', ch.is_delivery_complete_date,
+                    'reclaimed_order_uuid', o.reclaimed_order_uuid,
+                    'reclaimed_order_id', CASE WHEN ro.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.reclaimed_order_uuid) END,
                   )), '[]'::json
                 )
                 FROM work.order o
@@ -295,6 +297,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
                 LEFT JOIN delivery.challan_entry ce ON o.uuid = ce.order_uuid
                 LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
+                LEFT JOIN work.order ro ON o.reclaimed_order_uuid = ro.uuid
                 WHERE o.info_uuid = ${info.uuid}
               )`,
       receive_type: info.receive_type,
