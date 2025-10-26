@@ -1,5 +1,7 @@
 import { asc, desc, or, sql } from 'drizzle-orm';
 import { char, decimal, timestamp } from 'drizzle-orm/pg-core';
+import Cache from 'memory-cache';
+import * as HSCode from 'stoker/http-status-codes';
 
 import { insertFile, updateFile } from '@/utils/upload_file';
 
@@ -536,175 +538,52 @@ export async function handleImagePatch(newImage: any, oldImagePath: string | und
   return oldImagePath;
 }
 
-// export async function getEmployeeAttendanceForDateRange(employee_uuid: string, from_date: string, to_date: string) {
-//   const db = (await import('@/db')).default;
+export // cache create function
+async function cacheFunction(c: any, cacheKey: string, queryFunction: any, type: 'create' | 'other', durationMs = 2 * 60 * 1000) {
+  if (type === 'create') {
+  // get all query params from the request and add them to the cache key
+    const queryParams = c.req.valid('query');
+    const queryString = Object.keys(queryParams)
+      .map(key => `${key}=${queryParams[key]}`)
+      .join('&');
+    const cacheKeyWithParam = `${cacheKey}?${queryString}`;
+    const cachedData = Cache.get(cacheKeyWithParam);
+    if (cachedData) {
+      return c.json(cachedData, 200);
+    }
 
-//   const query = sql`
-//     WITH params AS (
-//       SELECT ${from_date}::date AS start_date, ${to_date}::date AS end_date
-//     ),
-//     dates AS (
-//       SELECT generate_series(start_date, end_date, INTERVAL '1 day')::date AS punch_date
-//       FROM params
-//     ),
-//     attendance_data AS (
-//       SELECT
-//         e.uuid AS employee_uuid,
-//         u.uuid AS user_uuid,
-//         u.name AS employee_name,
-//         s.name AS shift_name,
-//         s.start_time,
-//         s.end_time,
-//         s.late_time,
-//         s.early_exit_before,
-//         sg.name AS shift_group_name,
-//         e.start_date::date,
-//         d.punch_date,
-//         MIN(pl.punch_time) AS entry_time,
-//         MAX(pl.punch_time) AS exit_time,
-//         CASE
-//           WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
-//             (EXTRACT(EPOCH FROM MAX(pl.punch_time)::time - MIN(pl.punch_time)::time) / 3600)::float8
-//           ELSE NULL
-//         END AS working_hours,
-//         CASE
-//           WHEN gh.date IS NOT NULL OR sp.is_special = 1 OR hr.is_employee_off_day(e.uuid, d.punch_date)=true OR al.reason IS NOT NULL THEN 0
-//           ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
-//         END AS expected_working_hours,
-//         CASE
-//           WHEN MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time THEN
-//             (EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::float8
-//           ELSE NULL
-//         END AS late_hours,
-//         CASE
-//           WHEN MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN
-//             (EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::float8
-//           ELSE NULL
-//         END AS early_exit_hours,
-//         GREATEST(
-//           COALESCE(
-//             CASE
-//               WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN
-//                 (EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600)::float8
-//               ELSE 0
-//             END, 0
-//           ) - COALESCE(
-//             CASE
-//               WHEN gh.date IS NOT NULL OR sp.is_special = 1 OR hr.is_employee_off_day(e.uuid, d.punch_date)=true OR al.reason IS NOT NULL THEN 0
-//               ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
-//             END, 0
-//           ), 0
-//         )::float8 AS overtime_hours,
-//         CASE WHEN gh.date IS NOT NULL THEN TRUE ELSE FALSE END AS is_general_holiday,
-//         CASE WHEN sp.is_special = 1 THEN TRUE ELSE FALSE END AS is_special_holiday,
-//         CASE WHEN hr.is_employee_off_day(e.uuid, d.punch_date)=true THEN TRUE ELSE FALSE END AS is_off_day,
-//         CASE
-//           WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-//             AND MIN(pl.punch_time) IS NOT NULL THEN TRUE
-//           ELSE FALSE
-//         END AS is_present,
-//         CASE
-//           WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-//             AND MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time THEN TRUE
-//           ELSE FALSE
-//         END AS is_late,
-//         CASE
-//           WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-//             AND MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN TRUE
-//           ELSE FALSE
-//         END AS is_early_exit,
-//         CASE WHEN al.reason IS NOT NULL THEN al.reason ELSE NULL END AS leave_reason,
-//         dept.department AS department_name,
-//         des.designation AS designation_name,
-//         et.name AS employment_type_name,
-//         w.name AS workplace_name,
-//         CASE
-//           WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-//             AND MIN(pl.punch_time) IS NULL THEN TRUE
-//           ELSE FALSE
-//         END AS is_absent,
-//         CASE WHEN ap_late.employee_uuid IS NOT NULL THEN TRUE ELSE FALSE END AS is_late_application,
-//         CASE WHEN me_field.employee_uuid IS NOT NULL THEN TRUE ELSE FALSE END AS is_field_visit
-//       FROM hr.employee e
-//       CROSS JOIN dates d
-//       LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = d.punch_date
-//       LEFT JOIN LATERAL (
-//         SELECT r.shifts_uuid AS shifts_uuid,
-//               r.shift_group_uuid AS shift_group_uuid
-//         FROM hr.roster r
-//         WHERE r.shift_group_uuid = (
-//           SELECT el.type_uuid
-//           FROM hr.employee_log el
-//           WHERE el.employee_uuid = e.uuid
-//             AND el.type = 'shift_group'
-//             AND el.effective_date::date <= d.punch_date
-//           ORDER BY el.effective_date DESC
-//           LIMIT 1
-//         )
-//         AND r.effective_date <= d.punch_date
-//         ORDER BY r.effective_date DESC
-//         LIMIT 1
-//       ) sg_sel ON TRUE
-//       LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
-//       LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
-//       LEFT JOIN hr.general_holidays gh ON gh.date = d.punch_date
-//       LEFT JOIN hr.users u ON e.user_uuid = u.uuid
-//       LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
-//       LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
-//       LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-//       LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
-//       LEFT JOIN hr.apply_late ap_late ON ap_late.employee_uuid = e.uuid
-//           AND ap_late.date::date = d.punch_date
-//           AND ap_late.status = 'approved'
-//       LEFT JOIN hr.manual_entry me_field ON me_field.employee_uuid = e.uuid
-//         AND me_field.entry_time::date = d.punch_date
-//         AND me_field.approval = 'approved'
-//         AND me_field.type = 'field_visit'
-//       LEFT JOIN LATERAL (
-//         SELECT 1 AS is_special
-//         FROM hr.special_holidays sh
-//         WHERE d.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-//         LIMIT 1
-//       ) AS sp ON TRUE
-//       LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
-//         AND d.punch_date BETWEEN al.from_date::date AND al.to_date::date
-//         AND al.approval = 'approved'
-//       GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special,al.reason, dept.department, des.designation, et.name, w.name, ap_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date
-//     )
-//     SELECT
-//       ad.employee_uuid,
-//       ad.user_uuid,
-//       ad.employee_name,
-//       ad.designation_name,
-//       ad.department_name,
-//       ad.workplace_name,
-//       ad.employment_type_name,
-//       ad.start_date,
-//       (SELECT COUNT(*) FROM dates)::int AS total_days,
-//       COUNT(*) FILTER (WHERE ad.is_present)::float8    AS present_days,
-//       COUNT(*) FILTER (WHERE ad.is_late)::float8        AS late_days,
-//       COUNT(*) FILTER (WHERE ad.is_early_exit)::float8   AS early_exit_days,
-//       COUNT(*) FILTER (WHERE ad.leave_reason IS NOT NULL)::float8  AS leave_days,
-//       COUNT(*) FILTER (WHERE ad.is_off_day AND NOT ad.is_general_holiday AND NOT ad.is_special_holiday)::float8 AS off_days,
-//       COUNT(*) FILTER (WHERE ad.is_general_holiday)::float8  AS general_holidays,
-//       COUNT(*) FILTER (WHERE ad.is_special_holiday)::float8  AS special_holidays,
-//       ((SELECT COUNT(*) FROM dates) - COUNT(*) FILTER (WHERE ad.is_off_day OR ad.is_general_holiday OR ad.is_special_holiday OR ad.leave_reason IS NOT NULL))::int AS working_days,
-//       COUNT(*) FILTER (WHERE ad.is_absent)::float8       AS absent_days,
-//       COUNT(*) FILTER (WHERE ad.is_late_application)::float8  AS approved_lates,
-//       COUNT(*) FILTER (WHERE ad.is_field_visit)::float8  AS field_visit_days,
-//       -- Sum late_hours only for rows flagged as is_late
-//       COALESCE(SUM(ad.late_hours) FILTER (WHERE ad.is_late), 0)::float8      AS total_late_hours,
-//       -- Sum early_exit_hours only for rows flagged as is_early_exit
-//       COALESCE(SUM(ad.early_exit_hours) FILTER (WHERE ad.is_early_exit), 0)::float8 AS total_early_exit_hours,
-//       COALESCE(SUM(ad.working_hours), 0)::float8   AS working_hours,
-//       COALESCE(SUM(ad.expected_working_hours), 0)::float8 AS expected_hours,
-//       COALESCE(SUM(ad.overtime_hours), 0)::float8  AS overtime_hours
-//     FROM attendance_data ad
-//     WHERE ${employee_uuid ? sql`ad.employee_uuid = ${employee_uuid}` : sql`TRUE`}
-//     GROUP BY ad.employee_uuid, ad.user_uuid, ad.employee_name, ad.designation_name, ad.department_name, ad.workplace_name, ad.employment_type_name, ad.start_date
-//     ORDER BY ad.employee_name
-//   `;
-//   const result = await db.execute(query);
+    try {
+      const response = await queryFunction(c, async () => {});
 
-//   return result.rows || [];
-// }
+      // Normalize response data for caching and returning:
+      // - if the response provides a json() method (e.g., Fetch Response), use it
+      // - if the response is a TypedResponse-like object with a `body` property, use that
+      // - otherwise, treat the response itself as the data
+      let responseData: any;
+      if (response && typeof (response as any).json === 'function') {
+        responseData = await (response as any).json();
+      }
+      else if (response && (response as any).body !== undefined) {
+        responseData = (response as any).body;
+      }
+      else {
+        responseData = response;
+      }
+
+      Cache.put(cacheKey, responseData, durationMs);
+      return c.json(responseData, 200);
+    }
+    catch (error: any) {
+      console.warn('Error fetching order details:', error);
+      return c.json({ error: 'Internal Server Error' }, HSCode.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  else if (type === 'other') {
+    const cachedKeys = Cache.keys().find(key => key.startsWith(cacheKey));
+    if (cachedKeys) {
+      Cache.del(cachedKeys);
+    }
+    return queryFunction(c, async () => {});
+  }
+}
