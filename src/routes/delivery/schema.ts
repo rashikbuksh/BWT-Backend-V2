@@ -8,7 +8,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 
-import { DateTime, defaultUUID, uuid_primary } from '@/lib/variables';
+import { DateTime, defaultUUID, PG_DECIMAL, uuid_primary } from '@/lib/variables';
 
 import { users } from '../hr/schema';
 import { branch } from '../store/schema';
@@ -79,6 +79,8 @@ export const challan = delivery.table('challan', {
   branch_uuid: defaultUUID('branch_uuid').references(
     () => branch.uuid,
   ),
+  convince_bill_amount: PG_DECIMAL('convince_bill_amount').default(sql`0`),
+  add_convince_bill_amount: boolean('add_convince_bill_amount').default(false),
 });
 
 export const challan_entry = delivery.table('challan_entry', {

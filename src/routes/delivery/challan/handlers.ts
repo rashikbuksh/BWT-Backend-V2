@@ -109,6 +109,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       payment_method: challan.payment_method,
       branch_uuid: challan.branch_uuid,
       branch_name: storeSchema.branch.name,
+      convince_bill_amount: challan.convince_bill_amount,
+      add_convince_bill_amount: challan.add_convince_bill_amount,
     })
     .from(challan)
     .leftJoin(customerUser, eq(challan.customer_uuid, customerUser.uuid))
@@ -161,6 +163,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       payment_method: challan.payment_method,
       branch_uuid: challan.branch_uuid,
       branch_name: storeSchema.branch.name,
+      convince_bill_amount: challan.convince_bill_amount,
+      add_convince_bill_amount: challan.add_convince_bill_amount,
     })
     .from(challan)
     .leftJoin(customerUser, eq(challan.customer_uuid, customerUser.uuid))
