@@ -651,7 +651,10 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                             ELSE NULL
                           END AS working_hours,
                           CASE
-                            WHEN gh.date IS NOT NULL OR sp.is_special = 1 OR hr.is_employee_off_day(e.uuid, d.punch_date)=true OR al.reason IS NOT NULL THEN 0
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date))
+                            OR (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date))
+                            OR hr.is_employee_off_day(e.uuid, d.punch_date)=true 
+                            OR hr.is_employee_on_leave(e.uuid, d.punch_date)=true THEN 0
                             ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                           END AS expected_working_hours,
                           CASE 
@@ -673,27 +676,39 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                               END, 0
                             ) - COALESCE(
                               CASE
-                                WHEN gh.date IS NOT NULL OR sp.is_special = 1 OR hr.is_employee_off_day(e.uuid, d.punch_date)=true OR al.reason IS NOT NULL THEN 0
+                                WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date))
+                                OR (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date))
+                                OR hr.is_employee_off_day(e.uuid, d.punch_date)=true 
+                                OR hr.is_employee_on_leave(e.uuid, d.punch_date)=true THEN 0
                                 ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                               END, 0
                             ), 0
                           )::float8 AS overtime_hours,
-                          CASE WHEN gh.date IS NOT NULL THEN TRUE ELSE FALSE END AS is_general_holiday,
-                          CASE WHEN sp.is_special = 1 THEN TRUE ELSE FALSE END AS is_special_holiday,
+                          CASE WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) THEN TRUE ELSE FALSE END AS is_general_holiday,
+                          CASE WHEN (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) THEN TRUE ELSE FALSE END AS is_special_holiday,
                           CASE WHEN hr.is_employee_off_day(e.uuid, d.punch_date)=true THEN TRUE ELSE FALSE END AS is_off_day,
                           CASE 
-                            WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-                              AND MIN(pl.punch_time) IS NOT NULL THEN TRUE
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) IS false
+                            AND (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) IS false 
+                            AND hr.is_employee_off_day(e.uuid, d.punch_date)=false 
+                            AND hr.is_employee_on_leave(e.uuid, d.punch_date)=false
+                            AND MIN(pl.punch_time) IS NOT NULL AND ((MIN(pl.punch_time)::time <= s.late_time::time) OR (( MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, d.punch_date)=true)) THEN TRUE
                             ELSE FALSE
                           END AS is_present,
                           CASE 
-                            WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-                              AND MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time THEN TRUE
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) IS false
+                            AND (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) IS false
+                            AND hr.is_employee_off_day(e.uuid, d.punch_date)=false 
+                            AND hr.is_employee_on_leave(e.uuid, d.punch_date)=false
+                            AND MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time AND hr.is_employee_applied_late(e.uuid, d.punch_date)=false THEN TRUE
                             ELSE FALSE
                           END AS is_late,
                           CASE 
-                            WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
-                              AND MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN TRUE
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) IS false
+                             AND (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) IS false
+                             AND hr.is_employee_off_day(e.uuid, d.punch_date)=false 
+                             AND hr.is_employee_on_leave(e.uuid, d.punch_date)=false
+                            AND MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN TRUE
                             ELSE FALSE
                           END AS is_early_exit,
                           CASE WHEN al.reason IS NOT NULL THEN al.reason ELSE NULL END AS leave_reason,
@@ -703,7 +718,10 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           w.name AS workplace_name,
                           e.profile_picture,
                           CASE 
-                            WHEN gh.date IS NULL AND sp.is_special IS NULL AND hr.is_employee_off_day(e.uuid, d.punch_date)=false AND al.reason IS NULL
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) IS false 
+                            AND (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) IS false 
+                            AND hr.is_employee_off_day(e.uuid, d.punch_date)=false 
+                            AND hr.is_employee_on_leave(e.uuid, d.punch_date)=false
                               AND MIN(pl.punch_time) IS NULL THEN TRUE
                             ELSE FALSE
                           END AS is_absent,
@@ -731,7 +749,6 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                                         ) sg_sel ON TRUE
                         LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
                         LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
-                        LEFT JOIN hr.general_holidays gh ON gh.date = d.punch_date
                         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                         LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                         LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
@@ -744,16 +761,10 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                           AND me_field.entry_time::date = d.punch_date
                           AND me_field.approval = 'approved'
                           AND me_field.type = 'field_visit'
-                        LEFT JOIN LATERAL (
-                          SELECT 1 AS is_special
-                          FROM hr.special_holidays sh
-                          WHERE d.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-                          LIMIT 1
-                        ) AS sp ON TRUE
                         LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                           AND d.punch_date BETWEEN al.from_date::date AND al.to_date::date
                           AND al.approval = 'approved'
-                        GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, gh.date, sp.is_special,al.reason, dept.department, des.designation, et.name, w.name, ap_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date, e.profile_picture
+                        GROUP BY e.uuid, u.uuid, u.name, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,al.reason, dept.department, des.designation, et.name, w.name, ap_late.employee_uuid, me_field.employee_uuid, d.punch_date, sg.name, e.start_date, e.profile_picture
                       )
                       SELECT
                         ad.employee_uuid,
@@ -851,10 +862,10 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                         ELSE NULL
                     END AS hours_worked,
                     CASE
-                        WHEN gh.date IS NOT NULL
-                          OR sp.is_special = 1
+                        WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date))
+                          OR (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date))  
                           OR hr.is_employee_off_day(e.uuid,ud.punch_date)=true
-                          OR al.reason IS NOT NULL THEN 0
+                          OR hr.is_employee_on_leave(e.uuid, ud.punch_date)=true  THEN 0
                         ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                     END AS expected_hours,
                      GREATEST(
@@ -868,20 +879,22 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                       -
                       COALESCE(
                         CASE
-                          WHEN gh.date IS NOT NULL
-                            OR sp.is_special = 1
+                          WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date))
+                            OR (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date))
                             OR hr.is_employee_off_day(e.uuid,ud.punch_date)=true
-                            OR al.reason IS NOT NULL THEN 0
+                            OR hr.is_employee_on_leave(e.uuid, ud.punch_date)=true  THEN 0
                           ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                         END
                       , 0)
                     , 0)::float8 AS overtime_hours,
                     CASE
-                        WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
+                        WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date)) OR 
+                              (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date)) THEN 'Holiday'
                         WHEN hr.is_employee_off_day(e.uuid,ud.punch_date)=true THEN 'Off Day'
-                        WHEN al.reason IS NOT NULL THEN 'Leave'
+                        WHEN hr.is_employee_on_leave(e.uuid, ud.punch_date)=true THEN 'Leave'
                         WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
-                        WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                        WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=false THEN 'Late'
+                        WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=true THEN 'Late (Approved)'
                         WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                         ELSE 'Present'
                     END as status,
@@ -890,13 +903,15 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     et.name AS employment_type_name,
                     w.name AS workplace_name,
                     sg.name AS shift_group_name,
-                    e.profile_picture
+                    e.profile_picture,
+                    COALESCE(sg_sel.off_days::jsonb, '[]'::jsonb) AS off_days
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                   LEFT JOIN LATERAL (
                               SELECT r.shifts_uuid AS shifts_uuid,
-                              r.shift_group_uuid
+                              r.shift_group_uuid,
+                              r.off_days
                               FROM hr.roster r
                               WHERE r.shift_group_uuid = (
                                   SELECT el.type_uuid
@@ -913,24 +928,14 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                           ) sg_sel ON TRUE
                   LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                   LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
-                  LEFT JOIN hr.general_holidays gh ON gh.date = ud.punch_date
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                   LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                   LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                   LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
-                  LEFT JOIN LATERAL (
-                    SELECT 1 AS is_special
-                    FROM hr.special_holidays sh
-                    WHERE ud.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-                    LIMIT 1
-                  ) AS sp ON TRUE
-                  LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
-                    AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
-                    AND al.approval = 'approved'
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special,gh.date, al.reason,dept.department, des.designation, et.name, e.uuid, w.name, sg.name, e.start_date, e.profile_picture
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,dept.department, des.designation, et.name, e.uuid, w.name, sg.name, e.start_date, e.profile_picture, sg_sel.off_days::jsonb
                 )
                 SELECT
                     uuid,
@@ -958,7 +963,8 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
                     early_exit_hours,
                     overtime_hours,
                     start_date::date,
-                    shift_group_name
+                    shift_group_name,
+                    off_days
                 FROM attendance_data
                 ORDER BY employee_name, punch_date;
               `;
@@ -969,124 +975,3 @@ export const getDailyEmployeeAttendanceReport: AppRouteHandler<GetDailyEmployeeA
 
   return c.json(data.rows || [], HSCode.OK);
 };
-
-// export const getMonthlyAttendanceReport2: AppRouteHandler<GetMonthlyAttendanceReportRoute> = async (c: any) => {
-//   let { from_date, to_date, employee_uuid } = c.req.valid('query');
-
-//   if (employee_uuid === '' || employee_uuid === null || employee_uuid === undefined) {
-//     employee_uuid = null;
-//   }
-
-//   const holidays = await getHolidayCountsDateRange(from_date, to_date);
-//   const totalOffDays = await getOffDayCountsDateRange(employee_uuid, from_date, to_date);
-
-//   // Generate all dates in the range
-//   const startDate = new Date(from_date.replace(/\//g, '-'));
-//   const endDate = new Date(to_date.replace(/\//g, '-'));
-//   const dates: string[] = [];
-//   const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-//   for (let i = 0; i < totalDays; i++) {
-//     const d = new Date(startDate);
-//     d.setDate(d.getDate() + i);
-//     dates.push(d.toISOString().split('T')[0]);
-//   }
-
-//   let presentDays = 0;
-//   let lateDays = 0;
-//   let earlyExitDays = 0;
-//   let leaveDays = 0;
-//   let absentDays = 0;
-//   let totalLateHours = 0;
-//   let totalEarlyExitHours = 0;
-//   let totalWorkingHours = 0;
-//   let totalExpectedHours = 0;
-//   let overtimeHours = 0;
-//   let approvedLates = 0;
-//   let fieldVisitDays = 0;
-
-//   // For each date, determine attendance status
-//   for (const date of dates) {
-//     const dailyStatus = await getEmployeeAttendanceForDate(employee_uuid, date);
-
-//     // console.log(`Date: ${date}, Status:`, dailyStatus);
-
-//     if (dailyStatus) {
-//       if (dailyStatus.is_present) {
-//         presentDays += 1;
-//       }
-//       if (dailyStatus.is_late) {
-//         lateDays += 1;
-//         totalLateHours += Number(dailyStatus.late_hours || 0);
-//       }
-//       if (dailyStatus.is_early_exit) {
-//         earlyExitDays += 1;
-//         totalEarlyExitHours += Number(dailyStatus.early_exit_hours || 0);
-//       }
-//       if (dailyStatus.leave_reason) {
-//         leaveDays += 1;
-//       }
-//       if (dailyStatus.is_absent) {
-//         absentDays += 1;
-//       }
-//       if (dailyStatus.working_hours) {
-//         totalWorkingHours += Number(dailyStatus.working_hours || 0);
-//       }
-//       if (dailyStatus.expected_working_hours) {
-//         totalExpectedHours += Number(dailyStatus.expected_working_hours || 0);
-//       }
-//       if (dailyStatus.overtime_hours) {
-//         overtimeHours += Number(dailyStatus.overtime_hours || 0);
-//       }
-//       if (dailyStatus.is_field_visit) {
-//         fieldVisitDays += 1;
-//       }
-//       if (dailyStatus.is_late_application) {
-//         approvedLates += 1;
-//       }
-//     }
-//   }
-
-//   const employeeQuery = sql`
-//     SELECT e.uuid AS employee_uuid, u.uuid AS user_uuid, u.name AS employee_name,
-//            d.designation AS designation_name, dep.department AS department_name,
-//            w.name AS workplace_name, et.name AS employment_type_name
-//     FROM hr.employee e
-//     LEFT JOIN hr.users u ON e.user_uuid = u.uuid
-//     LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
-//     LEFT JOIN hr.department dep ON u.department_uuid = dep.uuid
-//     LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
-//     LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
-//     WHERE ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-//   `;
-//   const employeeData = await db.execute(employeeQuery);
-
-//   // Format the result (single row per employee)
-//   const formattedData = employeeData.rows.map((emp: any) => ({
-//     employee_uuid: emp.employee_uuid,
-//     user_uuid: emp.user_uuid,
-//     employee_name: emp.employee_name,
-//     designation_name: emp.designation_name,
-//     department_name: emp.department_name,
-//     workplace_name: emp.workplace_name,
-//     employment_type_name: emp.employment_type_name,
-//     total_days: totalDays,
-//     present_days: presentDays,
-//     late_days: lateDays,
-//     early_exit_days: earlyExitDays,
-//     leave_days: leaveDays,
-//     off_days: Number(totalOffDays),
-//     general_holidays: Number(holidays.general),
-//     special_holidays: Number(holidays.special),
-//     working_days: totalDays - Number(holidays.general) - Number(holidays.special) - Number(totalOffDays) - Number(leaveDays),
-//     absent_days: absentDays,
-//     approved_lates: approvedLates,
-//     field_visit_days: fieldVisitDays,
-//     total_late_hours: totalLateHours,
-//     total_early_exit_hours: totalEarlyExitHours,
-//     working_hours: totalWorkingHours,
-//     expected_hours: totalExpectedHours,
-//     overtime_hours: overtimeHours,
-//   }));
-
-//   return c.json(formattedData || [], HSCode.OK);
-// };
