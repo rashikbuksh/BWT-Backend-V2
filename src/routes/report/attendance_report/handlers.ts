@@ -161,7 +161,7 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
                         'end_time', end_time,
                         'shift_group_name', shift_group_name,
                         'off_days', off_days
-                        ) ORDER BY punch_date
+                        ) ORDER BY punch_date DESC
                     ) AS attendance_records
                 FROM attendance_data
                 -- group only by stable identifiers so all dates aggregate into one employee row
