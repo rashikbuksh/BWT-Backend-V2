@@ -286,7 +286,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'ready_for_delivery_date', o.ready_for_delivery_date,
                     'is_delivery_without_challan', o.is_delivery_without_challan,
                     'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
-                    'is_delivered', CASE WHEN ce.uuid IS NOT NULL THEN true ELSE false END,
+                    'is_delivered', ch.is_delivery_complete,
                     'is_delivered_date', ch.is_delivery_complete_date,
                     'reclaimed_order_uuid', o.reclaimed_order_uuid,
                     'reclaimed_order_id', CASE WHEN ro.uuid IS NULL THEN NULL WHEN ro.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) END
