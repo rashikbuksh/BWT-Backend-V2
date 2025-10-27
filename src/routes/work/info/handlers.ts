@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -223,12 +223,23 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order,
       eq(deliverySchema.challan_entry.order_uuid, order.uuid),
     )
-    .where(or(
+    .where(
       eq(deliverySchema.challan.is_delivery_complete, true),
-      eq(order.is_delivery_without_challan, true),
-    ))
+    )
     .groupBy(order.info_uuid)
     .as('delivered_count_tbl');
+
+  const deliveredWithoutChallanCountSubquery = db
+    .select({
+      info_uuid: order.info_uuid,
+      delivered_without_challan_count: sql`COUNT(*)`.as('delivered_without_challan_count'),
+    })
+    .from(order)
+    .where(
+      eq(order.is_delivery_without_challan, true),
+    )
+    .groupBy(order.info_uuid)
+    .as('delivered_without_challan_count_tbl');
 
   const infoPromise = db
     .select({
@@ -320,6 +331,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       deliveredCountSubquery,
       eq(info.uuid, deliveredCountSubquery.info_uuid),
     )
+    .leftJoin(
+      deliveredWithoutChallanCountSubquery,
+      eq(info.uuid, deliveredWithoutChallanCountSubquery.info_uuid),
+    )
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
     .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
@@ -336,14 +351,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // Filter by order status
   if (status === 'pending') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) > COALESCE(delivered_count_tbl.delivered_count, 0)`,
+      sql`COALESCE(order_count_tbl.order_count, 0) > COALESCE(delivered_count_tbl.delivered_count, 0) + COALESCE(delivered_without_challan_count_tbl.delivered_without_challan_count, 0)`,
     );
   }
   else if (status === 'complete') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) <= COALESCE(delivered_count_tbl.delivered_count, 0) 
-          AND COALESCE(order_count_tbl.order_count, 0) > 0 
-          AND COALESCE(delivered_count_tbl.delivered_count, 0) > 0`,
+      sql`COALESCE(order_count_tbl.order_count, 0) <= COALESCE(delivered_count_tbl.delivered_count, 0) + COALESCE(delivered_without_challan_count_tbl.delivered_without_challan_count, 0)
+          AND COALESCE(order_count_tbl.order_count, 0) > 0`,
     );
   }
 
