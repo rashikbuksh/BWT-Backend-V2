@@ -80,6 +80,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_at: apply_late.created_at,
       updated_at: apply_late.updated_at,
       remarks: apply_late.remarks,
+      profile_picture: employee.profile_picture,
+      start_Date: employee.start_date,
     })
     .from(apply_late)
     .leftJoin(
@@ -129,6 +131,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       created_at: apply_late.created_at,
       updated_at: apply_late.updated_at,
       remarks: apply_late.remarks,
+      profile_picture: employee.profile_picture,
+      start_Date: employee.start_date,
     })
     .from(apply_late)
     .leftJoin(
