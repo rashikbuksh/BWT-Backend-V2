@@ -204,6 +204,8 @@ export const manualEntryByEmployee: AppRouteHandler<ManualEntryByEmployeeRoute> 
       device_list_uuid: manual_entry.device_list_uuid,
       device_list_name: device_list.name,
       approval: manual_entry.approval,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
     })
     .from(manual_entry)
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
@@ -263,19 +265,22 @@ export const selectAllManualEntryWithPaginationFieldVisit: AppRouteHandler<Selec
       created_at: manual_entry.created_at,
       updated_at: manual_entry.updated_at,
       remarks: manual_entry.remarks,
-      department_uuid: employee.department_uuid,
+      department_uuid: users.department_uuid,
       department_name: department.department,
-      designation_uuid: employee.designation_uuid,
+      designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
       device_list_uuid: manual_entry.device_list_uuid,
       device_list_name: device_list.name,
       approval: manual_entry.approval,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+
     })
     .from(manual_entry)
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(manual_entry.created_by, createdByUser.uuid),
