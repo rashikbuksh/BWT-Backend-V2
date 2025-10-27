@@ -826,10 +826,10 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                         ELSE NULL
                     END AS hours_worked,
                     CASE
-                        WHEN gh.date IS NOT NULL
-                          OR sp.is_special = 1
+                        WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date))
+                          OR (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date))
                           OR hr.is_employee_off_day(e.uuid, ud.punch_date)=true
-                          OR al.reason IS NOT NULL THEN 0
+                          OR hr.is_employee_on_leave(e.uuid, ud.punch_date)=true THEN 0
                         ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                     END AS expected_hours,
                      GREATEST(
@@ -843,20 +843,22 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                       -
                       COALESCE(
                         CASE
-                          WHEN gh.date IS NOT NULL
-                            OR sp.is_special = 1
+                          WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date))
+                            OR (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date))
                             OR hr.is_employee_off_day(e.uuid, ud.punch_date)=true
-                            OR al.reason IS NOT NULL THEN 0
+                            OR hr.is_employee_on_leave(e.uuid, ud.punch_date)=true THEN 0
                           ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                         END
                       , 0)
                     , 0)::float8 AS overtime_hours,
                     CASE
-                        WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
+                        WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date))
+                          OR (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date)) THEN 'Holiday'
                         WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)=true THEN 'Off Day'
-                        WHEN al.reason IS NOT NULL THEN 'Leave'
+                        WHEN hr.is_employee_on_leave(e.uuid, ud.punch_date)=true THEN 'Leave'
                         WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
-                        WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                        WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=false THEN 'Late'
+                        WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=true THEN 'Late (Approved)'
                         WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                         ELSE 'Present'
                     END as status,
@@ -882,25 +884,18 @@ export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmplo
                                     LIMIT 1
                                   ) AS sg_sel ON TRUE
                   LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
-                  LEFT JOIN hr.general_holidays gh ON gh.date = ud.punch_date
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                   LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                   LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
                   LEFT JOIN hr.users lineManager ON e.line_manager_uuid = lineManager.uuid
                   LEFT JOIN hr.employment_type et ON e.employment_type_uuid = et.uuid
                   LEFT JOIN hr.workplace w ON e.workplace_uuid = w.uuid
-                  LEFT JOIN LATERAL (
-                    SELECT 1 AS is_special
-                    FROM hr.special_holidays sh
-                    WHERE ud.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-                    LIMIT 1
-                  ) AS sp ON TRUE
                   LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
                     AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
                     AND al.approval = 'approved'
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, sp.is_special, gh.date, al.reason, dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name, e.profile_picture
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,al.reason, dept.department, des.designation, et.name, e.uuid, w.name, al.from_date, al.to_date, lineManager.name, e.profile_picture
                 )
                 SELECT
                     uuid,
