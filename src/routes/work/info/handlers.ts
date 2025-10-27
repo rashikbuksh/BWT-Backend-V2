@@ -333,12 +333,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // Filter by order status
   if (status === 'pending') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) < COALESCE(delivered_count_tbl.delivered_count, 0)`,
+      sql`COALESCE(order_count_tbl.order_count, 0) > COALESCE(delivered_count_tbl.delivered_count, 0)`,
     );
   }
   else if (status === 'complete') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) >= COALESCE(delivered_count_tbl.delivered_count, 0) 
+      sql`COALESCE(order_count_tbl.order_count, 0) <= COALESCE(delivered_count_tbl.delivered_count, 0) 
           AND COALESCE(order_count_tbl.order_count, 0) > 0 
           AND COALESCE(delivered_count_tbl.delivered_count, 0) > 0`,
     );
