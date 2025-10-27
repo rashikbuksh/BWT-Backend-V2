@@ -58,6 +58,8 @@ export const insertSchema = createInsertSchema(
   where_they_find_us: true,
   service_type: true,
   receive_type: true,
+  receiver: true,
+  courier_uuid: true,
 }).omit({
   id: true,
 }).extend({

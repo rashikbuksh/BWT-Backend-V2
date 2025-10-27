@@ -301,6 +301,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 WHERE o.info_uuid = ${info.uuid}
               )`,
       receive_type: info.receive_type,
+      receiver: info.receiver,
+      courier_uuid: info.courier_uuid,
+      courier_name: deliverySchema.courier.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -316,7 +319,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
-    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid));
+    .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
+    .leftJoin(deliverySchema.courier, eq(info.courier_uuid, deliverySchema.courier.uuid));
 
   // Build filters array and apply them together
   const filters = [];
@@ -329,12 +333,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // Filter by order status
   if (status === 'pending') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) != COALESCE(delivered_count_tbl.delivered_count, 0)`,
+      sql`COALESCE(order_count_tbl.order_count, 0) < COALESCE(delivered_count_tbl.delivered_count, 0)`,
     );
   }
   else if (status === 'complete') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) = COALESCE(delivered_count_tbl.delivered_count, 0) 
+      sql`COALESCE(order_count_tbl.order_count, 0) >= COALESCE(delivered_count_tbl.delivered_count, 0) 
           AND COALESCE(order_count_tbl.order_count, 0) > 0 
           AND COALESCE(delivered_count_tbl.delivered_count, 0) > 0`,
     );
@@ -414,6 +418,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                 WHERE o.info_uuid = ${info.uuid}
               )`,
       receive_type: info.receive_type,
+      receiver: info.receiver,
+      courier_uuid: info.courier_uuid,
+      courier_name: deliverySchema.courier.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -422,6 +429,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
     .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
+    .leftJoin(deliverySchema.courier, eq(info.courier_uuid, deliverySchema.courier.uuid))
     .where(eq(info.uuid, uuid));
 
   const [data] = await infoPromise;
@@ -579,6 +587,9 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
                 WHERE o.info_uuid = ${info.uuid}
               )`,
       receive_type: info.receive_type,
+      receiver: info.receiver,
+      courier_uuid: info.courier_uuid,
+      courier_name: deliverySchema.courier.name,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -587,6 +598,7 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
     .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
+    .leftJoin(deliverySchema.courier, eq(info.courier_uuid, deliverySchema.courier.uuid))
     .where(eq(info.user_uuid, user_uuid))
     .orderBy(desc(info.created_at));
 

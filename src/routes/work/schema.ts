@@ -15,6 +15,7 @@ import {
   uuid_primary,
 } from '@/lib/variables';
 
+import { courier } from '../delivery/schema';
 import * as hrSchema from '../hr/schema';
 import { whereTheyFindUsEnum } from '../hr/schema';
 import * as storeSchema from '../store/schema';
@@ -105,6 +106,10 @@ export const info = work.table('info', {
   is_fronted_user: boolean('is_fronted_user').default(false),
   service_type: serviceTypeEnum('service_type').default('monitor'),
   receive_type: receiveTypeEnum('receive_type').default('customer_drop_off'),
+  receiver: text('receiver').default(sql`null`),
+  courier_uuid: defaultUUID('courier_uuid').references(
+    () => courier.uuid,
+  ).default(sql`null`),
 });
 
 export const order = work.table('order', {
