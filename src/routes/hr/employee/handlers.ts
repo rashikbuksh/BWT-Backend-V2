@@ -954,7 +954,10 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                         'created_by_department_uuid', createdByUser.department_uuid,
                         'created_by_department_name', department.department,
                         'created_by_designation_uuid', createdByUser.designation_uuid,
-                        'created_by_designation_name', designation.designation
+                        'created_by_designation_name', designation.designation,
+                        'created_by_employee_uuid', createdByEmployee.uuid,
+                        'created_by_start_date', createdByEmployee.start_date,
+                        'created_by_profile_picture', createdByEmployee.profile_picture
                       ), '{}'::jsonb
                     )
                     FROM hr.apply_leave
@@ -964,6 +967,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                     LEFT JOIN hr.users AS createdByUser ON apply_leave.created_by = createdByUser.uuid
                     LEFT JOIN hr.department ON createdByUser.department_uuid = department.uuid
                     LEFT JOIN hr.designation ON createdByUser.designation_uuid = designation.uuid
+                    LEFT JOIN hr.employee createdByEmployee ON createdByUser.uuid = createdByEmployee.user_uuid
                     WHERE apply_leave.employee_uuid = ${employee_uuid} AND apply_leave.uuid = ${apply_leave_uuid})`,
       last_five_leave_applications: sql`
                         (
