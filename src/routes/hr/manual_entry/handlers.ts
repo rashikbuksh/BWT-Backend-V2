@@ -206,6 +206,7 @@ export const manualEntryByEmployee: AppRouteHandler<ManualEntryByEmployeeRoute> 
       approval: manual_entry.approval,
       start_date: employee.start_date,
       profile_picture: employee.profile_picture,
+
     })
     .from(manual_entry)
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
