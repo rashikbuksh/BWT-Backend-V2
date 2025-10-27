@@ -223,7 +223,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order,
       eq(deliverySchema.challan_entry.order_uuid, order.uuid),
     )
-    .where(sql`delivery."challan".is_delivery_complete = 'true'`)
+    .where(eq(deliverySchema.challan.is_delivery_complete, true))
     .groupBy(order.info_uuid)
     .as('delivered_count_tbl');
 
