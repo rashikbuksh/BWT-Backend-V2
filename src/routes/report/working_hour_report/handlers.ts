@@ -4,14 +4,11 @@ import { sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { getHolidayCountsDateRange } from '@/lib/variables';
 
 import type { GetEmployeeWorkingHourReportRoute } from './routes';
 
 export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHourReportRoute> = async (c: any) => {
   const { department_uuid, from_date, to_date, status } = c.req.valid('query');
-
-  const holidays = await getHolidayCountsDateRange(from_date, to_date);
 
   const query = sql`
     WITH 
@@ -49,11 +46,20 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             e.profile_picture,
             e.start_date::date,
             COALESCE(attendance_summary.present_days, 0)::float8 + COALESCE(attendance_summary.late_days, 0)::float8 AS present_days,
-            COALESCE((${to_date}::date - ${from_date}::date + 1), 0) - (COALESCE(attendance_summary.present_days, 0) + COALESCE(attendance_summary.late_days, 0) + COALESCE(leave_summary.total_leave_days, 0) + COALESCE(${holidays.general}::int, 0) + COALESCE(${holidays.special}::int, 0) + hr.get_offday_count(e.uuid, ${from_date}::date, ${to_date}::date))::float8 AS absent_days,
-            COALESCE(leave_summary.total_leave_days, 0)::float8 AS leave_days,
+            (
+                ( (${to_date}::date - GREATEST(${from_date}::date, e.start_date::date)) + 1 )::int
+                ) - (
+                COALESCE(attendance_summary.present_days, 0) + 
+                COALESCE(attendance_summary.late_days, 0) + 
+                hr.get_total_leave_days(e.uuid, GREATEST(${from_date}::date, e.start_date::date), ${to_date}::date) + 
+                hr.get_general_holidays_count(GREATEST(${from_date}::date, e.start_date::date), ${to_date}::date) + 
+                hr.get_special_holidays_count(GREATEST(${from_date}::date, e.start_date::date), ${to_date}::date) +
+                hr.get_offday_count(e.uuid, GREATEST(${from_date}::date, e.start_date::date), ${to_date}::date)
+            )::float8 AS absent_days,
+            hr.get_total_leave_days(e.uuid, GREATEST(${from_date}::date, e.start_date::date), ${to_date}::date)::float8 AS leave_days,
             COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,
             COALESCE(attendance_summary.early_exit_days, 0)::float8 AS early_exit_days,
-            hr.get_offday_count(e.uuid, ${from_date}::date, ${to_date}::date) AS off_days
+            hr.get_offday_count(e.uuid, GREATEST(${from_date}::date, e.start_date::date), ${to_date}::date)::float8 AS off_days
         FROM hr.employee e
         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
         LEFT JOIN hr.designation d ON u.designation_uuid = d.uuid
@@ -96,7 +102,7 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                         ) sg_sel ON TRUE
                     LEFT JOIN hr.shifts shifts ON shifts.uuid = sg_sel.shifts_uuid
                     WHERE pl.punch_time IS NOT NULL
-                        AND DATE(pl.punch_time) >= ${from_date}::date
+                        AND DATE(pl.punch_time) >= GREATEST(${from_date}::date, e.start_date::date)
                         AND DATE(pl.punch_time) <= ${to_date}::date
                     GROUP BY pl.employee_uuid, DATE(pl.punch_time), shifts.late_time, shifts.early_exit_before, shift_group_uuid
                 )
@@ -104,83 +110,38 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                     da.employee_uuid,
                     COUNT(
                             CASE
-                            WHEN gh.date IS NULL
-                                AND sp.is_special IS NULL
-                                AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
-                                AND NOT EXISTS(
-                                SELECT 1 FROM hr.apply_leave al2
-                                WHERE al2.employee_uuid = da.employee_uuid
-                                    AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
-                                    AND al2.approval = 'approved'
-                                )
-                                AND da.first_punch::time < da.late_time::time
-                            THEN 1 ELSE NULL
+                                WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false  
+                                    AND (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
+                                    AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
+                                    AND hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
+                                    AND ((da.first_punch::time < da.late_time::time) OR (hr.is_employee_applied_late(da.employee_uuid, da.attendance_date) = true))
+                                THEN 1 ELSE NULL
                             END
                         ) AS present_days,
                     COUNT(
                         CASE 
-                            WHEN gh.date IS NULL
-                                AND sp.is_special IS NULL 
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false
+                                AND (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
                                 AND  hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
-                                AND NOT EXISTS( 
-                                    SELECT 1 FROM hr.apply_leave al2
-                                    WHERE al2.employee_uuid = da.employee_uuid
-                                        AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
-                                        AND al2.approval = 'approved'
-                                )
+                                AND hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
+                                AND  hr.is_employee_applied_late(da.employee_uuid, da.attendance_date)=false
                                 AND da.first_punch::time >= da.late_time::time THEN 1
                             ELSE NULL
                         END
                     ) AS late_days,
                     COUNT(
-                        CASE 
-                            WHEN gh.date IS NULL
-                                AND sp.is_special IS NULL 
+                       CASE 
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(da.attendance_date)) IS false
+                                AND (SELECT is_special_holiday FROM hr.is_special_holiday(da.attendance_date)) IS false
                                 AND hr.is_employee_off_day(da.employee_uuid,da.attendance_date)=false
-                                AND NOT EXISTS( 
-                                    SELECT 1 FROM hr.apply_leave al2
-                                    WHERE al2.employee_uuid = da.employee_uuid
-                                        AND da.attendance_date BETWEEN al2.from_date::date AND al2.to_date::date
-                                        AND al2.approval = 'approved'
-                                )
+                                AND hr.is_employee_on_leave(da.employee_uuid, da.attendance_date)=false
                                 AND da.last_punch::time <= da.early_exit_before::time THEN 1
                             ELSE NULL
                         END
                     ) AS early_exit_days
                 FROM daily_attendance da
-                LEFT JOIN LATERAL (
-                                    SELECT 1 AS is_leave
-                                    FROM hr.apply_leave al
-                                    WHERE al.employee_uuid = da.employee_uuid
-                                        AND da.attendance_date BETWEEN al.from_date::date AND al.to_date::date
-                                        AND al.approval = 'approved'
-                                    LIMIT 1
-                                    ) al ON TRUE
-                LEFT JOIN hr.general_holidays gh ON gh.date = da.attendance_date
-                LEFT JOIN LATERAL (
-                    SELECT 1 AS is_special
-                    FROM hr.special_holidays sh
-                    WHERE da.attendance_date BETWEEN sh.from_date::date AND sh.to_date::date
-                    LIMIT 1
-                ) sp ON TRUE
                 GROUP BY employee_uuid
             ) AS attendance_summary ON e.uuid = attendance_summary.employee_uuid
-        LEFT JOIN
-            (
-                SELECT al.employee_uuid,
-                    SUM(al.to_date::date - al.from_date::date + 1) - 
-                    SUM(CASE WHEN al.to_date::date > ${to_date}::date THEN al.to_date::date - ${to_date}::date
-                            ELSE 0
-                        END + CASE WHEN al.from_date::date < ${from_date}::date THEN ${from_date}::date - al.from_date::date
-                            ELSE 0
-                        END
-                    ) AS total_leave_days
-                FROM hr.apply_leave al
-                WHERE al.approval = 'approved'
-                    AND al.to_date >= ${from_date}::date
-                    AND al.from_date <= ${to_date}::date
-                GROUP BY al.employee_uuid
-            ) AS leave_summary ON e.uuid = leave_summary.employee_uuid
         WHERE 
             ${department_uuid !== 'undefined' && department_uuid ? sql` u.department_uuid = ${department_uuid}` : sql` TRUE`}
             AND ${status === 'active'
@@ -228,27 +189,23 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                     ELSE 0
                 END AS late_hours,
                 CASE
-                    WHEN gh.date IS NOT NULL
-                        OR sp.is_special = 1
+                    WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ds.punch_date))
+                        OR (SELECT is_special_holiday FROM hr.is_special_holiday(ds.punch_date))
                         OR hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true
-                        OR al.reason IS NOT NULL THEN 0
-                    ELSE (
-                        EXTRACT(
-                            EPOCH
-                            FROM s.end_time::time - s.start_time::time
-                        ) / 3600
-                    )::float8
+                        OR hr.is_employee_on_leave(de.employee_uuid, ds.punch_date)=true THEN 0
+                    ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                 END AS expected_hours,
                 CASE
-                    WHEN gh.date IS NOT NULL
-                        OR sp.is_special = 1 THEN 'Holiday'
+                    WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ds.punch_date))
+                        OR (SELECT is_special_holiday FROM hr.is_special_holiday(ds.punch_date)) THEN 'Holiday'
                     WHEN hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true THEN 'Off Day'
-                    WHEN al.reason IS NOT NULL THEN 'On Leave'
+                    WHEN hr.is_employee_on_leave(de.employee_uuid, ds.punch_date)=true THEN 'Leave'
                     WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
-                    WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                    WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(de.employee_uuid, ds.punch_date)=false THEN 'Late'
+                    WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(de.employee_uuid, ds.punch_date)=true THEN 'Late (Approved)'
                     WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                     ELSE 'Present'
-                END AS status,
+                END as status,
                 al.reason AS leave_reason
             FROM dept_employees de
             CROSS JOIN date_series ds
@@ -273,12 +230,6 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
             ) sg_sel ON TRUE
             LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
             LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
-            LEFT JOIN hr.general_holidays gh ON gh.date = ds.punch_date
-            LEFT JOIN LATERAL
-                (SELECT 1 AS is_special
-                FROM hr.special_holidays sh
-                WHERE ds.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-                LIMIT 1) AS sp ON TRUE
             LEFT JOIN hr.apply_leave al ON al.employee_uuid = de.employee_uuid
             AND ds.punch_date BETWEEN al.from_date::date AND al.to_date::date
             AND al.approval = 'approved'
@@ -288,8 +239,6 @@ export const getEmployeeWorkingHourReport: AppRouteHandler<GetEmployeeWorkingHou
                 ds.punch_date,
                 s.start_time,
                 s.end_time,
-                gh.date,
-                sp.is_special,
                 al.employee_uuid,
                 al.reason,
                 s.late_time,
