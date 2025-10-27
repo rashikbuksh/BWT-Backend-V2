@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -223,7 +223,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order,
       eq(deliverySchema.challan_entry.order_uuid, order.uuid),
     )
-    .where(eq(deliverySchema.challan.is_delivery_complete, true))
+    .where(or(
+      eq(deliverySchema.challan.is_delivery_complete, true),
+      eq(order.is_delivery_without_challan, true),
+    ))
     .groupBy(order.info_uuid)
     .as('delivered_count_tbl');
 
