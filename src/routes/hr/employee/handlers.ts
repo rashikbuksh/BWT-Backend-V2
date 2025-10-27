@@ -429,22 +429,79 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       shift_group_start_time: sql`
           (
             SELECT s.start_time
-            FROM hr.employee_log el
-            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
-            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
+            FROM hr.shifts s
+            WHERE s.uuid = (
+              SELECT r.shifts_uuid
+              FROM hr.roster r
+              WHERE r.shift_group_uuid = (
+                SELECT el.type_uuid
+                FROM hr.employee_log el
+                WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+                ORDER BY el.effective_date DESC
+                LIMIT 1
+              )
+              AND r.effective_date <= CURRENT_DATE
+              ORDER BY r.effective_date DESC
+              LIMIT 1
+            )
           )`,
       shift_group_end_time: sql`
           (
             SELECT s.end_time
-            FROM hr.employee_log el
-            LEFT JOIN hr.shift_group sg ON el.type_uuid = sg.uuid
-            LEFT JOIN hr.shifts s ON sg.shifts_uuid = s.uuid
-            WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
+            FROM hr.shifts s
+            WHERE s.uuid = (
+              SELECT r.shifts_uuid
+              FROM hr.roster r
+              WHERE r.shift_group_uuid = (
+                SELECT el.type_uuid
+                FROM hr.employee_log el
+                WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+                ORDER BY el.effective_date DESC
+                LIMIT 1
+              )
+              AND r.effective_date <= CURRENT_DATE
+              ORDER BY r.effective_date DESC
+              LIMIT 1
+            )
+          )`,
+      shift_name: sql`
+          (
+            SELECT s.name
+            FROM hr.shifts s
+            WHERE s.uuid = (
+              SELECT r.shifts_uuid
+              FROM hr.roster r
+              WHERE r.shift_group_uuid = (
+                SELECT el.type_uuid
+                FROM hr.employee_log el
+                WHERE el.type = 'shift_group' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+                ORDER BY el.effective_date DESC
+                LIMIT 1
+              )
+              AND r.effective_date::date <= CURRENT_DATE
+              ORDER BY r.effective_date DESC
+              LIMIT 1
+            )
+          )`,
+      off_days: sql`
+         COALESCE(
+            (
+              SELECT (r.off_days)::jsonb
+              FROM hr.roster r
+              WHERE r.shift_group_uuid = (
+                SELECT el.type_uuid
+                FROM hr.employee_log el
+                WHERE el.type = 'shift_group'
+                  AND el.employee_uuid = ${employee.uuid}
+                  AND el.effective_date::date <= CURRENT_DATE
+                ORDER BY el.effective_date DESC
+                LIMIT 1
+              )
+              AND r.effective_date::date <= CURRENT_DATE
+              ORDER BY r.effective_date DESC
+              LIMIT 1
+            ),
+            '[]'::jsonb
           )`,
 
       leave_policy_uuid: sql`
