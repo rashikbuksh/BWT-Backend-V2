@@ -11,7 +11,7 @@ import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute, SelectAllApplyLeaveWithPaginationRoute } from './routes';
 
-import { apply_leave, employee, leave_category, users } from '../schema';
+import { apply_leave, department, designation, employee, leave_category, users } from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
 const employeeUser = alias(users, 'employee_user');
@@ -136,6 +136,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_at: apply_leave.updated_at,
       remarks: apply_leave.remarks,
       approval: apply_leave.approval,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: employeeUser.department_uuid,
+      designation_uuid: employeeUser.designation_uuid,
+      department_name: department.department,
+      designation_name: designation.designation,
     })
     .from(apply_leave)
     .leftJoin(
@@ -144,6 +150,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
     .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
+    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(apply_leave.created_by, createdByUser.uuid),
@@ -190,6 +198,12 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       updated_at: apply_leave.updated_at,
       remarks: apply_leave.remarks,
       approval: apply_leave.approval,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: employeeUser.department_uuid,
+      designation_uuid: employeeUser.designation_uuid,
+      department_name: department.department,
+      designation_name: designation.designation,
     })
     .from(apply_leave)
     .leftJoin(
@@ -198,6 +212,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
     .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
+    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(apply_leave.created_by, createdByUser.uuid),
@@ -262,10 +278,18 @@ export const selectAllApplyLeaveWithPagination: AppRouteHandler<SelectAllApplyLe
       updated_at: apply_leave.updated_at,
       remarks: apply_leave.remarks,
       approval: apply_leave.approval,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: employeeUser.department_uuid,
+      designation_uuid: employeeUser.designation_uuid,
+      department_name: department.department,
+      designation_name: designation.designation,
     })
     .from(apply_leave)
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
     .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
+    .leftJoin(department, eq(employee.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
     .leftJoin(
       leave_category,
       eq(apply_leave.leave_category_uuid, leave_category.uuid),
