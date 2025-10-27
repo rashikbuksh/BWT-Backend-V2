@@ -82,11 +82,13 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         'm'
                     ) AS expected_hours,
                     CASE
-                      WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
+                      WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date)) THEN 'Holiday'
+                      WHEN (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date)) THEN 'Holiday'
                       WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)=true THEN 'Off Day'
-                      WHEN al.reason IS NOT NULL THEN 'Leave'
+                      WHEN hr.is_employee_on_leave(e.uuid, ud.punch_date)=true THEN 'Leave'
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
-                      WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                      WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=false THEN 'Late'
+                      WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=true THEN 'Late (Approved)'
                       WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                       ELSE 'Present'
                     END as status
@@ -116,20 +118,9 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                                   ) sg_sel ON TRUE
                   LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                   LEFT JOIN hr.shift_group ON shift_group.uuid = sg_sel.shift_group_uuid
-                  LEFT JOIN hr.general_holidays gh ON gh.date::date = ud.punch_date::date
-                  LEFT JOIN LATERAL (
-                    SELECT 1 AS is_special
-                    FROM hr.special_holidays sh
-                    WHERE ud.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-                    LIMIT 1
-                  ) AS sp ON TRUE
-                  LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
-                    AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
-                    AND al.approval = 'approved'
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid,
-                    gh.date, sp.is_special, al.reason, e.profile_picture, e.start_date::date
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid, e.profile_picture, e.start_date::date
                 )
                SELECT
                     ad.punch_date AS date,
@@ -236,11 +227,13 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                         'm'
                     ) AS expected_hours,
                     CASE
-                      WHEN gh.date IS NOT NULL OR sp.is_special = 1 THEN 'Holiday'
+                      WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ud.punch_date)) THEN 'Holiday'
+                      WHEN (SELECT is_special_holiday FROM hr.is_special_holiday(ud.punch_date)) THEN 'Holiday'
                       WHEN hr.is_employee_off_day(e.uuid, ud.punch_date)=true THEN 'Off Day'
-                      WHEN al.reason IS NOT NULL THEN 'Leave'
+                      WHEN hr.is_employee_on_leave(e.uuid, ud.punch_date)=true THEN 'Leave'
                       WHEN MIN(pl.punch_time) IS NULL THEN 'Absent'
-                      WHEN MIN(pl.punch_time)::time > s.late_time::time THEN 'Late'
+                      WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=false THEN 'Late'
+                      WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=true THEN 'Late (Approved)'
                       WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                       ELSE 'Present'
                     END as status,
@@ -277,21 +270,11 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                                 ) sg_sel ON TRUE
                   LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
                   LEFT JOIN hr.shift_group ON shift_group.uuid = sg_sel.shift_group_uuid
-                  LEFT JOIN hr.general_holidays gh ON gh.date::date = ud.punch_date::date
-                  LEFT JOIN LATERAL (
-                    SELECT 1 AS is_special
-                    FROM hr.special_holidays sh
-                    WHERE ud.punch_date BETWEEN sh.from_date::date AND sh.to_date::date
-                    LIMIT 1
-                  ) AS sp ON TRUE
-                  LEFT JOIN hr.apply_leave al ON al.employee_uuid = e.uuid
-                    AND ud.punch_date BETWEEN al.from_date::date AND al.to_date::date
-                    AND al.approval = 'approved'
                   LEFT JOIN hr.apply_late alm ON e.uuid = alm.employee_uuid
                     AND ud.punch_date = alm.date::date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, gh.date, sp.is_special, al.reason, alm.status, e.start_date::date
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, alm.status, e.start_date::date
                 ),
                   monthly_late AS (
                                 SELECT
