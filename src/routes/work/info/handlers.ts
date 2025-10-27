@@ -302,6 +302,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
                     'is_delivered', ch.is_delivery_complete,
                     'is_delivered_date', ch.is_delivery_complete_date,
+                    'is_reclaimed', o.is_reclaimed,
+                    'is_reclaimed_date', o.is_reclaimed_date,
                     'reclaimed_order_uuid', o.reclaimed_order_uuid,
                     'reclaimed_order_id', CASE WHEN ro.uuid IS NULL THEN NULL WHEN ro.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) END
                   )), '[]'::json
