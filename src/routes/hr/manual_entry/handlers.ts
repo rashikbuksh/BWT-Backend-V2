@@ -95,8 +95,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(device_list, eq(manual_entry.device_list_uuid, device_list.uuid))
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(createdByUser, eq(manual_entry.created_by, createdByUser.uuid))
     .orderBy(desc(manual_entry.created_at));
 
@@ -154,8 +154,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(device_list, eq(manual_entry.device_list_uuid, device_list.uuid))
     .leftJoin(employee, eq(manual_entry.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(createdByUser, eq(manual_entry.created_by, createdByUser.uuid))
     .where(eq(manual_entry.uuid, uuid));
 
