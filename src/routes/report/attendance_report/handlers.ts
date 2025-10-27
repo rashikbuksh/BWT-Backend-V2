@@ -284,7 +284,8 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                         SELECT 
                             e.uuid AS employee_uuid,
                             u.uuid AS user_uuid,
-                            u.name AS employee_name
+                            u.name AS employee_name,
+                            e.start_date::date
                         FROM hr.employee e
                         LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                         WHERE ${department_uuid ? sql`u.department_uuid = ${department_uuid}` : sql`TRUE`}
@@ -438,6 +439,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                             s.end_time,
                             s.late_time,
                             s.early_exit_before,
+                            de.start_date::date,
                             CASE
                                 WHEN MIN(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time) IS NOT NULL THEN (
                                     EXTRACT(EPOCH FROM MAX(pl.punch_time) - MIN(pl.punch_time)) / 3600
@@ -462,6 +464,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                                 ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                             END AS expected_hours,
                             CASE
+                                WHEN de.start_date::date > ds.punch_date::date THEN 'Not Joined'
                                 WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(ds.punch_date))
                                   OR (SELECT is_special_holiday FROM hr.is_special_holiday(ds.punch_date)) THEN 'Holiday'
                                 WHEN hr.is_employee_off_day(de.employee_uuid, ds.punch_date)=true THEN 'Off Day'
@@ -500,7 +503,7 @@ export const getDepartmentAttendanceReport: AppRouteHandler<GetDepartmentAttenda
                         LEFT JOIN hr.apply_leave al ON al.employee_uuid = de.employee_uuid
                             AND ds.punch_date BETWEEN al.from_date::date AND al.to_date::date
                             AND al.approval = 'approved'
-                        GROUP BY de.employee_uuid, de.user_uuid, de.employee_name, ds.punch_date, s.start_time, s.end_time,al.employee_uuid, al.reason, s.late_time, s.early_exit_before, shift_group.name, s.name, COALESCE(sg_sel.off_days::jsonb, '[]'::jsonb)
+                        GROUP BY de.employee_uuid, de.user_uuid, de.employee_name, ds.punch_date, s.start_time, s.end_time,al.employee_uuid, al.reason, s.late_time, s.early_exit_before, shift_group.name, s.name, COALESCE(sg_sel.off_days::jsonb, '[]'::jsonb), de.start_date
                     )
                     -- 5) final SELECT
                     SELECT 
