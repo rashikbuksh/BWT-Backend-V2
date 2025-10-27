@@ -223,26 +223,32 @@ export const getEmployeeAttendanceReport: AppRouteHandler<GetEmployeeAttendanceR
     }
 
     const monthly_data = Array.isArray(row.attendance_records)
-      ? row.attendance_records.map((record: any) => ({
-          uuid: row.uuid,
-          punch_date: record.punch_date,
-          entry_time: record.entry_time,
-          exit_time: record.exit_time,
-          hours_worked: record.hours_worked,
-          expected_hours: record.expected_hours,
-          status: record.status,
-          late_time: record.late_time,
-          early_exit_before: record.early_exit_before,
-          late_start_time: record.late_start_time,
-          late_hours: record.late_hours,
-          early_exit_time: record.early_exit_time,
-          early_exit_hours: record.early_exit_hours,
-          shift_name: record.shift_name,
-          start_time: record.start_time,
-          end_time: record.end_time,
-          shift_group_name: record.shift_group_name,
-          off_days: record.off_days,
-        }))
+      ? [...row.attendance_records]
+          .sort((a: any, b: any) => {
+            const ta = a?.punch_date ? new Date(a.punch_date).getTime() : 0;
+            const tb = b?.punch_date ? new Date(b.punch_date).getTime() : 0;
+            return tb - ta; // sort by punch_date DESC
+          })
+          .map((record: any) => ({
+            uuid: row.uuid,
+            punch_date: record.punch_date,
+            entry_time: record.entry_time,
+            exit_time: record.exit_time,
+            hours_worked: record.hours_worked,
+            expected_hours: record.expected_hours,
+            status: record.status,
+            late_time: record.late_time,
+            early_exit_before: record.early_exit_before,
+            late_start_time: record.late_start_time,
+            late_hours: record.late_hours,
+            early_exit_time: record.early_exit_time,
+            early_exit_hours: record.early_exit_hours,
+            shift_name: record.shift_name,
+            start_time: record.start_time,
+            end_time: record.end_time,
+            shift_group_name: record.shift_group_name,
+            off_days: record.off_days,
+          }))
       : [];
 
     return {
