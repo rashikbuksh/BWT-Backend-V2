@@ -784,6 +784,23 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       personal_phone: employee.personal_phone,
       late_day_unit: employee.late_day_unit,
       profile_picture: employee.profile_picture,
+      Leave_policy_uuid: sql`
+          (
+            SELECT el.type_uuid
+            FROM hr.employee_log el
+            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
+      leave_policy_name: sql`
+          (
+            SELECT lp.name
+            FROM hr.employee_log el
+            LEFT JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
+            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
+            ORDER BY el.effective_date DESC
+            LIMIT 1
+          )`,
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
