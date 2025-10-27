@@ -74,6 +74,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       type: employee_log.type,
       type_uuid: employee_log.type_uuid,
       type_name: sql<string>`COALESCE(${leave_policy.name}, ${shift_group.name})`,
+      shift_name: shifts.name,
       effective_date: employee_log.effective_date,
       created_by: employee_log.created_by,
       created_by_name: users.name,
@@ -89,6 +90,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(designation, eq(employeeUser.designation_uuid, designation.uuid))
     .leftJoin(leave_policy, eq(employee_log.type_uuid, leave_policy.uuid))
     .leftJoin(shift_group, eq(employee_log.type_uuid, shift_group.uuid))
+    .leftJoin(shifts, eq(shift_group.shifts_uuid, shifts.uuid))
     // .where(eq(employee_log.employee_uuid, 'EMP00000000001'))
     .orderBy(desc(employee_log.created_at));
 
