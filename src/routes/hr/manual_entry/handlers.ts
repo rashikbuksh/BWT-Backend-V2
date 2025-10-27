@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -107,7 +107,15 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   if (type) {
-    filters.push(eq(manual_entry.type, type));
+    if (type === 'others') {
+      filters.push(or(
+        eq(manual_entry.type, 'field_visit'),
+        eq(manual_entry.type, 'manual_entry'),
+      ));
+    }
+    else {
+      filters.push(eq(manual_entry.type, type));
+    }
   }
   if (approval) {
     filters.push(eq(manual_entry.approval, approval));
