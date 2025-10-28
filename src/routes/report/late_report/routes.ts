@@ -48,6 +48,7 @@ export const dailyLateReport = createRoute({
       employee_uuid: z.string().optional(),
       from_date: z.string().optional(),
       to_date: z.string().optional(),
+      department_uuid: z.string().optional(),
     }),
   },
   responses: {

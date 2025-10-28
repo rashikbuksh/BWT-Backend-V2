@@ -159,7 +159,7 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
 };
 
 export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: any) => {
-  const { employee_uuid, from_date, to_date } = c.req.valid('query');
+  const { employee_uuid, from_date, to_date, department_uuid } = c.req.valid('query');
 
   const query = sql`
                 WITH date_series AS (
@@ -249,7 +249,9 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                             THEN 'Not Applied'
                         ELSE 
                             alm.status::text
-                    END AS late_application_status
+                    END AS late_application_status,
+                    COALESCE(sg_sel.off_days::jsonb, '[]'::jsonb) AS off_days,
+                    shift_group.name AS shift_group_name
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
@@ -260,7 +262,8 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                   LEFT JOIN LATERAL (
                                   SELECT 
                                       r.shifts_uuid AS shifts_uuid,
-                                      r.shift_group_uuid AS shift_group_uuid
+                                      r.shift_group_uuid AS shift_group_uuid,
+                                      r.off_days
                                   FROM hr.roster r
                                   WHERE r.shift_group_uuid = (
                                     SELECT el.type_uuid
@@ -281,7 +284,8 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     AND ud.punch_date = alm.date::date
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, alm.status, e.start_date::date
+                    AND ${department_uuid ? sql`d.uuid = ${department_uuid}` : sql`TRUE`} AND e.start_date::date <= ${to_date}::date
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, e.employee_id, d.department, des.designation, e.uuid, lm.name, e.profile_picture, alm.status, e.start_date::date, shift_group.name, sg_sel.off_days::jsonb
                 ),
                   monthly_late AS (
                                 SELECT
@@ -320,7 +324,9 @@ export const dailyLateReport: AppRouteHandler<DailyLateReportRoute> = async (c: 
                     CONCAT(
                       FLOOR(ml.total_late_seconds/3600)::int, 'h ',
                       FLOOR((ml.total_late_seconds%3600)/60)::int, 'm'
-                    ) AS total_late_hours
+                    ) AS total_late_hours,
+                    shift_group_name,
+                    off_days
                 FROM attendance_data
                LEFT JOIN monthly_late ml
                     ON uuid = ml.employee_uuid
