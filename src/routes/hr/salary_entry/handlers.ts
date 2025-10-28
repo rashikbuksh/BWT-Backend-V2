@@ -10,7 +10,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetEmployeeSalaryDetailsByYearDateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { employee, salary_entry, users } from '../schema';
+import { department, designation, employee, salary_entry, users } from '../schema';
 
 const createdByUser = alias(users, 'createdByUser');
 
@@ -96,6 +96,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       loan_amount: PG_DECIMAL_TO_FLOAT(salary_entry.loan_amount),
       advance_amount: PG_DECIMAL_TO_FLOAT(salary_entry.advance_amount),
       year_month: sql`TO_CHAR(TO_TIMESTAMP(${salary_entry.year} || '-' || LPAD(${salary_entry.month}::text, 2, '0') || '-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS')`,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
     })
     .from(salary_entry)
     .leftJoin(
@@ -104,6 +110,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(salary_entry.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .orderBy(desc(salary_entry.created_at));
 
   if (date) {
@@ -138,6 +146,12 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       loan_amount: PG_DECIMAL_TO_FLOAT(salary_entry.loan_amount),
       advance_amount: PG_DECIMAL_TO_FLOAT(salary_entry.advance_amount),
       year_month: sql`TO_CHAR(TO_TIMESTAMP(${salary_entry.year} || '-' || LPAD(${salary_entry.month}::text, 2, '0') || '-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS')`,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
     })
     .from(salary_entry)
     .leftJoin(
@@ -146,6 +160,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(salary_entry.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .where(eq(salary_entry.uuid, uuid));
 
   const [data] = await salaryIncrementPromise;
