@@ -142,7 +142,9 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         'profile_picture', ad.profile_picture,
                         'start_date',    ad.start_date::date,
                         'shift_group_name', ad.shift_group_name,
-                        'off_days', ad.off_days
+                        'off_days', ad.off_days,
+                        'start_time',       ad.start_time,
+                        'end_time',         ad.end_time
                         ) ORDER BY ad.employee_name
                     ) AS late_records
                     FROM attendance_data ad
