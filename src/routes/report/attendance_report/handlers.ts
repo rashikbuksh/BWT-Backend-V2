@@ -667,12 +667,20 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                             ELSE (EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600)::float8
                           END AS expected_working_hours,
                           CASE 
-                            WHEN MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time THEN
+                              WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date))
+                                OR (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date))
+                                OR hr.is_employee_off_day(e.uuid, d.punch_date)=true 
+                                OR hr.is_employee_on_leave(e.uuid, d.punch_date)=true 
+                                AND MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time THEN
                               (EXTRACT(EPOCH FROM (MIN(pl.punch_time)::time - s.late_time::time)) / 3600)::float8
                             ELSE NULL
                           END AS late_hours,
                           CASE 
-                            WHEN MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date))
+                                OR (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date))
+                                OR hr.is_employee_off_day(e.uuid, d.punch_date)=true 
+                                OR hr.is_employee_on_leave(e.uuid, d.punch_date)=true 
+                                AND MAX(pl.punch_time) IS NOT NULL AND MAX(pl.punch_time)::time < s.early_exit_before::time THEN
                               (EXTRACT(EPOCH FROM (s.early_exit_before::time - MAX(pl.punch_time)::time)) / 3600)::float8
                             ELSE NULL
                           END AS early_exit_hours,
@@ -712,6 +720,14 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                             AND MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time AND hr.is_employee_applied_late(e.uuid, d.punch_date)=false THEN TRUE
                             ELSE FALSE
                           END AS is_late,
+                           CASE 
+                            WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) IS false
+                            AND (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) IS false
+                            AND hr.is_employee_off_day(e.uuid, d.punch_date)=false 
+                            AND hr.is_employee_on_leave(e.uuid, d.punch_date)=false
+                            AND MIN(pl.punch_time) IS NOT NULL AND MIN(pl.punch_time)::time > s.late_time::time AND hr.is_employee_applied_late(e.uuid, d.punch_date)=true THEN TRUE
+                            ELSE FALSE
+                          END AS is_approved_late,
                           CASE 
                             WHEN (SELECT is_general_holiday FROM hr.is_general_holiday(d.punch_date)) IS false
                              AND (SELECT is_special_holiday FROM hr.is_special_holiday(d.punch_date)) IS false
@@ -797,6 +813,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         COUNT(*) FILTER (WHERE ad.is_absent)::float8       AS absent_days,
                         COUNT(*) FILTER (WHERE ad.is_late_application)::float8  AS approved_lates,
                         COUNT(*) FILTER (WHERE ad.is_field_visit)::float8  AS field_visit_days,
+                        COUNT(*) FILTER (WHERE ad.is_approved_late)::float8 AS approved_late_days,
                         -- Sum late_hours only for rows flagged as is_late
                         COALESCE(SUM(ad.late_hours), 0)::float8      AS total_late_hours,
                         -- Sum early_exit_hours only for rows flagged as is_early_exit
