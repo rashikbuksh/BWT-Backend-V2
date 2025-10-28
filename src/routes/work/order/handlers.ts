@@ -573,6 +573,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       return_comment: orderTable.return_comment,
       is_delivery_without_challan: orderTable.is_delivery_without_challan,
       is_delivery_without_challan_date: orderTable.is_delivery_without_challan_date,
+      challan_uuid: deliverySchema.challan.uuid,
+      challan_no: sql`CONCAT('CH', TO_CHAR(${deliverySchema.challan.created_at}::timestamp, 'YY'), '-', ${deliverySchema.challan.id})`,
+      receive_type: info.receive_type,
+      location: info.location,
     })
     .from(orderTable)
     .leftJoin(hrSchema.users, eq(orderTable.created_by, hrSchema.users.uuid))
