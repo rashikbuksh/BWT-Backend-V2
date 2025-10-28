@@ -14,6 +14,12 @@ export const list = createRoute({
   path: '/hr/salary-increment',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      approved: z.string().optional(),
+      employee_uuid: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),

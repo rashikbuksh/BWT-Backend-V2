@@ -62,6 +62,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
+  const { approved } = c.req.valid('query');
+
   const salaryIncrementPromise = db
     .select({
       uuid: salary_increment.uuid,
@@ -106,6 +108,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       eq(salary_increment.created_by, createdByUser.uuid),
     )
     .orderBy(desc(salary_increment.created_at));
+
+  if (approved !== undefined) {
+    salaryIncrementPromise.where(
+      eq(salary_increment.is_approved, approved === 'true'),
+    );
+  }
 
   const data = await salaryIncrementPromise;
 
