@@ -83,7 +83,8 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                         line_manager.name AS line_manager_name,
                         workplace.name AS workplace_name,
                         e.profile_picture,
-                        e.start_date
+                        e.start_date,
+                        sg.name AS shift_group_name
                       FROM hr.employee e
                       LEFT JOIN
                         hr.workplace ON e.workplace_uuid = workplace.uuid
@@ -107,6 +108,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                                           LIMIT 1
                             ) AS sg_sel ON TRUE
                       LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
+                      LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
                       LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                       LEFT JOIN hr.department dept ON u.department_uuid = dept.uuid
                       LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
@@ -114,14 +116,13 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       LEFT JOIN hr.users line_manager ON e.line_manager_uuid = line_manager.uuid
                       WHERE 
                         ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`} 
-                        ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}
-                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name, e.profile_picture, e.start_date
+                        ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}  AND e.start_date::date <= ${toDateExpr}::date
+                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name, e.profile_picture, e.start_date, sg.name
                     )
                     SELECT
                           uuid,
                           user_uuid,
                           employee_name,
-                          shift_name,
                           department_name,
                           designation_name,
                           employment_type_name, 
@@ -134,59 +135,97 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                           workplace_name,
                           profile_picture,
                           start_date,
-                          -- last date the employee had any punch (last present)
+                          shift_group_name,
                           (
-                            SELECT MAX(DATE(pl2.punch_time))
-                            FROM hr.punch_log pl2
-                            WHERE pl2.employee_uuid = attendance_data.uuid
-                          ) AS last_present,
+                              SELECT MAX(t.d)
+                              FROM (
+                                SELECT
+                                  DATE(pl2.punch_time) AS d,
+                                  MIN(pl2.punch_time) AS first_punch,
+                                  s.late_time
+                                FROM hr.punch_log pl2
+                                LEFT JOIN LATERAL (
+                                  SELECT r.shifts_uuid AS shifts_uuid,
+                                        r.shift_group_uuid AS shift_group_uuid
+                                  FROM hr.roster r
+                                  WHERE r.shift_group_uuid = (
+                                    SELECT el.type_uuid
+                                    FROM hr.employee_log el
+                                    WHERE el.employee_uuid = pl2.employee_uuid
+                                      AND el.type = 'shift_group'
+                                      AND el.effective_date::date <= DATE(pl2.punch_time)::date
+                                    ORDER BY el.effective_date DESC
+                                    LIMIT 1
+                                  )
+                                  AND r.effective_date::date <= DATE(pl2.punch_time)::date
+                                  ORDER BY r.effective_date DESC
+                                  LIMIT 1
+                                ) AS sg_sel ON TRUE
+                                LEFT JOIN hr.shifts s ON s.uuid = sg_sel.shifts_uuid
+                                LEFT JOIN hr.shift_group sg ON sg.uuid = sg_sel.shift_group_uuid
+                                WHERE pl2.employee_uuid = attendance_data.uuid
+                                  AND (SELECT is_general_holiday FROM hr.is_general_holiday(DATE(pl2.punch_time))) IS false
+                                  AND (SELECT is_special_holiday FROM hr.is_special_holiday(DATE(pl2.punch_time))) IS false
+                                  AND hr.is_employee_off_day(attendance_data.uuid, DATE(pl2.punch_time)) = false
+                                  AND hr.is_employee_on_leave(attendance_data.uuid, DATE(pl2.punch_time)) = false
+                                  AND DATE(pl2.punch_time) <= CURRENT_DATE
+                                GROUP BY DATE(pl2.punch_time), s.late_time
+                              ) AS t
+                              WHERE (t.first_punch::time <= t.late_time::time
+                                    OR (t.first_punch::time <= t.late_time::time
+                                        AND hr.is_employee_applied_late(attendance_data.uuid, t.d) = true))
+                            ) AS last_present,
 
-                          -- last date in the last 30 calendar days where there was NO punch and NOT on approved leave
                           (
-                            SELECT MAX(d)
-                            FROM (
-                              SELECT generate_series(
-                                CURRENT_DATE - INTERVAL '29 days',
-                                CURRENT_DATE,
-                                '1 day'
-                              )::date AS d
-                            ) AS days
-                            WHERE NOT EXISTS (
-                              SELECT 1 FROM hr.punch_log pl4
-                              WHERE pl4.employee_uuid = attendance_data.uuid
-                                AND DATE(pl4.punch_time) = days.d
-                            )
-                            AND NOT EXISTS (
-                              SELECT 1 FROM hr.apply_leave al4
-                              WHERE al4.employee_uuid = attendance_data.uuid
-                                AND al4.approval = 'approved'
-                                AND days.d BETWEEN al4.from_date::date AND al4.to_date::date
+                            SELECT GREATEST(
+                              DATE(attendance_data.start_date),
+                              COALESCE(
+                                (
+                                  SELECT MAX(days.d)
+                                  FROM (
+                                    SELECT generate_series(
+                                      CURRENT_DATE - INTERVAL '29 days',
+                                      CURRENT_DATE,
+                                      '1 day'
+                                    )::date AS d
+                                  ) AS days
+                                  WHERE NOT EXISTS (
+                                    SELECT 1 FROM hr.punch_log pl4
+                                    WHERE pl4.employee_uuid = attendance_data.uuid
+                                      AND DATE(pl4.punch_time) = days.d
+                                  )
+                                  AND hr.is_employee_on_leave(attendance_data.uuid, days.d) = false
+                                  AND (SELECT is_general_holiday FROM hr.is_general_holiday(days.d)) IS false
+                                  AND (SELECT is_special_holiday FROM hr.is_special_holiday(days.d)) IS false
+                                  AND hr.is_employee_off_day(attendance_data.uuid, days.d) = false
+                                  AND hr.is_employee_on_leave(attendance_data.uuid, days.d) = false
+                                ),
+                                DATE(attendance_data.start_date)
+                              )
                             )
                           ) AS last_absent_last_30_days,
 
-                          -- count of absent days in the last 30 calendar days (no punch & not on approved leave)
-                          (
-                            SELECT COUNT(*)
-                            FROM (
-                              SELECT generate_series(
-                                CURRENT_DATE - INTERVAL '29 days',
-                                CURRENT_DATE,
-                                '1 day'
-                              )::date AS d
-                            ) AS days
-                            LEFT JOIN hr.punch_log pl3 
-                              ON pl3.employee_uuid = attendance_data.uuid 
-                              AND DATE(pl3.punch_time) = days.d
-                            LEFT JOIN hr.apply_leave al3 
-                              ON al3.employee_uuid = attendance_data.uuid 
-                              AND al3.approval = 'approved'
-                              AND days.d BETWEEN al3.from_date::date AND al3.to_date::date
-                            WHERE pl3.employee_uuid IS NULL 
-                              AND al3.employee_uuid IS NULL
-                          ) AS absent_last_30_days_count
+                         (
+                          SELECT COUNT(*)
+                          FROM (
+                            SELECT generate_series(
+                              GREATEST(CURRENT_DATE - INTERVAL '29 days', DATE(attendance_data.start_date)),
+                              CURRENT_DATE,
+                              '1 day'
+                            )::date AS d
+                          ) AS days
+                          LEFT JOIN hr.punch_log pl3
+                            ON pl3.employee_uuid = attendance_data.uuid
+                            AND DATE(pl3.punch_time) = days.d
+                          WHERE pl3.employee_uuid IS NULL
+                            AND (SELECT is_general_holiday FROM hr.is_general_holiday(days.d)) IS false
+                            AND (SELECT is_special_holiday FROM hr.is_special_holiday(days.d)) IS false
+                            AND hr.is_employee_off_day(attendance_data.uuid, days.d) = false
+                            AND hr.is_employee_on_leave(attendance_data.uuid, days.d) = false
+                        ) AS absent_last_30_days_count
                         FROM attendance_data
                         WHERE status = 'Absent'
-                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date, workplace_name, profile_picture, start_date
+                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date, workplace_name, profile_picture, start_date, shift_group_name 
                         ORDER BY employee_name;
                   `;
 
