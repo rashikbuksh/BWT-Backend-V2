@@ -70,12 +70,17 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       amount: PG_DECIMAL_TO_FLOAT(salary_increment.amount),
       // Current salary = joining amount + sum of all increment amounts whose effective_date has passed
       current_salary: sql`(
-        ${PG_DECIMAL_TO_FLOAT(employee.joining_amount)}
-        + COALESCE(SUM(CASE
-            WHEN salary_increment.effective_date <= NOW() THEN ${PG_DECIMAL_TO_FLOAT(salary_increment.amount)}
-            ELSE 0
-          END), 0)
-      )`.as('current_salary'),
+          ${PG_DECIMAL_TO_FLOAT(employee.joining_amount)}
+          + COALESCE(
+              (
+                SELECT COALESCE(SUM(COALESCE(si.amount, 0)::float8), 0)
+                FROM hr.salary_increment si
+                WHERE si.employee_uuid = ${employee.uuid}
+                  AND si.effective_date <= NOW()
+              ),
+              0
+          )
+        )`.as('current_salary'),
       effective_date: salary_increment.effective_date,
       created_by: salary_increment.created_by,
       created_by_name: users.name,
@@ -100,8 +105,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       createdByUser,
       eq(salary_increment.created_by, createdByUser.uuid),
     )
-    .orderBy(desc(salary_increment.created_at))
-    .groupBy(salary_increment.uuid, users.name, employee.joining_amount, createdByUser.name);
+    .orderBy(desc(salary_increment.created_at));
 
   const data = await salaryIncrementPromise;
 
@@ -119,10 +123,15 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       amount: PG_DECIMAL_TO_FLOAT(salary_increment.amount),
       current_salary: sql`(
         ${PG_DECIMAL_TO_FLOAT(employee.joining_amount)}
-        + COALESCE(SUM(CASE
-            WHEN salary_increment.effective_date <= NOW() THEN ${PG_DECIMAL_TO_FLOAT(salary_increment.amount)}
-            ELSE 0
-          END), 0)
+        + COALESCE(
+            (
+              SELECT COALESCE(SUM(COALESCE(si.amount, 0)::float8), 0)
+              FROM hr.salary_increment si
+              WHERE si.employee_uuid = ${employee.uuid}
+                AND si.effective_date <= NOW()
+            ),
+            0
+        )
       )`.as('current_salary'),
       effective_date: salary_increment.effective_date,
       created_by: salary_increment.created_by,
@@ -148,8 +157,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       createdByUser,
       eq(salary_increment.created_by, createdByUser.uuid),
     )
-    .where(eq(salary_increment.uuid, uuid))
-    .groupBy(salary_increment.uuid, users.name, employee.joining_amount, createdByUser.name);
+    .where(eq(salary_increment.uuid, uuid));
 
   const [data] = await salaryIncrementPromise;
 
