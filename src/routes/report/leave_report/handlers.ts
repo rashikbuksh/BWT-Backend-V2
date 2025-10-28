@@ -27,6 +27,28 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                     apply_leave.to_date as to_date,
                     apply_leave.reason,
                     (apply_leave.to_date::date - apply_leave.from_date::date + 1) as total_days,
+                    (SELECT 
+                            lp.uuid
+                        FROM hr.employee_log el
+                        JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
+                        WHERE
+                            el.employee_uuid = employee.uuid
+                            AND el.type = 'leave_policy'
+                            AND el.effective_date::date <= CURRENT_DATE::date
+                        ORDER BY el.effective_date DESC
+                        LIMIT 1
+                    ) AS leave_policy_uuid,
+                    (SELECT
+                            lp.name
+                        FROM hr.employee_log el
+                        JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
+                        WHERE
+                            el.employee_uuid = employee.uuid
+                            AND el.type = 'leave_policy'
+                            AND el.effective_date::date <= CURRENT_DATE::date
+                            ORDER BY el.effective_date DESC
+                            LIMIT 1
+                    ) AS leave_policy_name,
                     employment_type.name as employment_type_name,
                     (
                             SELECT COALESCE(
