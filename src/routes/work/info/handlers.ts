@@ -27,7 +27,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const {
     is_new_customer,
-    user_uuid,
     name,
     phone,
     created_at,
@@ -36,28 +35,41 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     business_type,
     where_they_find_us,
     submitted_by,
-    is_fronted_user,
   } = value;
 
-  let userUuid = user_uuid;
+  let userUuid = null;
+
   if (is_new_customer) {
     const formattedName = name.toLowerCase().replace(/\s+/g, '');
-    await db.insert(users).values({
-      uuid: userUuid,
-      name,
-      phone,
-      user_type: 'customer',
-      pass: await HashPass(phone),
-      department_uuid,
-      designation_uuid,
-      email: `${formattedName + phone}@bwt.com`,
-      ext: '+880',
-      created_at,
-      business_type,
-      where_they_find_us,
-      can_access: '{"customer__customer_profile":["read"]}',
-      status: '1', // Set status to active for new customers
-    });
+
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.phone, phone))
+      .limit(1);
+
+    userUuid = existingUser[0]?.uuid || null;
+
+    if (existingUser?.length === 0) {
+      userUuid = nanoid();
+
+      await db.insert(users).values({
+        uuid: userUuid,
+        name,
+        phone,
+        user_type: 'customer',
+        pass: await HashPass(phone),
+        department_uuid,
+        designation_uuid,
+        email: `${formattedName + phone}@bwt.com`,
+        ext: '+880',
+        created_at,
+        business_type,
+        where_they_find_us,
+        can_access: '{"customer__customer_profile":["read"]}',
+        status: '1', // Set status to active for new customers
+      });
+    }
   }
   if (submitted_by === 'customer') {
     const formattedName2 = name.toLowerCase().replace(/\s+/g, '');
@@ -70,7 +82,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       .where(eq(users.phone, phone))
       .limit(1);
 
-    userUuid = existingUser[0]?.uuid || user_uuid;
+    userUuid = existingUser[0]?.uuid || null;
 
     if (existingUser?.length === 0) {
       userUuid = nanoid();
@@ -91,7 +103,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   const [data] = await db.insert(info).values(
-    is_fronted_user ? { ...value } : { ...value, user_uuid: userUuid },
+    { ...value, user_uuid: userUuid },
   ).returning({
     name: info.uuid,
   });
