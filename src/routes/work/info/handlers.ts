@@ -70,9 +70,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       .where(eq(users.phone, phone))
       .limit(1);
 
-    userUuid = existingUser[0]?.uuid || userUuid;
+    userUuid = existingUser[0]?.uuid || user_uuid;
 
-    if (existingUser.length === 0) {
+    if (existingUser?.length === 0) {
       userUuid = nanoid();
 
       await db.insert(users).values({
