@@ -798,7 +798,7 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
                         COUNT(*) FILTER (WHERE ad.is_late_application)::float8  AS approved_lates,
                         COUNT(*) FILTER (WHERE ad.is_field_visit)::float8  AS field_visit_days,
                         -- Sum late_hours only for rows flagged as is_late
-                        COALESCE(SUM(ad.late_hours) FILTER (WHERE ad.is_late), 0)::float8      AS total_late_hours,
+                        COALESCE(SUM(ad.late_hours), 0)::float8      AS total_late_hours,
                         -- Sum early_exit_hours only for rows flagged as is_early_exit
                         COALESCE(SUM(ad.early_exit_hours) FILTER (WHERE ad.is_early_exit), 0)::float8 AS total_early_exit_hours,
                         COALESCE(
