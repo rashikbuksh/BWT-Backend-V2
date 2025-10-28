@@ -84,7 +84,8 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                         workplace.name AS workplace_name,
                         e.profile_picture,
                         e.start_date,
-                        sg.name AS shift_group_name
+                        sg.name AS shift_group_name,
+                        COALESCE(sg_sel.off_days::jsonb, '[]'::jsonb) AS off_days
                       FROM hr.employee e
                       LEFT JOIN
                         hr.workplace ON e.workplace_uuid = workplace.uuid
@@ -92,7 +93,8 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       LEFT JOIN hr.punch_log pl ON pl.employee_uuid = e.uuid AND DATE(pl.punch_time) = DATE(ud.punch_date)
                       LEFT JOIN LATERAL (
                                           SELECT r.shifts_uuid AS shifts_uuid,
-                                                r.shift_group_uuid AS shift_group_uuid
+                                                r.shift_group_uuid AS shift_group_uuid,
+                                                r.off_days
                                           FROM hr.roster r
                                           WHERE r.shift_group_uuid = (
                                             SELECT el.type_uuid
@@ -117,7 +119,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                       WHERE 
                         ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`} 
                         ${department_uuid !== 'undefined' && department_uuid ? sql` AND dept.uuid = ${department_uuid}` : sql``}  AND e.start_date::date <= ${toDateExpr}::date
-                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name, e.profile_picture, e.start_date, sg.name
+                      GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before, dept.department, des.designation, et.name, e.uuid, e.employee_id, line_manager.name, workplace.name, e.profile_picture, e.start_date, sg.name, sg_sel.off_days::jsonb
                     )
                     SELECT
                           uuid,
@@ -136,6 +138,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                           profile_picture,
                           start_date,
                           shift_group_name,
+                          off_days,
                           (
                               SELECT MAX(t.d)
                               FROM (
@@ -225,7 +228,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                         ) AS absent_last_30_days_count
                         FROM attendance_data
                         WHERE status = 'Absent'
-                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date, workplace_name, profile_picture, start_date, shift_group_name 
+                        GROUP BY uuid, user_uuid, employee_name, shift_name, department_name, designation_name, employment_type_name, employee_id, line_manager_name, start_time, end_time, punch_date, workplace_name, profile_picture, start_date, shift_group_name, off_days
                         ORDER BY employee_name;
                   `;
 
