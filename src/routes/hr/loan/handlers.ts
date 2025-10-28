@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetLoanEntryDetailsRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { employee, loan, users } from '../schema';
+import { department, designation, employee, loan, users } from '../schema';
 
 const createdByUser = alias(users, 'createdByUser');
 
@@ -78,6 +78,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_at: loan.created_at,
       updated_at: loan.updated_at,
       remarks: loan.remarks,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
     })
     .from(loan)
     .leftJoin(
@@ -86,6 +92,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(loan.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .orderBy(desc(loan.created_at));
 
   const data = await salaryIncrementPromise;
@@ -109,6 +117,12 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       created_at: loan.created_at,
       updated_at: loan.updated_at,
       remarks: loan.remarks,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
     })
     .from(loan)
     .leftJoin(
@@ -117,6 +131,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(loan.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .where(eq(loan.uuid, uuid));
 
   const [data] = await salaryIncrementPromise;

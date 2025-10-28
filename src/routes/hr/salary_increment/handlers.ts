@@ -10,7 +10,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { employee, salary_increment, users } from '../schema';
+import { department, designation, employee, salary_increment, users } from '../schema';
 
 const createdByUser = alias(users, 'createdByUser');
 
@@ -84,10 +84,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: salary_increment.remarks,
       approval: salary_increment.approval,
       is_approved: salary_increment.is_approved,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(salary_increment.created_by, createdByUser.uuid),
@@ -124,10 +132,18 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       remarks: salary_increment.remarks,
       approval: salary_increment.approval,
       is_approved: salary_increment.is_approved,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      department_uuid: users.department_uuid,
+      department_name: department.department,
+      designation_uuid: users.designation_uuid,
+      designation_name: designation.designation,
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(salary_increment.created_by, createdByUser.uuid),
