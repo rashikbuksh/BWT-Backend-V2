@@ -106,37 +106,66 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
-  // Create object with only database fields (remove validation-only fields)
-  const dbFields = {
-    uuid: value.uuid,
-    user_uuid: userUuid,
-    received_date: value.received_date,
-    is_product_received: value.is_product_received,
-    created_by: value.created_by,
-    created_at: value.created_at,
-    updated_at: value.updated_at,
-    remarks: value.remarks,
-    zone_uuid: value.zone_uuid,
-    location: value.location,
-    submitted_by: value.submitted_by,
-    branch_uuid: value.branch_uuid,
-    reference_user_uuid: value.reference_user_uuid,
-    is_commission_amount: value.is_commission_amount,
-    commission_amount: value.commission_amount,
-    is_contact_with_customer: value.is_contact_with_customer,
-    customer_feedback: value.customer_feedback,
-    order_info_status: value.order_info_status,
-    order_type: value.order_type,
-    received_by: value.received_by,
-    name: value.name,
-    phone: value.phone,
-    where_they_find_us: value.where_they_find_us,
-    is_fronted_user: value.is_fronted_user,
-    service_type: value.service_type,
-    receive_type: value.receive_type,
-    receiver: value.receiver,
-    courier_uuid: value.courier_uuid,
-  };
+  // Create object with only database fields, filtering out undefined values
+  const dbFields: any = {};
+
+  // Only add fields that are not undefined
+  if (value.uuid !== undefined)
+    dbFields.uuid = value.uuid;
+  if (userUuid !== null)
+    dbFields.user_uuid = userUuid;
+  if (value.received_date !== undefined)
+    dbFields.received_date = value.received_date;
+  if (value.is_product_received !== undefined)
+    dbFields.is_product_received = value.is_product_received;
+  if (value.created_by !== undefined)
+    dbFields.created_by = value.created_by;
+  if (value.created_at !== undefined)
+    dbFields.created_at = value.created_at;
+  if (value.updated_at !== undefined)
+    dbFields.updated_at = value.updated_at;
+  if (value.remarks !== undefined)
+    dbFields.remarks = value.remarks;
+  if (value.zone_uuid !== undefined)
+    dbFields.zone_uuid = value.zone_uuid;
+  if (value.location !== undefined)
+    dbFields.location = value.location;
+  if (value.submitted_by !== undefined)
+    dbFields.submitted_by = value.submitted_by;
+  if (value.branch_uuid !== undefined)
+    dbFields.branch_uuid = value.branch_uuid;
+  if (value.reference_user_uuid !== undefined)
+    dbFields.reference_user_uuid = value.reference_user_uuid;
+  if (value.is_commission_amount !== undefined)
+    dbFields.is_commission_amount = value.is_commission_amount;
+  if (value.commission_amount !== undefined)
+    dbFields.commission_amount = value.commission_amount;
+  if (value.is_contact_with_customer !== undefined)
+    dbFields.is_contact_with_customer = value.is_contact_with_customer;
+  if (value.customer_feedback !== undefined)
+    dbFields.customer_feedback = value.customer_feedback;
+  if (value.order_info_status !== undefined)
+    dbFields.order_info_status = value.order_info_status;
+  if (value.order_type !== undefined)
+    dbFields.order_type = value.order_type;
+  if (value.received_by !== undefined)
+    dbFields.received_by = value.received_by;
+  if (value.name !== undefined)
+    dbFields.name = value.name;
+  if (value.phone !== undefined)
+    dbFields.phone = value.phone;
+  if (value.where_they_find_us !== undefined)
+    dbFields.where_they_find_us = value.where_they_find_us;
+  if (value.is_fronted_user !== undefined)
+    dbFields.is_fronted_user = value.is_fronted_user;
+  if (value.service_type !== undefined)
+    dbFields.service_type = value.service_type;
+  if (value.receive_type !== undefined)
+    dbFields.receive_type = value.receive_type;
+  if (value.receiver !== undefined)
+    dbFields.receiver = value.receiver;
+  if (value.courier_uuid !== undefined)
+    dbFields.courier_uuid = value.courier_uuid;
 
   const [data] = await db.insert(info).values(dbFields).returning({
     name: info.uuid,
