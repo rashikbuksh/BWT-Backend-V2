@@ -93,14 +93,20 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
         phone,
         user_type: 'customer',
         pass: await HashPass(phone),
+        department_uuid,
+        designation_uuid,
         email: `${formattedName2 + phone}@bwt.com`,
         ext: '+880',
         created_at,
+        business_type,
+        where_they_find_us,
         can_access: '{"customer__customer_profile":["read"]}',
         status: '1', // Set status to active for new customers
       });
     }
   }
+
+  delete value.is_new_customer;
 
   const [data] = await db.insert(info).values(
     { ...value, user_uuid: userUuid },
