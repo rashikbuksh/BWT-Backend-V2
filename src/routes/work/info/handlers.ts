@@ -106,11 +106,39 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     }
   }
 
-  delete value.is_new_customer;
+  // Create object with only database fields (remove validation-only fields)
+  const dbFields = {
+    uuid: value.uuid,
+    user_uuid: userUuid,
+    received_date: value.received_date,
+    is_product_received: value.is_product_received,
+    created_by: value.created_by,
+    created_at: value.created_at,
+    updated_at: value.updated_at,
+    remarks: value.remarks,
+    zone_uuid: value.zone_uuid,
+    location: value.location,
+    submitted_by: value.submitted_by,
+    branch_uuid: value.branch_uuid,
+    reference_user_uuid: value.reference_user_uuid,
+    is_commission_amount: value.is_commission_amount,
+    commission_amount: value.commission_amount,
+    is_contact_with_customer: value.is_contact_with_customer,
+    customer_feedback: value.customer_feedback,
+    order_info_status: value.order_info_status,
+    order_type: value.order_type,
+    received_by: value.received_by,
+    name: value.name,
+    phone: value.phone,
+    where_they_find_us: value.where_they_find_us,
+    is_fronted_user: value.is_fronted_user,
+    service_type: value.service_type,
+    receive_type: value.receive_type,
+    receiver: value.receiver,
+    courier_uuid: value.courier_uuid,
+  };
 
-  const [data] = await db.insert(info).values(
-    { ...value, user_uuid: userUuid },
-  ).returning({
+  const [data] = await db.insert(info).values(dbFields).returning({
     name: info.uuid,
   });
 
