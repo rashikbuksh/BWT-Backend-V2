@@ -91,7 +91,9 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                       WHEN (MIN(pl.punch_time)::time > s.late_time::time) AND hr.is_employee_applied_late(e.uuid, ud.punch_date)=true THEN 'Late (Approved)'
                       WHEN MAX(pl.punch_time)::time < s.early_exit_before::time THEN 'Early Exit'
                       ELSE 'Present'
-                    END as status
+                    END as status,
+                    shift_group.name AS shift_group_name,
+                    COALESCE(sg_sel.off_days::jsonb, '[]'::jsonb) AS off_days
                   FROM hr.employee e
                   LEFT JOIN user_dates ud ON e.user_uuid = ud.user_uuid
                   LEFT JOIN hr.users u ON e.user_uuid = u.uuid
@@ -101,7 +103,8 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                   LEFT JOIN LATERAL (
                                     SELECT 
                                         r.shifts_uuid AS shifts_uuid,
-                                        r.shift_group_uuid AS shift_group_uuid
+                                        r.shift_group_uuid AS shift_group_uuid,
+                                        r.off_days
                                     FROM hr.roster r
                                     WHERE r.shift_group_uuid = (
                                       SELECT el.type_uuid
@@ -120,7 +123,7 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                   LEFT JOIN hr.shift_group ON shift_group.uuid = sg_sel.shift_group_uuid
                   WHERE 
                     ${employee_uuid ? sql`e.uuid = ${employee_uuid}` : sql`TRUE`}
-                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid, e.profile_picture, e.start_date::date
+                  GROUP BY ud.user_uuid, ud.employee_name, ud.punch_date, s.name, s.start_time, s.end_time, s.late_time, s.early_exit_before,e.employee_id,d.department, des.designation, e.uuid, e.profile_picture, e.start_date::date, shift_group.name, sg_sel.off_days::jsonb
                 )
                SELECT
                     ad.punch_date AS date,
@@ -133,11 +136,13 @@ export const lateReport: AppRouteHandler<LateReportRoute> = async (c: any) => {
                         'employee_name', ad.employee_name,
                         'employee_department', ad.employee_department,
                         'employee_designation', ad.employee_designation,
-                        'shift',         ad.shift_name,
+                        'shift_name',         ad.shift_name,
                         'entry_time',    ad.entry_time,
                         'late_hours',    ad.late_hours,
                         'profile_picture', ad.profile_picture,
-                        'start_date',    ad.start_date::date
+                        'start_date',    ad.start_date::date,
+                        'shift_group_name', ad.shift_group_name,
+                        'off_days', ad.off_days
                         ) ORDER BY ad.employee_name
                     ) AS late_records
                     FROM attendance_data ad
