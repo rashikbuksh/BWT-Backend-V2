@@ -49,6 +49,16 @@ export const leaveHistoryReport: AppRouteHandler<LeaveHistoryReportRoute> = asyn
                             ORDER BY el.effective_date DESC
                             LIMIT 1
                     ) AS leave_policy_name,
+                    (SELECT
+                            el.effective_date::date
+                        FROM hr.employee_log el
+                        WHERE
+                            el.employee_uuid = employee.uuid
+                            AND el.type = 'leave_policy'
+                            AND el.effective_date::date <= CURRENT_DATE::date
+                        ORDER BY el.effective_date DESC
+                        LIMIT 1
+                    ) AS leave_policy_effective_date,
                     employment_type.name as employment_type_name,
                     (
                             SELECT COALESCE(
