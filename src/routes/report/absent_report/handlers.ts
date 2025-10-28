@@ -179,7 +179,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                                         AND hr.is_employee_applied_late(attendance_data.uuid, t.d) = true))
                             ) AS last_present,
 
-                          (
+                         (
                             SELECT GREATEST(
                               DATE(attendance_data.start_date),
                               COALESCE(
@@ -188,7 +188,7 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                                   FROM (
                                     SELECT generate_series(
                                       CURRENT_DATE - INTERVAL '29 days',
-                                      CURRENT_DATE,
+                                      CURRENT_DATE - INTERVAL '1 day',  -- end before today
                                       '1 day'
                                     )::date AS d
                                   ) AS days
@@ -201,19 +201,18 @@ export const dailyAbsentReport: AppRouteHandler<DailyAbsentReportRoute> = async 
                                   AND (SELECT is_general_holiday FROM hr.is_general_holiday(days.d)) IS false
                                   AND (SELECT is_special_holiday FROM hr.is_special_holiday(days.d)) IS false
                                   AND hr.is_employee_off_day(attendance_data.uuid, days.d) = false
-                                  AND hr.is_employee_on_leave(attendance_data.uuid, days.d) = false
                                 ),
                                 DATE(attendance_data.start_date)
                               )
                             )
                           ) AS last_absent_last_30_days,
 
-                         (
+                        (
                           SELECT COUNT(*)
                           FROM (
                             SELECT generate_series(
                               GREATEST(CURRENT_DATE - INTERVAL '29 days', DATE(attendance_data.start_date)),
-                              CURRENT_DATE,
+                              CURRENT_DATE - INTERVAL '1 day',   -- end before today
                               '1 day'
                             )::date AS d
                           ) AS days
