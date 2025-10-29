@@ -7,7 +7,7 @@ import { parseLine } from '@/utils/attendence/iclock_parser';
 
 import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute } from './routes';
 
-import { commandSyntax, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
+import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
 // In-memory stores (replace with DB in prod)
 const pushedLogs: any[] = []; // raw + enriched entries -- attendance real time logs
@@ -20,6 +20,10 @@ const devicePinKey = new Map(); // sn -> preferred PIN field key (PIN, Badgenumb
 const sentCommands = new Map(); // sn -> [{ id, cmd, queuedAt, sentAt(deprecated), deliveredAt, bytesSent, respondedAt, staleAt, postSeenAfterDelivery, remote }]
 const cdataEvents = new Map(); // sn -> [{ at, lineCount, firstLine, hasUserInfo, hasAttlog, hasOptionLike }]
 const rawCDataStore = new Map(); // sn -> [{ at, raw, bytes }]
+// const pollHistory = new Map(); // sn -> [{ at, queueBefore, deliveredCount, remote }]
+
+// Export shared state for use in other modules
+export { commandQueue, usersByDevice };
 // const pollHistory = new Map(); // sn -> [{ at, queueBefore, deliveredCount, remote }]
 
 export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
@@ -820,3 +824,39 @@ export const getQueueStatus: AppRouteHandler<GetQueueStatusRoute> = async (c: an
     });
   }
 };
+
+// Handler to delete a user from ZKTeco device(s)
+export async function deleteUser(c: any) {
+  const sn = c.req.query('sn') || c.req.query('SN');
+  const pin = c.req.query('pin') || c.req.query('PIN');
+
+  if (!pin) {
+    return c.json({ error: 'PIN is required' }, 400);
+  }
+
+  try {
+    const result = await deleteUserFromDevice(pin, commandQueue, usersByDevice, sn);
+
+    if (result.success) {
+      return c.json({
+        ok: true,
+        message: `User with PIN ${pin} deletion command queued successfully`,
+        ...result,
+      });
+    }
+    else {
+      return c.json({
+        ok: false,
+        error: result.error,
+        ...result,
+      }, 400);
+    }
+  }
+  catch (error) {
+    console.error('[delete-user-handler] Error:', error);
+    return c.json({
+      ok: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    }, 500);
+  }
+}

@@ -479,3 +479,90 @@ export async function insertBiometricData(biometricItems: any[]) {
   console.warn(`[insert-biometric] Results: ${inserted} inserted, ${updated} updated, ${skipped} skipped, ${errors} errors (${successfulResults.length} total processed)`);
   return { inserted, updated, skipped, errors, total: successfulResults.length };
 }
+
+// Function to delete a user from ZKTeco device using PIN
+export async function deleteUserFromDevice(
+  pin: string,
+  commandQueue: Map<string, string[]>,
+  usersByDevice: Map<string, Map<string, any>>,
+  sn?: string,
+) {
+  try {
+    if (!pin) {
+      console.error('[delete-user] PIN is required');
+      return { success: false, error: 'PIN is required' };
+    }
+
+    // If no specific device serial number provided, send to all devices
+    const devicesToUpdate = sn ? [sn] : Array.from(commandQueue.keys());
+
+    if (devicesToUpdate.length === 0) {
+      console.warn('[delete-user] No devices found to delete user from');
+      return { success: false, error: 'No devices found' };
+    }
+
+    const results = [];
+
+    for (const deviceSn of devicesToUpdate) {
+      try {
+        // Ensure queue exists for this device
+        const queue = ensureQueue(deviceSn, commandQueue);
+
+        // Remove user from device cache
+        const umap = ensureUserMap(deviceSn, usersByDevice);
+        if (umap && umap.has(pin)) {
+          umap.delete(pin);
+          console.warn(`[delete-user] Removed PIN ${pin} from device ${deviceSn} cache`);
+        }
+
+        // Create delete user command for ZKTeco device
+        // The command format is: C:ID:DELETE USER PIN=<pin>
+        const deleteCommand = `C:1:DELETE USER PIN=${pin}`;
+
+        // Add command to queue
+        if (queue) {
+          // Check if delete command already exists in queue to avoid duplicates
+          const existingDeleteCmd = queue.find(cmd => cmd === deleteCommand);
+          if (!existingDeleteCmd) {
+            queue.push(deleteCommand);
+            console.warn(`[delete-user] Queued delete command for PIN ${pin} on device ${deviceSn}: ${deleteCommand}`);
+            results.push({ device: deviceSn, success: true, command: deleteCommand });
+          }
+          else {
+            console.warn(`[delete-user] Delete command for PIN ${pin} already queued for device ${deviceSn}`);
+            results.push({ device: deviceSn, success: true, command: deleteCommand, note: 'Already queued' });
+          }
+        }
+        else {
+          console.error(`[delete-user] Failed to get command queue for device ${deviceSn}`);
+          results.push({ device: deviceSn, success: false, error: 'Failed to get command queue' });
+        }
+      }
+      catch (error) {
+        console.error(`[delete-user] Error processing device ${deviceSn}:`, error);
+        results.push({ device: deviceSn, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
+
+    console.warn(`[delete-user] Delete user PIN ${pin} completed: ${successCount} success, ${failureCount} failures`);
+
+    return {
+      success: successCount > 0,
+      pin,
+      devicesProcessed: devicesToUpdate.length,
+      successCount,
+      failureCount,
+      results,
+    };
+  }
+  catch (error) {
+    console.error('[delete-user] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unexpected error occurred',
+    };
+  }
+}
