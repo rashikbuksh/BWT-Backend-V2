@@ -317,7 +317,7 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
     ok: true,
     devices: (deviceIdentifier
       ? deviceState.has(deviceIdentifier)
-        ? [{ sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }]
+        ? sn ? { sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) } : [{ sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }]
         : []
       : Array.from(deviceState.entries()).map(([sn, s]) => ({
           sn,

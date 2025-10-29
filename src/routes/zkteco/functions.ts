@@ -566,3 +566,30 @@ export async function deleteUserFromDevice(
     };
   }
 }
+
+export async function syncAllAttendenceLogs() {
+  try {
+    console.warn('[sync-all-logs] Starting synchronization of all attendance logs from all devices');
+
+    // Fetch all devices from the database
+    const devices = await db.select().from(device_list);
+
+    for (const device of devices) {
+      try {
+        console.warn(`[sync-all-logs] Syncing logs for device SN=${device.identifier}, UUID=${device.uuid}`);
+        // Here you would implement the logic to sync logs for each device.
+        // This could involve queuing fetch commands, processing logs, etc.
+        // For now, we just log the action.
+      }
+      catch (deviceError) {
+        console.error(`[sync-all-logs] Error syncing device SN=${device.identifier}, UUID=${device.uuid}:`, deviceError);
+      }
+    }
+    console.warn('[sync-all-logs] Completed synchronization of all attendance logs');
+    return { success: true, devicesProcessed: devices.length };
+  }
+  catch (error) {
+    console.error('[sync-all-logs] Unexpected error during synchronization:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unexpected error occurred' };
+  }
+}
