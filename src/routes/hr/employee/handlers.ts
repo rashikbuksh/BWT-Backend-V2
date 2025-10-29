@@ -78,48 +78,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
-  // First, get the employee data including PIN before deletion
-  const [employeeData] = await db
-    .select({
-      id: employee.id,
-      pin: employee.pin,
-    })
-    .from(employee)
-    .where(eq(employee.uuid, uuid))
-    .limit(1);
-
-  if (!employeeData) {
-    return DataNotFound(c);
-  }
-
-  // Delete from ZKTeco devices if PIN exists
-  if (employeeData.pin) {
-    try {
-      // Import the delete function and shared state from zkteco module
-      const { deleteUserFromDevice } = await import('@/routes/zkteco/functions');
-      const { commandQueue, usersByDevice } = await import('@/routes/zkteco/handlers');
-
-      console.warn(`[employee-remove] Attempting to delete user with PIN ${employeeData.pin} from ZKTeco devices`);
-
-      const zkResult = await deleteUserFromDevice(
-        employeeData.pin,
-        commandQueue,
-        usersByDevice,
-      );
-
-      if (zkResult.success) {
-        console.warn(`[employee-remove] Successfully queued deletion of PIN ${employeeData.pin} from ${zkResult.devicesProcessed} ZKTeco devices`);
-      }
-      else {
-        console.error(`[employee-remove] Failed to delete PIN ${employeeData.pin} from ZKTeco devices:`, zkResult.error);
-      }
-    }
-    catch (error) {
-      console.error('[employee-remove] Error deleting user from ZKTeco devices:', error);
-      // Continue with employee deletion even if ZKTeco deletion fails
-    }
-  }
-
   const deleteFromEmployeeLog = db.delete(employee_log)
     .where(eq(employee_log.employee_uuid, uuid))
     .returning({

@@ -74,6 +74,71 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
 
+  const [employeeDataFromDevicePermission] = await db
+    .select({
+      id: device_permission.id,
+      employee_uuid: device_permission.employee_uuid,
+    })
+    .from(device_permission)
+    .where(eq(device_permission.uuid, uuid))
+    .limit(1);
+
+  // Ensure we have a linked employee UUID before querying employee table
+  if (!employeeDataFromDevicePermission || !employeeDataFromDevicePermission.employee_uuid) {
+    console.warn(`[employee-remove] No linked employee UUID found for device_permission UUID=${uuid}`);
+  }
+
+  // First, get the employee data including PIN before deletion
+  let employeeData;
+  if (!employeeDataFromDevicePermission || !employeeDataFromDevicePermission.employee_uuid) {
+    employeeData = undefined;
+    console.warn(`[employee-remove] No employee UUID available to query employee table for device_permission UUID=${uuid}`);
+  }
+  else {
+    const [emp] = await db
+      .select({
+        id: employee.id,
+        pin: employee.pin,
+      })
+      .from(employee)
+      .where(eq(employee.uuid, employeeDataFromDevicePermission.employee_uuid))
+      .limit(1);
+
+    employeeData = emp;
+  }
+
+  if (!employeeData) {
+    console.warn(`[employee-remove] No employee data found for UUID=${employeeDataFromDevicePermission?.employee_uuid}`);
+  }
+
+  // Delete from ZKTeco devices if PIN exists
+  if (employeeData && employeeData.pin) {
+    try {
+      // Import the delete function and shared state from zkteco module
+      const { deleteUserFromDevice } = await import('@/routes/zkteco/functions');
+      const { commandQueue, usersByDevice } = await import('@/routes/zkteco/handlers');
+
+      console.warn(`[employee-remove] Attempting to delete user with PIN ${employeeData.pin} from ZKTeco devices`);
+
+      const zkResult = await deleteUserFromDevice(
+        employeeData.pin,
+        commandQueue,
+        usersByDevice,
+      );
+
+      if (zkResult.success) {
+        console.warn(`[employee-remove] Successfully queued deletion of PIN ${employeeData.pin} from ${zkResult.devicesProcessed} ZKTeco devices`);
+      }
+      else {
+        console.error(`[employee-remove] Failed to delete PIN ${employeeData.pin} from ZKTeco devices:`, zkResult.error);
+      }
+    }
+    catch (error) {
+      console.error('[employee-remove] Error deleting user from ZKTeco devices:', error);
+      // Continue with employee deletion even if ZKTeco deletion fails
+    }
+  }
+
   const [data] = await db.delete(device_permission)
     .where(eq(device_permission.uuid, uuid))
     .returning({
@@ -83,6 +148,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
+  // Return a proper Response on successful deletion to satisfy handler contract
   return c.json(createToast('delete', data.name), HSCode.OK);
 };
 
