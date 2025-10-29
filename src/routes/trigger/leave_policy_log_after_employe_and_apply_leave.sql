@@ -1,5 +1,4 @@
-CREATE OR REPLACE FUNCTION hr.leave_policy_log_after_employee_insert_function() RETURNS TRIGGER AS $$
-BEGIN
+CREATE OR REPLACE FUNCTION hr.leave_policy_log_after_employee_insert_function() RETURNS TRIGGER AS $$ BEGIN
 INSERT INTO hr.leave_policy_log (
         uuid,
         employee_uuid,
@@ -26,10 +25,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER leave_policy_log_after_employee_insert
 AFTER
 INSERT ON hr.employee FOR EACH ROW EXECUTE FUNCTION hr.leave_policy_log_after_employee_insert_function();
-
-
-
-
 CREATE OR REPLACE FUNCTION hr.leave_policy_log_after_employee_update_function() RETURNS TRIGGER AS $$
 DECLARE new_year int := EXTRACT(
         YEAR
@@ -46,7 +41,7 @@ LIMIT 1;
 IF FOUND THEN
 UPDATE hr.leave_policy_log
 SET leave_policy_uuid = NEW.leave_policy_uuid,
-    update_by = NEW.created_by,
+    update_by = NEW.updated_by,
     updated_at = NEW.updated_at
 WHERE uuid = existing_log_uuid;
 ELSE
@@ -64,9 +59,9 @@ VALUES (
         NEW.leave_policy_uuid,
         EXTRACT(
             YEAR
-            FROM NEW.created_at
+            FROM NEW.updated_at
         )::int,
-        NEW.created_by,
+        NEW.updated_by,
         NEW.created_at
     );
 END IF;
