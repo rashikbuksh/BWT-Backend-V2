@@ -26,7 +26,7 @@ export function configureOpenAPI(app: AppOpenAPI, openapiPath = '/reference', do
     `${openapiPath}`,
     apiReference({
       url: `${docPath}`,
-      theme: 'kepler',
+      theme: 'deepSpace',
       pageTitle: packageJSON.name,
       layout: 'modern', // modern, classic
       defaultHttpClient: {
