@@ -291,22 +291,33 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
     console.warn(`  SN=${sn} users=${umap.size} pins=[${Array.from(umap.keys()).join(', ')}]`);
   }
 
+  const devices = deviceIdentifier
+    ? Array.from(deviceState.entries()).find(([sn]) => sn === deviceIdentifier)
+    : Array.from(deviceState.entries()).map(([sn, s]) => ({
+        sn,
+        lastStamp: s.lastStamp,
+        lastSeenAt: s.lastSeenAt,
+        lastUserSyncAt: s.lastUserSyncAt,
+      }));
+
+  //   deviceIdentifier
+  // ? (Array.from(deviceState.entries()).map(([sn, s]) => ({
+  //     sn,
+  //     lastStamp: s.lastStamp,
+  //     lastSeenAt: s.lastSeenAt,
+  //     lastUserSyncAt: s.lastUserSyncAt,
+  //   })).filter(d => d.sn === deviceIdentifier))
+  // : (Array.from(deviceState.entries()).map(([sn, s]) => ({
+  //     sn,
+  //     lastStamp: s.lastStamp,
+  //     lastSeenAt: s.lastSeenAt,
+  //     lastUserSyncAt: s.lastUserSyncAt,
+  //   }))
+  //   );
+
   const response = {
     ok: true,
-    devices: deviceIdentifier
-      ? (Array.from(deviceState.entries()).map(([sn, s]) => ({
-          sn,
-          lastStamp: s.lastStamp,
-          lastSeenAt: s.lastSeenAt,
-          lastUserSyncAt: s.lastUserSyncAt,
-        })).filter(d => d.sn === deviceIdentifier))
-      : (Array.from(deviceState.entries()).map(([sn, s]) => ({
-          sn,
-          lastStamp: s.lastStamp,
-          lastSeenAt: s.lastSeenAt,
-          lastUserSyncAt: s.lastUserSyncAt,
-        }))
-        ),
+    devices,
     pullMode: env.PULL_MODE,
     commandSyntax,
   };
