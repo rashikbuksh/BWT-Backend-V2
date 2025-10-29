@@ -19,6 +19,7 @@ import employment_type from './employment_type';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
+import leave_policy_log from './leave_policy_log';
 import loan from './loan';
 import loan_entry from './loan_entry';
 import manual_entry from './manual_entry';
@@ -72,4 +73,5 @@ export default [
   employee_log,
   apply_late,
   employee_biometric,
+  leave_policy_log,
 ];

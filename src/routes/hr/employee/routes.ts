@@ -6,7 +6,7 @@ import { notFoundSchema } from '@/lib/constants';
 import * as param from '@/lib/param';
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { insertSchema, patchSchema, selectSchema } from './utils';
+import { bulkInsertSchema, insertSchema, patchSchema, selectSchema } from './utils';
 
 const tags = ['hr.employee'];
 
@@ -279,6 +279,38 @@ export const getBulkShiftForEmployee = createRoute({
   },
 });
 
+export const postBulkEmployeeInformation = createRoute({
+  path: '/hr/employee-bulk-information',
+  method: 'post',
+  request: {
+    body: jsonContentRequired(
+      bulkInsertSchema,
+      'The bulk employee information to create',
+    ),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The bulk employee information',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(
+        z.array(
+          insertSchema.partial({
+            uuid: true,
+            user_uuid: true,
+            workplace_uuid: true,
+            created_by: true,
+            created_at: true,
+          }),
+        ),
+      ),
+      'The validation error(s)',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -290,3 +322,4 @@ export type GetEmployeeAttendanceReportRoute = typeof getEmployeeAttendanceRepor
 export type GetEmployeeSummaryDetailsByEmployeeUuidRoute = typeof getEmployeeSummaryDetailsByEmployeeUuid;
 export type UpdateProfilePictureRoute = typeof updateProfilePicture;
 export type GetBulkShiftForEmployeeRoute = typeof getBulkShiftForEmployee;
+export type PostBulkEmployeeInformationRoute = typeof postBulkEmployeeInformation;
