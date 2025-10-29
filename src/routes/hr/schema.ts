@@ -447,6 +447,9 @@ export const employee = hr.table('employee', {
   late_day_unit: integer('late_day_unit').default(3),
   pin: text('pin').default(sql`null`),
   profile_picture: text('profile_picture').default(sql`null`),
+  leave_policy_uuid: defaultUUID('leave_policy_uuid').references(
+    () => leave_policy.uuid,
+  ).default(sql`null`),
 });
 
 // ? Employee Address
@@ -792,6 +795,26 @@ export const apply_late = hr.table('apply_late', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+});
+
+export const leave_policy_log = hr.table('leave_policy_log', {
+  uuid: uuid_primary,
+  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
+  leave_policy_uuid: defaultUUID('leave_policy_uuid').references(
+    () => leave_policy.uuid,
+  ),
+  year: integer('year').notNull(),
+  sick_used: PG_DECIMAL('sick_used').default(sql`0`),
+  casual_used: PG_DECIMAL('casual_used').default(sql`0`),
+  maternity_used: PG_DECIMAL('maternity_used').default(sql`0`),
+  sick_added: PG_DECIMAL('sick_added').default(sql`0`),
+  casual_added: PG_DECIMAL('casual_added').default(sql`0`),
+  maternity_added: PG_DECIMAL('maternity_added').default(sql`0`),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+
 });
 
 export default hr;

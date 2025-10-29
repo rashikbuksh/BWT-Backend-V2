@@ -19,6 +19,7 @@ import type {
   GetOneRoute,
   ListRoute,
   PatchRoute,
+  PostBulkEmployeeInformationRoute,
   RemoveRoute,
   UpdateProfilePictureRoute,
 } from './routes';
@@ -1538,4 +1539,46 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
 
   const data = await resultPromise;
   return c.json({ entry: data.rows ?? {} }, HSCode.OK);
+};
+
+export const postBulkEmployeeInformation: AppRouteHandler<PostBulkEmployeeInformationRoute> = async (c: any) => {
+  const payload = c.req.valid('json');
+
+  // console.log('Bulk Employee Payload:', payload);
+
+  if (!Array.isArray(payload) || payload.length === 0)
+    return c.json({ message: 'Invalid payload, expected an array' }, HSCode.BAD_REQUEST);
+
+  const inserted: any[] = [];
+  const skipped: any[] = [];
+
+  try {
+    await db.transaction(async (tx) => {
+      for (const row of payload) {
+        const email = row.email;
+
+        console.log('Processing row for employee_id:', row.employee_id, 'email:', email);
+
+        const existingUser = email
+          ? await tx.select({ uuid: users.uuid }).from(users).where(eq(users.email, email))
+          : [];
+
+        console.log('Existing user check for email', email, ':', existingUser);
+
+        if ((existingUser && existingUser.length > 0)) {
+          skipped.push({
+            email: email || null,
+            reason: 'employee_id or email already exists',
+          });
+          continue;
+        }
+      } // end for
+    }); // end transaction
+  }
+  catch (err: any) {
+    // on transaction error return failure
+    return c.json({ message: 'Bulk insert failed', error: err?.message ?? String(err) }, HSCode.INTERNAL_SERVER_ERROR);
+  }
+
+  return c.json({ inserted_count: inserted.length, skipped_count: skipped.length, inserted, skipped }, HSCode.OK);
 };

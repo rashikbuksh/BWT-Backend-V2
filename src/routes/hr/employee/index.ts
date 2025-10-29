@@ -14,6 +14,7 @@ const router = createRouter()
   .openapi(routes.getEmployeeAttendanceReport, handlers.getEmployeeAttendanceReport)
   .openapi(routes.getEmployeeSummaryDetailsByEmployeeUuid, handlers.getEmployeeSummaryDetailsByEmployeeUuid)
   .openapi(routes.updateProfilePicture, handlers.updateProfilePicture)
-  .openapi(routes.getBulkShiftForEmployee, handlers.getBulkShiftForEmployee);
+  .openapi(routes.getBulkShiftForEmployee, handlers.getBulkShiftForEmployee)
+  .openapi(routes.postBulkEmployeeInformation, handlers.postBulkEmployeeInformation);
 
 export default router;
