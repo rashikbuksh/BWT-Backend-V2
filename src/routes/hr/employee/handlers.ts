@@ -30,6 +30,7 @@ import {
   employee,
   employee_log,
   employment_type,
+  leave_policy,
   sub_department,
   users,
   workplace,
@@ -44,6 +45,7 @@ const firstLateApprover = alias(users, 'first_late_approver');
 const secondLateApprover = alias(users, 'second_late_approver');
 const firstManualEntryApprover = alias(users, 'first_manual_entry_approver');
 const secondManualEntryApprover = alias(users, 'second_manual_entry_approver');
+const updatedByUser = alias(users, 'updated_by_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -175,6 +177,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
       profile_picture: employee.profile_picture,
+      leave_policy_uuid: employee.leave_policy_uuid,
+      leave_policy_name: leave_policy.name,
+      updated_by: employee.updated_by,
+      updated_by_name: updatedByUser.name,
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -269,23 +275,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
             ),
             '[]'::jsonb
           )`,
-      leave_policy_uuid: sql`
-          (
-            SELECT el.type_uuid
-            FROM hr.employee_log el
-            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
-          )`,
-      leave_policy_name: sql`
-          (
-            SELECT lp.name
-            FROM hr.employee_log el
-            LEFT JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
-            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
-          )`,
     })
     .from(employee)
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
@@ -338,6 +327,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         employee.second_manual_entry_approver_uuid,
         secondManualEntryApprover.uuid,
       ),
+    )
+    .leftJoin(
+      leave_policy,
+      eq(employee.leave_policy_uuid, leave_policy.uuid),
+    )
+    .leftJoin(
+      updatedByUser,
+      eq(employee.updated_by, updatedByUser.uuid),
     )
     .orderBy(desc(employee.created_at));
 
@@ -421,6 +418,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_resign: employee.is_resign,
       late_day_unit: employee.late_day_unit,
       profile_picture: employee.profile_picture,
+      leave_policy_uuid: employee.leave_policy_uuid,
+      leave_policy_name: leave_policy.name,
+      updated_by: employee.updated_by,
+      updated_by_name: updatedByUser.name,
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -514,24 +515,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
               LIMIT 1
             ),
             '[]'::jsonb
-          )`,
-
-      leave_policy_uuid: sql`
-          (
-            SELECT el.type_uuid
-            FROM hr.employee_log el
-            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
-          )`,
-      leave_policy_name: sql`
-          (
-            SELECT lp.name
-            FROM hr.employee_log el
-            LEFT JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
-            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
           )`,
       employee_address: sql`
           COALESCE((
@@ -682,6 +665,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         secondManualEntryApprover.uuid,
       ),
     )
+    .leftJoin(
+      leave_policy,
+      eq(employee.leave_policy_uuid, leave_policy.uuid),
+    )
+    .leftJoin(
+      updatedByUser,
+      eq(employee.updated_by, updatedByUser.uuid),
+    )
     .where(eq(employee.uuid, uuid));
 
   const [data] = await employeePromise;
@@ -796,23 +787,10 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       personal_phone: employee.personal_phone,
       late_day_unit: employee.late_day_unit,
       profile_picture: employee.profile_picture,
-      Leave_policy_uuid: sql`
-          (
-            SELECT el.type_uuid
-            FROM hr.employee_log el
-            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
-          )`,
-      leave_policy_name: sql`
-          (
-            SELECT lp.name
-            FROM hr.employee_log el
-            LEFT JOIN hr.leave_policy lp ON el.type_uuid = lp.uuid
-            WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee.uuid} AND el.effective_date::date <= CURRENT_DATE
-            ORDER BY el.effective_date DESC
-            LIMIT 1
-          )`,
+      leave_policy_uuid: employee.leave_policy_uuid,
+      leave_policy_name: leave_policy.name,
+      updated_by: employee.updated_by,
+      updated_by_name: updatedByUser.name,
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -1089,6 +1067,14 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
         employee.second_manual_entry_approver_uuid,
         secondManualEntryApprover.uuid,
       ),
+    )
+    .leftJoin(
+      leave_policy,
+      eq(employee.leave_policy_uuid, leave_policy.uuid),
+    )
+    .leftJoin(
+      updatedByUser,
+      eq(employee.updated_by, updatedByUser.uuid),
     )
     .where(eq(employee.uuid, employee_uuid));
 
