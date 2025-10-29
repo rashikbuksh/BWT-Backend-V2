@@ -313,44 +313,25 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
   //     }),
   // );
 
-  let response;
+  const response = {
+    ok: true,
+    devices: (deviceIdentifier
+      ? deviceState.has(deviceIdentifier)
+        ? [{ sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }]
+        : []
+      : Array.from(deviceState.entries()).map(([sn, s]) => ({
+          sn,
+          lastStamp: s.lastStamp,
+          lastSeenAt: s.lastSeenAt,
+          lastUserSyncAt: s.lastUserSyncAt,
+        }))
+    ),
+    // users: usersSummary,
+    // commandQueues: queueStatus,
+    pullMode: env.PULL_MODE,
+    commandSyntax,
+  };
 
-  if (sn) {
-    response = {
-      ok: true,
-      device: deviceState.has(deviceIdentifier)
-        ? { sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }
-        : null,
-      // users: usersSummary,
-      // commandQueues: queueStatus,
-      pullMode: env.PULL_MODE,
-      commandSyntax,
-    };
-  }
-  else {
-    response = {
-      ok: true,
-      devices: (deviceIdentifier
-        ? deviceState.has(deviceIdentifier)
-          ? [{ sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }]
-          : []
-        : Array.from(deviceState.entries()).map(([sn, s]) => ({
-            sn,
-            lastStamp: s.lastStamp,
-            lastSeenAt: s.lastSeenAt,
-            lastUserSyncAt: s.lastUserSyncAt,
-          }))
-      ),
-      // users: usersSummary,
-      // commandQueues: queueStatus,
-      pullMode: env.PULL_MODE,
-      commandSyntax,
-    };
-  }
-
-  if (response.devices) {
-    console.warn(`*** DEVICE HEALTH CHECK *** devices=${response.devices.length}`);
-  }
   return c.json(response);
 };
 
