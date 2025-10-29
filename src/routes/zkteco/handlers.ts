@@ -313,6 +313,13 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
   //     }),
   // );
 
+  console.log('[health] Constructing device health response: ', Array.from(deviceState.entries()).map(([sn, s]) => ({
+    sn,
+    lastStamp: s.lastStamp,
+    lastSeenAt: s.lastSeenAt,
+    lastUserSyncAt: s.lastUserSyncAt,
+  })));
+
   const response = {
     ok: true,
     devices: (deviceIdentifier
