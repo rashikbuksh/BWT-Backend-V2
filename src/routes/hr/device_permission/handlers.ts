@@ -111,8 +111,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
     console.warn(`[employee-remove] No employee data found for UUID=${employeeDataFromDevicePermission?.employee_uuid}`);
   }
 
-  // Delete from ZKTeco devices if PIN exists
-  if (employeeData && employeeData.pin) {
+  // Delete from ZKTeco devices if PIN exists and is valid
+  if (employeeData && employeeData.pin && String(employeeData.pin).trim()) {
     try {
       // Import the delete function and shared state from zkteco module
       const { deleteUserFromDevice } = await import('@/routes/zkteco/functions');
@@ -121,7 +121,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
       console.warn(`[employee-remove] Attempting to delete user with PIN ${employeeData.pin} from ZKTeco devices`);
 
       const zkResult = await deleteUserFromDevice(
-        employeeData.pin,
+        String(employeeData.pin).trim(),
         commandQueue,
         usersByDevice,
       );
@@ -136,6 +136,15 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
     catch (error) {
       console.error('[employee-remove] Error deleting user from ZKTeco devices:', error);
       // Continue with employee deletion even if ZKTeco deletion fails
+    }
+  }
+  else {
+    // Skip ZKTeco deletion if no employee data or PIN
+    if (!employeeData) {
+      console.warn(`[employee-remove] Skipping ZKTeco deletion - no employee data found for device_permission UUID=${uuid}`);
+    }
+    else if (!employeeData.pin || !String(employeeData.pin).trim()) {
+      console.warn(`[employee-remove] Skipping ZKTeco deletion - no valid PIN found for employee ID=${employeeData.id} (PIN: "${employeeData.pin}")`);
     }
   }
 
