@@ -291,50 +291,22 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
     console.warn(`  SN=${sn} users=${umap.size} pins=[${Array.from(umap.keys()).join(', ')}]`);
   }
 
-  // // Get command queue status
-  // const queueStatus = Array.from(commandQueue.entries()).map(([sn, queue]) => ({
-  //   sn,
-  //   queueLength: queue.length,
-  //   commands: queue.slice(0, 5), // Show first 5 commands
-  // }));
-
-  // const usersSummary = await Promise.all(
-  //   (deviceIdentifier ? [[deviceIdentifier, deviceState.get(deviceIdentifier)]] : deviceEntries)
-  //     .map(async ([sn, _]) => {
-  //       console.warn(`[health] Processing device SN=${sn}`);
-  //       await ensureUsersFetched(sn, usersByDevice, commandQueue);
-  //       const umap = usersByDevice.get(sn);
-  //       const count = umap ? umap.size : 0;
-  //       console.warn(`[health] SN=${sn} final count=${count}`);
-  //       return {
-  //         sn,
-  //         count,
-  //       };
-  //     }),
-  // );
-
-  console.log('[health] Constructing device health response: ', Array.from(deviceState.entries()).map(([sn, s]) => ({
-    sn,
-    lastStamp: s.lastStamp,
-    lastSeenAt: s.lastSeenAt,
-    lastUserSyncAt: s.lastUserSyncAt,
-  })));
-
   const response = {
     ok: true,
-    devices: (deviceIdentifier
-      ? deviceState.has(deviceIdentifier)
-        ? [{ sn: deviceIdentifier, ...deviceState.get(deviceIdentifier) }]
-        : []
-      : Array.from(deviceState.entries()).map(([sn, s]) => ({
+    devices: deviceIdentifier
+      ? (Array.from(deviceState.entries()).map(([sn, s]) => ({
+          sn,
+          lastStamp: s.lastStamp,
+          lastSeenAt: s.lastSeenAt,
+          lastUserSyncAt: s.lastUserSyncAt,
+        })).filter(d => d.sn === deviceIdentifier))
+      : (Array.from(deviceState.entries()).map(([sn, s]) => ({
           sn,
           lastStamp: s.lastStamp,
           lastSeenAt: s.lastSeenAt,
           lastUserSyncAt: s.lastUserSyncAt,
         }))
-    ),
-    // users: usersSummary,
-    // commandQueues: queueStatus,
+        ),
     pullMode: env.PULL_MODE,
     commandSyntax,
   };
