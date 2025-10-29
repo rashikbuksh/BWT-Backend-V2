@@ -27,6 +27,7 @@ import {
   department,
   designation,
   employee,
+  employee_log,
   employment_type,
   sub_department,
   users,
@@ -117,6 +118,14 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
       // Continue with employee deletion even if ZKTeco deletion fails
     }
   }
+
+  const deleteFromEmployeeLog = db.delete(employee_log)
+    .where(eq(employee_log.employee_uuid, uuid))
+    .returning({
+      id: employee_log.id,
+    });
+
+  await deleteFromEmployeeLog;
 
   // Now delete the employee from the database
   const [data] = await db.delete(employee)
