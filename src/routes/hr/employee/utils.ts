@@ -42,6 +42,7 @@ export const insertSchema = createInsertSchema(
     updated_at: schema => schema.updated_at.regex(dateTimePattern, {
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
+    leave_policy_uuid: schema => schema.leave_policy_uuid.length(15),
   },
 ).required({
   uuid: true,
@@ -92,6 +93,7 @@ export const insertSchema = createInsertSchema(
   is_resign: true,
   updated_at: true,
   remarks: true,
+  leave_policy_uuid: true,
 }).omit({
   id: true,
 });

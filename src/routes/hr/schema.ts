@@ -814,6 +814,7 @@ export const leave_policy_log = hr.table('leave_policy_log', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  updated_by: defaultUUID('updated_by').references(() => users.uuid).default(sql`null`),
 
 });
 
