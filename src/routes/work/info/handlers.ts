@@ -50,7 +50,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
     userUuid = existingUser[0]?.uuid || null;
 
-    if (existingUser?.length === 0) {
+    if (userUuid === null) {
       userUuid = nanoid();
 
       await db.insert(users).values({
