@@ -517,7 +517,7 @@ export async function deleteUserFromDevice(
 
         // Create delete user command for ZKTeco device
         // The command format is: C:ID:DELETE USER PIN=<pin>
-        const deleteCommand = `C:1:DELETE USER PIN=${pin}`;
+        const deleteCommand = `C:1:DELETE USERINFO PIN=${pin}`;
 
         // Add command to queue
         if (queue) {
