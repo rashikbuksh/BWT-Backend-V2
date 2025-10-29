@@ -87,7 +87,7 @@ export const iclockRoot = createRoute({
 });
 
 export const deviceHealth = createRoute({
-  path: '/iclock/device/health',
+  path: '/v1/iclock/device/health',
   method: 'get',
   request: {
     query: z.object({
