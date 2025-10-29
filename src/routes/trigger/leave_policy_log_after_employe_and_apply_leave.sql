@@ -30,7 +30,7 @@ DECLARE new_year int := EXTRACT(
         YEAR
         FROM NEW.updated_at
     )::int;
-existing_log_uuid uuid;
+existing_log_uuid text;
 BEGIN IF OLD.leave_policy_uuid IS DISTINCT
 FROM NEW.leave_policy_uuid THEN
 SELECT uuid INTO existing_log_uuid
@@ -38,10 +38,10 @@ FROM hr.leave_policy_log
 WHERE employee_uuid = NEW.uuid
     AND year = new_year
 LIMIT 1;
-IF FOUND THEN
+IF existing_log_uuid IS NOT NULL THEN
 UPDATE hr.leave_policy_log
 SET leave_policy_uuid = NEW.leave_policy_uuid,
-    update_by = NEW.updated_by,
+    updated_by = NEW.updated_by,
     updated_at = NEW.updated_at
 WHERE uuid = existing_log_uuid;
 ELSE
@@ -57,12 +57,9 @@ VALUES (
         generate_15_digit_uuid(),
         NEW.uuid,
         NEW.leave_policy_uuid,
-        EXTRACT(
-            YEAR
-            FROM NEW.updated_at
-        )::int,
+        new_year,
         NEW.updated_by,
-        NEW.created_at
+        NEW.updated_at
     );
 END IF;
 END IF;
