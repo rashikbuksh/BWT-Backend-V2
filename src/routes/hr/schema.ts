@@ -450,6 +450,7 @@ export const employee = hr.table('employee', {
   leave_policy_uuid: defaultUUID('leave_policy_uuid').references(
     () => leave_policy.uuid,
   ).default(sql`null`),
+  updated_by: defaultUUID('updated_by').references(() => users.uuid).default(sql`null`),
 });
 
 // ? Employee Address
