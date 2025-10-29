@@ -26,6 +26,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
   const {
+    user_uuid,
     is_new_customer,
     name,
     phone,
@@ -104,6 +105,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
         status: '1', // Set status to active for new customers
       });
     }
+  }
+  if (user_uuid) {
+    userUuid = user_uuid;
   }
 
   // Try a completely different approach using destructuring to exclude problematic fields
