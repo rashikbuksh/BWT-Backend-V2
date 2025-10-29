@@ -292,7 +292,17 @@ export const deviceHealth: AppRouteHandler<DeviceHealthRoute> = async (c: any) =
   }
 
   const devices = deviceIdentifier
-    ? Array.from(deviceState.entries()).find(([sn]) => sn === deviceIdentifier)
+    ? (() => {
+        const deviceEntry = Array.from(deviceState.entries()).find(([sn]) => sn === deviceIdentifier);
+        return deviceEntry
+          ? {
+              sn: deviceEntry[0],
+              lastStamp: deviceEntry[1].lastStamp,
+              lastSeenAt: deviceEntry[1].lastSeenAt,
+              lastUserSyncAt: deviceEntry[1].lastUserSyncAt,
+            }
+          : null;
+      })()
     : Array.from(deviceState.entries()).map(([sn, s]) => ({
         sn,
         lastStamp: s.lastStamp,
