@@ -26,6 +26,10 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
           )
         )
       `,
+      email: (is_hr === 'true' || is_line_manager === 'true')
+        ? users.email
+        : sql`NULL`,
+
     })
     .from(employee)
     .leftJoin(
@@ -102,7 +106,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
           : sql`true`,
       ),
     )
-    .groupBy(employee.uuid, users.name);
+    .groupBy(employee.uuid, users.name, users.email, employee.user_uuid);
 
   const data = await employeePromise;
 
