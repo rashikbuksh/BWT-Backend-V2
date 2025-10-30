@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -13,7 +14,7 @@ export const insertSchema = createInsertSchema(
     uuid: schema => schema.uuid.length(15),
     employee_uuid: schema => schema.employee_uuid.length(15),
     leave_category_uuid: schema => schema.leave_category_uuid.length(15),
-    year: schema => schema.year,
+    year: z.number().optional().default(new Date().getFullYear()),
     type: schema => schema.type,
     from_date: schema => schema.from_date.regex(dateTimePattern, {
       message: 'from_date must be in the format "YYYY-MM-DD HH:MM:SS"',
