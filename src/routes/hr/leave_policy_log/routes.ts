@@ -15,7 +15,7 @@ export const list = createRoute({
   tags,
   request: {
     query: z.object({
-      type: z.enum(['leave_policy', 'shift_group']).optional(),
+      year: z.coerce.number().int().optional(),
     }),
   },
   responses: {
