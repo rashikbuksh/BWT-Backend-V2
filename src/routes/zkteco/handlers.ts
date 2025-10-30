@@ -16,15 +16,12 @@ const deviceState = new Map(); // sn -> { lastStamp, lastSeenAt, lastUserSyncAt 
 const commandQueue = new Map(); // sn -> [ '...' ]
 const usersByDevice = new Map(); // sn -> Map(pin -> user)
 const devicePinKey = new Map(); // sn -> preferred PIN field key (PIN, Badgenumber, EnrollNumber, etc.)
-// const sseClients = new Set(); // SSE clients for real-time
 const sentCommands = new Map(); // sn -> [{ id, cmd, queuedAt, sentAt(deprecated), deliveredAt, bytesSent, respondedAt, staleAt, postSeenAfterDelivery, remote }]
 const cdataEvents = new Map(); // sn -> [{ at, lineCount, firstLine, hasUserInfo, hasAttlog, hasOptionLike }]
 const rawCDataStore = new Map(); // sn -> [{ at, raw, bytes }]
-// const pollHistory = new Map(); // sn -> [{ at, queueBefore, deliveredCount, remote }]
 
 // Export shared state for use in other modules
 export { commandQueue, usersByDevice };
-// const pollHistory = new Map(); // sn -> [{ at, queueBefore, deliveredCount, remote }]
 
 export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
@@ -117,11 +114,6 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
 
   // Debug summary of payload
   const rawLines = String(raw || '').replace(/\r/g, '\n').split('\n').filter(Boolean);
-  // console.warn(
-  //   `[cdata] SN=${sn} table=${table} lines=${rawLines.length} bytes=${Buffer.byteLength(
-  //     String(raw || ''),
-  //   )} firstLine=${rawLines[0] ? JSON.stringify(rawLines[0]) : '<empty>'}`,
-  // );
 
   recordCDataEvent(sn, {
     at: new Date().toISOString(),
@@ -168,6 +160,7 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
       // Collect biometric data for batch processing
       biometricItems.push(items);
     }
+
     else if (items.type === 'USER') {
       biometricItems.push(items);
       // Auto-detect PIN key from the first USER with PIN-like fields
@@ -188,7 +181,6 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
         // Auto-detect and cache the PIN key for this device
         if (!devicePinKey.has(sn)) {
           devicePinKey.set(sn, detectedKey);
-          // console.warn(`[auto-detect] SN=${sn} detected PIN key: ${detectedKey}`);
         }
 
         const umap = ensureUserMap(sn, usersByDevice);
@@ -197,21 +189,14 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
         if (umap && !umap.has(userPin)) {
           umap.set(userPin, { ...items, pin: userPin });
           userCount++;
-          // console.warn(`[user-added] SN=${sn} PIN=${userPin} Name=${items.Name || 'N/A'}`);
         }
         else if (umap) {
           duplicateCount++;
-          // console.warn(
-          //   `[user-exists] SN=${sn} PIN=${userPin} Name=${
-          //     items.Name || 'N/A'
-          //   } - skipping duplicate`
-          // );
         }
       }
     }
     else if (items.type === 'ATT_LOG') {
       // Process attendance logs
-      pushedLogs.push({ ...items, sn });
       currentSessionLogs.push({ ...items, sn });
       insertRealTimeLogToBackend(currentSessionLogs).then((insertedCount) => {
         console.warn(`[real-time-logs] SN=${sn} successfully inserted ${insertedCount} attendance records`);
