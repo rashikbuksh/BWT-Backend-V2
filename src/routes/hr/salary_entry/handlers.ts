@@ -268,13 +268,14 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   -
                   COALESCE(
                     FLOOR(COALESCE(attendance_summary.late_days, 0) / employee.late_day_unit) *
-                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30) + employee.tax_amount::float8 + COALESCE(total_increment.total_new_tds, 0)::float8
+                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30)
                   , 0) 
                 )::float8 AS net_payable,
                 COALESCE(loan_summary.total_loan_salary_amount, 0)::float8 AS total_loan_salary_amount,
                 COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0)::float8 AS total_paid_loan_salary_amount,
                 (COALESCE(loan_summary.total_loan_salary_amount, 0) - COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0))::float8 AS due_loan_salary_amount,
-                employee.tax_amount::float8 + COALESCE(total_increment.total_new_tds, 0)::float8 AS tax_amount
+                employee.tax_amount::float8,
+                COALESCE(total_new_tds.new_tds, 0)::float8 AS new_tds
             FROM  hr.employee
             LEFT JOIN LATERAL
                     hr.get_employee_summary(employee.uuid) emp_sum ON TRUE
@@ -284,8 +285,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 SUM(si.amount) AS total_salary_increment,
                 SUM(si.new_tds) AS total_new_tds
               FROM hr.salary_increment si
-            WHERE EXTRACT(YEAR FROM si.effective_date) <= ${year}
-              AND EXTRACT(MONTH FROM si.effective_date) <= ${month}
+            WHERE si.effective_date::date <= ${to_date}::date
               GROUP BY si.employee_uuid
             ) AS total_increment
               ON employee.uuid = total_increment.employee_uuid
@@ -382,11 +382,21 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   SUM(le.amount) as total_paid_loan_salary_amount
                 FROM hr.loan_entry le
                 LEFT JOIN hr.loan l ON le.loan_uuid = l.uuid
-                WHERE EXTRACT(YEAR FROM le.date) <= ${year}
-                  AND EXTRACT(MONTH FROM le.date) <= ${month}
+                WHERE le.date::date <= ${to_date}::date
                 GROUP BY l.employee_uuid
               ) AS loan_entry_summary
             ON employee.uuid = loan_entry_summary.employee_uuid
+            LEFT JOIN 
+                    (
+                      SELECT
+                           si.employee_uuid,
+                           si.new_tds::float8
+                      FROM hr.salary_increment si
+                      WHERE effective_date::date <= ${to_date}::date
+                      ORDER BY si.effective_date DESC
+                      LIMIT 1
+                    ) AS total_new_tds
+              ON employee.uuid = total_new_tds.employee_uuid
             WHERE employee.status = true AND employee.start_date <= ${to_date}::date
             ${employee_uuid ? sql`AND employee.uuid = ${employee_uuid}` : sql``}
             ORDER BY employee.created_at DESC`;
