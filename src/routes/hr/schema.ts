@@ -705,6 +705,7 @@ export const salary_increment = hr.table('salary_increment', {
   remarks: text('remarks').default(sql`null`),
   approval: approval_status_enum('approval').default('pending'),
   is_approved: boolean('is_approved').default(false),
+  new_tds: PG_DECIMAL('new_tds').default(sql`0`),
 });
 
 // ? salary entry

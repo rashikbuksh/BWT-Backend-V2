@@ -60,8 +60,6 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  // const data = await db.query.department.findMany();
-
   const { approved } = c.req.valid('query');
 
   const salaryIncrementPromise = db
@@ -70,7 +68,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       employee_uuid: salary_increment.employee_uuid,
       employee_name: users.name,
       amount: PG_DECIMAL_TO_FLOAT(salary_increment.amount),
-      // Current salary = joining amount + sum of all increment amounts whose effective_date has passed
       current_salary: sql`(
           ${PG_DECIMAL_TO_FLOAT(employee.joining_amount)}
           + COALESCE(
@@ -97,6 +94,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       department_name: department.department,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
+      new_tds: PG_DECIMAL_TO_FLOAT(salary_increment.new_tds),
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
@@ -155,6 +153,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       department_name: department.department,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
+      new_tds: PG_DECIMAL_TO_FLOAT(salary_increment.new_tds),
     })
     .from(salary_increment)
     .leftJoin(employee, eq(salary_increment.employee_uuid, employee.uuid))
