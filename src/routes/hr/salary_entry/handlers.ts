@@ -268,12 +268,13 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                   -
                   COALESCE(
                     FLOOR(COALESCE(attendance_summary.late_days, 0) / employee.late_day_unit) *
-                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30)
-                  , 0)
+                    (COALESCE(employee.joining_amount + COALESCE(total_increment.total_salary_increment, 0), employee.joining_amount) / 30) + employee.tax_amount::float8
+                  , 0) 
                 )::float8 AS net_payable,
                 COALESCE(loan_summary.total_loan_salary_amount, 0)::float8 AS total_loan_salary_amount,
                 COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0)::float8 AS total_paid_loan_salary_amount,
-                (COALESCE(loan_summary.total_loan_salary_amount, 0) - COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0))::float8 AS due_loan_salary_amount
+                (COALESCE(loan_summary.total_loan_salary_amount, 0) - COALESCE(loan_entry_summary.total_paid_loan_salary_amount, 0))::float8 AS due_loan_salary_amount,
+                employee.tax_amount::float8
             FROM  hr.employee
             LEFT JOIN LATERAL
                     hr.get_employee_summary(employee.uuid) emp_sum ON TRUE
