@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
@@ -70,6 +71,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       employee_designation_name: designation.designation,
       leave_policy_uuid: leave_policy_log.leave_policy_uuid,
       leave_policy_name: leave_policy.name,
+      year: leave_policy_log.year,
+      sick_used: PG_DECIMAL_TO_FLOAT(leave_policy_log.sick_used),
+      casual_used: PG_DECIMAL_TO_FLOAT(leave_policy_log.casual_used),
+      maternity_used: PG_DECIMAL_TO_FLOAT(leave_policy_log.maternity_used),
+      sick_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.sick_added),
+      casual_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.casual_added),
+      maternity_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.maternity_added),
       created_by: leave_policy_log.created_by,
       created_by_name: users.name,
       created_at: leave_policy_log.created_at,
@@ -104,6 +112,13 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       employee_designation_name: designation.designation,
       leave_policy_uuid: leave_policy_log.leave_policy_uuid,
       leave_policy_name: leave_policy.name,
+      year: leave_policy_log.year,
+      sick_used: PG_DECIMAL_TO_FLOAT(leave_policy_log.sick_used),
+      casual_used: PG_DECIMAL_TO_FLOAT(leave_policy_log.casual_used),
+      maternity_used: PG_DECIMAL_TO_FLOAT(leave_policy_log.maternity_used),
+      sick_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.sick_added),
+      casual_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.casual_added),
+      maternity_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.maternity_added),
       created_by: leave_policy_log.created_by,
       created_by_name: users.name,
       created_at: leave_policy_log.created_at,
