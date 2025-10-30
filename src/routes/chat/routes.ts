@@ -11,18 +11,27 @@ export const getRooms = createRoute({
   path: '/chat/rooms',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(50),
+      offset: z.coerce.number().int().min(0).default(0),
+      search: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
         rooms: z.array(z.object({
-          id: z.string(),
+          uuid: z.string(),
           name: z.string(),
-          description: z.string().optional(),
+          user_uuid: z.string().nullable().optional(),
+          last_message_uuid: z.string().nullable().optional(),
           created_at: z.string(),
-          user_count: z.number(),
+          updated_at: z.string().nullable().optional(),
         })),
+        total: z.number().optional(),
       }),
-      'List of available chat rooms',
+      'List of chat rooms',
     ),
   },
 });
@@ -35,8 +44,9 @@ export const createRoom = createRoute({
   request: {
     body: jsonContentRequired(
       z.object({
+        uuid: z.string().optional(),
         name: z.string().min(1).max(50),
-        description: z.string().optional(),
+        user_uuid: z.string().optional(),
       }),
       'Room creation data',
     ),
@@ -44,17 +54,19 @@ export const createRoom = createRoute({
   responses: {
     [HSCode.CREATED]: jsonContent(
       z.object({
-        id: z.string(),
+        uuid: z.string(),
         name: z.string(),
-        description: z.string().optional(),
+        user_uuid: z.string().nullable().optional(),
+        last_message_uuid: z.string().nullable().optional(),
         created_at: z.string(),
+        updated_at: z.string().nullable().optional(),
       }),
       'Created room',
     ),
     [HSCode.BAD_REQUEST]: jsonContent(
       createErrorSchema(z.object({
         name: z.string().min(1).max(50),
-        description: z.string().optional(),
+        user_uuid: z.string().optional(),
       })),
       'Invalid room data',
     ),
@@ -74,17 +86,70 @@ export const getRoomDetails = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
-        id: z.string(),
-        name: z.string(),
-        description: z.string().optional(),
+        uuid: z.string(),
+        name: z.string().nullable().optional(),
         created_at: z.string(),
-        users: z.array(z.object({
-          user_uuid: z.string(),
-          username: z.string(),
-          joined_at: z.string(),
-        })),
+        updated_at: z.string().nullable().optional(),
+        user_uuid: z.string().nullable().optional(),
+        user_name: z.string().nullable().optional(),
+        last_message_uuid: z.string().nullable().optional(),
       }),
-      'Room details with users',
+      'Room details',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      createErrorSchema(z.object({ roomId: z.string() })),
+      'Room not found',
+    ),
+  },
+});
+
+export const updateRoom = createRoute({
+  path: '/chat/rooms/{roomId}',
+  method: 'patch',
+  tags,
+  request: {
+    params: z.object({
+      roomId: z.string(),
+    }),
+    body: jsonContentRequired(
+      z.object({
+        name: z.string().min(1).max(50).optional(),
+      }),
+      'Room update data',
+    ),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        uuid: z.string(),
+        name: z.string(),
+        user_uuid: z.string().nullable().optional(),
+        last_message_uuid: z.string().nullable().optional(),
+        created_at: z.string(),
+        updated_at: z.string().nullable().optional(),
+      }),
+      'Updated room',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      createErrorSchema(z.object({ roomId: z.string() })),
+      'Room not found',
+    ),
+  },
+});
+
+export const deleteRoom = createRoute({
+  path: '/chat/rooms/{roomId}',
+  method: 'delete',
+  tags,
+  request: {
+    params: z.object({
+      roomId: z.string(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({ success: z.boolean() }),
+      'Room deleted',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       createErrorSchema(z.object({ roomId: z.string() })),
@@ -164,8 +229,8 @@ export const sendMessage = createRoute({
     body: jsonContentRequired(
       z.object({
         user_uuid: z.string(),
-        username: z.string(),
-        message: z.string().min(1).max(1000),
+        text: z.string().min(1).max(1000),
+        type: z.enum(['admin', 'web']).default('web'),
       }),
       'Message data',
     ),
@@ -174,8 +239,8 @@ export const sendMessage = createRoute({
     [HSCode.OK]: jsonContent(
       z.object({
         success: z.boolean(),
-        message_id: z.string(),
-        timestamp: z.string(),
+        message_uuid: z.string(),
+        created_at: z.string(),
       }),
       'Message sent successfully',
     ),
@@ -198,17 +263,21 @@ export const getRoomMessages = createRoute({
     query: z.object({
       limit: z.coerce.number().int().min(1).max(100).default(50),
       offset: z.coerce.number().int().min(0).default(0),
+      include_deleted: z.coerce.boolean().default(false),
     }),
   },
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
         messages: z.array(z.object({
-          id: z.string(),
-          message: z.string(),
-          from_user_uuid: z.string(),
-          from_username: z.string(),
-          timestamp: z.string(),
+          uuid: z.string(),
+          text: z.string(),
+          room_uuid: z.string(),
+          user_uuid: z.string(),
+          type: z.enum(['admin', 'web']),
+          is_deleted: z.boolean(),
+          created_at: z.string(),
+          updated_at: z.string().nullable().optional(),
         })),
         total: z.number(),
         has_more: z.boolean(),
@@ -249,11 +318,72 @@ export const getRoomUsers = createRoute({
   },
 });
 
+export const updateMessage = createRoute({
+  path: '/chat/messages/{messageId}',
+  method: 'patch',
+  tags,
+  request: {
+    params: z.object({
+      messageId: z.string(),
+    }),
+    body: jsonContentRequired(
+      z.object({
+        text: z.string().min(1).max(1000),
+      }),
+      'Message update data',
+    ),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        uuid: z.string(),
+        text: z.string(),
+        room_uuid: z.string(),
+        user_uuid: z.string(),
+        type: z.enum(['admin', 'web']),
+        is_deleted: z.boolean(),
+        created_at: z.string(),
+        updated_at: z.string().nullable().optional(),
+      }),
+      'Updated message',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      createErrorSchema(z.object({ messageId: z.string() })),
+      'Message not found',
+    ),
+  },
+});
+
+export const deleteMessage = createRoute({
+  path: '/chat/messages/{messageId}',
+  method: 'delete',
+  tags,
+  request: {
+    params: z.object({
+      messageId: z.string(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({ success: z.boolean() }),
+      'Message soft-deleted',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      createErrorSchema(z.object({ messageId: z.string() })),
+      'Message not found',
+    ),
+  },
+});
+
 export type GetRoomsRoute = typeof getRooms;
 export type CreateRoomRoute = typeof createRoom;
 export type GetRoomDetailsRoute = typeof getRoomDetails;
+export type UpdateRoomRoute = typeof updateRoom;
+export type DeleteRoomRoute = typeof deleteRoom;
 export type JoinRoomRoute = typeof joinRoom;
 export type LeaveRoomRoute = typeof leaveRoom;
 export type SendMessageRoute = typeof sendMessage;
 export type GetRoomMessagesRoute = typeof getRoomMessages;
 export type GetRoomUsersRoute = typeof getRoomUsers;
+export type UpdateMessageRoute = typeof updateMessage;
+export type DeleteMessageRoute = typeof deleteMessage;
