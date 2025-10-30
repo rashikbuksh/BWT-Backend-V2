@@ -1,5 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-// import { z } from 'zod';
+import { z } from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -40,6 +40,9 @@ export const insertSchema = createInsertSchema(
     updated_at: schema => schema.updated_at.regex(dateTimePattern, {
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
+    sick_added: z.number().optional(),
+    casual_added: z.number().optional(),
+    maternity_added: z.number().optional(),
   },
 ).required({
   uuid: true,
