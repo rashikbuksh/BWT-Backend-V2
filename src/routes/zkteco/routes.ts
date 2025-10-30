@@ -236,6 +236,36 @@ export const refreshUsers = createRoute({
   },
 });
 
+export const deleteUser = createRoute({
+  path: '/v1/iclock/delete/user',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Queue status retrieved'),
+  },
+});
+
+export const syncAttendanceLogs = createRoute({
+  path: '/v1/iclock/sync/attendance-logs',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent({}, 'Queue status retrieved'),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type ConnectionTestRoute = typeof connectionTest;
@@ -248,3 +278,5 @@ export type GetQueueStatusRoute = typeof getQueueStatus;
 export type RefreshUsersRoute = typeof refreshUsers;
 export type GetRequestLegacyRoute = typeof getRequest_legacy;
 export type DeviceCmdRoute = typeof deviceCmd;
+export type DeleteUserRoute = typeof deleteUser;
+export type SyncAttendanceLogsRoute = typeof syncAttendanceLogs;

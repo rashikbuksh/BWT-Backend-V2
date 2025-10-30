@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute } from './routes';
+import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute } from './routes';
 
 import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -168,50 +168,57 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
       // Collect biometric data for batch processing
       biometricItems.push(items);
     }
+    else if (items.type === 'USER') {
+      biometricItems.push(items);
+      // Auto-detect PIN key from the first USER with PIN-like fields
+      const pinKeys = ['PIN', 'Badgenumber', 'EnrollNumber', 'CardNo', 'Card'];
+      let userPin = null;
+      let detectedKey = null;
 
-    else {
-      informationLogs.push(items);
-      if (items.type === 'USER') {
-        biometricItems.push(items);
-        // Auto-detect PIN key from the first USER with PIN-like fields
-        const pinKeys = ['PIN', 'Badgenumber', 'EnrollNumber', 'CardNo', 'Card'];
-        let userPin = null;
-        let detectedKey = null;
-
-        // Find which PIN field is present
-        for (const key of pinKeys) {
-          if ((items as Record<string, any>)[key]) {
-            userPin = String((items as Record<string, any>)[key]);
-            detectedKey = key;
-            break;
-          }
-        }
-
-        if (userPin && detectedKey) {
-          // Auto-detect and cache the PIN key for this device
-          if (!devicePinKey.has(sn)) {
-            devicePinKey.set(sn, detectedKey);
-            // console.warn(`[auto-detect] SN=${sn} detected PIN key: ${detectedKey}`);
-          }
-
-          const umap = ensureUserMap(sn, usersByDevice);
-
-          // Avoid overwriting existing users with same PIN
-          if (umap && !umap.has(userPin)) {
-            umap.set(userPin, { ...items, pin: userPin });
-            userCount++;
-            // console.warn(`[user-added] SN=${sn} PIN=${userPin} Name=${items.Name || 'N/A'}`);
-          }
-          else if (umap) {
-            duplicateCount++;
-            // console.warn(
-            //   `[user-exists] SN=${sn} PIN=${userPin} Name=${
-            //     items.Name || 'N/A'
-            //   } - skipping duplicate`
-            // );
-          }
+      // Find which PIN field is present
+      for (const key of pinKeys) {
+        if ((items as Record<string, any>)[key]) {
+          userPin = String((items as Record<string, any>)[key]);
+          detectedKey = key;
+          break;
         }
       }
+
+      if (userPin && detectedKey) {
+        // Auto-detect and cache the PIN key for this device
+        if (!devicePinKey.has(sn)) {
+          devicePinKey.set(sn, detectedKey);
+          // console.warn(`[auto-detect] SN=${sn} detected PIN key: ${detectedKey}`);
+        }
+
+        const umap = ensureUserMap(sn, usersByDevice);
+
+        // Avoid overwriting existing users with same PIN
+        if (umap && !umap.has(userPin)) {
+          umap.set(userPin, { ...items, pin: userPin });
+          userCount++;
+          // console.warn(`[user-added] SN=${sn} PIN=${userPin} Name=${items.Name || 'N/A'}`);
+        }
+        else if (umap) {
+          duplicateCount++;
+          // console.warn(
+          //   `[user-exists] SN=${sn} PIN=${userPin} Name=${
+          //     items.Name || 'N/A'
+          //   } - skipping duplicate`
+          // );
+        }
+      }
+    }
+    else if (items.type === 'ATT_LOG') {
+      // Process attendance logs
+      pushedLogs.push({ ...items, sn });
+      currentSessionLogs.push({ ...items, sn });
+      insertRealTimeLogToBackend(currentSessionLogs).then((insertedCount) => {
+        console.warn(`[real-time-logs] SN=${sn} successfully inserted ${insertedCount} attendance records`);
+      });
+    }
+    else {
+      informationLogs.push(items);
     }
   }
 
@@ -826,7 +833,7 @@ export const getQueueStatus: AppRouteHandler<GetQueueStatusRoute> = async (c: an
 };
 
 // Handler to delete a user from ZKTeco device(s)
-export async function deleteUser(c: any) {
+export const deleteUser: AppRouteHandler<DeleteUserRoute> = async (c: any) => {
   const sn = c.req.query('sn') || c.req.query('SN');
   const pin = c.req.query('pin') || c.req.query('PIN');
 
@@ -859,4 +866,27 @@ export async function deleteUser(c: any) {
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     }, 500);
   }
-}
+};
+
+export const syncAttendanceLogs: AppRouteHandler<SyncAttendanceLogsRoute> = async (c: any) => {
+  const sn = c.req.query('sn') || c.req.query('SN');
+
+  if (!sn) {
+    return c.json({ error: 'sn is required' }, 400);
+  }
+
+  // Queue command to fetch attendance logs
+  const q = ensureQueue(sn, commandQueue);
+  const fetchCmd = 'C:1:DATA QUERY ATTLOG';
+  q?.push(fetchCmd);
+
+  console.warn(`[sync-attendance-logs] SN=${sn} queued command to fetch attendance logs`);
+
+  return c.json({
+    ok: true,
+    sn,
+    message: `Attendance log sync command queued for device ${sn}`,
+    queuedCommand: fetchCmd,
+    note: 'Attendance logs will be fetched when device next polls for commands.',
+  });
+};

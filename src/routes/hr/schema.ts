@@ -8,6 +8,7 @@ import {
   pgSchema,
   serial,
   text,
+  unique,
 } from 'drizzle-orm/pg-core';
 
 import {
@@ -628,7 +629,9 @@ export const punch_log = hr.table('punch_log', {
   manual_entry_uuid: defaultUUID('manual_entry_uuid').references(
     () => manual_entry.uuid,
   ).default(sql`null`),
-});
+}, t => [
+  unique('unique_on_device_employee_punch_time').on(t.device_list_uuid, t.employee_uuid, t.punch_time),
+]);
 
 // ? Apply Leave
 export const apply_leave_type_enum = pgEnum('apply_leave_type_enum', [
