@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -78,6 +78,35 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       sick_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.sick_added),
       casual_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.casual_added),
       maternity_added: PG_DECIMAL_TO_FLOAT(leave_policy_log.maternity_added),
+      sick_leave: sql`COALESCE((
+                            SELECT 
+                              conf_entry.maximum_number_of_allowed_leaves::float
+                            FROM hr.configuration_entry conf_entry
+                            LEFT JOIN hr.leave_category lc ON conf_entry.leave_category_uuid = lc.uuid
+                            LEFT JOIN hr.configuration conf ON conf_entry.configuration_uuid = conf.uuid
+                            LEFT JOIN hr.leave_policy lp ON conf.leave_policy_uuid = lp.uuid
+                            WHERE lc.name = 'Sick Leave' AND lp.uuid = ${leave_policy_log.leave_policy_uuid}
+                       ), 0)`,
+
+      casual_leave: sql`COALESCE((
+                            SELECT 
+                              conf_entry.maximum_number_of_allowed_leaves::float
+                            FROM hr.configuration_entry conf_entry
+                            LEFT JOIN hr.leave_category lc ON conf_entry.leave_category_uuid = lc.uuid
+                            LEFT JOIN hr.configuration conf ON conf_entry.configuration_uuid = conf.uuid
+                            LEFT JOIN hr.leave_policy lp ON conf.leave_policy_uuid = lp.uuid
+                            WHERE lc.name = 'Casual Leave' AND lp.uuid = ${leave_policy_log.leave_policy_uuid}
+                       ), 0)`,
+
+      maternity_leave: sql`COALESCE((
+                            SELECT 
+                              conf_entry.maximum_number_of_allowed_leaves::float
+                            FROM hr.configuration_entry conf_entry
+                            LEFT JOIN hr.leave_category lc ON conf_entry.leave_category_uuid = lc.uuid
+                            LEFT JOIN hr.configuration conf ON conf_entry.configuration_uuid = conf.uuid
+                            LEFT JOIN hr.leave_policy lp ON conf.leave_policy_uuid = lp.uuid
+                            WHERE lc.name = 'Maternity Leave' AND lp.uuid = ${leave_policy_log.leave_policy_uuid}
+                       ), 0)`,
       created_by: leave_policy_log.created_by,
       created_by_name: users.name,
       created_at: leave_policy_log.created_at,
