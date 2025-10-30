@@ -15,6 +15,8 @@ const router = createRouter()
   .openapi(routes.getQueueStatus, handlers.getQueueStatus)
   .openapi(routes.refreshUsers, handlers.refreshUsers)
   .openapi(routes.getRequest_legacy, handlers.getRequest_legacy)
-  .openapi(routes.deviceCmd, handlers.deviceCmd);
+  .openapi(routes.deviceCmd, handlers.deviceCmd)
+  .openapi(routes.deleteUser, handlers.deleteUser)
+  .openapi(routes.syncAttendanceLogs, handlers.syncAttendanceLogs);
 
 export default router;
