@@ -724,7 +724,6 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       uuid: employee.uuid,
       id: employee.id,
       gender: employee.gender,
-      // employee_name: employee.name,
       user_uuid: employee.user_uuid,
       employee_name: users.name,
       start_date: employee.start_date,
@@ -739,8 +738,6 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       employment_type_uuid: employee.employment_type_uuid,
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
-      // shift_group_uuid: employee.shift_group_uuid,
-      // shift_group_name: shift_group.name,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -754,16 +751,11 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       created_at: employee.created_at,
       updated_at: employee.updated_at,
       remarks: employee.remarks,
-      // name: employee.name,
-      // email: employee.email,
-      // pass: employee.pass,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
       department_uuid: users.department_uuid,
       department_name: department.department,
       employee_id: employee.employee_id,
-      // leave_policy_uuid: employee.leave_policy_uuid,
-      // leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
       first_leave_approver_name: firstLeaveApprover.name,
@@ -891,13 +883,19 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                       jsonb_build_object(
                         'uuid', lc.uuid,
                         'name', lc.name,
-                        'maximum_number_of_allowed_leaves', ce.maximum_number_of_allowed_leaves,
-                        'used_leave_days', COALESCE(leave_summary.total_leave_days, 0),
+                        'maximum_number_of_allowed_leaves', ce.maximum_number_of_allowed_leaves::float8 + CASE WHEN lc.name = 'Sick Leave' THEN COALESCE(leave_summary.sick_added, 0)
+                                                                                                         WHEN lc.name = 'Casual Leave' THEN COALESCE(leave_summary.casual_added, 0)
+                                                                                                         WHEN lc.name = 'Maternity Leave' THEN COALESCE(leave_summary.maternity_added, 0)
+                                                                                                         ELSE 0 END,
+                        'used_leave_days', CASE WHEN lc.name = 'Sick Leave' THEN COALESCE(leave_summary.sick_used, 0)
+                                              WHEN lc.name = 'Casual Leave' THEN COALESCE(leave_summary.casual_used, 0)
+                                              WHEN lc.name = 'Maternity Leave' THEN COALESCE(leave_summary.maternity_used, 0)
+                                              ELSE 0 END,
                         'remaining_leave_days',
-                          COALESCE(
-                            ce.maximum_number_of_allowed_leaves - COALESCE(leave_summary.total_leave_days, 0),
-                            ce.maximum_number_of_allowed_leaves
-                          )
+                          CASE WHEN lc.name = 'Sick Leave' THEN (ce.maximum_number_of_allowed_leaves::float8 + COALESCE(leave_summary.sick_added, 0)) - COALESCE(leave_summary.sick_used, 0)
+                               WHEN lc.name = 'Casual Leave' THEN (ce.maximum_number_of_allowed_leaves::float8 + COALESCE(leave_summary.casual_added, 0)) - COALESCE(leave_summary.casual_used, 0)
+                               WHEN lc.name = 'Maternity Leave' THEN (ce.maximum_number_of_allowed_leaves::float8 + COALESCE(leave_summary.maternity_added, 0)) - COALESCE(leave_summary.maternity_used, 0)
+                               ELSE 0 END
                       )
                     )
                     FROM hr.configuration cfg
@@ -906,20 +904,20 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                     LEFT JOIN hr.leave_category lc
                       ON lc.uuid = ce.leave_category_uuid
                     LEFT JOIN (
-                      SELECT
-                        al.employee_uuid,
-                        al.leave_category_uuid,
-                        SUM(al.to_date::date - al.from_date::date + 1) AS total_leave_days
-                      FROM hr.apply_leave al
-                      WHERE al.approval = 'approved' AND al.employee_uuid = ${employee_uuid}
-                      GROUP BY al.employee_uuid, al.leave_category_uuid
-                    ) AS leave_summary
-                      ON leave_summary.leave_category_uuid = lc.uuid
-                    WHERE cfg.leave_policy_uuid = (SELECT el.type_uuid
-                                              FROM hr.employee_log el
-                                              WHERE el.type = 'leave_policy' AND el.employee_uuid = ${employee_uuid} AND el.effective_date::date <= CURRENT_DATE
-                                              ORDER BY el.effective_date DESC
-                                              LIMIT 1)
+                              SELECT
+                                pll.employee_uuid,
+                                pll.sick_used::float8,
+                                pll.casual_used::float8,
+                                pll.maternity_used::float8,
+                                pll.sick_added::float8,
+                                pll.casual_added::float8,
+                                pll.maternity_added::float8
+                              FROM hr.leave_policy_log pll
+                              WHERE pll.year = EXTRACT(YEAR FROM CURRENT_DATE)
+                                AND pll.employee_uuid = ${employee_uuid}
+                            ) AS leave_summary
+                      ON leave_summary.employee_uuid = ${employee_uuid}
+                    WHERE cfg.leave_policy_uuid = ${employee.leave_policy_uuid}
                   )`,
       leave_application_information: sql`
                   (
