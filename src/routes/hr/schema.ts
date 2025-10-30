@@ -452,6 +452,7 @@ export const employee = hr.table('employee', {
     () => leave_policy.uuid,
   ).default(sql`null`),
   updated_by: defaultUUID('updated_by').references(() => users.uuid).default(sql`null`),
+  tax_amount: PG_DECIMAL('tax_amount').default(sql`0`),
 });
 
 // ? Employee Address

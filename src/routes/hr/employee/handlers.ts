@@ -111,7 +111,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       id: employee.id,
       employee_id: employee.employee_id,
       gender: employee.gender,
-      // employee_name: employee.name,
       user_uuid: employee.user_uuid,
       employee_name: users.name,
       email: users.email,
@@ -127,10 +126,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       employment_type_uuid: employee.employment_type_uuid,
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
-      // shift_group_uuid: employee.shift_group_uuid,
-      // shift_group_name: shift_group.name,
-      // shift_group_start_time: shifts.start_time,
-      // shift_group_end_time: shifts.end_time,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -144,14 +139,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_at: employee.created_at,
       updated_at: employee.updated_at,
       remarks: employee.remarks,
-      // name: employee.name,
-      // pass: employee.pass,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
       department_uuid: users.department_uuid,
       department_name: department.department,
-      // leave_policy_uuid: employee.leave_policy_uuid,
-      // leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
       first_leave_approver_name: firstLeaveApprover.name,
@@ -181,6 +172,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       leave_policy_name: leave_policy.name,
       updated_by: employee.updated_by,
       updated_by_name: updatedByUser.name,
+      tax_amount: PG_DECIMAL_TO_FLOAT(employee.tax_amount),
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -352,7 +344,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       id: employee.id,
       employee_id: employee.employee_id,
       gender: employee.gender,
-      // employee_name: employee.name,
       user_uuid: employee.user_uuid,
       employee_name: users.name,
       email: users.email,
@@ -368,10 +359,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       employment_type_uuid: employee.employment_type_uuid,
       employment_type_name: employment_type.name,
       end_date: employee.end_date,
-      // shift_group_uuid: employee.shift_group_uuid,
-      // shift_group_name: shift_group.name,
-      // shift_group_start_time: shifts.start_time,
-      // shift_group_end_time: shifts.end_time,
       line_manager_uuid: employee.line_manager_uuid,
       hr_manager_uuid: employee.hr_manager_uuid,
       is_admin: employee.is_admin,
@@ -385,14 +372,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       created_at: employee.created_at,
       updated_at: employee.updated_at,
       remarks: employee.remarks,
-      // name: employee.name,
-      // pass: employee.pass,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
       department_uuid: users.department_uuid,
       department_name: department.department,
-      // leave_policy_uuid: employee.leave_policy_uuid,
-      // leave_policy_name: leave_policy.name,
       report_position: employee.report_position,
       first_leave_approver_uuid: employee.first_leave_approver_uuid,
       first_leave_approver_name: firstLeaveApprover.name,
@@ -422,6 +405,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       leave_policy_name: leave_policy.name,
       updated_by: employee.updated_by,
       updated_by_name: updatedByUser.name,
+      tax_amount: PG_DECIMAL_TO_FLOAT(employee.tax_amount),
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid
@@ -783,6 +767,7 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
       leave_policy_name: leave_policy.name,
       updated_by: employee.updated_by,
       updated_by_name: updatedByUser.name,
+      tax_amount: PG_DECIMAL_TO_FLOAT(employee.tax_amount),
       shift_group_uuid: sql`
           (
             SELECT el.type_uuid

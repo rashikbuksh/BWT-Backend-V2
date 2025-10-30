@@ -44,6 +44,7 @@ export const insertSchema = createInsertSchema(
     }),
     leave_policy_uuid: schema => schema.leave_policy_uuid.length(15),
     updated_by: schema => schema.updated_by.length(15),
+    tax_amount: z.number().optional(),
   },
 ).required({
   uuid: true,
@@ -62,7 +63,6 @@ export const insertSchema = createInsertSchema(
   configuration_uuid: true,
   employment_type_uuid: true,
   end_date: true,
-  // shift_group_uuid: true,
   line_manager_uuid: true,
   hr_manager_uuid: true,
   is_admin: true,
@@ -73,7 +73,6 @@ export const insertSchema = createInsertSchema(
   status: true,
   designation_uuid: true,
   department_uuid: true,
-  // leave_policy_uuid: true,
   report_position: true,
   company_id: true,
   first_leave_approver_uuid: true,
@@ -96,6 +95,7 @@ export const insertSchema = createInsertSchema(
   remarks: true,
   leave_policy_uuid: true,
   updated_by: true,
+  tax_amount: true,
 }).omit({
   id: true,
 });
