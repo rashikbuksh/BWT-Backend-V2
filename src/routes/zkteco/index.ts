@@ -1,5 +1,6 @@
 import { createRouter } from '@/lib/create_app';
 
+import * as backupHandlers from './backup_handlers';
 import * as handlers from './handlers';
 import * as routes from './routes';
 
@@ -17,6 +18,7 @@ const router = createRouter()
   .openapi(routes.getRequest_legacy, handlers.getRequest_legacy)
   .openapi(routes.deviceCmd, handlers.deviceCmd)
   .openapi(routes.deleteUser, handlers.deleteUser)
-  .openapi(routes.syncAttendanceLogs, handlers.syncAttendanceLogs);
+  .openapi(routes.syncAttendanceLogs, handlers.syncAttendanceLogs)
+  .openapi(routes.fullBackup, backupHandlers.fullBackup);
 
 export default router;

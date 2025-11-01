@@ -280,3 +280,7 @@ export type GetRequestLegacyRoute = typeof getRequest_legacy;
 export type DeviceCmdRoute = typeof deviceCmd;
 export type DeleteUserRoute = typeof deleteUser;
 export type SyncAttendanceLogsRoute = typeof syncAttendanceLogs;
+
+// Import backup route
+export { fullBackup } from './backup_routes';
+export type { FullBackupRoute } from './backup_routes';
