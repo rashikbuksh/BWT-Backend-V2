@@ -13,8 +13,8 @@ IF NEW.approval = 'approved' THEN
 SELECT COALESCE(
         SUM(
             CASE
-                WHEN LEAST(a.to_date::date, year_end) >= GREATEST(a.from_date::date, year_start) THEN (
-                    LEAST(a.to_date::date, year_end) - GREATEST(a.from_date::date, year_start) + 1
+                WHEN LEAST(NEW.to_date::date, year_end) >= GREATEST(NEW.from_date::date, year_start) THEN (
+                    LEAST(NEW.to_date::date, year_end) - GREATEST(NEW.from_date::date, year_start) + 1
                 )
                 ELSE 0
             END
@@ -30,17 +30,17 @@ FROM hr.leave_category lc
 WHERE lc.uuid = NEW.leave_category_uuid;
 IF category_name = 'Sick Leave' THEN
 UPDATE hr.leave_policy_log
-SET sick_used = leave_days
+SET sick_used = sick_added + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
 ELSIF category_name = 'Casual Leave' THEN
 UPDATE hr.leave_policy_log
-SET casual_used = leave_days
+SET casual_used = casual_added + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
 ELSIF category_name = 'Maternity Leave' THEN
 UPDATE hr.leave_policy_log
-SET maternity_used = leave_days
+SET maternity_used = maternity_added + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
 END IF;
@@ -66,8 +66,8 @@ IF NEW.approval = 'approved' THEN
 SELECT COALESCE(
         SUM(
             CASE
-                WHEN LEAST(a.to_date::date, year_end) >= GREATEST(a.from_date::date, year_start) THEN (
-                    LEAST(a.to_date::date, year_end) - GREATEST(a.from_date::date, year_start) + 1
+                WHEN LEAST(NEW.to_date::date, year_end) >= GREATEST(NEW.from_date::date, year_start) THEN (
+                    LEAST(NEW.to_date::date, year_end) - GREATEST(NEW.from_date::date, year_start) + 1
                 )
                 ELSE 0
             END
@@ -83,17 +83,18 @@ FROM hr.leave_category lc
 WHERE lc.uuid = NEW.leave_category_uuid;
 IF category_name = 'Sick Leave' THEN
 UPDATE hr.leave_policy_log
-SET sick_used = leave_days
+SET sick_used = sick_used + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
 ELSIF category_name = 'Casual Leave' THEN
 UPDATE hr.leave_policy_log
-SET casual_used = leave_days
+SET casual_used = casual_used + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
+
 ELSIF category_name = 'Maternity Leave' THEN
 UPDATE hr.leave_policy_log
-SET maternity_used = leave_days
+SET maternity_used = maternity_used + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
 END IF;
