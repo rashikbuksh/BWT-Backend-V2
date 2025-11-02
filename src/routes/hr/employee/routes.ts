@@ -311,6 +311,36 @@ export const postBulkEmployeeInformation = createRoute({
   },
 });
 
+export const getEmployeeSalaryByFiscalYear = createRoute({
+  path: '/hr/employee-salary/by/{fiscal_year_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      fiscal_year_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The employee salary for the fiscal year',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'Employee salary for the fiscal year not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(
+        z.object({
+          employee_uuid: z.string(),
+          fiscal_year_uuid: z.string(),
+        }),
+      ),
+      'Invalid id error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -323,3 +353,4 @@ export type GetEmployeeSummaryDetailsByEmployeeUuidRoute = typeof getEmployeeSum
 export type UpdateProfilePictureRoute = typeof updateProfilePicture;
 export type GetBulkShiftForEmployeeRoute = typeof getBulkShiftForEmployee;
 export type PostBulkEmployeeInformationRoute = typeof postBulkEmployeeInformation;
+export type GetEmployeeSalaryByFiscalYearRoute = typeof getEmployeeSalaryByFiscalYear;
