@@ -3,6 +3,7 @@ import designation from './designation';
 import device_list from './device_list';
 import employee from './employee';
 import employment_type from './employment_type';
+import festival from './festival';
 import fiscal_year from './fiscal_year';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
@@ -26,4 +27,5 @@ export default [
   employee,
   device_list,
   fiscal_year,
+  festival,
 ];
