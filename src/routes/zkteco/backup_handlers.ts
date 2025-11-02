@@ -36,13 +36,9 @@ export const fullBackup: AppRouteHandler<FullBackupRoute> = async (c: any) => {
       queue?.push('C:1:DATA QUERY USERINFO'); //* Works
       queuedCommands.push('DATA QUERY USERINFO');
 
-      // Also get user roles/privileges
-      queue?.push('C:1:DATA QUERY USERTZ'); // ! doesnt work
-      queuedCommands.push('DATA QUERY USERTZ');
-
       // Get department information
-      queue?.push('C:1:DATA QUERY DEPT'); // ! doesnt work
-      queuedCommands.push('DATA QUERY DEPT');
+      queue?.push('C:1:DATA QUERY DEPTINFO'); // ! doesnt work
+      queuedCommands.push('DATA QUERY DEPTINFO');
     }
 
     // 3. Attendance Logs
@@ -80,12 +76,16 @@ export const fullBackup: AppRouteHandler<FullBackupRoute> = async (c: any) => {
 
     // 6. Device Configuration
     if (includeConfig) {
-      queue?.push('C:1:OPTIONS'); // ! doesnt work
-      queuedCommands.push('OPTIONS');
+      queue?.push('C:1:GET OPTION'); // ! doesn't work
+      queuedCommands.push('GET OPTION');
 
       // Get device parameters/settings
-      queue?.push('C:1:DATA QUERY OPTIONS'); // ! doesnt work
-      queuedCommands.push('DATA QUERY OPTIONS');
+      queue?.push('C:1:DATA QUERY FINGERVEIN'); // ! doesn't work
+      queuedCommands.push('DATA QUERY FINGERVEIN');
+
+      // Get device time and settings
+      queue?.push('C:1:CHECK'); // * Works
+      queuedCommands.push('CHECK');
     }
 
     // Calculate estimated time (rough estimate: 30 seconds per command)
