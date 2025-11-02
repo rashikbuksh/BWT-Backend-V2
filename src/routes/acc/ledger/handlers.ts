@@ -136,6 +136,31 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       initial_amount: ledger.initial_amount,
       group_number: ledger.group_number,
       index: ledger.index,
+      vouchers: sql`
+        (
+          SELECT COALESCE(
+                  JSONB_AGG(
+                      JSONB_BUILD_OBJECT(
+                          'uuid', ve.uuid, 
+                          'voucher_uuid', ve.voucher_uuid, 
+                          'voucher_id', CONCAT(
+                              'VO', TO_CHAR(v.created_at::timestamp, 'YY'), '-', v.id
+                          ), 
+                          'ledger_uuid', ve.ledger_uuid, 
+                          'ledger_name', l.name,
+                          'category', v.category, 
+                          'date', v.date,
+                          'type', ve.type,
+                          'amount', ve.amount
+                      )
+                  ), '[]'::jsonb
+              )
+          FROM acc.voucher_entry ve
+          LEFT JOIN acc.voucher v ON ve.voucher_uuid = v.uuid
+          LEFT JOIN acc.ledger l ON ve.ledger_uuid = l.uuid
+          WHERE ve.ledger_uuid = ledger.uuid
+      )
+      `.as('vouchers'),
     })
     .from(ledger)
     .leftJoin(group, eq(group.uuid, ledger.group_uuid))
