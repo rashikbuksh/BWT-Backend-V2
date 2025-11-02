@@ -28,26 +28,26 @@ export const fullBackup: AppRouteHandler<FullBackupRoute> = async (c: any) => {
 
   try {
     // 1. Device Information
-    queue?.push('C:1:GET INFO');
-    queuedCommands.push('GET INFO');
+    queue?.push('C:1:INFO'); //* Works
+    queuedCommands.push('INFO');
 
     // 2. User Information
     if (includeUsers) {
-      queue?.push('C:1:DATA QUERY USERINFO');
+      queue?.push('C:1:DATA QUERY USERINFO'); //* Works
       queuedCommands.push('DATA QUERY USERINFO');
 
       // Also get user roles/privileges
-      queue?.push('C:1:DATA QUERY ROLE');
-      queuedCommands.push('DATA QUERY ROLE');
+      queue?.push('C:1:DATA QUERY USERTZ'); // ! doesnt work
+      queuedCommands.push('DATA QUERY USERTZ');
 
       // Get department information
-      queue?.push('C:1:DATA QUERY DEPT');
+      queue?.push('C:1:DATA QUERY DEPT'); // ! doesnt work
       queuedCommands.push('DATA QUERY DEPT');
     }
 
     // 3. Attendance Logs
     if (includeAttlogs) {
-      let attlogCommand = 'C:1:DATA QUERY ATTLOG';
+      let attlogCommand = 'C:1:DATA QUERY ATTLOG'; //* Works
 
       // Add date range if specified
       if (startDate && endDate) {
@@ -68,20 +68,24 @@ export const fullBackup: AppRouteHandler<FullBackupRoute> = async (c: any) => {
 
     // 4. Biometric Data (Fingerprints)
     if (includeBiometric) {
-      queue?.push('C:1:DATA QUERY BIODATA');
+      queue?.push('C:1:DATA QUERY BIODATA'); //* Works
       queuedCommands.push('DATA QUERY BIODATA');
     }
 
     // 5. Face Templates (if requested)
     if (includeFaceTemplates) {
-      queue?.push('C:1:DATA QUERY BIOPHOTO');
+      queue?.push('C:1:DATA QUERY BIOPHOTO'); //* Works
       queuedCommands.push('DATA QUERY BIOPHOTO');
     }
 
     // 6. Device Configuration
     if (includeConfig) {
-      queue?.push('C:1:DATA QUERY OPTION');
-      queuedCommands.push('DATA QUERY OPTION');
+      queue?.push('C:1:OPTIONS'); // ! doesnt work
+      queuedCommands.push('OPTIONS');
+
+      // Get device parameters/settings
+      queue?.push('C:1:DATA QUERY OPTIONS'); // ! doesnt work
+      queuedCommands.push('DATA QUERY OPTIONS');
     }
 
     // Calculate estimated time (rough estimate: 30 seconds per command)
