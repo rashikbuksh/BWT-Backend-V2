@@ -70,7 +70,9 @@ export interface ColumnProps {
     | 'is_transferred_for_qc_date'
     | 'is_proceed_to_repair_date'
     | 'is_delivery_complete_date'
-    | 'is_delivery_without_challan_date';
+    | 'is_delivery_without_challan_date'
+    | 'from_month'
+    | 'to_month';
 }
 
 export interface PublicUrlProps { url: string; method: string }

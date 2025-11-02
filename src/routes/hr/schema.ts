@@ -824,4 +824,42 @@ export const leave_policy_log = hr.table('leave_policy_log', {
 
 });
 
+export const festival = hr.table('festival', {
+  uuid: uuid_primary,
+  name: text('name').notNull(),
+  religion: text('religion').notNull(),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => users.uuid).default(sql`null`),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const fiscal_year = hr.table('fiscal_year', {
+  uuid: uuid_primary,
+  year: text('year').notNull().unique(),
+  from_month: DateTime('from_month').notNull(),
+  to_month: DateTime('to_month').notNull(),
+  challan_info: text('challan_info').default(sql`null`),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => users.uuid).default(sql`null`),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
+export const festival_bonus = hr.table('festival_bonus', {
+  uuid: uuid_primary,
+  employee_uuid: defaultUUID('employee_uuid').references(() => employee.uuid),
+  festival_uuid: defaultUUID('festival_uuid').references(() => festival.uuid),
+  fiscal_year_uuid: defaultUUID('fiscal_year_uuid').references(() => fiscal_year.uuid),
+  special_consideration: PG_DECIMAL('special_consideration').default(sql`0`),
+  net_payable: PG_DECIMAL('net_payable').notNull(),
+  created_by: defaultUUID('created_by').references(() => users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => users.uuid).default(sql`null`),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default hr;
