@@ -316,7 +316,6 @@ export const getEmployeeSalaryByFiscalYear = createRoute({
   method: 'get',
   request: {
     params: z.object({
-      employee_uuid: z.string(),
       fiscal_year_uuid: z.string(),
     }),
   },
