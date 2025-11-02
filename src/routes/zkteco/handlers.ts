@@ -204,6 +204,8 @@ export const post: AppRouteHandler<PostRoute> = async (c: any) => {
     }
     else {
       informationLogs.push(items);
+      // eslint-disable-next-line no-console
+      console.log(`[information-log] SN=${sn} received info line:`, items);
     }
   }
 
