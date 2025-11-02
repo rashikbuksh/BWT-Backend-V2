@@ -17,6 +17,7 @@ import employee_history from './employee_history';
 import employee_log from './employee_log';
 import employment_type from './employment_type';
 import festival from './festival';
+import fiscal_year from './fiscal_year';
 import general_holiday from './general_holiday';
 import leave_category from './leave_category';
 import leave_policy from './leave_policy';
@@ -76,4 +77,5 @@ export default [
   employee_biometric,
   leave_policy_log,
   festival,
+  fiscal_year,
 ];
