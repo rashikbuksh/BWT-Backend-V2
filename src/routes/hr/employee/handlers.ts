@@ -14,6 +14,7 @@ import type {
   GetBulkShiftForEmployeeRoute,
   GetEmployeeAttendanceReportRoute,
   GetEmployeeLeaveInformationDetailsRoute,
+  GetEmployeeSalaryByFiscalYearRoute,
   GetEmployeeSummaryDetailsByEmployeeUuidRoute,
   GetManualEntryByEmployeeRoute,
   GetOneRoute,
@@ -30,6 +31,7 @@ import {
   employee,
   employee_log,
   employment_type,
+  fiscal_year,
   leave_policy,
   sub_department,
   users,
@@ -1482,6 +1484,73 @@ export const getBulkShiftForEmployee: AppRouteHandler<GetBulkShiftForEmployeeRou
 
   const data = await resultPromise;
   return c.json({ entry: data.rows ?? {} }, HSCode.OK);
+};
+
+export const getEmployeeSalaryByFiscalYear: AppRouteHandler<GetEmployeeSalaryByFiscalYearRoute> = async (c: any) => {
+  const { fiscal_year_uuid } = c.req.valid('param');
+
+  const fiscalYearPromise = db
+    .select({
+      uuid: fiscal_year.uuid,
+      year: fiscal_year.year,
+      from_month: fiscal_year.from_month,
+      to_month: fiscal_year.to_month,
+      challan_info: fiscal_year.challan_info,
+    })
+    .from(fiscal_year)
+    .where(eq(fiscal_year.uuid, fiscal_year_uuid));
+
+  const [data] = await fiscalYearPromise;
+
+  const employeeSalaryPromise = db
+    .select({
+      employee_uuid: employee.uuid,
+      employee_name: users.name,
+      designation: designation.designation,
+      department: department.department,
+      start_date: employee.start_date,
+      profile_picture: employee.profile_picture,
+      actual_salary: sql`
+        (
+          COALESCE(${employee.joining_amount}::float8, 0)
+          +
+          COALESCE(
+            (
+              SELECT SUM(si.amount)::float8
+              FROM hr.salary_increment si
+              WHERE si.effective_date::date <= ${data.to_month}::date
+                AND si.employee_uuid = ${employee.uuid}
+            ),
+            0
+          )
+        )::float8
+      `,
+      basic_salary: sql`
+        (
+          (
+            COALESCE(${employee.joining_amount}::float8, 0)
+            +
+            COALESCE(
+              (
+                SELECT SUM(si.amount)::float8
+                FROM hr.salary_increment si
+                WHERE si.effective_date::date <= ${data.to_month}::date
+                  AND si.employee_uuid = ${employee.uuid}
+              ),
+              0
+            )
+          ) * 0.50
+        )::float8
+      `,
+    })
+    .from(employee)
+    .leftJoin(users, eq(employee.user_uuid, users.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid));
+
+  const employeeSalaryData = await employeeSalaryPromise;
+
+  return c.json(employeeSalaryData || [], HSCode.OK);
 };
 
 export const postBulkEmployeeInformation: AppRouteHandler<PostBulkEmployeeInformationRoute> = async (c: any) => {
