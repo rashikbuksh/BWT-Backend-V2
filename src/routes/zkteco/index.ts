@@ -19,6 +19,7 @@ const router = createRouter()
   .openapi(routes.deviceCmd, handlers.deviceCmd)
   .openapi(routes.deleteUser, handlers.deleteUser)
   .openapi(routes.syncAttendanceLogs, handlers.syncAttendanceLogs)
+  .openapi(routes.syncEmployees, handlers.syncEmployees)
   .openapi(routes.fullBackup, backupHandlers.fullBackup);
 
 export default router;

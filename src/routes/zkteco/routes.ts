@@ -266,6 +266,50 @@ export const syncAttendanceLogs = createRoute({
   },
 });
 
+export const syncEmployees = createRoute({
+  path: '/zkteco/sync-employees',
+  method: 'post',
+  request: {
+    query: z.object({
+      sn: z.string().optional().describe('Specific device serial number (optional)'),
+    }),
+    body: jsonContent(z.object({
+      dryRun: z.boolean().optional().default(false).describe('Preview changes without executing'),
+    }), 'Sync configuration'),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(z.object({
+      ok: z.boolean(),
+      message: z.string(),
+      syncResults: z.object({
+        totalEmployees: z.number(),
+        devicesProcessed: z.number(),
+        usersAdded: z.number(),
+        usersSkipped: z.number(),
+        errors: z.number(),
+        details: z.array(z.object({
+          employee: z.object({
+            pin: z.string(),
+            name: z.string(),
+            email: z.string(),
+          }),
+          action: z.string(),
+          devices: z.array(z.string()),
+          success: z.boolean(),
+          error: z.string().optional(),
+        })),
+      }),
+    }), 'Employee sync results'),
+    [HSCode.BAD_REQUEST]: jsonContent(z.object({
+      error: z.string(),
+    }), 'Invalid request'),
+    [HSCode.INTERNAL_SERVER_ERROR]: jsonContent(z.object({
+      error: z.string(),
+    }), 'Server error'),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type ConnectionTestRoute = typeof connectionTest;
@@ -280,6 +324,7 @@ export type GetRequestLegacyRoute = typeof getRequest_legacy;
 export type DeviceCmdRoute = typeof deviceCmd;
 export type DeleteUserRoute = typeof deleteUser;
 export type SyncAttendanceLogsRoute = typeof syncAttendanceLogs;
+export type SyncEmployeesRoute = typeof syncEmployees;
 
 // Import backup route
 export { fullBackup } from './backup_routes';

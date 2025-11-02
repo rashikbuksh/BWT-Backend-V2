@@ -566,3 +566,104 @@ export async function deleteUserFromDevice(
     };
   }
 }
+
+// Function to add a user to ZKTeco device
+export async function addUserToDevice(
+  pin: string,
+  name: string,
+  commandQueue: Map<string, string[]>,
+  usersByDevice: Map<string, Map<string, any>>,
+  sn?: string,
+  privilege = '0', // 0 = user, 1 = admin
+  password = '',
+  cardno = '',
+) {
+  try {
+    if (!pin || !name) {
+      console.error('[add-user] PIN and name are required');
+      return { success: false, error: 'PIN and name are required' };
+    }
+
+    // If no specific device serial number provided, send to all devices
+    const devicesToUpdate = sn ? [sn] : Array.from(commandQueue.keys());
+
+    if (devicesToUpdate.length === 0) {
+      console.warn('[add-user] No devices found to add user to');
+      return { success: false, error: 'No devices found' };
+    }
+
+    const results = [];
+
+    for (const deviceSn of devicesToUpdate) {
+      try {
+        // Ensure queue exists for this device
+        const queue = ensureQueue(deviceSn, commandQueue);
+
+        // Check if user already exists on device
+        const umap = ensureUserMap(deviceSn, usersByDevice);
+        const existingUser = umap?.get(pin);
+
+        if (existingUser && existingUser.name === name) {
+          console.warn(`[add-user] User PIN ${pin} with name "${name}" already exists on device ${deviceSn}`);
+          results.push({ device: deviceSn, success: true, note: 'User already exists with same name' });
+          continue;
+        }
+
+        // Add user to device cache
+        if (umap) {
+          umap.set(pin, { pin, name, privilege, password, cardno });
+          console.warn(`[add-user] Added PIN ${pin} to device ${deviceSn} cache`);
+        }
+
+        // Create add user command for ZKTeco device
+        // The command format is: C:ID:DATA UPDATE USERINFO PIN=<pin>\tName=<name>\tPri=<privilege>\tPasswd=<password>\tCard=<cardno>
+        const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}`;
+
+        // Add command to queue
+        if (queue) {
+          // Check if add command already exists in queue to avoid duplicates
+          const existingAddCmd = queue.find(cmd => cmd.includes(`PIN=${pin}`) && cmd.includes('DATA UPDATE USERINFO'));
+          if (!existingAddCmd) {
+            queue.push(addCommand);
+            console.warn(`[add-user] Queued add command for PIN ${pin} on device ${deviceSn}: ${addCommand}`);
+            results.push({ device: deviceSn, success: true, command: addCommand });
+          }
+          else {
+            console.warn(`[add-user] Add command for PIN ${pin} already queued for device ${deviceSn}`);
+            results.push({ device: deviceSn, success: true, command: addCommand, note: 'Already queued' });
+          }
+        }
+        else {
+          console.error(`[add-user] Failed to get command queue for device ${deviceSn}`);
+          results.push({ device: deviceSn, success: false, error: 'Failed to get command queue' });
+        }
+      }
+      catch (error) {
+        console.error(`[add-user] Error processing device ${deviceSn}:`, error);
+        results.push({ device: deviceSn, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
+
+    console.warn(`[add-user] Add user PIN ${pin} completed: ${successCount} success, ${failureCount} failures`);
+
+    return {
+      success: successCount > 0,
+      pin,
+      name,
+      devicesProcessed: devicesToUpdate.length,
+      successCount,
+      failureCount,
+      results,
+    };
+  }
+  catch (error) {
+    console.error('[add-user] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unexpected error occurred',
+    };
+  }
+}

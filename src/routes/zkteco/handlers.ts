@@ -1,11 +1,13 @@
 import type { AppRouteHandler } from '@/lib/types';
 
+import { eq } from 'drizzle-orm';
 import { Buffer } from 'node:buffer';
 
 import env from '@/env';
+import { users } from '@/routes/hr/schema';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute } from './routes';
+import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
 
 import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -876,4 +878,211 @@ export const syncAttendanceLogs: AppRouteHandler<SyncAttendanceLogsRoute> = asyn
     queuedCommand: fetchCmd,
     note: 'Attendance logs will be fetched when device next polls for commands.',
   });
+};
+
+export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any) => {
+  const { sn } = c.req.valid('query');
+  const { dryRun = false } = c.req.valid('json');
+
+  try {
+    // Import the database and schemas here to avoid circular dependencies
+    const db = (await import('@/db')).default;
+    const { employee } = await import('@/routes/hr/schema');
+    const { addUserToDevice } = await import('./functions');
+
+    // Get all active employees from HR database
+    const employees = await db
+      .select({
+        uuid: employee.uuid,
+        name: users.name,
+        email: users.email,
+        id: employee.id,
+      })
+      .from(employee)
+      .leftJoin(
+        users,
+        eq(employee.user_uuid, users.uuid),
+      );
+
+    if (employees.length === 0) {
+      return c.json({
+        ok: false,
+        message: 'No employees found in HR database',
+        syncResults: {
+          totalEmployees: 0,
+          devicesProcessed: 0,
+          usersAdded: 0,
+          usersSkipped: 0,
+          errors: 0,
+          details: [],
+        },
+      });
+    }
+
+    const targetDevices = sn ? [sn] : Array.from(commandQueue.keys());
+
+    if (targetDevices.length === 0) {
+      return c.json({
+        ok: false,
+        message: 'No ZKTeco devices found or connected',
+        syncResults: {
+          totalEmployees: employees.length,
+          devicesProcessed: 0,
+          usersAdded: 0,
+          usersSkipped: 0,
+          errors: 0,
+          details: [],
+        },
+      }, 400);
+    }
+
+    const syncDetails = [];
+    let totalAdded = 0;
+    let totalSkipped = 0;
+    let totalErrors = 0;
+
+    // Get the starting PIN from the function
+    let currentPin = await getNextAvailablePin(sn || targetDevices[0], String(usersByDevice.size), usersByDevice);
+
+    for (const employeeInd of employees) {
+      // Use getNextAvailablePin function instead of employee.pin
+      const pin = String(currentPin);
+      const name = employeeInd.name;
+
+      if (!pin || !name) {
+        syncDetails.push({
+          employee: { pin, name, email: employeeInd.email },
+          action: 'error',
+          devices: [],
+          success: false,
+          error: 'Missing PIN or name',
+        });
+        totalErrors++;
+        continue;
+      }
+
+      try {
+        // Check if user already exists on any device with the same name
+        let userExistsWithSameName = false;
+        const devicesWithUser = [];
+
+        for (const deviceSn of targetDevices) {
+          const umap = ensureUserMap(deviceSn, usersByDevice);
+
+          // Check if user with same name already exists (regardless of PIN)
+          const existingUserWithSameName = Array.from(umap?.values() || []).find(user => user.name === name);
+
+          if (existingUserWithSameName) {
+            userExistsWithSameName = true;
+            devicesWithUser.push(deviceSn);
+          }
+        }
+
+        if (userExistsWithSameName) {
+          syncDetails.push({
+            employee: { pin, name, email: employeeInd.email },
+            action: 'skipped',
+            devices: devicesWithUser,
+            success: true,
+            error: 'user with same name already exists',
+          });
+          totalSkipped++;
+          // Don't increment PIN for skipped users
+          continue;
+        }
+
+        // Add user to devices (if not dry run)
+        if (!dryRun) {
+          const result = await addUserToDevice(pin, name, commandQueue, usersByDevice, sn);
+
+          if (result.success) {
+            // Update employee's pin field in database with the assigned device PIN
+            try {
+              await db
+                .update(employee)
+                .set({ pin })
+                .where(eq(employee.uuid, employeeInd.uuid)); // Use original employee.id as the ID to find the record
+
+              console.warn(`[sync-employees] Updated employee ID ${employeeInd.id} with device PIN ${pin}`);
+            }
+            catch (dbError) {
+              console.error(`[sync-employees] Failed to update employee PIN in database:`, dbError);
+              // Don't fail the sync operation for database update errors
+            }
+
+            syncDetails.push({
+              employee: { pin, name, email: employeeInd.email },
+              action: 'added',
+              devices: targetDevices,
+              success: true,
+              error: undefined,
+            });
+            totalAdded++;
+            // Increment PIN for next user
+            currentPin++;
+          }
+          else {
+            syncDetails.push({
+              employee: { pin, name, email: employeeInd.email },
+              action: 'error',
+              devices: targetDevices,
+              success: false,
+              error: result.error,
+            });
+            totalErrors++;
+            // Don't increment PIN for failed users
+          }
+        }
+        else {
+          // Dry run - just mark as would be added
+          syncDetails.push({
+            employee: { pin, name, email: employeeInd.email },
+            action: 'would_add',
+            devices: targetDevices,
+            success: true,
+            error: undefined,
+          });
+          totalAdded++;
+          // Increment PIN for next user even in dry run
+          currentPin++;
+        }
+      }
+      catch (error) {
+        syncDetails.push({
+          employee: { pin, name, email: employeeInd.email },
+          action: 'error',
+          devices: [],
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        totalErrors++;
+        // Don't increment PIN for error cases
+      }
+    }
+
+    const message = dryRun
+      ? `Dry run completed: ${totalAdded} employees would be added, ${totalSkipped} skipped, ${totalErrors} errors`
+      : `Employee sync completed: ${totalAdded} employees added, ${totalSkipped} skipped, ${totalErrors} errors`;
+
+    console.warn(`[sync-employees] ${message} across ${targetDevices.length} devices`);
+
+    return c.json({
+      ok: true,
+      message,
+      syncResults: {
+        totalEmployees: employees.length,
+        devicesProcessed: targetDevices.length,
+        usersAdded: totalAdded,
+        usersSkipped: totalSkipped,
+        errors: totalErrors,
+        details: syncDetails,
+      },
+    });
+  }
+  catch (error) {
+    console.error('[sync-employees] Error:', error);
+    return c.json({
+      error: error instanceof Error ? error.message : 'Failed to sync employees',
+    }, 500);
+  }
 };
