@@ -998,6 +998,22 @@ export const getEmployeeLeaveInformationDetails: AppRouteHandler<GetEmployeeLeav
                             LIMIT 5
                           ) t
                         )`,
+      leave_application_dates: sql`
+                  (
+                    SELECT COALESCE(
+                      jsonb_agg( 
+                        jsonb_build_object(
+                          'uuid', al.uuid,
+                          'from_date', al.from_date,
+                          'to_date', al.to_date,
+                          'approval', al.approval
+                        )
+                      ), '[]'::jsonb
+                    )
+                    FROM hr.apply_leave al
+                    WHERE al.employee_uuid = ${employee_uuid}
+                          AND al.approval != 'rejected' AND EXTRACT(YEAR FROM al.from_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+                  )`,
     })
     .from(employee)
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
