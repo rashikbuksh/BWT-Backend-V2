@@ -46,11 +46,11 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                     e.profile_picture,
                     e.start_date::date,
                     jsonb_object_agg(
-                            make_date(se.year::int, se.month::int, 1)::text,
+                           ( (make_date(se.year::int, se.month::int, 1) + INTERVAL '1 month' - INTERVAL '1 day')::date )::text,
                             jsonb_build_object(
                               'salary', se.amount::float8,
                               'tds', se.tds::float8
-                            ) ORDER BY make_date(se.year::int, se.month::int, 1) ASC
+                            ) ORDER BY (make_date(se.year::int, se.month::int, 1) + INTERVAL '1 month' - INTERVAL '1 day') ASC
                           ) AS months,
                     fb_info.festival_bonus_info,
                     fy.year AS fiscal_year,
@@ -79,7 +79,7 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                   WHERE fb.fiscal_year_uuid = ${fiscal_year_uuid}
                   GROUP BY fb.employee_uuid, f.uuid, f.name, f.religion, fb.special_consideration, fb.net_payable
                 ) fb_info ON fb_info.employee_uuid = e.uuid
-                WHERE fy.uuid = ${fiscal_year_uuid} AND  make_date(se.year::int, se.month::int, 1) BETWEEN ${from_month}::date AND ${to_month}::date
+                WHERE fy.uuid = ${fiscal_year_uuid} AND  (make_date(se.year::int, se.month::int, 1) + INTERVAL '1 month' - INTERVAL '1 day')  BETWEEN ${from_month}::date AND ${to_month}::date
                 GROUP BY e.uuid, u.uuid, u.name, e.employee_id, d.uuid, d.department, des.uuid, des.designation,
                          e.profile_picture, e.start_date,
                          fb_info.festival_bonus_info, fy.year, fy.from_month, fy.to_month
