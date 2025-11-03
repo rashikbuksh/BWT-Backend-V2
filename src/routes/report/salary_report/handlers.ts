@@ -61,8 +61,6 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                       'tax_amount', e.tax_amount::float8
                     )
                   ) FILTER (WHERE m.month_end IS NOT NULL) AS months,
-                  SUM(COALESCE(ts.total_salary, 0)) AS total_salary,
-                  SUM(COALESCE(tn.new_tds, 0)) AS total_tax,
                   fb_info.festival_bonus_info
                 FROM hr.employee e
                 CROSS JOIN months m
