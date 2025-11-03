@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { Buffer } from 'node:buffer';
 
 import env from '@/env';
@@ -882,7 +882,7 @@ export const syncAttendanceLogs: AppRouteHandler<SyncAttendanceLogsRoute> = asyn
 
 export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any) => {
   const { sn } = c.req.valid('query');
-  const { dryRun = false } = c.req.valid('json');
+  const { dryRun = false, employee_uuids } = c.req.valid('json');
 
   try {
     // Import the database and schemas here to avoid circular dependencies
@@ -891,7 +891,7 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
     const { addUserToDevice } = await import('./functions');
 
     // Get all active employees from HR database
-    const employees = await db
+    const employeesQuery = db
       .select({
         uuid: employee.uuid,
         name: users.name,
@@ -903,6 +903,20 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
         users,
         eq(employee.user_uuid, users.uuid),
       );
+
+    // Filter by specific employee UUIDs if provided
+    let employees;
+    if (typeof employee_uuids === 'string' && employee_uuids.trim().length > 0) {
+      // Handle both single UUID and comma-separated UUIDs
+      const employeeArray = employee_uuids.includes(',')
+        ? employee_uuids.split(',').map((id: string) => id.trim()).filter(Boolean)
+        : [employee_uuids.trim()]; // Single UUID case
+
+      employees = await employeesQuery.where(inArray(employee.uuid, employeeArray));
+    }
+    else {
+      employees = await employeesQuery;
+    }
 
     if (employees.length === 0) {
       return c.json({

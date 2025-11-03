@@ -275,6 +275,7 @@ export const syncEmployees = createRoute({
     }),
     body: jsonContent(z.object({
       dryRun: z.boolean().optional().default(false).describe('Preview changes without executing'),
+      employee_uuids: z.string().optional().describe('Comma-separated list of employee UUIDs to sync (optional)'),
     }), 'Sync configuration'),
   },
   tags,
