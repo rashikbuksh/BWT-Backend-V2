@@ -4,7 +4,6 @@ import { eq, inArray } from 'drizzle-orm';
 import { Buffer } from 'node:buffer';
 
 import env from '@/env';
-import { users } from '@/routes/hr/schema';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
 import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
@@ -892,7 +891,7 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
   try {
     // Import the database and schemas here to avoid circular dependencies
     const db = (await import('@/db')).default;
-    const { employee } = await import('@/routes/hr/schema');
+    const { employee, users } = await import('@/routes/hr/schema');
     const { addUserToDevice } = await import('./functions');
 
     // Get all active employees from HR database
@@ -911,13 +910,8 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
 
     // Filter by specific employee UUIDs if provided
     let employees;
-    if (typeof employee_uuids === 'string' && employee_uuids.trim().length > 0) {
-      // Handle both single UUID and comma-separated UUIDs
-      const employeeArray = employee_uuids.includes(',')
-        ? employee_uuids.split(',').map((id: string) => id.trim()).filter(Boolean)
-        : [employee_uuids.trim()]; // Single UUID case
-
-      employees = await employeesQuery.where(inArray(employee.uuid, employeeArray));
+    if (Array.isArray(employee_uuids) && employee_uuids.length > 0) {
+      employees = await employeesQuery.where(inArray(employee.uuid, employee_uuids));
     }
     else {
       employees = await employeesQuery;
