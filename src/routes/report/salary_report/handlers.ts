@@ -57,7 +57,8 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                     to_char(m.month_end, 'YYYY-MM-DD'),
                     jsonb_build_object(
                       'salary', COALESCE(ts.total_salary, 0),
-                      'tax', COALESCE(tn.new_tds, 0)
+                      'tds', COALESCE(tn.new_tds, 0),
+                      'tax_amount', e.tax_amount::float8
                     )
                   ) FILTER (WHERE m.month_end IS NOT NULL) AS months,
                   SUM(COALESCE(ts.total_salary, 0)) AS total_salary,
