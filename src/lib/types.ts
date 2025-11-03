@@ -72,7 +72,8 @@ export interface ColumnProps {
     | 'is_delivery_complete_date'
     | 'is_delivery_without_challan_date'
     | 'from_month'
-    | 'to_month';
+    | 'to_month'
+    | 'is_diagnosis_completed_date';
 }
 
 export interface PublicUrlProps { url: string; method: string }

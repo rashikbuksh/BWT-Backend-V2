@@ -18,6 +18,10 @@ export const insertSchema = createInsertSchema(
     status: schema => schema.status.optional(),
     status_update_date: schema => schema.status_update_date.optional(),
     proposed_cost: z.number().optional().default(0),
+    is_diagnosis_completed: schema => schema.is_diagnosis_completed.optional(),
+    is_diagnosis_completed_date: schema => schema.is_diagnosis_completed_date.regex(dateTimePattern, {
+      message: 'is_diagnosis_completed_date must be in the format "YYYY-MM-DD HH:MM:SS"',
+    }).optional(),
     is_proceed_to_repair: schema => schema.is_proceed_to_repair.optional(),
     is_proceed_to_repair_date: schema => schema.is_proceed_to_repair_date.regex(dateTimePattern, {
       message: 'is_proceed_to_repair_date must be in the format "YYYY-MM-DD HH:MM:SS"',
@@ -44,6 +48,8 @@ export const insertSchema = createInsertSchema(
   status: true,
   status_update_date: true,
   proposed_cost: true,
+  is_diagnosis_completed: true,
+  is_diagnosis_completed_date: true,
   is_proceed_to_repair: true,
   is_proceed_to_repair_date: true,
   customer_problem_statement: true,
