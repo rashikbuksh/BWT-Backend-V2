@@ -171,7 +171,7 @@ export const deviceCmd = createRoute({
 });
 
 export const customCommand = createRoute({
-  path: '/iclock/device/custom-command',
+  path: '/v1/iclock/device/custom-command',
   method: 'post',
   request: {
     query: z.object({
@@ -192,7 +192,7 @@ export const customCommand = createRoute({
 });
 
 export const clearCommandQueue = createRoute({
-  path: '/iclock/device/clear-queue',
+  path: '/v1/iclock/device/clear-queue',
   method: 'post',
   request: {
     query: z.object({
@@ -207,7 +207,7 @@ export const clearCommandQueue = createRoute({
 });
 
 export const getQueueStatus = createRoute({
-  path: '/iclock/device/queue-status',
+  path: '/v1/iclock/device/queue-status',
   method: 'get',
   request: {
     query: z.object({
@@ -267,7 +267,7 @@ export const syncAttendanceLogs = createRoute({
 });
 
 export const syncEmployees = createRoute({
-  path: '/zkteco/sync-employees',
+  path: '/v1/iclock/sync-employees',
   method: 'post',
   request: {
     query: z.object({

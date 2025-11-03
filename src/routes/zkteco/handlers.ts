@@ -248,8 +248,13 @@ export const connectionTest: AppRouteHandler<ConnectionTestRoute> = async (c: an
   state.connectionTestAt = new Date().toISOString();
   deviceState.set(sn, state);
 
+  const response = {
+    ok: true,
+    state,
+  };
+
   // Return a simple response that ZKTeco devices expect
-  return c.text('OK');
+  return c.json(response);
 };
 
 export const iclockRoot: AppRouteHandler<IclockRootRoute> = async (c: any) => {
