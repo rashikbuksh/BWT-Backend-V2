@@ -5,18 +5,14 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 const tags = ['reports'];
 
-export const fieldVisitReport = createRoute({
-  path: '/report/field-visit-report',
+export const salaryReport = createRoute({
+  path: '/report/salary-report/by/{fiscal_year_uuid}',
   method: 'get',
-  summary: 'Field Visit Report',
-  description: 'Get the field visit report for an employee',
+  summary: 'Get Salary Report',
+  description: 'Get the Salary Report for a specific fiscal year',
   request: {
-    query: z.object({
-      employee_uuid: z.string().optional(),
-      from_date: z.string().optional(),
-      to_date: z.string().optional(),
-      approval: z.string().optional(),
-      status: z.string().optional(),
+    params: z.object({
+      fiscal_year_uuid: z.string(),
     }),
   },
   responses: {
@@ -46,10 +42,10 @@ export const fieldVisitReport = createRoute({
           applied_date: z.string(),
         }),
       ),
-      'Field Visit Report',
+      'The Salary Report data',
     ),
   },
   tags,
 });
 
-export type FieldVisitReportRoute = typeof fieldVisitReport;
+export type SalaryReportRoute = typeof salaryReport;
