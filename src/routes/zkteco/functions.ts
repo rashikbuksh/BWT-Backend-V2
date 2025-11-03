@@ -667,3 +667,239 @@ export async function addUserToDevice(
     };
   }
 }
+
+// Store for temporary users with their expiry times
+const temporaryUsers = new Map<string, { pin: string; deviceSn: string; expiryTime: Date; timeoutId: NodeJS.Timeout }>();
+
+// Function to add a user to ZKTeco device with temporary access
+export async function addTemporaryUserToDevice(
+  pin: string,
+  name: string,
+  commandQueue: Map<string, string[]>,
+  usersByDevice: Map<string, Map<string, any>>,
+  accessDurationMinutes: number,
+  sn?: string,
+  privilege = '0', // 0 = user, 1 = admin
+  password = '',
+  cardno = '',
+  timeZone = '1', // Time zone ID for access control (1-50 available)
+) {
+  try {
+    if (!pin || !name) {
+      console.error('[add-temp-user] PIN and name are required');
+      return { success: false, error: 'PIN and name are required' };
+    }
+
+    if (accessDurationMinutes <= 0) {
+      console.error('[add-temp-user] Access duration must be greater than 0');
+      return { success: false, error: 'Access duration must be greater than 0 minutes' };
+    }
+
+    // If no specific device serial number provided, send to all devices
+    const devicesToUpdate = sn ? [sn] : Array.from(commandQueue.keys());
+
+    if (devicesToUpdate.length === 0) {
+      console.warn('[add-temp-user] No devices found to add user to');
+      return { success: false, error: 'No devices found' };
+    }
+
+    const results = [];
+    const expiryTime = new Date(Date.now() + accessDurationMinutes * 60 * 1000);
+
+    for (const deviceSn of devicesToUpdate) {
+      try {
+        // Ensure queue exists for this device
+        const queue = ensureQueue(deviceSn, commandQueue);
+
+        // Check if user already exists on device
+        const umap = ensureUserMap(deviceSn, usersByDevice);
+        const existingUser = umap?.get(pin);
+
+        if (existingUser && existingUser.name === name) {
+          console.warn(`[add-temp-user] User PIN ${pin} with name "${name}" already exists on device ${deviceSn}`);
+          results.push({ device: deviceSn, success: true, note: 'User already exists with same name' });
+          continue;
+        }
+
+        // Add user to device cache
+        if (umap) {
+          umap.set(pin, { pin, name, privilege, password, cardno, timeZone, temporary: true, expiryTime });
+          console.warn(`[add-temp-user] Added PIN ${pin} to device ${deviceSn} cache with expiry ${expiryTime.toISOString()}`);
+        }
+
+        // Create time zone first (if not exists)
+        const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${timeZone}\tAlias=TempAccess${timeZone}\tStartTime=${formatDateTime(new Date())}\tEndTime=${formatDateTime(expiryTime)}`;
+
+        // Create add user command with time zone restriction
+        const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}\tTZ=${timeZone}`;
+
+        // Add commands to queue
+        if (queue) {
+          // Check if commands already exist in queue to avoid duplicates
+          const existingTzCmd = queue.find(cmd => cmd.includes(`TZId=${timeZone}`) && cmd.includes('DATA UPDATE TIMEZONE'));
+          const existingAddCmd = queue.find(cmd => cmd.includes(`PIN=${pin}`) && cmd.includes('DATA UPDATE USERINFO'));
+
+          if (!existingTzCmd) {
+            queue.push(timeZoneCommand);
+            console.warn(`[add-temp-user] Queued timezone command for device ${deviceSn}: ${timeZoneCommand}`);
+          }
+
+          if (!existingAddCmd) {
+            queue.push(addCommand);
+            console.warn(`[add-temp-user] Queued add command for PIN ${pin} on device ${deviceSn}: ${addCommand}`);
+          }
+
+          results.push({
+            device: deviceSn,
+            success: true,
+            commands: [timeZoneCommand, addCommand],
+            expiryTime: expiryTime.toISOString(),
+          });
+        }
+        else {
+          console.error(`[add-temp-user] Failed to get command queue for device ${deviceSn}`);
+          results.push({ device: deviceSn, success: false, error: 'Failed to get command queue' });
+        }
+
+        // Schedule automatic deletion
+        const timeoutId = setTimeout(async () => {
+          console.warn(`[add-temp-user] Auto-deleting expired user PIN ${pin} from device ${deviceSn}`);
+
+          try {
+            await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
+            // Clean up temporary user record
+            const tempKey = `${pin}-${deviceSn}`;
+            temporaryUsers.delete(tempKey);
+            console.warn(`[add-temp-user] Successfully auto-deleted expired user PIN ${pin} from device ${deviceSn}`);
+          }
+          catch (error) {
+            console.error(`[add-temp-user] Failed to auto-delete expired user PIN ${pin} from device ${deviceSn}:`, error);
+          }
+        }, accessDurationMinutes * 60 * 1000);
+
+        // Store temporary user info for tracking
+        const tempKey = `${pin}-${deviceSn}`;
+        temporaryUsers.set(tempKey, {
+          pin,
+          deviceSn,
+          expiryTime,
+          timeoutId,
+        });
+      }
+      catch (error) {
+        console.error(`[add-temp-user] Error processing device ${deviceSn}:`, error);
+        results.push({ device: deviceSn, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
+
+    console.warn(`[add-temp-user] Add temporary user PIN ${pin} completed: ${successCount} success, ${failureCount} failures`);
+
+    return {
+      success: successCount > 0,
+      pin,
+      name,
+      accessDurationMinutes,
+      expiryTime: expiryTime.toISOString(),
+      devicesProcessed: devicesToUpdate.length,
+      successCount,
+      failureCount,
+      results,
+    };
+  }
+  catch (error) {
+    console.error('[add-temp-user] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unexpected error occurred',
+    };
+  }
+}
+
+// Function to cancel temporary access before expiry
+export async function cancelTemporaryAccess(
+  pin: string,
+  commandQueue: Map<string, string[]>,
+  usersByDevice: Map<string, Map<string, any>>,
+  sn?: string,
+) {
+  try {
+    const devicesToUpdate = sn ? [sn] : Array.from(commandQueue.keys());
+    const results = [];
+
+    for (const deviceSn of devicesToUpdate) {
+      const tempKey = `${pin}-${deviceSn}`;
+      const tempUser = temporaryUsers.get(tempKey);
+
+      if (tempUser) {
+        // Clear the scheduled deletion
+        clearTimeout(tempUser.timeoutId);
+        temporaryUsers.delete(tempKey);
+
+        // Delete user from device
+        const deleteResult = await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
+        results.push({
+          device: deviceSn,
+          success: deleteResult.success,
+          note: 'Temporary access cancelled before expiry',
+        });
+
+        console.warn(`[cancel-temp-access] Cancelled temporary access for PIN ${pin} on device ${deviceSn}`);
+      }
+      else {
+        results.push({
+          device: deviceSn,
+          success: false,
+          error: 'No temporary access found for this PIN',
+        });
+      }
+    }
+
+    return {
+      success: results.some(r => r.success),
+      pin,
+      results,
+    };
+  }
+  catch (error) {
+    console.error('[cancel-temp-access] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unexpected error occurred',
+    };
+  }
+}
+
+// Function to get list of active temporary users
+export function getTemporaryUsers() {
+  const activeUsers = [];
+  const now = new Date();
+
+  for (const [key, tempUser] of temporaryUsers.entries()) {
+    if (tempUser.expiryTime > now) {
+      activeUsers.push({
+        key,
+        pin: tempUser.pin,
+        deviceSn: tempUser.deviceSn,
+        expiryTime: tempUser.expiryTime.toISOString(),
+        timeRemainingMinutes: Math.ceil((tempUser.expiryTime.getTime() - now.getTime()) / (60 * 1000)),
+      });
+    }
+  }
+
+  return activeUsers;
+}
+
+// Helper function to format date time for ZKTeco commands
+function formatDateTime(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}

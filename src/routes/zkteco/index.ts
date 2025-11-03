@@ -20,6 +20,9 @@ const router = createRouter()
   .openapi(routes.deleteUser, handlers.deleteUser)
   .openapi(routes.syncAttendanceLogs, handlers.syncAttendanceLogs)
   .openapi(routes.syncEmployees, handlers.syncEmployees)
+  .openapi(routes.addTemporaryUser, handlers.addTemporaryUserHandler)
+  .openapi(routes.cancelTemporaryAccess, handlers.cancelTemporaryAccessHandler)
+  .openapi(routes.getTemporaryUsersRoute, handlers.getTemporaryUsersHandler)
   .openapi(routes.fullBackup, backupHandlers.fullBackup);
 
 export default router;

@@ -311,6 +311,101 @@ export const syncEmployees = createRoute({
   },
 });
 
+export const addTemporaryUser = createRoute({
+  path: '/zkteco/add-temporary-user',
+  method: 'post',
+  request: {
+    query: z.object({
+      sn: z.string().optional().describe('Specific device serial number (optional)'),
+    }),
+    body: jsonContent(z.object({
+      pin: z.string().describe('User PIN number'),
+      name: z.string().describe('User name'),
+      accessDurationMinutes: z.number().min(1).describe('Access duration in minutes'),
+      privilege: z.string().optional().default('0').describe('User privilege (0=user, 1=admin)'),
+      password: z.string().optional().default('').describe('User password'),
+      cardno: z.string().optional().default('').describe('Card number'),
+      timeZone: z.string().optional().default('1').describe('Time zone ID (1-50)'),
+    }), 'Temporary user configuration'),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(z.object({
+      success: z.boolean(),
+      pin: z.string(),
+      name: z.string(),
+      accessDurationMinutes: z.number(),
+      expiryTime: z.string(),
+      devicesProcessed: z.number(),
+      successCount: z.number(),
+      failureCount: z.number(),
+      results: z.array(z.object({
+        device: z.string(),
+        success: z.boolean(),
+        commands: z.array(z.string()).optional(),
+        expiryTime: z.string().optional(),
+        note: z.string().optional(),
+        error: z.string().optional(),
+      })),
+    }), 'Temporary user added successfully'),
+    [HSCode.BAD_REQUEST]: jsonContent(z.object({
+      success: z.boolean(),
+      error: z.string(),
+    }), 'Invalid request'),
+    [HSCode.INTERNAL_SERVER_ERROR]: jsonContent(z.object({
+      success: z.boolean(),
+      error: z.string(),
+    }), 'Server error'),
+  },
+});
+
+export const cancelTemporaryAccess = createRoute({
+  path: '/zkteco/cancel-temporary-access',
+  method: 'post',
+  request: {
+    query: z.object({
+      sn: z.string().optional().describe('Specific device serial number (optional)'),
+      pin: z.string().describe('User PIN to cancel access for'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(z.object({
+      success: z.boolean(),
+      pin: z.string(),
+      results: z.array(z.object({
+        device: z.string(),
+        success: z.boolean(),
+        note: z.string().optional(),
+        error: z.string().optional(),
+      })),
+    }), 'Temporary access cancelled'),
+    [HSCode.BAD_REQUEST]: jsonContent(z.object({
+      success: z.boolean(),
+      error: z.string(),
+    }), 'Invalid request'),
+  },
+});
+
+export const getTemporaryUsersRoute = createRoute({
+  path: '/zkteco/temporary-users',
+  method: 'get',
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(z.object({
+      success: z.boolean(),
+      temporaryUsers: z.array(z.object({
+        key: z.string(),
+        pin: z.string(),
+        deviceSn: z.string(),
+        expiryTime: z.string(),
+        timeRemainingMinutes: z.number(),
+      })),
+      totalCount: z.number(),
+    }), 'List of active temporary users'),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type ConnectionTestRoute = typeof connectionTest;
@@ -326,6 +421,9 @@ export type DeviceCmdRoute = typeof deviceCmd;
 export type DeleteUserRoute = typeof deleteUser;
 export type SyncAttendanceLogsRoute = typeof syncAttendanceLogs;
 export type SyncEmployeesRoute = typeof syncEmployees;
+export type AddTemporaryUserRoute = typeof addTemporaryUser;
+export type CancelTemporaryAccessRoute = typeof cancelTemporaryAccess;
+export type GetTemporaryUsersRoute = typeof getTemporaryUsersRoute;
 
 // Import backup route
 export { fullBackup } from './backup_routes';

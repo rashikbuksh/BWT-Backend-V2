@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
+import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
 
 import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -1096,6 +1096,89 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
     console.error('[sync-employees] Error:', error);
     return c.json({
       error: error instanceof Error ? error.message : 'Failed to sync employees',
+    }, 500);
+  }
+};
+
+export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = async (c: any) => {
+  const { sn } = c.req.valid('query');
+  const { pin, name, accessDurationMinutes, privilege = '0', password = '', cardno = '', timeZone = '1' } = c.req.valid('json');
+
+  try {
+    const { addTemporaryUserToDevice } = await import('./functions');
+
+    const result = await addTemporaryUserToDevice(
+      pin,
+      name,
+      commandQueue,
+      usersByDevice,
+      accessDurationMinutes,
+      sn,
+      privilege,
+      password,
+      cardno,
+      timeZone,
+    );
+
+    if (result.success) {
+      return c.json(result);
+    }
+    else {
+      return c.json(result, 400);
+    }
+  }
+  catch (error) {
+    console.error('[add-temp-user-handler] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to add temporary user',
+    }, 500);
+  }
+};
+
+export const cancelTemporaryAccessHandler: AppRouteHandler<CancelTemporaryAccessRoute> = async (c: any) => {
+  const { sn, pin } = c.req.valid('query');
+
+  try {
+    const { cancelTemporaryAccess } = await import('./functions');
+
+    const result = await cancelTemporaryAccess(pin, commandQueue, usersByDevice, sn);
+
+    if (result.success) {
+      return c.json(result);
+    }
+    else {
+      return c.json(result, 400);
+    }
+  }
+  catch (error) {
+    console.error('[cancel-temp-access-handler] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to cancel temporary access',
+    }, 500);
+  }
+};
+
+export const getTemporaryUsersHandler: AppRouteHandler<GetTemporaryUsersRoute> = async (c: any) => {
+  try {
+    const { getTemporaryUsers } = await import('./functions');
+
+    const temporaryUsers = getTemporaryUsers();
+
+    return c.json({
+      success: true,
+      temporaryUsers,
+      totalCount: temporaryUsers.length,
+    });
+  }
+  catch (error) {
+    console.error('[get-temp-users-handler] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get temporary users',
+      temporaryUsers: [],
+      totalCount: 0,
     }, 500);
   }
 };
