@@ -102,6 +102,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       department_name: department.department,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
+      tds: PG_DECIMAL_TO_FLOAT(salary_entry.tds),
     })
     .from(salary_entry)
     .leftJoin(
@@ -152,6 +153,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       department_name: department.department,
       designation_uuid: users.designation_uuid,
       designation_name: designation.designation,
+      tds: PG_DECIMAL_TO_FLOAT(salary_entry.tds),
     })
     .from(salary_entry)
     .leftJoin(

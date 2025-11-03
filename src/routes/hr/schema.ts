@@ -726,6 +726,7 @@ export const salary_entry = hr.table('salary_entry', {
   remarks: text('remarks').default(sql`null`),
   loan_amount: PG_DECIMAL('loan_amount').default(sql`0`),
   advance_amount: PG_DECIMAL('advance_amount').default(sql`0`),
+  tds: PG_DECIMAL('tds').default(sql`0`),
 });
 
 // ? loan
