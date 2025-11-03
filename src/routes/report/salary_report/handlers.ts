@@ -100,6 +100,7 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                   WHERE fb.fiscal_year_uuid = ${fiscal_year_uuid}
                   GROUP BY fb.employee_uuid, f.uuid, f.name, f.religion, fb.special_consideration, fb.net_payable
                 ) fb_info ON fb_info.employee_uuid = e.uuid
+                WHERE fy.uuid = ${fiscal_year_uuid}
                 GROUP BY
                   e.uuid, u.uuid, u.name, e.employee_id,
                   d.uuid, d.department, des.uuid, des.designation,
