@@ -71,7 +71,7 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                 LEFT JOIN hr.festival_bonus fb ON fb.employee_uuid = e.uuid
                 LEFT JOIN hr.festival f ON f.uuid = fb.festival_uuid
                 LEFT JOIN LATERAL (
-                  SELECT SUM(si.amount) AS total_salary
+                  SELECT SUM(si.amount::float8) AS total_salary
                   FROM hr.salary_increment si
                   WHERE si.employee_uuid = e.uuid AND si.effective_date::date <= m.month_end::date
                 ) ts ON true
