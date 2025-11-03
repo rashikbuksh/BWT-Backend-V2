@@ -16,7 +16,7 @@ export const list = createRoute({
   tags,
   request: {
     query: z.object({
-      fiscal_year_uuid: z.string().uuid().optional(),
+      fiscal_year_uuid: z.string().optional(),
     }),
   },
   responses: {
