@@ -27,15 +27,21 @@ export const create = createRoute({
   method: 'post',
   request: {
     body: jsonContentRequired(
-      insertSchema,
-      'The festival-bonus to create',
+      z.union([insertSchema, z.array(insertSchema)]),
+      'The festival-bonus to create (single object or array for bulk)',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      selectSchema,
-      'The created festival-bonus',
+      z.union([
+        selectSchema,
+        z.object({
+          created_count: z.number(),
+          created: z.array(z.string()),
+        }),
+      ]),
+      'The created festival-bonus (single) or bulk-create summary',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
