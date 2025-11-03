@@ -61,7 +61,10 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                       'tax_amount', e.tax_amount::float8
                     )
                   ) FILTER (WHERE m.month_end IS NOT NULL) AS months,
-                  fb_info.festival_bonus_info
+                  fb_info.festival_bonus_info,
+                  fy.year,
+                  fy.from_month::date,
+                  fy.to_month::date
                 FROM hr.employee e
                 CROSS JOIN months m
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
@@ -69,6 +72,7 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                 LEFT JOIN hr.designation des ON des.uuid = u.designation_uuid
                 LEFT JOIN hr.festival_bonus fb ON fb.employee_uuid = e.uuid
                 LEFT JOIN hr.festival f ON f.uuid = fb.festival_uuid
+                LEFT JOIN hr.fiscal_year fy ON fy.uuid = fb.fiscal_year_uuid
                 LEFT JOIN LATERAL (
                   SELECT SUM(si.amount::float8) AS total_salary
                   FROM hr.salary_increment si
@@ -99,7 +103,8 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                 GROUP BY
                   e.uuid, u.uuid, u.name, e.employee_id,
                   d.uuid, d.department, des.uuid, des.designation,
-                  e.profile_picture, e.start_date, fb_info.festival_bonus_info
+                  e.profile_picture, e.start_date, fb_info.festival_bonus_info,
+                  fy.year, fy.from_month, fy.to_month
                 ORDER BY e.uuid;
                 `;
 
