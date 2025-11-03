@@ -107,6 +107,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { fiscal_year_uuid } = c.req.valid('query');
   const festivalBonusPromise = db
     .select({
       uuid: festival_bonus.uuid,
@@ -144,6 +145,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(createdByUser, eq(festival_bonus.created_by, createdByUser.uuid))
     .leftJoin(updatedByUser, eq(festival_bonus.updated_by, updatedByUser.uuid))
     .orderBy(desc(festival_bonus.created_at));
+
+  if (fiscal_year_uuid) {
+    festivalBonusPromise.where(
+      eq(festival_bonus.fiscal_year_uuid, fiscal_year_uuid),
+    );
+  }
 
   const data = await festivalBonusPromise;
 
