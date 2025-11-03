@@ -55,7 +55,9 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                     fb_info.festival_bonus_info,
                     fy.year AS fiscal_year,
                     fy.from_month::date,
-                    fy.to_month::date
+                    fy.to_month::date,
+                    SUM(se.amount)::float8 AS total_salary,
+                    SUM(se.tds)::float8 AS total_tds
                 FROM hr.salary_entry se
                 LEFT JOIN hr.employee e ON se.employee_uuid = e.uuid
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
