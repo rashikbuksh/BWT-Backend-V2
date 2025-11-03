@@ -66,21 +66,23 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                 LEFT JOIN hr.festival_bonus fb ON fb.employee_uuid = e.uuid
                 LEFT JOIN hr.festival f ON f.uuid = fb.festival_uuid
                 LEFT JOIN hr.fiscal_year fy ON fy.uuid = fb.fiscal_year_uuid
-                LEFT JOIN (
-                  SELECT 
-                        fb.employee_uuid,
-                        jsonb_build_object(
-                          'festival_uuid', f.uuid,
-                          'festival_name', f.name,
-                          'festival_religion', f.religion,
-                          'special_consideration', fb.special_consideration::float8,
-                          'net_payable', fb.net_payable::float8
-                        ) AS festival_bonus_info
-                  FROM hr.festival_bonus fb
-                  LEFT JOIN hr.festival f ON f.uuid = fb.festival_uuid
-                  WHERE fb.fiscal_year_uuid = ${fiscal_year_uuid}
-                  GROUP BY fb.employee_uuid, f.uuid, f.name, f.religion, fb.special_consideration, fb.net_payable
-                ) fb_info ON fb_info.employee_uuid = e.uuid
+               LEFT JOIN (
+                          SELECT 
+                                fb.employee_uuid,
+                                jsonb_agg(
+                                  jsonb_build_object(
+                                    'festival_uuid', f.uuid,
+                                    'festival_name', f.name,
+                                    'festival_religion', f.religion,
+                                    'special_consideration', fb.special_consideration::float8,
+                                    'net_payable', fb.net_payable::float8
+                                  ) ORDER BY f.name
+                                ) AS festival_bonus_info
+                          FROM hr.festival_bonus fb
+                          LEFT JOIN hr.festival f ON f.uuid = fb.festival_uuid
+                          WHERE fb.fiscal_year_uuid = ${fiscal_year_uuid}
+                          GROUP BY fb.employee_uuid
+                        ) fb_info ON fb_info.employee_uuid = e.uuid
                 WHERE fy.uuid = ${fiscal_year_uuid} AND  (make_date(se.year::int, se.month::int, 1) + INTERVAL '1 month' - INTERVAL '1 day')  BETWEEN ${from_month}::date AND ${to_month}::date
                 GROUP BY e.uuid, u.uuid, u.name, e.employee_id, d.uuid, d.department, des.uuid, des.designation,
                          e.profile_picture, e.start_date,
