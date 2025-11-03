@@ -34,14 +34,6 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
   const to_month = fiscalYear[0]?.to_month;
 
   const query = sql`
-               WITH months AS (
-                                SELECT
-                                  (generate_series(
-                                    date_trunc('month', ${from_month}::date),
-                                    date_trunc('month', ${to_month}::date),
-                                    interval '1 month'
-                                  )::date + INTERVAL '1 month' - INTERVAL '1 day')::date AS month_end
-                    )
                 SELECT
                     e.uuid as employee_uuid,
                     u.uuid AS employee_user_uuid,
@@ -54,37 +46,24 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                     e.profile_picture,
                     e.start_date::date,
                     jsonb_object_agg(
-                    to_char(m.month_end, 'YYYY-MM-DD'),
-                    jsonb_build_object(
-                      'salary', COALESCE(ts.total_salary, 0),
-                      'tds', COALESCE(tn.new_tds, 0),
-                      'tax_amount', e.tax_amount::float8
-                    )
-                  ) FILTER (WHERE m.month_end IS NOT NULL) AS months,
-                  fb_info.festival_bonus_info,
-                  fy.year,
-                  fy.from_month::date,
-                  fy.to_month::date
-                FROM hr.employee e
-                CROSS JOIN months m
+                            make_date(se.year::int, se.month::int, 1)::text,
+                            jsonb_build_object(
+                              'salary', se.amount::float8,
+                              'tds', se.tds::float8
+                            ) ORDER BY make_date(se.year::int, se.month::int, 1) ASC
+                          ) AS months,
+                    fb_info.festival_bonus_info,
+                    fy.year AS fiscal_year,
+                    fy.from_month::date,
+                    fy.to_month::date
+                FROM hr.salary_entry se
+                LEFT JOIN hr.employee e ON se.employee_uuid = e.uuid
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
                 LEFT JOIN hr.department d ON d.uuid = u.department_uuid
                 LEFT JOIN hr.designation des ON des.uuid = u.designation_uuid
                 LEFT JOIN hr.festival_bonus fb ON fb.employee_uuid = e.uuid
                 LEFT JOIN hr.festival f ON f.uuid = fb.festival_uuid
                 LEFT JOIN hr.fiscal_year fy ON fy.uuid = fb.fiscal_year_uuid
-                LEFT JOIN LATERAL (
-                  SELECT SUM(si.amount::float8) AS total_salary
-                  FROM hr.salary_increment si
-                  WHERE si.employee_uuid = e.uuid AND si.effective_date::date <= m.month_end::date
-                ) ts ON true
-                LEFT JOIN LATERAL (
-                  SELECT si.new_tds::float8 AS new_tds
-                  FROM hr.salary_increment si
-                  WHERE si.employee_uuid = e.uuid AND si.effective_date::date <= m.month_end::date
-                  ORDER BY si.effective_date DESC
-                  LIMIT 1
-                ) tn ON true
                 LEFT JOIN (
                   SELECT 
                         fb.employee_uuid,
@@ -100,12 +79,10 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                   WHERE fb.fiscal_year_uuid = ${fiscal_year_uuid}
                   GROUP BY fb.employee_uuid, f.uuid, f.name, f.religion, fb.special_consideration, fb.net_payable
                 ) fb_info ON fb_info.employee_uuid = e.uuid
-                WHERE fy.uuid = ${fiscal_year_uuid}
-                GROUP BY
-                  e.uuid, u.uuid, u.name, e.employee_id,
-                  d.uuid, d.department, des.uuid, des.designation,
-                  e.profile_picture, e.start_date, fb_info.festival_bonus_info,
-                  fy.year, fy.from_month, fy.to_month
+                WHERE fy.uuid = ${fiscal_year_uuid} AND  make_date(se.year::int, se.month::int, 1) BETWEEN ${from_month}::date AND ${to_month}::date
+                GROUP BY e.uuid, u.uuid, u.name, e.employee_id, d.uuid, d.department, des.uuid, des.designation,
+                         e.profile_picture, e.start_date,
+                         fb_info.festival_bonus_info, fy.year, fy.from_month, fy.to_month
                 ORDER BY e.uuid;
                 `;
 
