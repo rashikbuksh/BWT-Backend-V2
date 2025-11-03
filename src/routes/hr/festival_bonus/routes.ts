@@ -27,7 +27,7 @@ export const create = createRoute({
   method: 'post',
   request: {
     body: jsonContentRequired(
-      z.union([insertSchema, z.array(insertSchema)]),
+      z.preprocess(val => (Array.isArray(val) ? val : [val]), z.array(insertSchema)),
       'The festival-bonus to create (single object or array for bulk)',
     ),
   },
@@ -44,7 +44,10 @@ export const create = createRoute({
       'The created festival-bonus (single) or bulk-create summary',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(insertSchema),
+      z.union([
+        createErrorSchema(insertSchema),
+        createErrorSchema(z.array(insertSchema)),
+      ]),
       'The validation error(s)',
     ),
   },
