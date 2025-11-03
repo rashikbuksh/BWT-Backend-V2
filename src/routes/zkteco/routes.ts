@@ -222,7 +222,7 @@ export const getQueueStatus = createRoute({
 });
 
 export const refreshUsers = createRoute({
-  path: '/iclock/device/refresh-users',
+  path: '/v1/iclock/device/refresh-users',
   method: 'post',
   request: {
     query: z.object({
