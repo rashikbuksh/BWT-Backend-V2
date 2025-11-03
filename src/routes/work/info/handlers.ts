@@ -325,6 +325,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                     'is_return_date', o.is_return_date,
                     'is_diagnosis_need', o.is_diagnosis_need,
                     'is_diagnosis_need_date', o.is_diagnosis_need_date,
+                    'is_diagnosis_completed', d.is_diagnosis_completed,
+                    'is_diagnosis_completed_date', d.is_diagnosis_completed_date,
                     'is_proceed_to_repair', o.is_proceed_to_repair,
                     'is_proceed_to_repair_date', o.is_proceed_to_repair_date,
                     'is_transferred_for_qc', o.is_transferred_for_qc,
@@ -342,6 +344,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                   )), '[]'::json
                 )
                 FROM work.order o
+                LEFT JOIN work.diagnosis d ON o.uuid = d.order_uuid
                 LEFT JOIN store.model m ON o.model_uuid = m.uuid
                 LEFT JOIN store.brand b ON m.brand_uuid = b.uuid
                 LEFT JOIN delivery.challan_entry ce ON o.uuid = ce.order_uuid
