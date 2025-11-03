@@ -64,8 +64,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const {
     is_diagnosis_need,
     is_diagnosis_need_date,
-    is_diagnosis_completed,
-    is_diagnosis_completed_date,
     is_proceed_to_repair,
     is_proceed_to_repair_date,
     is_challan_needed,
@@ -181,8 +179,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     is_transferred_for_qc_date: defaultIfEmpty(is_transferred_for_qc_date, null),
     is_ready_for_delivery: defaultIfEmpty(is_ready_for_delivery, false),
     brand_uuid: defaultIfEmpty(brand_uuid, null),
-    is_diagnosis_completed: defaultIfEmpty(is_diagnosis_completed, false),
-    is_diagnosis_completed_date: defaultIfEmpty(is_diagnosis_completed_date, null),
     is_proceed_to_repair: defaultIfEmpty(is_proceed_to_repair, false),
     is_proceed_to_repair_date: defaultIfEmpty(is_proceed_to_repair_date, null),
     repairing_problems_uuid: defaultIfEmpty(repairing_problems_uuid, []),
@@ -360,8 +356,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   formData.is_ready_for_delivery = defaultIfEmpty(formData.is_ready_for_delivery, false);
   formData.ready_for_delivery_date = defaultIfEmpty(formData.ready_for_delivery_date, null);
   formData.brand_uuid = defaultIfEmpty(formData.brand_uuid, null);
-  formData.is_diagnosis_completed = defaultIfEmpty(formData.is_diagnosis_completed, false);
-  formData.is_diagnosis_completed_date = defaultIfEmpty(formData.is_diagnosis_completed_date, null);
   formData.is_proceed_to_repair = defaultIfEmpty(formData.is_proceed_to_repair, false);
   formData.is_proceed_to_repair_date = defaultIfEmpty(formData.is_proceed_to_repair_date, null);
   formData.repairing_problems_uuid = defaultIfEmpty(formData.repairing_problems_uuid, []);
@@ -546,8 +540,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_transferred_for_qc_date: orderTable.is_transferred_for_qc_date,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       ready_for_delivery_date: orderTable.ready_for_delivery_date,
-      is_diagnosis_completed: orderTable.is_diagnosis_completed,
-      is_diagnosis_completed_date: orderTable.is_diagnosis_completed_date,
+      diagnosis_uuid: diagnosis.uuid,
+      is_diagnosis_completed: diagnosis.is_diagnosis_completed,
+      is_diagnosis_completed_date: diagnosis.is_diagnosis_completed_date,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
       is_proceed_to_repair_date: orderTable.is_proceed_to_repair_date,
       branch_uuid: storeSchema.warehouse.branch_uuid,
@@ -892,8 +887,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_transferred_for_qc_date: orderTable.is_transferred_for_qc_date,
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       ready_for_delivery_date: orderTable.ready_for_delivery_date,
-      is_diagnosis_completed: orderTable.is_diagnosis_completed,
-      is_diagnosis_completed_date: orderTable.is_diagnosis_completed_date,
+      diagnosis_uuid: diagnosis.uuid,
+      is_diagnosis_completed: diagnosis.is_diagnosis_completed,
+      is_diagnosis_completed_date: diagnosis.is_diagnosis_completed_date,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
       is_proceed_to_repair_date: orderTable.is_proceed_to_repair_date,
       branch_uuid: storeSchema.warehouse.branch_uuid,
@@ -1208,8 +1204,9 @@ export const getByInfo: AppRouteHandler<GetByInfoRoute> = async (c: any) => {
       is_ready_for_delivery: orderTable.is_ready_for_delivery,
       is_delivery_complete: sql`COALESCE(${deliverySchema.challan.is_delivery_complete}, false)`,
       is_delivery_complete_date: deliverySchema.challan.is_delivery_complete_date,
-      is_diagnosis_completed: orderTable.is_diagnosis_completed,
-      is_diagnosis_completed_date: orderTable.is_diagnosis_completed_date,
+      diagnosis_uuid: diagnosis.uuid,
+      is_diagnosis_completed: diagnosis.is_diagnosis_completed,
+      is_diagnosis_completed_date: diagnosis.is_diagnosis_completed_date,
       is_proceed_to_repair: orderTable.is_proceed_to_repair,
       is_proceed_to_repair_date: orderTable.is_proceed_to_repair_date,
       branch_uuid: storeSchema.warehouse.branch_uuid,

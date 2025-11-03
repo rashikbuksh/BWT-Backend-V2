@@ -145,10 +145,6 @@ export const order = work.table('order', {
   brand_uuid: defaultUUID('brand_uuid').references(
     () => storeSchema.brand.uuid,
   ),
-  is_diagnosis_completed: boolean('is_diagnosis_completed').default(false),
-  is_diagnosis_completed_date: DateTime('is_diagnosis_completed_date').default(
-    sql`null`,
-  ),
   is_proceed_to_repair: boolean('is_proceed_to_repair').default(false),
   is_proceed_to_repair_date: DateTime('is_proceed_to_repair_date').default(sql`null`),
   repairing_problems_uuid: text('repairing_problems_uuid')

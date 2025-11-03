@@ -86,8 +86,6 @@ export const insertSchema = createInsertSchema(
   is_ready_for_delivery: true,
   ready_for_delivery_date: true,
   brand_uuid: true,
-  is_diagnosis_completed: true,
-  is_diagnosis_completed_date: true,
   is_proceed_to_repair: true,
   is_proceed_to_repair_date: true,
   repairing_problems_uuid: true,
