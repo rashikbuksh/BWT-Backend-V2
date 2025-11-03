@@ -27,11 +27,33 @@ const employeeUser = alias(users, 'employee_user');
 // };
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
+  const employeeData = await db.select().from(employee);
+
   const value = c.req.valid('json');
   const rows = Array.isArray(value) ? value : [value];
 
   if (rows.length === 0)
     return ObjectNotFound(c);
+
+  if (rows.length > employeeData.length) {
+    return c.json(
+      {
+        toastType: 'error',
+        message: 'Cannot create more festival bonuses than existing employees',
+      },
+      HSCode.UNPROCESSABLE_ENTITY,
+    );
+  }
+
+  if (rows.length < employeeData.length) {
+    return c.json(
+      {
+        toastType: 'error',
+        message: 'Cannot create fewer festival bonuses than existing employees',
+      },
+      HSCode.UNPROCESSABLE_ENTITY,
+    );
+  }
 
   const inserted = await db.insert(festival_bonus).values(rows).returning({
     name: festival_bonus.uuid,
@@ -45,7 +67,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   }
 
   const uuids = inserted.map((r: any) => r.name);
-  return c.json({ created_count: uuids.length, created: uuids }, HSCode.OK);
+  const toast = createToast('create', `${uuids.length} employee festival bonuses`);
+  return c.json({ ...toast, created_count: uuids.length, created: uuids }, HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
