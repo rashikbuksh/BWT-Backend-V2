@@ -110,7 +110,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const festivalBonusPromise = db
     .select({
       uuid: festival_bonus.uuid,
-      employee__uuid: festival_bonus.employee_uuid,
+      employee_uuid: festival_bonus.employee_uuid,
       employee_name: employeeUser.name,
       department_name: department.department,
       designation_name: designation.designation,
@@ -156,7 +156,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const festivalBonusPromise = db
     .select({
       uuid: festival_bonus.uuid,
-      employee__uuid: festival_bonus.employee_uuid,
+      employee_uuid: festival_bonus.employee_uuid,
       employee_name: employeeUser.name,
       department_name: department.department,
       designation_name: designation.designation,
