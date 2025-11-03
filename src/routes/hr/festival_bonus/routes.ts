@@ -14,6 +14,11 @@ export const list = createRoute({
   path: '/hr/festival-bonus',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      fiscal_year_uuid: z.string().uuid().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
