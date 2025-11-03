@@ -15,14 +15,37 @@ import { department, designation, employee, festival, festival_bonus, fiscal_yea
 const createdByUser = alias(users, 'created_by_user');
 const updatedByUser = alias(users, 'updated_by_user');
 const employeeUser = alias(users, 'employee_user');
+
+// export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
+//   const value = c.req.valid('json');
+
+//   const [data] = await db.insert(festival_bonus).values(value).returning({
+//     name: festival_bonus.uuid,
+//   });
+
+//   return c.json(createToast('create', data.name), HSCode.OK);
+// };
+
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
+  const rows = Array.isArray(value) ? value : [value];
 
-  const [data] = await db.insert(festival_bonus).values(value).returning({
+  if (rows.length === 0)
+    return ObjectNotFound(c);
+
+  const inserted = await db.insert(festival_bonus).values(rows).returning({
     name: festival_bonus.uuid,
   });
 
-  return c.json(createToast('create', data.name), HSCode.OK);
+  if (!inserted || inserted.length === 0)
+    return DataNotFound(c);
+
+  if (inserted.length === 1) {
+    return c.json(createToast('create', inserted[0].name), HSCode.OK);
+  }
+
+  const uuids = inserted.map((r: any) => r.name);
+  return c.json({ created_count: uuids.length, created: uuids }, HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
