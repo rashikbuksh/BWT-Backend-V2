@@ -1,8 +1,5 @@
--- ...existing code...
-/*
- Ensure leave_policy_log rows exist for all employees for a given year.
- Call this from a trigger when the system/current year is changed.
- */
+-- STEP 1: Your original function (no changes needed)
+-- This function creates new leave logs for a given year if they don't already exist.
 CREATE OR REPLACE FUNCTION hr.ensure_leave_policy_logs_for_year(p_year int) RETURNS void AS $$ BEGIN
 INSERT INTO hr.leave_policy_log (
         uuid,
@@ -28,35 +25,25 @@ WHERE e.leave_policy_uuid IS NOT NULL
     );
 END;
 $$ LANGUAGE plpgsql;
--- Create a minimal system_config to track current_year and trigger the function automatically
-CREATE TABLE IF NOT EXISTS hr.system_config (
-    id boolean PRIMARY KEY DEFAULT true,
-    current_year int NOT NULL
+-- STEP 2: Enable the scheduler extension (run this once)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- STEP 3: Schedule the function to run automatically every year
+-- This schedules the job to run at midnight (00:00) on January 1st.
+-- The format '0 0 1 1 *' means: Minute 0, Hour 0, Day 1, Month 1, any Day of the week.
+SELECT cron.schedule(
+        'run yearly leave log creation',
+        -- A unique name for your job
+        '0 0 1 1 *',
+        -- The schedule: runs on Jan 1st at midnight
+        $$SELECT hr.ensure_leave_policy_logs_for_year(
+            EXTRACT(
+                YEAR
+                FROM now()
+            )::int
+        );
+$$
 );
--- Ensure a single row exists with the current year
-INSERT INTO hr.system_config (id, current_year)
-SELECT true,
-    EXTRACT(
-        YEAR
-        FROM now()
-    )::int
-WHERE NOT EXISTS (
-        SELECT 1
-        FROM hr.system_config
-        WHERE id = true
-    );
--- Trigger function called when system_config.current_year changes
-CREATE OR REPLACE FUNCTION hr.leave_policy_log_after_year_update_function() RETURNS TRIGGER AS $$ BEGIN IF OLD.current_year IS DISTINCT
-FROM NEW.current_year THEN PERFORM hr.ensure_leave_policy_logs_for_year(NEW.current_year);
-END IF;
-RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER leave_policy_log_after_year_update
-AFTER
-UPDATE ON hr.system_config FOR EACH ROW
-    WHEN (
-        OLD.current_year IS DISTINCT
-        FROM NEW.current_year
-    ) EXECUTE FUNCTION hr.leave_policy_log_after_year_update_function();
+-- OPTIONAL: To see all scheduled jobs
+-- SELECT * FROM cron.job;
+-- OPTIONAL: To unschedule a job
+-- SELECT cron.unschedule('run yearly leave log creation');
