@@ -10,11 +10,11 @@ import { getHolidayCountsDateRange } from '@/lib/variables';
 import type { GetAttendanceReportRoute, GetLateEmployeeAttendanceReportRoute, GetMonthlyAttendanceReportRoute, GetOnLeaveEmployeeAttendanceReportRoute } from './routes';
 
 export const getLateEmployeeAttendanceReport: AppRouteHandler<GetLateEmployeeAttendanceReportRoute> = async (c: any) => {
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, date } = c.req.valid('query');
 
   // single-day data (today) for all returned fields
-  const from_day = sql`CURRENT_DATE`;
-  const to_day = sql`CURRENT_DATE`;
+  const from_day = date ? sql`${date}::date` : sql`CURRENT_DATE::date`;
+  const to_day = date ? sql`${date}::date` : sql`CURRENT_DATE::date`;
 
   // month range (first of month .. today) used only to compute total_late_in_month
   const from_month = sql`date_trunc('month', CURRENT_DATE)::date`;
@@ -776,13 +776,13 @@ export const getMonthlyAttendanceReport: AppRouteHandler<GetMonthlyAttendanceRep
 };
 
 export const getOnLeaveEmployeeAttendanceReport: AppRouteHandler<GetOnLeaveEmployeeAttendanceReportRoute> = async (c: any) => {
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, date } = c.req.valid('query');
 
-  const date = sql`CURRENT_DATE `;
+  const from_date = date ? sql`${date}::date` : sql`CURRENT_DATE::date`;
 
   const query = sql`
                 WITH date_series AS (
-                  SELECT generate_series(${date}::date, ${date}::date, INTERVAL '1 day')::date AS punch_date
+                  SELECT generate_series(${from_date}::date, ${from_date}::date, INTERVAL '1 day')::date AS punch_date
                 ),
                 user_dates AS (
                   SELECT u.uuid AS user_uuid, u.name AS employee_name, d.punch_date

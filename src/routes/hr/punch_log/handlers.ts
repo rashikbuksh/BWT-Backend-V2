@@ -67,7 +67,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // const data = await db.query.department.findMany();
 
-  const { employee_uuid } = c.req.valid('query');
+  const { employee_uuid, date } = c.req.valid('query');
 
   const punchLogPromise = db
     .select({
@@ -88,10 +88,21 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
     .leftJoin(department, eq(users.department_uuid, department.uuid))
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
-    .where(
-      employee_uuid ? eq(punch_log.employee_uuid, employee_uuid) : undefined,
-    )
     .orderBy(desc(punch_log.punch_time));
+
+  const filters = [];
+
+  if (employee_uuid) {
+    filters.push(eq(punch_log.employee_uuid, employee_uuid));
+  }
+
+  if (date) {
+    filters.push(sql`${punch_log.punch_time}::date = ${date}::date`);
+  }
+
+  if (filters.length > 0) {
+    punchLogPromise.where(and(...filters));
+  }
 
   const data = await punchLogPromise;
 

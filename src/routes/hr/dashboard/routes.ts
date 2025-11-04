@@ -16,6 +16,7 @@ export const getLateEmployeeAttendanceReport = createRoute({
       // to_date: z.string().optional(),
       // month: z.string().optional(),
       employee_uuid: z.string().optional(),
+      date: z.string().optional(),
     }),
   },
   responses: {
@@ -109,7 +110,7 @@ export const getOnLeaveEmployeeAttendanceReport = createRoute({
       // to_date: z.string().optional(),
       // month: z.string().optional(),
       employee_uuid: z.string().optional(),
-      // date: z.string().optional(),
+      date: z.string().optional(),
     }),
   },
   responses: {
