@@ -57,7 +57,8 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                     fy.from_month::date,
                     fy.to_month::date,
                     SUM(se.amount)::float8 AS total_salary,
-                    SUM(se.tds)::float8 AS total_tds
+                    SUM(se.tds)::float8 AS total_tds,
+                    fy.challan_info
                 FROM hr.salary_entry se
                 LEFT JOIN hr.employee e ON se.employee_uuid = e.uuid
                 LEFT JOIN hr.users u ON e.user_uuid = u.uuid
@@ -86,7 +87,7 @@ export const salaryReport: AppRouteHandler<SalaryReportRoute> = async (c: any) =
                 WHERE fy.uuid = ${fiscal_year_uuid} AND  (make_date(se.year::int, se.month::int, 1) + INTERVAL '1 month' - INTERVAL '1 day')  BETWEEN ${from_month}::date AND ${to_month}::date
                 GROUP BY e.uuid, u.uuid, u.name, e.employee_id, d.uuid, d.department, des.uuid, des.designation,
                          e.profile_picture, e.start_date,
-                         fb_info.festival_bonus_info, fy.year, fy.from_month, fy.to_month
+                         fb_info.festival_bonus_info, fy.year, fy.from_month, fy.to_month, fy.challan_info
                 ORDER BY e.uuid;
                 `;
 
