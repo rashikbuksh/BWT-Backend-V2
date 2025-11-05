@@ -3,7 +3,7 @@ DECLARE leave_year int := EXTRACT(
         YEAR
         FROM NEW.from_date
     )::int;
-leave_days int;
+leave_days numeric;
 year_start date;
 year_end date;
 category_name text;
@@ -13,9 +13,15 @@ IF NEW.approval = 'approved' THEN
 SELECT COALESCE(
         SUM(
             CASE
-                WHEN LEAST(NEW.to_date::date, year_end) >= GREATEST(NEW.from_date::date, year_start) THEN (
-                    LEAST(NEW.to_date::date, year_end) - GREATEST(NEW.from_date::date, year_start) + 1
-                )
+                WHEN LEAST(a.to_date::date, year_end) >= GREATEST(a.from_date::date, year_start) THEN CASE
+                    WHEN a.type = 'half'
+                    AND (
+                        LEAST(a.to_date::date, year_end) - GREATEST(a.from_date::date, year_start) + 1
+                    ) = 1 THEN 0.5
+                    ELSE (
+                        LEAST(a.to_date::date, year_end) - GREATEST(a.from_date::date, year_start) + 1
+                    )
+                END
                 ELSE 0
             END
         ),
@@ -56,7 +62,7 @@ DECLARE leave_year int := EXTRACT(
         YEAR
         FROM NEW.from_date
     )::int;
-leave_days int;
+leave_days numeric;
 year_start date;
 year_end date;
 category_name text;
@@ -66,9 +72,15 @@ IF NEW.approval = 'approved' THEN
 SELECT COALESCE(
         SUM(
             CASE
-                WHEN LEAST(NEW.to_date::date, year_end) >= GREATEST(NEW.from_date::date, year_start) THEN (
-                    LEAST(NEW.to_date::date, year_end) - GREATEST(NEW.from_date::date, year_start) + 1
-                )
+                WHEN LEAST(a.to_date::date, year_end) >= GREATEST(a.from_date::date, year_start) THEN CASE
+                    WHEN a.type = 'half'
+                    AND (
+                        LEAST(a.to_date::date, year_end) - GREATEST(a.from_date::date, year_start) + 1
+                    ) = 1 THEN 0.5
+                    ELSE (
+                        LEAST(a.to_date::date, year_end) - GREATEST(a.from_date::date, year_start) + 1
+                    )
+                END
                 ELSE 0
             END
         ),
@@ -91,7 +103,6 @@ UPDATE hr.leave_policy_log
 SET casual_used = casual_used + leave_days
 WHERE employee_uuid = NEW.employee_uuid
     AND year = leave_year;
-
 ELSIF category_name = 'Maternity Leave' THEN
 UPDATE hr.leave_policy_log
 SET maternity_used = maternity_used + leave_days
