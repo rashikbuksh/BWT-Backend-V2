@@ -68,7 +68,7 @@ export const post = createRoute({
 
 // Simple connection test endpoint
 export const connectionTest = createRoute({
-  path: '/iclock/ping',
+  path: '/v1/iclock/ping',
   method: 'get',
   request: {
     query: z.object({

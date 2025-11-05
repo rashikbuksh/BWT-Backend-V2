@@ -156,7 +156,7 @@ export const syncUser = createRoute({
     query: z.object({
       sn: z.string(),
       employee_uuid: z.string(),
-      temporary: z.boolean().optional(),
+      temporary: z.string().optional(),
       from: z.string().optional(),
       to: z.string().optional(),
     }),
