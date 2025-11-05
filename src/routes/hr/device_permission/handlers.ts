@@ -46,7 +46,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
     });
   }
-
   else {
     const syncToDevice = api.post(
       `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}&temporary=false`,

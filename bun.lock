@@ -5,8 +5,8 @@
       "name": "bwt-backend-v2",
       "dependencies": {
         "@hono/node-server": "^1.19.5",
-        "@hono/zod-openapi": "^0.19.6",
-        "@scalar/hono-api-reference": "^0.9.22",
+        "@hono/zod-openapi": "^0.19.10",
+        "@scalar/hono-api-reference": "^0.9.23",
         "@types/memory-cache": "^0.2.6",
         "@types/nodemailer": "^7.0.3",
         "bcrypt-ts": "^7.1.0",
@@ -284,13 +284,13 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.45.1", "", { "os": "win32", "cpu": "x64" }, "sha512-M/fKi4sasCdM8i0aWJjCSFm2qEnYRR8AMLG2kxp6wD13+tMGA4Z1tVAuHkNRjud5SW2EM3naLuK35w9twvf6aA=="],
 
-    "@scalar/core": ["@scalar/core@0.3.20", "", { "dependencies": { "@scalar/types": "0.3.2" } }, "sha512-bIlrePx41pSvjDcaJPa9YVVhbSm0N9SKQm2Fzl489S0bUVToyXIQtMFVR4i+BmXGjOcATm/66ELW4vdXRjHoRA=="],
+    "@scalar/core": ["@scalar/core@0.3.21", "", { "dependencies": { "@scalar/types": "0.4.0" } }, "sha512-jwBWUHxxPf30V+ddrSyiDPXYPrC2Z2/Tch8mNPphhd3gi1Dr4Bgd6aMFVIEqlzdOInfTR0pbignifPnQL4GTeA=="],
 
-    "@scalar/hono-api-reference": ["@scalar/hono-api-reference@0.9.22", "", { "dependencies": { "@scalar/core": "0.3.20" }, "peerDependencies": { "hono": "^4.0.0" } }, "sha512-utIz4F6YZj3QU/9HK4P1wIcHY8ceMbL7w+VahFbnmZbE3Gy+haaaHfhZOs2nAfdx1cKOhkm11/inZTtw8+I2bw=="],
+    "@scalar/hono-api-reference": ["@scalar/hono-api-reference@0.9.23", "", { "dependencies": { "@scalar/core": "0.3.21" }, "peerDependencies": { "hono": "^4.10.3" } }, "sha512-Vi7ypOwJO7x1+lVFmh4z6ljqxMThGUWhCA3Z4eBenS8sv/eSYmucI/on1AjItqt2yYBNTZcAxhN8GsCeECR5FA=="],
 
-    "@scalar/openapi-types": ["@scalar/openapi-types@0.5.0", "", { "dependencies": { "zod": "4.1.11" } }, "sha512-HJBcLa+/mPP+3TCcQngj/iW5UqynRosOQdEETXjmdy6Ngw8wBjwIcT6C86J5jufJ6sI8++HYnt+e7pAvp5FO6A=="],
+    "@scalar/openapi-types": ["@scalar/openapi-types@0.5.1", "", { "dependencies": { "zod": "4.1.11" } }, "sha512-8g7s9lPolyDFtijyh3Ob459tpezPuZbkXoFgJwBTHjPZ7ap+TvOJTvLk56CFwxVBVz2BxCzWJqxYyy3FUdeLoA=="],
 
-    "@scalar/types": ["@scalar/types@0.3.2", "", { "dependencies": { "@scalar/openapi-types": "0.5.0", "nanoid": "5.1.5", "type-fest": "5.0.0", "zod": "4.1.11" } }, "sha512-+X10CCvG57nAqYbTGteiSzRFQcMYm7DLfCRMeEfiWQ9Bq2ladat17XsMSvkvwcfpOSlsoepWf3P5dErERUSOQQ=="],
+    "@scalar/types": ["@scalar/types@0.4.0", "", { "dependencies": { "@scalar/openapi-types": "0.5.1", "nanoid": "5.1.5", "type-fest": "5.0.0", "zod": "4.1.11" } }, "sha512-vOD1GZez7kPdVA+UQit05QE9dbALfevhK9kqRTsqcPX7FvvZ9eQWSNl1GKmKtmRiAZGThv2agM5AvHRxkH2JSw=="],
 
     "@smithy/abort-controller": ["@smithy/abort-controller@4.2.4", "", { "dependencies": { "@smithy/types": "^4.8.1", "tslib": "^2.6.2" } }, "sha512-Z4DUr/AkgyFf1bOThW2HwzREagee0sB5ycl+hDiSZOfRLW8ZgrOjDi6g8mHH19yyU5E2A/64W3z6SMIf5XiUSQ=="],
 

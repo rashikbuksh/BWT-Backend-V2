@@ -26,8 +26,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.5",
-    "@hono/zod-openapi": "^0.19.6",
-    "@scalar/hono-api-reference": "^0.9.22",
+    "@hono/zod-openapi": "^0.19.10",
+    "@scalar/hono-api-reference": "^0.9.23",
     "@types/memory-cache": "^0.2.6",
     "@types/nodemailer": "^7.0.3",
     "bcrypt-ts": "^7.1.0",
