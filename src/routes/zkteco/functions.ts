@@ -579,9 +579,9 @@ export async function addUserToDevice(
   cardno = '',
 ) {
   try {
-    if (!pin || !name) {
-      console.error('[add-user] PIN and name are required');
-      return { success: false, error: 'PIN and name are required' };
+    if (!name) {
+      console.error('[add-user] Name is required');
+      return { success: false, error: 'Name is required' };
     }
 
     // If no specific device serial number provided, send to all devices
@@ -596,6 +596,12 @@ export async function addUserToDevice(
 
     for (const deviceSn of devicesToUpdate) {
       try {
+        if (!pin) {
+          // Get next available PIN from the first device
+          pin = String(await getNextAvailablePin(deviceSn, '1', usersByDevice));
+          console.warn(`[add-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
+        }
+
         // Ensure queue exists for this device
         const queue = ensureQueue(deviceSn, commandQueue);
 
@@ -677,7 +683,8 @@ export async function addTemporaryUserToDevice(
   name: string,
   commandQueue: Map<string, string[]>,
   usersByDevice: Map<string, Map<string, any>>,
-  accessDurationMinutes: number,
+  start_date: Date,
+  end_date: Date,
   sn?: string,
   privilege = '0', // 0 = user, 1 = admin
   password = '',
@@ -685,14 +692,14 @@ export async function addTemporaryUserToDevice(
   timeZone = '1', // Time zone ID for access control (1-50 available)
 ) {
   try {
-    if (!pin || !name) {
-      console.error('[add-temp-user] PIN and name are required');
-      return { success: false, error: 'PIN and name are required' };
+    if (!name) {
+      console.error('[add-temp-user] Name is required');
+      return { success: false, error: 'Name is required' };
     }
 
-    if (accessDurationMinutes <= 0) {
-      console.error('[add-temp-user] Access duration must be greater than 0');
-      return { success: false, error: 'Access duration must be greater than 0 minutes' };
+    if (end_date <= start_date) {
+      console.error('[add-temp-user] End date must be greater than start date');
+      return { success: false, error: 'End date must be greater than start date' };
     }
 
     // If no specific device serial number provided, send to all devices
@@ -704,10 +711,15 @@ export async function addTemporaryUserToDevice(
     }
 
     const results = [];
-    const expiryTime = new Date(Date.now() + accessDurationMinutes * 60 * 1000);
+    const expiryTime = end_date;
 
     for (const deviceSn of devicesToUpdate) {
       try {
+        if (!pin || pin.trim() === '' || pin === null) {
+          // Get next available PIN from the first device
+          pin = String(await getNextAvailablePin(deviceSn, '1', usersByDevice));
+          console.warn(`[add-temp-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
+        }
         // Ensure queue exists for this device
         const queue = ensureQueue(deviceSn, commandQueue);
 
@@ -724,11 +736,11 @@ export async function addTemporaryUserToDevice(
         // Add user to device cache
         if (umap) {
           umap.set(pin, { pin, name, privilege, password, cardno, timeZone, temporary: true, expiryTime });
-          console.warn(`[add-temp-user] Added PIN ${pin} to device ${deviceSn} cache with expiry ${expiryTime.toISOString()}`);
+          console.warn(`[add-temp-user] Added PIN ${pin} to device ${deviceSn} cache with expiry ${expiryTime}`);
         }
 
         // Create time zone first (if not exists)
-        const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${timeZone}\tAlias=TempAccess${timeZone}\tStartTime=${formatDateTime(new Date())}\tEndTime=${formatDateTime(expiryTime)}`;
+        const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${timeZone}\tAlias=TempAccess${timeZone}\tStartTime=${start_date}\tEndTime=${expiryTime}`;
 
         // Create add user command with time zone restriction
         const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}\tTZ=${timeZone}`;
@@ -753,7 +765,7 @@ export async function addTemporaryUserToDevice(
             device: deviceSn,
             success: true,
             commands: [timeZoneCommand, addCommand],
-            expiryTime: expiryTime.toISOString(),
+            expiryTime,
           });
         }
         else {
@@ -762,29 +774,37 @@ export async function addTemporaryUserToDevice(
         }
 
         // Schedule automatic deletion
-        const timeoutId = setTimeout(async () => {
-          console.warn(`[add-temp-user] Auto-deleting expired user PIN ${pin} from device ${deviceSn}`);
+        const timeUntilExpiry = expiryTime.getTime() - start_date.getTime();
 
-          try {
-            await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
-            // Clean up temporary user record
-            const tempKey = `${pin}-${deviceSn}`;
-            temporaryUsers.delete(tempKey);
-            console.warn(`[add-temp-user] Successfully auto-deleted expired user PIN ${pin} from device ${deviceSn}`);
-          }
-          catch (error) {
-            console.error(`[add-temp-user] Failed to auto-delete expired user PIN ${pin} from device ${deviceSn}:`, error);
-          }
-        }, accessDurationMinutes * 60 * 1000);
+        // Only set timeout if expiry is in the future
+        if (timeUntilExpiry > 0) {
+          const timeoutId = setTimeout(async () => {
+            console.warn(`[add-temp-user] Auto-deleting expired user PIN ${pin} from device ${deviceSn}`);
 
-        // Store temporary user info for tracking
-        const tempKey = `${pin}-${deviceSn}`;
-        temporaryUsers.set(tempKey, {
-          pin,
-          deviceSn,
-          expiryTime,
-          timeoutId,
-        });
+            try {
+              await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
+              // Clean up temporary user record
+              const tempKey = `${pin}-${deviceSn}`;
+              temporaryUsers.delete(tempKey);
+              console.warn(`[add-temp-user] Successfully auto-deleted expired user PIN ${pin} from device ${deviceSn}`);
+            }
+            catch (error) {
+              console.error(`[add-temp-user] Failed to auto-delete expired user PIN ${pin} from device ${deviceSn}:`, error);
+            }
+          }, timeUntilExpiry);
+
+          // Store temporary user info for tracking
+          const tempKey = `${pin}-${deviceSn}`;
+          temporaryUsers.set(tempKey, {
+            pin,
+            deviceSn,
+            expiryTime,
+            timeoutId,
+          });
+        }
+        else {
+          console.warn(`[add-temp-user] Expiry time is in the past for PIN ${pin} on device ${deviceSn}, not scheduling deletion`);
+        }
       }
       catch (error) {
         console.error(`[add-temp-user] Error processing device ${deviceSn}:`, error);
@@ -801,8 +821,8 @@ export async function addTemporaryUserToDevice(
       success: successCount > 0,
       pin,
       name,
-      accessDurationMinutes,
-      expiryTime: expiryTime.toISOString(),
+      start_date,
+      expiryTime,
       devicesProcessed: devicesToUpdate.length,
       successCount,
       failureCount,
@@ -890,16 +910,4 @@ export function getTemporaryUsers() {
   }
 
   return activeUsers;
-}
-
-// Helper function to format date time for ZKTeco commands
-function formatDateTime(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }

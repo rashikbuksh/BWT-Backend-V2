@@ -28,21 +28,42 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const api = createApi(c);
 
-  const syncToDevice = api.post(
-    `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}`,
-  );
+  if (value.permission_type === 'temporary') {
+    // For temporary permissions, ensure temporary dates are provided
+    const syncToDevice = api.post(
+      `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}&temporary=true&from=${value.temporary_from_date}&to=${value.temporary_to_date}`,
+    );
 
-  await syncToDevice.then((response) => {
-    console.warn(response, ' response from sync to device');
-    if (response.status === HSCode.OK) {
-      console.warn(`[hr-device-permission] Successfully synced employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
-    }
-    else {
-      console.error(`[hr-device-permission] Failed to sync employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
-    }
-  }).catch((error) => {
-    console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
-  });
+    await syncToDevice.then((response) => {
+      console.warn(response, ' response from sync to device');
+      if (response.status === HSCode.OK) {
+        console.warn(`[hr-device-permission] Successfully synced employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
+      }
+      else {
+        console.error(`[hr-device-permission] Failed to sync employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
+      }
+    }).catch((error) => {
+      console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
+    });
+  }
+
+  else {
+    const syncToDevice = api.post(
+      `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}&temporary=false`,
+    );
+
+    await syncToDevice.then((response) => {
+      console.warn(response, ' response from sync to device');
+      if (response.status === HSCode.OK) {
+        console.warn(`[hr-device-permission] Successfully synced employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
+      }
+      else {
+        console.error(`[hr-device-permission] Failed to sync employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
+      }
+    }).catch((error) => {
+      console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
+    });
+  }
 
   const [data] = await db.insert(device_permission).values(value).returning({
     name: device_permission.uuid,
@@ -293,12 +314,13 @@ export const getNotAssignedEmployeeForPermissionByDeviceListUuid: AppRouteHandle
 };
 
 export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
-  const { employee_uuid, sn } = c.req.valid('query');
+  const { employee_uuid, sn, temporary, from, to } = c.req.valid('query');
 
   console.warn(employee_uuid, ' employee_uuid');
 
   const userInfo = await db.select({
     name: users.name,
+    id: users.id,
   })
     .from(users)
     .leftJoin(employee, eq(users.uuid, employee.user_uuid))
@@ -316,55 +338,83 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
   const requestBody = { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] };
   console.warn(`[hr-device-permission] Sending request to add user bulk:`, JSON.stringify(requestBody, null, 2));
 
-  const response = await api.post(
-    `/iclock/add/user/bulk?sn=${sn}`,
-    requestBody,
-  );
+  let response = null;
+  let pin = null;
 
-  console.warn(`[hr-device-permission] Raw response from add user bulk:`, JSON.stringify(response, null, 2));
+  if (temporary === 'false') {
+    response = await api.post(
+      `/iclock/add/user/bulk?sn=${sn}`,
+      requestBody,
+    );
 
-  // Wait a moment for device to process the user addition, then refresh user list
-  setTimeout(async () => {
-    try {
-      console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
-      await api.post(`/iclock/device/refresh-users?sn=${sn}`, {});
+    console.warn(`[hr-device-permission] Raw response from add user bulk:`, JSON.stringify(response, null, 2));
+
+    // Wait a moment for device to process the user addition, then refresh user list
+    setTimeout(async () => {
+      try {
+        console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
+        await api.post(`/iclock/device/refresh-users?sn=${sn}`, {});
+      }
+      catch (error) {
+        console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
+      }
+    }, 3000); // Wait 3 seconds
+
+    // Check if response and response.data exist
+    if (!response || !response.data) {
+      console.error(`[hr-device-permission] Invalid response structure:`, response);
+      return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Invalid response from device.`), HSCode.INTERNAL_SERVER_ERROR);
     }
-    catch (error) {
-      console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
+
+    // Check if processedUsers exists and has at least one item
+    if (!response.data.processedUsers || !Array.isArray(response.data.processedUsers) || response.data.processedUsers.length === 0) {
+      console.error(`[hr-device-permission] No processed users in response:`, response.data);
+      return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No users were processed.`), HSCode.INTERNAL_SERVER_ERROR);
     }
-  }, 3000); // Wait 3 seconds
 
-  // Check if response and response.data exist
-  if (!response || !response.data) {
-    console.error(`[hr-device-permission] Invalid response structure:`, response);
-    return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Invalid response from device.`), HSCode.INTERNAL_SERVER_ERROR);
+    const processedUser = response.data.processedUsers[0];
+
+    // Check if the processed user has a pin
+    if (!processedUser || typeof processedUser.pin === 'undefined') {
+      console.error(`[hr-device-permission] No PIN assigned to processed user:`, processedUser);
+      return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No PIN was assigned.`), HSCode.INTERNAL_SERVER_ERROR);
+    }
+
+    pin = processedUser.pin;
   }
+  else {
+    response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, {
+      sn,
+      name: userInfo[0].name,
+      start_date: from,
+      end_date: to,
+      privilege: '0',
+      timeZone: userInfo[0].id.toString(),
+    });
 
-  // Check if processedUsers exists and has at least one item
-  if (!response.data.processedUsers || !Array.isArray(response.data.processedUsers) || response.data.processedUsers.length === 0) {
-    console.error(`[hr-device-permission] No processed users in response:`, response.data);
-    return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No users were processed.`), HSCode.INTERNAL_SERVER_ERROR);
+    if (response && response.data && response.data.success === true) {
+      pin = response.data.pin;
+    }
+    else {
+      console.error(`[hr-device-permission] Failed to add temporary user to device:`, response && response.data);
+      const errorMessage = response && response.data && response.data.error
+        ? response.data.error
+        : 'Unknown error occurred';
+      return c.json(createToast('error', `${userInfo[0].name} not synced to ${sn}: ${errorMessage}`), HSCode.PRECONDITION_FAILED);
+    }
   }
-
-  const processedUser = response.data.processedUsers[0];
-
-  // Check if the processed user has a pin
-  if (!processedUser || typeof processedUser.pin === 'undefined') {
-    console.error(`[hr-device-permission] No PIN assigned to processed user:`, processedUser);
-    return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No PIN was assigned.`), HSCode.INTERNAL_SERVER_ERROR);
-  }
-
-  const pin = processedUser.pin;
 
   // Check if the operation was successful
-  if (response.data.ok === true && pin) {
+  if (response && response.data.ok === true && pin) {
     console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with PIN=${pin}`);
 
     try {
-      const _employeeUpdate = await db.update(employee)
+      const employeeUpdate = db.update(employee)
         .set({ pin })
         .where(eq(employee.uuid, employee_uuid))
         .returning();
+
+      await employeeUpdate;
 
       console.warn(`[hr-device-permission] Updated employee ${employee_uuid} with PIN=${pin}`);
 
@@ -377,13 +427,13 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
   }
   else {
     console.error(`[hr-device-permission] Failed to sync user to device:`, {
-      ok: response.data.ok,
+      ok: response && response.data.ok,
       pin,
-      errors: response.data.errors || 'No errors provided',
-      response: response.data,
+      errors: (response && response.data.errors) || 'No errors provided',
+      response: response && response.data,
     });
 
-    const errorMessage = response.data.errors && response.data.errors.length > 0
+    const errorMessage = response && response.data.errors && response.data.errors.length > 0
       ? response.data.errors[0].error
       : 'Unknown error occurred';
 

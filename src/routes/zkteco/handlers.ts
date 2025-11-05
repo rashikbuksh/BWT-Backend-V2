@@ -1102,7 +1102,7 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
 
 export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = async (c: any) => {
   const { sn } = c.req.valid('query');
-  const { pin, name, accessDurationMinutes, privilege = '0', password = '', cardno = '', timeZone = '1' } = c.req.valid('json');
+  const { pin = null, name, start_date, end_date, privilege = '0', password = '', cardno = '', timeZone = '1' } = c.req.valid('json');
 
   try {
     const { addTemporaryUserToDevice } = await import('./functions');
@@ -1112,7 +1112,8 @@ export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = a
       name,
       commandQueue,
       usersByDevice,
-      accessDurationMinutes,
+      start_date,
+      end_date,
       sn,
       privilege,
       password,
@@ -1121,7 +1122,7 @@ export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = a
     );
 
     if (result.success) {
-      return c.json(result);
+      return c.json(result, 200);
     }
     else {
       return c.json(result, 400);
