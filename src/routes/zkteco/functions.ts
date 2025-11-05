@@ -783,6 +783,10 @@ export async function addTemporaryUserToDevice(
 
             try {
               await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
+
+              await db.update(employee)
+                .set({ pin: null })
+                .where(eq(employee.pin, pin));
               // Clean up temporary user record
               const tempKey = `${pin}-${deviceSn}`;
               temporaryUsers.delete(tempKey);
