@@ -24,7 +24,7 @@ export function ObjectNotFound(c: Context) {
   );
 }
 interface Toast {
-  type: 'create' | 'update' | 'delete' | 'error' | 'sent';
+  type: 'create' | 'update' | 'delete' | 'error' | 'sent' | 'warning';
   message: string | number;
 }
 
@@ -62,7 +62,12 @@ export function createToast(toastType: Toast['type'], message: Toast['message'])
     case 'sent':
       return {
         toastType,
-        message: `${message} sent successfully`,
+        message: `${message}`,
+      };
+    case 'warning':
+      return {
+        toastType,
+        message: `${message}`,
       };
   }
 }

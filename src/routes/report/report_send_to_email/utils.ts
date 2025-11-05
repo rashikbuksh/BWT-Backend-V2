@@ -11,10 +11,22 @@ export const mySchema = z.object({
   }),
 });
 
-// You can then create your variations from this base
 export const insertSchema = mySchema.required();
 
 export const patchSchema = mySchema.partial();
 
-// And the select schema is just the base schema
 export const selectSchema = mySchema;
+
+export const bulkInsertSchema = z.object({
+  names: z.array(z.string().min(1).max(100)),
+  emails: z.array(z.string().email()),
+  reports: z.array(z.any().openapi({
+    type: 'string',
+    format: 'binary',
+    description: 'Report files to upload',
+  })),
+}).refine(data =>
+  data.names.length === data.emails.length
+  && data.names.length === data.reports.length, {
+  message: 'All arrays must have the same length',
+});
