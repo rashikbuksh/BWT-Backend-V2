@@ -22,7 +22,13 @@ export const getRequest = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'The cdata retrieved'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        timestamp: z.string(),
+      }),
+      'The cdata retrieved',
+    ),
   },
 });
 
@@ -50,7 +56,13 @@ export const post = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'The cdata accepted'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        timestamp: z.string(),
+      }),
+      'The cdata accepted',
+    ),
   },
 });
 
@@ -66,7 +78,13 @@ export const connectionTest = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Connection test successful'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        status: z.string(),
+      }),
+      'Connection test successful',
+    ),
   },
 });
 
@@ -82,7 +100,13 @@ export const iclockRoot = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'iClock server ready'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        ready: z.boolean(),
+      }),
+      'iClock server ready',
+    ),
   },
 });
 
@@ -97,7 +121,14 @@ export const deviceHealth = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'The device health status'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        status: z.string(),
+        deviceSN: z.string().optional(),
+        health: z.string(),
+      }),
+      'The device health status',
+    ),
   },
 });
 
@@ -125,7 +156,14 @@ export const addBulkUsers = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'The bulk users accepted'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        usersProcessed: z.number(),
+        timestamp: z.string(),
+      }),
+      'The bulk users accepted',
+    ),
   },
 });
 
