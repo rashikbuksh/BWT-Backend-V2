@@ -321,7 +321,8 @@ export const addTemporaryUser = createRoute({
     body: jsonContent(z.object({
       pin: z.string().describe('User PIN number'),
       name: z.string().describe('User name'),
-      accessDurationMinutes: z.number().min(1).describe('Access duration in minutes'),
+      start_date: z.string().describe('Access start date-time in ISO 8601 format'),
+      end_date: z.string().describe('Access end date-time in ISO 8601 format'),
       privilege: z.string().optional().default('0').describe('User privilege (0=user, 1=admin)'),
       password: z.string().optional().default('').describe('User password'),
       cardno: z.string().optional().default('').describe('Card number'),
