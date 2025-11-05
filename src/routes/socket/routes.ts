@@ -94,7 +94,7 @@ export const sendNotification = createRoute({
         target_type: z.enum(['user', 'room']).openapi({ example: 'user' }),
         target_id: z.string().openapi({ example: 'user_123' }),
         event: z.string().openapi({ example: 'new_message' }),
-        data: z.record(z.unknown()).openapi({ example: { message: 'Hello!' } }),
+        data: z.any(),
       }),
       'Notification data',
     ),
@@ -104,7 +104,7 @@ export const sendNotification = createRoute({
       z.object({
         message: z.string(),
         event: z.string(),
-        data: z.record(z.unknown()),
+        data: z.any(),
       }),
       'Notification sent',
     ),
