@@ -74,11 +74,6 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     return true;
   }
 
-  // Check for OpenAPI documentation routes
-  if (url.startsWith('/reference') || url.startsWith('/doc')) {
-    return true;
-  }
-
   if (url.startsWith('/iclock')) {
     return true;
   }
