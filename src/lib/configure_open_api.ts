@@ -1,5 +1,5 @@
 import env from '@/env';
-import { Scalar } from '@scalar/hono-api-reference';
+import { apiReference } from '@scalar/hono-api-reference';
 
 import type { AppOpenAPI } from './types';
 
@@ -24,7 +24,7 @@ export function configureOpenAPI(app: AppOpenAPI, openapiPath = '/reference', do
 
   app.get(
     `${openapiPath}`,
-    Scalar({
+    apiReference({
       url: `${docPath}`,
       theme: 'deepSpace',
       pageTitle: packageJSON.name,

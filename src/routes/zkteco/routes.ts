@@ -179,7 +179,14 @@ export const getRequest_legacy = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Commands for device'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        commands: z.array(z.string()),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'Commands for device',
+    ),
   },
 });
 
@@ -204,7 +211,14 @@ export const deviceCmd = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Device command processed'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        commandsProcessed: z.array(z.string()).optional(),
+        timestamp: z.string(),
+      }),
+      'Device command processed',
+    ),
   },
 });
 
@@ -225,7 +239,15 @@ export const customCommand = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'The custom command accepted'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        command: z.string(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'The custom command accepted',
+    ),
   },
 });
 
@@ -240,7 +262,15 @@ export const clearCommandQueue = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Command queue cleared'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        queueCleared: z.boolean(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'Command queue cleared',
+    ),
   },
 });
 
@@ -255,7 +285,15 @@ export const getQueueStatus = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Queue status retrieved'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        queueLength: z.number(),
+        pendingCommands: z.array(z.string()),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'Queue status retrieved',
+    ),
   },
 });
 
@@ -270,7 +308,15 @@ export const refreshUsers = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'User refresh initiated'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        refreshInitiated: z.boolean(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'User refresh initiated',
+    ),
   },
 });
 
@@ -285,7 +331,15 @@ export const deleteUser = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Queue status retrieved'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        userDeleted: z.boolean(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'User deletion processed',
+    ),
   },
 });
 
@@ -300,7 +354,15 @@ export const syncAttendanceLogs = createRoute({
   },
   tags,
   responses: {
-    [HSCode.OK]: jsonContent({}, 'Queue status retrieved'),
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        logsSynced: z.number(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'Attendance logs sync completed',
+    ),
   },
 });
 
