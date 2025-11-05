@@ -206,6 +206,7 @@ export const getEmployeeSalaryDetailsByYearDate: AppRouteHandler<GetEmployeeSala
                 emp_sum.department,
                 emp_sum.start_date,
                 emp_sum.profile_picture,
+                emp_sum.email,
                 COALESCE(total_increment.total_salary_increment, 0)::float8 AS total_incremented_salary,
                 COALESCE(attendance_summary.present_days, 0)::float8 AS present_days,
                 COALESCE(attendance_summary.late_days, 0)::float8 AS late_days,

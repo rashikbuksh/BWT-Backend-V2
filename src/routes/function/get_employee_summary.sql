@@ -4,14 +4,16 @@ CREATE OR REPLACE FUNCTION hr.get_employee_summary(p_employee_uuid text DEFAULT 
         designation text,
         department text,
         start_date date,
-        profile_picture text
+        profile_picture text,
+        email text
     ) AS $$
 SELECT e.uuid::uuid,
     u.name,
     des.designation,
     dep.department,
     e.start_date::date,
-    e.profile_picture
+    e.profile_picture,
+    u.email
 FROM hr.employee e
     LEFT JOIN hr.users u ON e.user_uuid = u.uuid
     LEFT JOIN hr.designation des ON u.designation_uuid = des.uuid
