@@ -316,6 +316,24 @@ app.get('/socket.io/socket.io.js', async (c) => {
   }
 });
 
+// Debug endpoint for OpenAPI status
+app.get('/openapi-status', (c) => {
+  return c.json({
+    openapi_configured: true,
+    doc_url: '/doc',
+    reference_url: '/reference',
+    environment: env.NODE_ENV,
+    server_urls: [
+      { url: env.SERVER_URL, description: 'Dev' },
+      { url: env.PRODUCTION_URL, description: 'Prod' },
+      { url: env.PRODUCTION_URL_2, description: 'Local' },
+    ],
+    public_routes_configured: true,
+    cors_configured: true,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Socket.IO status endpoint (outside v1 path)
 app.get('/socket-status', (c) => {
   try {
@@ -889,6 +907,26 @@ app.get('/socket-test', (c) => {
 });
 
 app.use(`${basePath}/*`, cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
+
+// Add CORS support for OpenAPI documentation routes
+app.use('/reference', cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
+
+app.use('/doc', cors({
+  origin: ALLOWED_ROUTES,
+  maxAge: 600,
+  credentials: true,
+}));
+
+// Add CORS support for debug endpoints
+app.use('/openapi-status', cors({
   origin: ALLOWED_ROUTES,
   maxAge: 600,
   credentials: true,
