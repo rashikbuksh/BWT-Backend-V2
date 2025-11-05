@@ -4,7 +4,11 @@ import { z } from 'zod';
 export const mySchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
-  report: z.instanceof(File),
+  report: z.string().openapi({
+    type: 'string',
+    format: 'binary',
+    description: 'Report file to upload (PDF, Excel, etc.)',
+  }),
 });
 
 // You can then create your variations from this base
