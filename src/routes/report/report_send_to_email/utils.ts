@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const mySchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
-  report: z.string(),
+  report: z.instanceof(File),
 });
 
 // You can then create your variations from this base
