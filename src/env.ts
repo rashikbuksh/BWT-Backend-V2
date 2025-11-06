@@ -33,6 +33,8 @@ const EnvSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_EMAIL: z.string().default('jobayer@fortunezip.com'),
   SMTP_PASSWORD: z.string().default('flyd rmjn lwzw dkuq'),
+  DEPARTMENT_NAME: z.string().default('BWT Finance Department'),
+  SUPPORT_EMAIL: z.string().default('support@bwt.com'),
 });
 
 export type env = z.infer<typeof EnvSchema>;

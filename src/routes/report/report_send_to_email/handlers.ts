@@ -123,7 +123,7 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
 
   (async () => {
     const info = await transporter.sendMail({
-      from: `BWT Finance Department <${env.SMTP_EMAIL}>`,
+      from: `${env.DEPARTMENT_NAME} <${env.SMTP_EMAIL}>`,
       to: userEmail,
       subject: 'Monthly Payment Slip',
       text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
@@ -159,7 +159,7 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
                         <p>This document serves as an official record of your payment for the current period.</p>
 
                         <p>If you have any questions, please contact our support team at 
-                          <a href="mailto:support@bwt.com" style="color:#004aad; text-decoration:none; font-weight:500;">support@bwt.com</a>.
+                          <a href="mailto:support@bwt.com" style="color:#004aad; text-decoration:none; font-weight:500;">${env.SUPPORT_EMAIL}</a>.
                         </p>
 
                         <br>
@@ -243,7 +243,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
         // console.log(`Sending email to ${userEmail} with attachment ${reportAttachment.filename}`);
 
         const info = await transporter.sendMail({
-          from: `BWT Finance Department <${env.SMTP_EMAIL}>`,
+          from: `${env.DEPARTMENT_NAME} <${env.SMTP_EMAIL}>`,
           to: userEmail,
           subject: 'Monthly Payment Slip',
           text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
@@ -279,7 +279,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
                                 <p>This document serves as an official record of your payment for the current period.</p>
 
                                 <p>If you have any questions, please contact our support team at 
-                                  <a href="mailto:support@bwt.com" style="color:#004aad; text-decoration:none; font-weight:500;">support@bwt.com</a>.
+                                  <a href="mailto:support@bwt.com" style="color:#004aad; text-decoration:none; font-weight:500;">${env.SUPPORT_EMAIL}</a>.
                                 </p>
 
                                 <br>
