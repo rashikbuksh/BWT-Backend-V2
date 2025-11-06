@@ -285,21 +285,26 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
 export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
   const formData = await c.req.formData(); // Use formData() instead of parseBody()
 
+  console.log('Received bulk report send to email request.');
+  console.log('FormData type:', formData);
   console.log('Raw form data entries:');
   for (const [key, value] of formData.entries()) {
-    console.log(`${key}:`, value);
+    console.log(`Key: ${key}, Value:`, value);
   }
-
   // Group form data by index
   const entries: Record<string, Record<string, any>> = {}; // Explicitly define the type
   for (const [key, value] of formData.entries()) {
-    const match = key.match(/(\d+)\.(.+)/);
+    console.log(`Processing key: ${key}, value:`, value); // Debugging log
+    const match = key.match(/(\d+)\.(.+)/); // Match keys like "0.email"
     if (match) {
       const index = match[1];
       const field = match[2];
       if (!entries[index])
         entries[index] = {};
       entries[index][field] = value;
+    }
+    else {
+      console.warn(`Key "${key}" does not match the expected pattern.`);
     }
   }
 
