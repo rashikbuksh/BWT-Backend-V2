@@ -214,6 +214,10 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
       const userName = formData.name;
       const file = formData.report;
 
+      console.log(`Processing email for ${userEmail}`);
+      console.log('File received:', file);
+      console.log('File type:', file ? file.type : 'No file');
+
       try {
         if (!file) {
           throw new Error('No report file provided');
@@ -228,6 +232,8 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
           content: buffer,
           contentType: file.type || 'application/pdf',
         };
+
+        console.log(`Sending email to ${userEmail} with attachment ${reportAttachment.filename}`);
 
         // Send email
         const info = await transporter.sendMail({
