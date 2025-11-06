@@ -44,26 +44,26 @@ export const bulkReportSendToEmail = createRoute({
   path: '/report/bulk-send-to-email',
   method: 'post',
   description: 'Send Bulk Reports to Emails',
-  // request: {
-  //   body: {
-  //     content: {
-  //       'multipart/form-data': {
-  //         schema: {
-  //           ...bulkInsertSchema,
-  //         },
-  //       },
-  //     },
-  //   },
-  // },
   request: {
     body: {
       content: {
         'multipart/form-data': {
-          schema: bulkInsertSchema,
+          schema: {
+            ...bulkInsertSchema,
+          },
         },
       },
     },
   },
+  // request: {
+  //   body: {
+  //     content: {
+  //       'multipart/form-data': {
+  //         schema: bulkInsertSchema,
+  //       },
+  //     },
+  //   },
+  // },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
