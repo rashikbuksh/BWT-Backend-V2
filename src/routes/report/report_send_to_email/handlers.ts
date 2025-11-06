@@ -287,28 +287,25 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
 
   console.log('Received bulk report send to email request.');
   console.log('FormData type:', formData);
-  console.log('Raw form data entries:');
+
+  // Process each FormData entry
+  const formDataArray: any[] = [];
   for (const [key, value] of formData.entries()) {
-    console.log(`Key: ${key}, Value:`, value);
-  }
-  // Group form data by index
-  const entries: Record<string, Record<string, any>> = {}; // Explicitly define the type
-  for (const [key, value] of formData.entries()) {
-    console.log(`Processing key: ${key}, value:`, value); // Debugging log
-    const match = key.match(/(\d+)\.(.+)/); // Match keys like "0.email"
-    if (match) {
-      const index = match[1];
-      const field = match[2];
-      if (!entries[index])
-        entries[index] = {};
-      entries[index][field] = value;
+    console.log(`Processing key: ${key}, value:`, value);
+
+    // Check if the value is a nested FormData object
+    if (value instanceof FormData) {
+      const entry: Record<string, any> = {};
+      for (const [nestedKey, nestedValue] of value.entries()) {
+        entry[nestedKey] = nestedValue;
+      }
+      formDataArray.push(entry);
     }
     else {
-      console.warn(`Key "${key}" does not match the expected pattern.`);
+      console.warn(`Value for key "${key}" is not a FormData object.`);
     }
   }
 
-  const formDataArray = Object.values(entries);
   console.log('Processed form data array:', formDataArray);
 
   // Rest of your email sending logic...
