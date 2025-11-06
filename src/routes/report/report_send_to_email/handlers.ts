@@ -196,9 +196,13 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
   const formDataObject = await c.req.parseBody();
 
   console.log('Raw form data object received:', formDataObject);
-  const formDataArray = Array.isArray(formDataObject) ? formDataObject : Object.values(formDataObject);
 
-  console.log('Received bulk form data:', formDataArray);
+  // Convert FormData to plain objects
+  const formDataArray = Array.isArray(formDataObject)
+    ? formDataObject.map(parseFormData)
+    : Object.values(formDataObject).map(parseFormData);
+
+  console.log('Parsed bulk form data:', formDataArray);
 
   const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
@@ -213,7 +217,6 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
   const results = await Promise.all(
     formDataArray.map(async (formData: any, index: number) => {
       try {
-        // Access plain object properties directly
         const userEmail = formData.email;
         const userName = formData.name;
         const file = formData.report;
@@ -225,7 +228,6 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
         console.log(`Processing email for ${userEmail}`);
         console.log('File received:', file.name);
 
-        // Convert file (Blob) to buffer
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
@@ -237,7 +239,6 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
 
         console.log(`Sending email to ${userEmail} with attachment ${reportAttachment.filename}`);
 
-        // Send email
         const info = await transporter.sendMail({
           from: `BWT Finance Department <${env.SMTP_EMAIL}>`,
           to: userEmail,
@@ -257,7 +258,6 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
     }),
   );
 
-  // Log results and return response
   const successCount = results.filter(result => result.success).length;
   const failureCount = results.length - successCount;
 
@@ -270,6 +270,14 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
   );
 };
 
+// Helper function to parse FormData into plain objects
+function parseFormData(formData: any): any {
+  const plainObject: any = {};
+  for (const [key, value] of formData.entries()) {
+    plainObject[key] = value;
+  }
+  return plainObject;
+}
 // export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
 //   const formDataObject = await c.req.parseBody();
 
