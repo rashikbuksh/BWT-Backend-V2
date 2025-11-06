@@ -194,6 +194,8 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
 
 export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
   const formDataObject = await c.req.parseBody();
+
+  console.log('Raw form data object received:', formDataObject);
   const formDataArray = Array.isArray(formDataObject) ? formDataObject : Object.values(formDataObject);
 
   console.log('Received bulk form data:', formDataArray);
