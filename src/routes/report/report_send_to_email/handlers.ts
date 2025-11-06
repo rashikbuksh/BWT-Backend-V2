@@ -215,8 +215,8 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
       const file = formData.report;
 
       console.log(`Processing email for ${userEmail}`);
-      console.log('File received:', file);
-      console.log('File type:', file ? file.type : 'No file');
+      console.log('File received:', file.type);
+      // console.log('File type:', file ? file.type : 'No file');
 
       try {
         if (!file) {
