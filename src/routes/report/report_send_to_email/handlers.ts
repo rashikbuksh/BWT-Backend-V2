@@ -197,10 +197,15 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
 
   console.log('Raw form data object received:', formDataObject);
 
-  // Convert the parsed body into an array of plain objects
-  const formDataArray = Array.isArray(formDataObject)
-    ? formDataObject.map(parseFormData)
-    : Object.values(formDataObject).map(parseFormData);
+  // Extract and pair employees with their reports
+  const formDataArray = Object.keys(formDataObject)
+    .filter(key => key.startsWith('employees'))
+    .map((key) => {
+      const index = key.match(/\d+/)?.[0]; // Extract the index from the key
+      const employee = JSON.parse(formDataObject[key]); // Parse the employee JSON
+      const report = formDataObject[`reports[${index}]`]; // Get the corresponding report
+      return { ...employee, report }; // Combine employee and report into one object
+    });
 
   console.log('Parsed bulk form data:', formDataArray);
 
@@ -217,9 +222,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
   const results = await Promise.all(
     formDataArray.map(async (formData: any, index: number) => {
       try {
-        const userEmail = formData.email;
-        const userName = formData.name;
-        const file = formData.report;
+        const { email: userEmail, name: userName, report: file } = formData;
 
         if (!file) {
           throw new Error(`No report file provided for ${userEmail || `unknown-email-${index}`}`);
@@ -244,7 +247,21 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
           to: userEmail,
           subject: 'Monthly Payment Slip',
           text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
-          html: `... (HTML content here) ...`,
+          html: `
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>Monthly Payment Slip</title>
+              </head>
+              <body>
+                <p>Dear ${userName},</p>
+                <p>Your monthly payment slip has been generated and is attached to this email.</p>
+                <p>Sincerely,<br>BWT Finance Department</p>
+              </body>
+            </html>
+          `,
           attachments: [reportAttachment],
         });
 
@@ -269,18 +286,6 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
     HSCode.OK,
   );
 };
-// Helper function to parse FormData into plain objects
-function parseFormData(formData: any): any {
-  const plainObject: any = {};
-  if (typeof formData === 'object' && formData !== null) {
-    for (const key in formData) {
-      if (Object.prototype.hasOwnProperty.call(formData, key)) {
-        plainObject[key] = formData[key];
-      }
-    }
-  }
-  return plainObject;
-}
 
 // export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
 //   const formData = await c.req.formData(); // Use formData() instead of parseBody()
