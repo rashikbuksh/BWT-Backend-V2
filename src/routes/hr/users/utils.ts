@@ -9,8 +9,8 @@ import { users } from '../schema';
 export const selectSchema = createSelectSchema(users);
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  pass: z.string().min(4).max(50),
+  email: z.string().email().openapi({ example: 'admin@bwt.com' }),
+  pass: z.string().min(4).max(50).openapi({ example: '1234' }),
 });
 
 // export const signinOutputSchema = z.object({

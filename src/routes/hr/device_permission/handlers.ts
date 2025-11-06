@@ -325,8 +325,6 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     .leftJoin(employee, eq(users.uuid, employee.user_uuid))
     .where(eq(employee.uuid, employee_uuid));
 
-  console.warn(userInfo, ' userInfo');
-
   const api = createApi(c);
 
   // Clear queue before adding user to prevent command conflicts
@@ -382,8 +380,9 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     pin = processedUser.pin;
   }
   else {
+    // Let the ZKTeco function automatically assign the next available PIN
     response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, {
-      sn,
+      // Don't pass pin - let the function auto-generate it
       name: userInfo[0].name,
       start_date: from,
       end_date: to,
@@ -393,12 +392,42 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
     if (response && response.data && response.data.success === true) {
       pin = response.data.pin;
+
+      // Wait a moment for device to process the user addition, then refresh user list
+      setTimeout(async () => {
+        try {
+          console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
+          await api.post(`/iclock/device/refresh-users?sn=${sn}`, {});
+        }
+        catch (error) {
+          console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
+        }
+      }, 3000); // Wait 3 seconds
     }
     else {
       console.error(`[hr-device-permission] Failed to add temporary user to device:`, response && response.data);
-      const errorMessage = response && response.data && response.data.error
-        ? response.data.error
-        : 'Unknown error occurred';
+
+      // Properly handle the error object
+      let errorMessage = 'Unknown error occurred';
+      if (response && response.data && response.data.error) {
+        if (typeof response.data.error === 'string') {
+          errorMessage = response.data.error;
+        }
+        else if (response.data.error.issues && Array.isArray(response.data.error.issues)) {
+          // Handle ZodError
+          const zodIssues = response.data.error.issues.map((issue: any) =>
+            `${issue.path?.join('.') || 'field'}: ${issue.message}`,
+          ).join(', ');
+          errorMessage = `Validation error: ${zodIssues}`;
+        }
+        else if (response.data.error.message) {
+          errorMessage = response.data.error.message;
+        }
+        else {
+          errorMessage = JSON.stringify(response.data.error);
+        }
+      }
+
       return c.json(createToast('error', `${userInfo[0].name} not synced to ${sn}: ${errorMessage}`), HSCode.PRECONDITION_FAILED);
     }
   }
