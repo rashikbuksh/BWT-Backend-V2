@@ -192,18 +192,121 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
   return c.json(createToast('sent', 'Monthly Payment slip sent to email successfully'), HSCode.OK);
 };
 
+// export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
+//   const formDataObject = await c.req.parseBody();
+
+//   console.log('Raw form data object received:', formDataObject);
+
+//   // Convert the parsed body into an array of plain objects
+//   const formDataArray = Array.isArray(formDataObject)
+//     ? formDataObject.map(parseFormData)
+//     : Object.values(formDataObject).map(parseFormData);
+
+//   console.log('Parsed bulk form data:', formDataArray);
+
+//   const transporter = nodemailer.createTransport({
+//     host: env.SMTP_HOST,
+//     port: env.SMTP_PORT,
+//     secure: false,
+//     auth: {
+//       user: env.SMTP_EMAIL,
+//       pass: env.SMTP_PASSWORD,
+//     },
+//   });
+
+//   const results = await Promise.all(
+//     formDataArray.map(async (formData: any, index: number) => {
+//       try {
+//         const userEmail = formData.email;
+//         const userName = formData.name;
+//         const file = formData.report;
+
+//         if (!file) {
+//           throw new Error(`No report file provided for ${userEmail || `unknown-email-${index}`}`);
+//         }
+
+//         console.log(`Processing email for ${userEmail}`);
+//         console.log('File received:', file.name);
+
+//         const arrayBuffer = await file.arrayBuffer();
+//         const buffer = Buffer.from(arrayBuffer);
+
+//         const reportAttachment = {
+//           filename: file.name || 'report.pdf',
+//           content: buffer,
+//           contentType: file.type || 'application/pdf',
+//         };
+
+//         console.log(`Sending email to ${userEmail} with attachment ${reportAttachment.filename}`);
+
+//         const info = await transporter.sendMail({
+//           from: `BWT Finance Department <${env.SMTP_EMAIL}>`,
+//           to: userEmail,
+//           subject: 'Monthly Payment Slip',
+//           text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
+//           html: `... (HTML content here) ...`,
+//           attachments: [reportAttachment],
+//         });
+
+//         console.log(`Message sent to ${userEmail}: ${info.messageId}`);
+//         return { success: true, email: userEmail, messageId: info.messageId };
+//       }
+//       catch (error: any) {
+//         console.error(`Failed to send email:`, error);
+//         return { success: false, error: error.message };
+//       }
+//     }),
+//   );
+
+//   const successCount = results.filter(result => result.success).length;
+//   const failureCount = results.length - successCount;
+
+//   return c.json(
+//     createToast(
+//       'sent',
+//       `${successCount} emails sent successfully, ${failureCount} failed.`,
+//     ),
+//     HSCode.OK,
+//   );
+// };
+// // Helper function to parse FormData into plain objects
+// function parseFormData(formData: any): any {
+//   const plainObject: any = {};
+//   if (typeof formData === 'object' && formData !== null) {
+//     for (const key in formData) {
+//       if (Object.prototype.hasOwnProperty.call(formData, key)) {
+//         plainObject[key] = formData[key];
+//       }
+//     }
+//   }
+//   return plainObject;
+// }
+
 export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
-  const formDataObject = await c.req.parseBody();
+  const formData = await c.req.formData(); // Use formData() instead of parseBody()
 
-  console.log('Raw form data object received:', formDataObject);
+  console.log('Raw form data entries:');
+  for (const [key, value] of formData.entries()) {
+    console.log(`${key}:`, value);
+  }
 
-  // Convert the parsed body into an array of plain objects
-  const formDataArray = Array.isArray(formDataObject)
-    ? formDataObject.map(parseFormData)
-    : Object.values(formDataObject).map(parseFormData);
+  // Group form data by index
+  const entries: Record<string, Record<string, any>> = {}; // Explicitly define the type
+  for (const [key, value] of formData.entries()) {
+    const match = key.match(/(\d+)\.(.+)/);
+    if (match) {
+      const index = match[1];
+      const field = match[2];
+      if (!entries[index])
+        entries[index] = {};
+      entries[index][field] = value;
+    }
+  }
 
-  console.log('Parsed bulk form data:', formDataArray);
+  const formDataArray = Object.values(entries);
+  console.log('Processed form data array:', formDataArray);
 
+  // Rest of your email sending logic...
   const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
@@ -226,10 +329,19 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
         }
 
         console.log(`Processing email for ${userEmail}`);
-        console.log('File received:', file.name);
 
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        // Handle file conversion
+        let buffer;
+        if (file instanceof File || file.arrayBuffer) {
+          const arrayBuffer = await file.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+        }
+        else if (file.buffer) {
+          buffer = file.buffer;
+        }
+        else {
+          throw new Error('Invalid file format');
+        }
 
         const reportAttachment = {
           filename: file.name || 'report.pdf',
@@ -252,7 +364,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
         return { success: true, email: userEmail, messageId: info.messageId };
       }
       catch (error: any) {
-        console.error(`Failed to send email:`, error);
+        console.error(`Failed to send email to index ${index}:`, error);
         return { success: false, error: error.message };
       }
     }),
@@ -269,114 +381,3 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
     HSCode.OK,
   );
 };
-// Helper function to parse FormData into plain objects
-function parseFormData(formData: any): any {
-  const plainObject: any = {};
-  if (typeof formData === 'object' && formData !== null) {
-    for (const key in formData) {
-      if (Object.prototype.hasOwnProperty.call(formData, key)) {
-        plainObject[key] = formData[key];
-      }
-    }
-  }
-  return plainObject;
-}
-
-// export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
-//   const formDataObject = await c.req.parseBody();
-
-//   // --- NEW LOGIC TO RE-HYDRATE THE ARRAY ---
-//   const usersMap = new Map<string, { name?: string; email?: string; report?: File }>();
-
-//   for (const [key, value] of Object.entries(formDataObject)) {
-//     const match = key.match(/^users\[(\d+)\]\.(name|email|report)$/);
-//     if (match) {
-//       const index = match[1]; // e.g., "0", "1"
-//       const field = match[2]; // e.g., "name", "email", "report"
-
-//       if (!usersMap.has(index)) {
-//         usersMap.set(index, {});
-//       }
-//       (usersMap.get(index) as any)[field] = value;
-//     }
-//   }
-
-//   // Convert the map to an array, ordered by index
-//   const formDataArray = Array.from(usersMap.entries())
-//     .sort(([indexA], [indexB]) => Number.parseInt(indexA) - Number.parseInt(indexB))
-//     .map(([, userObject]) => userObject);
-//   // --- END OF NEW LOGIC ---
-
-//   console.log('Received and parsed user data count:', formDataArray.length);
-
-//   const transporter = nodemailer.createTransport({
-//     host: env.SMTP_HOST,
-//     port: env.SMTP_PORT,
-//     secure: false,
-//     auth: {
-//       user: env.SMTP_EMAIL,
-//       pass: env.SMTP_PASSWORD,
-//     },
-//   });
-
-//   const results = await Promise.all(
-//     // Now, 'formData' is an object: { name, email, report }
-//     formDataArray.map(async (formData, index: number) => {
-//       try {
-//         // --- THIS PART IS NOW FIXED ---
-//         const userEmail = formData.email;
-//         const userName = formData.name;
-//         const file = formData.report; // This is a File object
-//         // ---
-
-//         if (!file || !userEmail || !userName) {
-//           throw new Error(`Incomplete data for user at index ${index}`);
-//         }
-
-//         console.log(`Processing email for ${userEmail}`);
-//         console.log('File received:', file.name);
-
-//         // Convert file to buffer
-//         const arrayBuffer = await file.arrayBuffer();
-//         const buffer = Buffer.from(arrayBuffer);
-
-//         const reportAttachment = {
-//           filename: file.name || 'report.pdf', // File.name will be correct now
-//           content: buffer,
-//           contentType: file.type || 'application/pdf',
-//         };
-
-//         console.log(`Sending email to ${userEmail} with attachment ${reportAttachment.filename}`);
-
-//         // Send email (Your HTML and transporter logic is fine)
-//         const info = await transporter.sendMail({
-//           from: `BWT Finance Department <${env.SMTP_EMAIL}>`,
-//           to: userEmail,
-//           subject: 'Monthly Payment Slip',
-//           text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
-//           html: `... (Your HTML here) ...`, // Your HTML email
-//           attachments: [reportAttachment],
-//         });
-
-//         console.log(`Message sent to ${userEmail}: ${info.messageId}`);
-//         return { success: true, email: userEmail, messageId: info.messageId };
-//       }
-//       catch (error: any) {
-//         console.error(`Failed to send email:`, error);
-//         return { success: false, error: error.message, email: formData.email || `unknown-${index}` };
-//       }
-//     }),
-//   );
-
-//   // Log results and return response
-//   const successCount = results.filter(result => result.success).length;
-//   const failureCount = results.length - successCount;
-
-//   return c.json(
-//     createToast(
-//       'sent',
-//       `${successCount} emails sent successfully, ${failureCount} failed.`,
-//     ),
-//     HSCode.OK,
-//   );
-// };
