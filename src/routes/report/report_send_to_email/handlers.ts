@@ -211,13 +211,13 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
   const results = await Promise.all(
     formDataArray.map(async (formData: any, index: number) => {
       try {
-        // Parse the FormData object manually
-        const userEmail = formData?.email || `unknown-email-${index}`;
-        const userName = formData?.name || `Unknown User ${index}`;
-        const file = formData?.report;
+        // Manually parse the FormData object
+        const userEmail = formData.get('email');
+        const userName = formData.get('name');
+        const file = formData.get('report');
 
         if (!file) {
-          throw new Error(`No report file provided for ${userEmail}`);
+          throw new Error(`No report file provided for ${userEmail || `unknown-email-${index}`}`);
         }
 
         console.log(`Processing email for ${userEmail}`);
