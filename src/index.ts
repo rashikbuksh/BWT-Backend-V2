@@ -70,7 +70,7 @@ import env from './env';
 const port = env.PORT;
 const topic = 'anonymous-chat-room';
 
-// Add WebSocket route
+// Add WebSocket route from BUN
 app.get(
   '/ws',
   upgradeWebSocket(_ => ({
