@@ -419,7 +419,7 @@ export const addTemporaryUser = createRoute({
       sn: z.string().optional().describe('Specific device serial number (optional)'),
     }),
     body: jsonContent(z.object({
-      pin: z.string().describe('User PIN number'),
+      pin: z.string().optional().describe('User PIN number (will be auto-generated if not provided)'),
       name: z.string().describe('User name'),
       start_date: z.string().describe('Access start date-time in ISO 8601 format'),
       end_date: z.string().describe('Access end date-time in ISO 8601 format'),

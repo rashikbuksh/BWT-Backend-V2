@@ -1102,18 +1102,44 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
 
 export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = async (c: any) => {
   const { sn } = c.req.valid('query');
-  const { pin = null, name, start_date, end_date, privilege = '0', password = '', cardno = '', timeZone = '1' } = c.req.valid('json');
+  const { pin, name, start_date, end_date, privilege = '0', password = '', cardno = '', timeZone = '1' } = c.req.valid('json');
 
   try {
+    // Validate and convert date strings to Date objects
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    // Check if dates are valid
+    if (Number.isNaN(startDate.getTime())) {
+      return c.json({
+        success: false,
+        error: 'Invalid start_date format. Expected ISO 8601 format (e.g., 2024-01-01T10:00:00Z)',
+      }, 400);
+    }
+
+    if (Number.isNaN(endDate.getTime())) {
+      return c.json({
+        success: false,
+        error: 'Invalid end_date format. Expected ISO 8601 format (e.g., 2024-01-01T18:00:00Z)',
+      }, 400);
+    }
+
+    if (endDate <= startDate) {
+      return c.json({
+        success: false,
+        error: 'End date must be greater than start date',
+      }, 400);
+    }
+
     const { addTemporaryUserToDevice } = await import('./functions');
 
     const result = await addTemporaryUserToDevice(
-      pin,
+      pin || '', // Pass empty string if pin is undefined, function will handle it
       name,
       commandQueue,
       usersByDevice,
-      start_date,
-      end_date,
+      startDate,
+      endDate,
       sn,
       privilege,
       password,

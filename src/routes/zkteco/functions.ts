@@ -596,10 +596,19 @@ export async function addUserToDevice(
 
     for (const deviceSn of devicesToUpdate) {
       try {
-        if (!pin) {
-          // Get next available PIN from the first device
+        // Always get next available PIN to avoid conflicts, unless pin is explicitly provided and valid
+        if (!pin || pin.trim() === '' || pin === null) {
           pin = String(await getNextAvailablePin(deviceSn, '1', usersByDevice));
           console.warn(`[add-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
+        }
+        else {
+          // Check if provided PIN is already in use and get next available if needed
+          const umap = ensureUserMap(deviceSn, usersByDevice);
+          if (umap?.has(pin)) {
+            const originalPin = pin;
+            pin = String(await getNextAvailablePin(deviceSn, pin, usersByDevice));
+            console.warn(`[add-user] PIN ${originalPin} already in use, assigned next available PIN ${pin} for device ${deviceSn}`);
+          }
         }
 
         // Ensure queue exists for this device
@@ -715,11 +724,21 @@ export async function addTemporaryUserToDevice(
 
     for (const deviceSn of devicesToUpdate) {
       try {
+        // Always get next available PIN to avoid conflicts, unless pin is explicitly provided and valid
         if (!pin || pin.trim() === '' || pin === null) {
-          // Get next available PIN from the first device
           pin = String(await getNextAvailablePin(deviceSn, '1', usersByDevice));
           console.warn(`[add-temp-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
         }
+        else {
+          // Check if provided PIN is already in use and get next available if needed
+          const umap = ensureUserMap(deviceSn, usersByDevice);
+          if (umap?.has(pin)) {
+            const originalPin = pin;
+            pin = String(await getNextAvailablePin(deviceSn, pin, usersByDevice));
+            console.warn(`[add-temp-user] PIN ${originalPin} already in use, assigned next available PIN ${pin} for device ${deviceSn}`);
+          }
+        }
+
         // Ensure queue exists for this device
         const queue = ensureQueue(deviceSn, commandQueue);
 
