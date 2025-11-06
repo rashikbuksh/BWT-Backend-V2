@@ -211,9 +211,9 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
   const results = await Promise.all(
     formDataArray.map(async (formData: any) => {
       try {
-        const userEmail = formData.get('email');
-        const userName = formData.get('name');
-        const file = formData.get('report');
+        const userEmail = formData.email;
+        const userName = formData.name;
+        const file = formData.report;
 
         console.log(`Processing email for ${userEmail}`);
         console.log('File received:', file.type);
