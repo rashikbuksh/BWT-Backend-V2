@@ -197,7 +197,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
 
   console.log('Raw form data object received:', formDataObject);
 
-  // Convert FormData to plain objects
+  // Convert the parsed body into an array of plain objects
   const formDataArray = Array.isArray(formDataObject)
     ? formDataObject.map(parseFormData)
     : Object.values(formDataObject).map(parseFormData);
@@ -269,15 +269,19 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
     HSCode.OK,
   );
 };
-
 // Helper function to parse FormData into plain objects
 function parseFormData(formData: any): any {
   const plainObject: any = {};
-  for (const [key, value] of formData.entries()) {
-    plainObject[key] = value;
+  if (typeof formData === 'object' && formData !== null) {
+    for (const key in formData) {
+      if (Object.prototype.hasOwnProperty.call(formData, key)) {
+        plainObject[key] = formData[key];
+      }
+    }
   }
   return plainObject;
 }
+
 // export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
 //   const formDataObject = await c.req.parseBody();
 
