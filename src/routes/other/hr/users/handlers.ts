@@ -246,46 +246,69 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     filters.push(eq(hrSchema.users.uuid, user_uuid));
   }
 
-  const query = db
-    .select({
-      value: hrSchema.users.uuid,
-      label:
-        type === 'customer' || type === 'web'
-          ? sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone})`
-          : department === 'engineer'
-            ? sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone}, 
-            ' (', 'Work In Hand: ', (COUNT(${receivedTrue})::float8 + COUNT(${diagnosisTrue})::float8 + COUNT(${repairTrue})::float8), ')')`
-            : hrSchema.users.name,
-      ...((type === 'customer' || type === 'web') && {
-        zone_uuid: sql`MAX(${workSchema.info.zone_uuid})`,
-        zone_name: sql`MAX(${workSchema.zone.name})`,
-        location: sql`MAX(${workSchema.info.location})`,
-        user_type: sql`MAX(${hrSchema.users.user_type})`,
-      }),
-      received_count: sql`COUNT(${receivedTrue})::float8`,
-      diagnosis_count: sql`COUNT(${diagnosisTrue})::float8`,
-      repair_count: sql`COUNT(${repairTrue})::float8`,
-    })
-    .from(hrSchema.users)
-    .leftJoin(hrSchema.designation, eq(hrSchema.users.designation_uuid, hrSchema.designation.uuid))
-    .leftJoin(hrSchema.department, eq(hrSchema.users.department_uuid, hrSchema.department.uuid))
-    .leftJoin(workSchema.info, eq(hrSchema.users.uuid, workSchema.info.user_uuid))
-    .leftJoin(workSchema.order, eq(workSchema.info.uuid, workSchema.order.info_uuid))
-    .leftJoin(engineerOrder, eq(engineerOrder.engineer_uuid, hrSchema.users.uuid))
-    .leftJoin(engineerWorkInfo, eq(engineerWorkInfo.uuid, engineerOrder.info_uuid))
-    .leftJoin(engineerDeliveryChallanEntry, eq(engineerDeliveryChallanEntry.order_uuid, engineerOrder.uuid))
-    .leftJoin(engineerDeliveryChallan, eq(engineerDeliveryChallanEntry.challan_uuid, engineerDeliveryChallan.uuid))
-    .leftJoin(workSchema.zone, eq(workSchema.info.zone_uuid, workSchema.zone.uuid))
-    .leftJoin(deliverySchema.challan, eq(hrSchema.users.uuid, deliverySchema.challan.customer_uuid))
-    .leftJoin(hrSchema.employee, eq(hrSchema.users.uuid, hrSchema.employee.user_uuid))
-    .where(filters.length > 0 ? and(...filters) : undefined)
-    .groupBy(
-      hrSchema.users.uuid,
-      hrSchema.users.name,
-      hrSchema.users.phone,
-    );
+  let data;
 
-  const data = await query;
+  if (department === 'engineer') {
+    // Engineer-specific query with work counts
+    const engineerQuery = db
+      .select({
+        value: hrSchema.users.uuid,
+        label: sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone}, 
+            ' (', 'Work In Hand: ', (COUNT(${receivedTrue})::float8 + COUNT(${diagnosisTrue})::float8 + COUNT(${repairTrue})::float8), ')')`,
+        received_count: sql`COUNT(${receivedTrue})::float8`,
+        diagnosis_count: sql`COUNT(${diagnosisTrue})::float8`,
+        repair_count: sql`COUNT(${repairTrue})::float8`,
+      })
+      .from(hrSchema.users)
+      .leftJoin(hrSchema.designation, eq(hrSchema.users.designation_uuid, hrSchema.designation.uuid))
+      .leftJoin(hrSchema.department, eq(hrSchema.users.department_uuid, hrSchema.department.uuid))
+      .leftJoin(engineerOrder, eq(engineerOrder.engineer_uuid, hrSchema.users.uuid))
+      .leftJoin(engineerWorkInfo, eq(engineerWorkInfo.uuid, engineerOrder.info_uuid))
+      .leftJoin(engineerDeliveryChallanEntry, eq(engineerDeliveryChallanEntry.order_uuid, engineerOrder.uuid))
+      .leftJoin(engineerDeliveryChallan, eq(engineerDeliveryChallanEntry.challan_uuid, engineerDeliveryChallan.uuid))
+      .leftJoin(hrSchema.employee, eq(hrSchema.users.uuid, hrSchema.employee.user_uuid))
+      .where(filters.length > 0 ? and(...filters) : undefined)
+      .groupBy(
+        hrSchema.users.uuid,
+        hrSchema.users.name,
+        hrSchema.users.phone,
+      );
+
+    data = await engineerQuery;
+  }
+  else {
+    // Regular query for non-engineer users
+    const regularQuery = db
+      .select({
+        value: hrSchema.users.uuid,
+        label:
+          type === 'customer' || type === 'web'
+            ? sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone})`
+            : hrSchema.users.name,
+        ...((type === 'customer' || type === 'web') && {
+          zone_uuid: sql`MAX(${workSchema.info.zone_uuid})`,
+          zone_name: sql`MAX(${workSchema.zone.name})`,
+          location: sql`MAX(${workSchema.info.location})`,
+          user_type: sql`MAX(${hrSchema.users.user_type})`,
+        }),
+      })
+      .from(hrSchema.users)
+      .leftJoin(hrSchema.designation, eq(hrSchema.users.designation_uuid, hrSchema.designation.uuid))
+      .leftJoin(hrSchema.department, eq(hrSchema.users.department_uuid, hrSchema.department.uuid))
+      .leftJoin(workSchema.info, eq(hrSchema.users.uuid, workSchema.info.user_uuid))
+      .leftJoin(workSchema.order, eq(workSchema.info.uuid, workSchema.order.info_uuid))
+      .leftJoin(workSchema.zone, eq(workSchema.info.zone_uuid, workSchema.zone.uuid))
+      .leftJoin(deliverySchema.challan, eq(hrSchema.users.uuid, deliverySchema.challan.customer_uuid))
+      .leftJoin(hrSchema.employee, eq(hrSchema.users.uuid, hrSchema.employee.user_uuid))
+      .where(filters.length > 0 ? and(...filters) : undefined)
+      .groupBy(
+        hrSchema.users.uuid,
+        hrSchema.users.name,
+        hrSchema.users.phone,
+      );
+
+    data = await regularQuery;
+  }
 
   return c.json(data, HSCode.OK);
 };
