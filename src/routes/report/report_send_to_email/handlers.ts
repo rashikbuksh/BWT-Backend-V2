@@ -59,7 +59,7 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
 export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> = async (c: any) => {
   const formDataObject = await c.req.parseBody();
 
-  console.log('Received form data for bulk email:', formDataObject);
+  // console.log('Received form data for bulk email:', formDataObject);
 
   // Extract and pair employees with their reports
   const formDataArray = Object.keys(formDataObject)
@@ -71,65 +71,63 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
       return { ...employee, report }; // Combine employee and report into one object
     });
 
-  console.log('Prepared form data for bulk email:', formDataArray);
+  // console.log('Prepared form data for bulk email:', formDataArray);
 
-  // const transporter = nodemailer.createTransport({
-  //   host: env.SMTP_HOST,
-  //   port: env.SMTP_PORT,
-  //   secure: false,
-  //   auth: {
-  //     user: env.SMTP_EMAIL,
-  //     pass: env.SMTP_PASSWORD,
-  //   },
-  // });
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: false,
+    auth: {
+      user: env.SMTP_EMAIL,
+      pass: env.SMTP_PASSWORD,
+    },
+  });
 
-  // const results = await Promise.all(
-  //   formDataArray.map(async (formData: any, index: number) => {
-  //     try {
-  //       const { email: userEmail, name: userName, report: file } = formData;
+  const results = await Promise.all(
+    formDataArray.map(async (formData: any, index: number) => {
+      try {
+        const { email: userEmail, name: userName, report: file } = formData;
 
-  //       if (!file) {
-  //         throw new Error(`No report file provided for ${userEmail || `unknown-email-${index}`}`);
-  //       }
+        if (!file) {
+          throw new Error(`No report file provided for ${userEmail || `unknown-email-${index}`}`);
+        }
 
-  //       const arrayBuffer = await file.arrayBuffer();
-  //       const buffer = Buffer.from(arrayBuffer);
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-  //       const reportAttachment = {
-  //         filename: file.name || 'report.pdf',
-  //         content: buffer,
-  //         contentType: file.type || 'application/pdf',
-  //       };
+        const reportAttachment = {
+          filename: file.name || 'report.pdf',
+          content: buffer,
+          contentType: file.type || 'application/pdf',
+        };
 
-  //       const info = await transporter.sendMail({
-  //         from: `${env.DEPARTMENT_NAME} <${env.SMTP_EMAIL}>`,
-  //         to: userEmail,
-  //         subject: 'Monthly Payment Slip',
-  //         text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
-  //         html: generateEmailHtmlContent(userName, env.SUPPORT_EMAIL),
-  //         attachments: [reportAttachment],
-  //       });
+        const info = await transporter.sendMail({
+          from: `${env.DEPARTMENT_NAME} <${env.SMTP_EMAIL}>`,
+          to: userEmail,
+          subject: 'Monthly Payment Slip',
+          text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
+          html: generateEmailHtmlContent(userName, env.SUPPORT_EMAIL),
+          attachments: [reportAttachment],
+        });
 
-  //       console.log(`Message sent to ${userEmail}: ${info.messageId}`);
-  //       return { success: true, email: userEmail, messageId: info.messageId };
-  //     }
-  //     catch (error: any) {
-  //       console.error(`Failed to send email:`, error);
-  //       return { success: false, error: error.message };
-  //     }
-  //   }),
-  // );
+        console.log(`Message sent to ${userEmail}: ${info.messageId}`);
+        return { success: true, email: userEmail, messageId: info.messageId };
+      }
+      catch (error: any) {
+        console.error(`Failed to send email:`, error);
+        return { success: false, error: error.message };
+      }
+    }),
+  );
 
-  // const successCount = results.filter(result => result.success).length;
-  // const failureCount = results.length - successCount;
+  const successCount = results.filter(result => result.success).length;
+  const failureCount = results.length - successCount;
 
-  // return c.json(
-  //   createToast(
-  //     'sent',
-  //     `${successCount} emails sent successfully, ${failureCount} failed.`,
-  //   ),
-  //   HSCode.OK,
-  // );
-
-  return c.json(createToast('sent', 'Bulk email sending is currently disabled.'), HSCode.OK);
+  return c.json(
+    createToast(
+      'sent',
+      `${successCount} emails sent successfully, ${failureCount} failed.`,
+    ),
+    HSCode.OK,
+  );
 };
