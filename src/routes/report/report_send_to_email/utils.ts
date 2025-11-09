@@ -28,3 +28,12 @@ export const bulkInsertSchema = z.array(
     }),
   }),
 );
+
+export const bulkInsertWithoutFormSchema = z.object({
+  email: z.string().email(),
+  employee_name: z.string(),
+  start_date: z.string(),
+  employee_designation_name: z.string(),
+  employee_department_name: z.string(),
+  total_salary: z.number(),
+});

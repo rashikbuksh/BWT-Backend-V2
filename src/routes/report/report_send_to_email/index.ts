@@ -5,6 +5,7 @@ import * as routes from './routes';
 
 const router = createRouter()
   .openapi(routes.reportSendToEmail, handlers.reportSendToEmail)
-  .openapi(routes.bulkReportSendToEmail, handlers.bulkReportSendToEmail);
+  .openapi(routes.bulkReportSendToEmail, handlers.bulkReportSendToEmail)
+  .openapi(routes.bulkReportSendToEmailWithoutForm, handlers.bulkReportSendToEmailWithoutForm);
 
 export default router;

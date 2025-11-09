@@ -4,7 +4,7 @@ import { createErrorSchema } from 'stoker/openapi/schemas';
 
 import { createRoute, z } from '@hono/zod-openapi';
 
-import { bulkInsertSchema, insertSchema } from './utils';
+import { bulkInsertSchema, bulkInsertWithoutFormSchema, insertSchema } from './utils';
 
 const tags = ['reports'];
 
@@ -55,15 +55,34 @@ export const bulkReportSendToEmail = createRoute({
       },
     },
   },
-  // request: {
-  //   body: {
-  //     content: {
-  //       'multipart/form-data': {
-  //         schema: bulkInsertSchema,
-  //       },
-  //     },
-  //   },
-  // },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+      }),
+      'Bulk Reports sent to emails successfully',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(bulkInsertSchema), // Use the same schema for error mapping
+      'The validation error(s)',
+    ),
+  },
+});
+
+export const bulkReportSendToEmailWithoutForm = createRoute({
+  path: '/report/bulk-send-to-email-without-form',
+  method: 'post',
+  description: 'Send Bulk Reports to Emails without form-data',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.array(bulkInsertWithoutFormSchema),
+        },
+      },
+    },
+  },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
@@ -81,3 +100,4 @@ export const bulkReportSendToEmail = createRoute({
 
 export type ReportSendToEmailRoute = typeof reportSendToEmail;
 export type BulkReportSendToEmailRoute = typeof bulkReportSendToEmail;
+export type BulkReportSendToEmailWithoutFormRoute = typeof bulkReportSendToEmailWithoutForm;

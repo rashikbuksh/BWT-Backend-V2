@@ -7,7 +7,7 @@ import * as HSCode from 'stoker/http-status-codes';
 import { generateEmailHtmlContent } from '@/lib/email_html_content';
 import { createToast } from '@/utils/return';
 
-import type { BulkReportSendToEmailRoute, ReportSendToEmailRoute } from './routes';
+import type { BulkReportSendToEmailRoute, BulkReportSendToEmailWithoutFormRoute, ReportSendToEmailRoute } from './routes';
 
 import env from './../../../env';
 
@@ -130,4 +130,11 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
     ),
     HSCode.OK,
   );
+};
+
+export const bulkReportSendToEmailWithoutForm: AppRouteHandler<BulkReportSendToEmailWithoutFormRoute> = async (c: any) => {
+  const requestBody = await c.req.json();
+  console.log('Received JSON data for bulk email without form:', requestBody);
+
+  return c.json(createToast('sent', 'Bulk Reports sent to emails successfully'), HSCode.OK);
 };
