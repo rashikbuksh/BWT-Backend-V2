@@ -277,15 +277,21 @@ export function getOnlineUsersCount(): number {
 //   await next();
 // });
 
-app.use('/v1/report/bulk-send-to-email', async (c, next) => {
-  await next(); // Skip the bodyLimit middleware for this route
-});
-
 // Apply 50 MB limit to all routes
-app.use('*', bodyLimit({
-  maxSize: 50 * 1024 * 1024, // 50 MB
-  onError: c => c.text('File too large Greater Than 50 MB', 413),
-}));
+// app.use('*', bodyLimit({
+//   maxSize: 50 * 1024 * 1024, // 50 MB
+//   onError: c => c.text('File too large Greater Than 50 MB', 413),
+// }));
+
+app.use('*', (c, next) => {
+  if (c.req.path === '/v1/report/bulk-send-to-email') {
+    return next(); // Skip bodyLimit for this specific route
+  }
+  return bodyLimit({
+    maxSize: 50 * 1024 * 1024, // 50 MB
+    onError: c => c.text('File too large Greater Than 50 MB', 413),
+  })(c, next);
+});
 
 app.use('/iclock', bodyLimit({
   maxSize: 50 * 1024 * 1024, // 50 MB
