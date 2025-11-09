@@ -933,6 +933,21 @@ routes.forEach((route) => {
   app.route(basePath, route);
 });
 
+// WebSocket test page route
+app.get('/ws-test', async (c) => {
+  try {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const htmlPath = path.resolve(process.cwd(), 'websocket_test.html');
+    const htmlContent = await fs.readFile(htmlPath, 'utf-8');
+    return c.html(htmlContent);
+  }
+  catch (error) {
+    console.error('Error serving websocket_test.html:', error);
+    return c.text('WebSocket test file not found', 404);
+  }
+});
+
 // zkteco routes
 app.route('/', zktecoRouter);
 

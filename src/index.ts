@@ -84,11 +84,52 @@ app.get(
       rawWs.unsubscribe(topic);
       console.warn(`WebSocket server closed and unsubscribed from topic '${topic}'`);
     },
-    onMessage(event, ws) {
+    onMessage: async (event, ws) => {
       const rawWs = ws.raw as ServerWebSocket;
       console.warn('Received message:', event.data);
+
+      // Normalize the incoming data to string | BufferSource
+      let payload: string | ArrayBuffer | ArrayBufferView;
+      if (typeof event.data === 'string') {
+        payload = event.data;
+      }
+      else if (event.data instanceof ArrayBuffer || ArrayBuffer.isView(event.data)) {
+        payload = event.data as ArrayBuffer | ArrayBufferView;
+      }
+      else if (typeof Blob !== 'undefined' && event.data instanceof Blob) {
+        // Blob is not a BufferSource; convert to ArrayBuffer first
+        payload = await event.data.arrayBuffer();
+      }
+      else {
+        // Fallback: try to stringify unknown types
+        try {
+          payload = JSON.stringify(event.data);
+        }
+        catch {
+          payload = '';
+        }
+      }
+
       // Broadcast message to all subscribers
-      rawWs.publish(topic, event.data);
+      {
+        // Ensure we pass either a string or an ArrayBuffer (BufferSource) to publish.
+        let publishPayload: string | ArrayBuffer;
+        if (typeof payload === 'string') {
+          publishPayload = payload;
+        }
+        else if (ArrayBuffer.isView(payload)) {
+          const view = payload as ArrayBufferView;
+          // Create a new ArrayBuffer that represents only the view's bytes.
+          // Copy the bytes into a new ArrayBuffer to ensure it's a plain ArrayBuffer (not SharedArrayBuffer).
+          const tmp = new Uint8Array(view.byteLength);
+          tmp.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
+          publishPayload = tmp.buffer;
+        }
+        else {
+          publishPayload = payload as ArrayBuffer;
+        }
+        rawWs.publish(topic, publishPayload);
+      }
     },
   })),
 );
