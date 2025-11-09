@@ -138,6 +138,37 @@ import type { UserAccessRoute, ValueLabelRoute } from './routes';
 //   return c.json(data, HSCode.OK);
 // };
 
+const receivedTrue = sql`CASE WHEN 
+      ${workSchema.info.is_product_received} = TRUE
+      AND ${workSchema.order.is_diagnosis_need} = FALSE
+      AND ${workSchema.order.is_proceed_to_repair} = FALSE
+      AND ${workSchema.order.is_transferred_for_qc} = FALSE
+      AND ${workSchema.order.is_ready_for_delivery} = FALSE
+      AND ${workSchema.order.is_delivery_without_challan} = FALSE
+      AND ${deliverySchema.challan.uuid} IS NULL
+      AND ${workSchema.order.is_return} = FALSE 
+      THEN ${workSchema.order.uuid} END`;
+const diagnosisTrue = sql`CASE WHEN 
+      ${workSchema.info.is_product_received} = TRUE 
+      AND ${workSchema.order.is_diagnosis_need} = TRUE 
+      AND ${workSchema.order.is_proceed_to_repair} = FALSE
+      AND ${workSchema.order.is_transferred_for_qc} = FALSE
+      AND ${workSchema.order.is_ready_for_delivery} = FALSE
+      AND ${workSchema.order.is_delivery_without_challan} = FALSE
+      AND ${deliverySchema.challan.uuid} IS NULL
+      AND ${workSchema.order.is_return} = FALSE 
+      THEN ${workSchema.order.uuid} END`;
+const repairTrue = sql`CASE WHEN 
+      ${workSchema.info.is_product_received} = TRUE 
+      AND ${workSchema.order.is_diagnosis_need} = TRUE 
+      AND ${workSchema.order.is_proceed_to_repair} = TRUE 
+      AND ${workSchema.order.is_transferred_for_qc} = FALSE 
+      AND ${workSchema.order.is_ready_for_delivery} = FALSE
+      AND ${workSchema.order.is_delivery_without_challan} = FALSE
+      AND ${deliverySchema.challan.uuid} IS NULL
+      AND ${workSchema.order.is_return} = FALSE 
+      THEN ${workSchema.order.uuid} END`;
+
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const {
     type,
@@ -215,7 +246,10 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       label:
         type === 'customer' || type === 'web'
           ? sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone})`
-          : hrSchema.users.name,
+          : department === 'engineer'
+            ? sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone}, 
+            ' (', 'Work In Hand: ', (COUNT(${receivedTrue})::float8 + COUNT(${diagnosisTrue})::float8 + COUNT(${repairTrue})::float8), ')')`
+            : hrSchema.users.name,
       ...((type === 'customer' || type === 'web') && {
         zone_uuid: sql`MAX(${workSchema.info.zone_uuid})`,
         zone_name: sql`MAX(${workSchema.zone.name})`,
