@@ -139,7 +139,7 @@ import type { UserAccessRoute, ValueLabelRoute } from './routes';
 //   return c.json(data, HSCode.OK);
 // };
 
-const engineerWorkInfo = alias(workSchema.info, 'engineerOrder');
+const engineerWorkInfo = alias(workSchema.info, 'engineerInfo');
 const engineerOrder = alias(workSchema.order, 'engineerOrder');
 const engineerDeliveryChallanEntry = alias(deliverySchema.challan_entry, 'engineerDelivery');
 const engineerDeliveryChallan = alias(deliverySchema.challan, 'engineerDelivery');
