@@ -1,6 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 
 import { and, eq, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -138,36 +139,41 @@ import type { UserAccessRoute, ValueLabelRoute } from './routes';
 //   return c.json(data, HSCode.OK);
 // };
 
+const engineerWorkInfo = alias(workSchema.info, 'engineerOrder');
+const engineerOrder = alias(workSchema.order, 'engineerOrder');
+const engineerDeliveryChallanEntry = alias(deliverySchema.challan_entry, 'engineerDelivery');
+const engineerDeliveryChallan = alias(deliverySchema.challan, 'engineerDelivery');
+
 const receivedTrue = sql`CASE WHEN 
-      ${workSchema.info.is_product_received} = TRUE
-      AND ${workSchema.order.is_diagnosis_need} = FALSE
-      AND ${workSchema.order.is_proceed_to_repair} = FALSE
-      AND ${workSchema.order.is_transferred_for_qc} = FALSE
-      AND ${workSchema.order.is_ready_for_delivery} = FALSE
-      AND ${workSchema.order.is_delivery_without_challan} = FALSE
-      AND ${deliverySchema.challan.uuid} IS NULL
-      AND ${workSchema.order.is_return} = FALSE 
-      THEN ${workSchema.order.uuid} END`;
+      ${engineerWorkInfo.is_product_received} = TRUE
+      AND ${engineerOrder.is_diagnosis_need} = FALSE
+      AND ${engineerOrder.is_proceed_to_repair} = FALSE
+      AND ${engineerOrder.is_transferred_for_qc} = FALSE
+      AND ${engineerOrder.is_ready_for_delivery} = FALSE
+      AND ${engineerOrder.is_delivery_without_challan} = FALSE
+      AND ${engineerDeliveryChallan.uuid} IS NULL
+      AND ${engineerOrder.is_return} = FALSE 
+      THEN ${engineerOrder.uuid} END`;
 const diagnosisTrue = sql`CASE WHEN 
-      ${workSchema.info.is_product_received} = TRUE 
-      AND ${workSchema.order.is_diagnosis_need} = TRUE 
-      AND ${workSchema.order.is_proceed_to_repair} = FALSE
-      AND ${workSchema.order.is_transferred_for_qc} = FALSE
-      AND ${workSchema.order.is_ready_for_delivery} = FALSE
-      AND ${workSchema.order.is_delivery_without_challan} = FALSE
-      AND ${deliverySchema.challan.uuid} IS NULL
-      AND ${workSchema.order.is_return} = FALSE 
-      THEN ${workSchema.order.uuid} END`;
+      ${engineerWorkInfo.is_product_received} = TRUE 
+      AND ${engineerOrder.is_diagnosis_need} = TRUE 
+      AND ${engineerOrder.is_proceed_to_repair} = FALSE
+      AND ${engineerOrder.is_transferred_for_qc} = FALSE
+      AND ${engineerOrder.is_ready_for_delivery} = FALSE
+      AND ${engineerOrder.is_delivery_without_challan} = FALSE
+      AND ${engineerDeliveryChallan.uuid} IS NULL
+      AND ${engineerOrder.is_return} = FALSE 
+      THEN ${engineerOrder.uuid} END`;
 const repairTrue = sql`CASE WHEN 
-      ${workSchema.info.is_product_received} = TRUE 
-      AND ${workSchema.order.is_diagnosis_need} = TRUE 
-      AND ${workSchema.order.is_proceed_to_repair} = TRUE 
-      AND ${workSchema.order.is_transferred_for_qc} = FALSE 
-      AND ${workSchema.order.is_ready_for_delivery} = FALSE
-      AND ${workSchema.order.is_delivery_without_challan} = FALSE
-      AND ${deliverySchema.challan.uuid} IS NULL
-      AND ${workSchema.order.is_return} = FALSE 
-      THEN ${workSchema.order.uuid} END`;
+      ${engineerWorkInfo.is_product_received} = TRUE 
+      AND ${engineerOrder.is_diagnosis_need} = TRUE 
+      AND ${engineerOrder.is_proceed_to_repair} = TRUE 
+      AND ${engineerOrder.is_transferred_for_qc} = FALSE 
+      AND ${engineerOrder.is_ready_for_delivery} = FALSE
+      AND ${engineerOrder.is_delivery_without_challan} = FALSE
+      AND ${engineerDeliveryChallan.uuid} IS NULL
+      AND ${engineerOrder.is_return} = FALSE 
+      THEN ${engineerOrder.uuid} END`;
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const {
@@ -265,6 +271,10 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .leftJoin(hrSchema.department, eq(hrSchema.users.department_uuid, hrSchema.department.uuid))
     .leftJoin(workSchema.info, eq(hrSchema.users.uuid, workSchema.info.user_uuid))
     .leftJoin(workSchema.order, eq(workSchema.info.uuid, workSchema.order.info_uuid))
+    .leftJoin(engineerOrder, eq(engineerOrder.engineer_uuid, hrSchema.users.uuid))
+    .leftJoin(engineerWorkInfo, eq(engineerWorkInfo.uuid, engineerOrder.info_uuid))
+    .leftJoin(engineerDeliveryChallanEntry, eq(engineerDeliveryChallanEntry.order_uuid, engineerOrder.uuid))
+    .leftJoin(engineerDeliveryChallan, eq(engineerDeliveryChallanEntry.challan_uuid, engineerDeliveryChallan.uuid))
     .leftJoin(workSchema.zone, eq(workSchema.info.zone_uuid, workSchema.zone.uuid))
     .leftJoin(deliverySchema.challan, eq(hrSchema.users.uuid, deliverySchema.challan.customer_uuid))
     .leftJoin(hrSchema.employee, eq(hrSchema.users.uuid, hrSchema.employee.user_uuid))
