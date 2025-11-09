@@ -141,8 +141,8 @@ import type { UserAccessRoute, ValueLabelRoute } from './routes';
 
 const engineerWorkInfo = alias(workSchema.info, 'engineerInfo');
 const engineerOrder = alias(workSchema.order, 'engineerOrder');
-const engineerDeliveryChallanEntry = alias(deliverySchema.challan_entry, 'engineerDelivery');
-const engineerDeliveryChallan = alias(deliverySchema.challan, 'engineerDelivery');
+const engineerDeliveryChallanEntry = alias(deliverySchema.challan_entry, 'engineerChallanEntry');
+const engineerDeliveryChallan = alias(deliverySchema.challan, 'engineerChallan');
 
 const receivedTrue = sql`CASE WHEN 
       ${engineerWorkInfo.is_product_received} = TRUE
