@@ -256,6 +256,9 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
         location: sql`MAX(${workSchema.info.location})`,
         user_type: sql`MAX(${hrSchema.users.user_type})`,
       }),
+      received_count: sql`COUNT(${receivedTrue})::float8`,
+      diagnosis_count: sql`COUNT(${diagnosisTrue})::float8`,
+      repair_count: sql`COUNT(${repairTrue})::float8`,
     })
     .from(hrSchema.users)
     .leftJoin(hrSchema.designation, eq(hrSchema.users.designation_uuid, hrSchema.designation.uuid))
