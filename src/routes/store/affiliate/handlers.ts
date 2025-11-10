@@ -14,12 +14,19 @@ import { affiliate } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
+  // console.log('Affiliate Create Value:', value);
 
-  const [data] = await db.insert(affiliate).values(value).returning({
-    name: affiliate.id,
-  });
-
-  return c.json(createToast('create', data.name), HSCode.OK);
+  try {
+    const [data] = await db.insert(affiliate).values(value).returning({
+      name: affiliate.id,
+    });
+    return c.json(createToast('create', data.name), HSCode.OK);
+  }
+  catch (error) {
+    console.error('DETAILED DATABASE ERROR:', error); // Log the full error
+    // Return a generic error to the client
+    return c.json({ message: 'Failed to create affiliate' }, 500);
+  }
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {

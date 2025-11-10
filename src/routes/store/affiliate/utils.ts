@@ -11,8 +11,8 @@ export const selectSchema = createSelectSchema(affiliate);
 export const insertSchema = createInsertSchema(
   affiliate,
   {
-    user_uuid: schema => schema.user_uuid.uuid(),
-    product_uuid: schema => schema.product_uuid.uuid(),
+    user_uuid: schema => schema.user_uuid.length(15),
+    product_uuid: schema => schema.product_uuid.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
@@ -21,6 +21,7 @@ export const insertSchema = createInsertSchema(
     }),
     visited: z.number().int().min(0),
     purchased: z.number().int().min(0),
+    commission_rate: z.number().min(0),
   },
 ).required({
   user_uuid: true,
@@ -29,7 +30,10 @@ export const insertSchema = createInsertSchema(
 }).partial({
   visited: true,
   purchased: true,
+  commission_rate: true,
+  unit_type: true,
   updated_at: true,
+  remarks: true,
 }).omit({
   id: true,
 });
