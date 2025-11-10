@@ -35,7 +35,11 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const image = formData.image;
 
-  const imagePath = await insertFile(image, 'public/product-variant');
+  let imagePath = null;
+
+  if (!image) {
+    imagePath = await insertFile(image, 'public/product-variant');
+  }
 
   const value = {
     uuid: formData.uuid,
