@@ -935,7 +935,13 @@ if (!isDev) {
     ) {
       return next();
     }
-    return bearerAuth({ verifyToken: VerifyToken })(c, next);
+    return bearerAuth({
+      verifyToken: VerifyToken,
+      // Custom error message for unauthorized/expired tokens
+      realm: 'Protected Area',
+      // Custom response for invalid/expired tokens
+      invalidTokenMessage: 'Token expired or invalid. Please login again.',
+    })(c, next);
   });
 }
 

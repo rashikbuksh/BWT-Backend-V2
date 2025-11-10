@@ -27,9 +27,15 @@ export async function CreateToken(payload: JWTPayload) {
 }
 
 export async function VerifyToken(token: string) {
-  const decodedPayload = await verify(token, env.PRIVATE_KEY);
-
-  return !!decodedPayload;
+  try {
+    const decodedPayload = await verify(token, env.PRIVATE_KEY);
+    return !!decodedPayload;
+  }
+  catch (error: any) {
+    // JWT verification failed - could be expired, invalid, or malformed
+    console.warn('Token verification failed:', error.message);
+    return false; // This will trigger 401 from bearerAuth
+  }
 }
 
 export function isPublicRoute(url: string, method: string, query?: Record<string, string>) {
