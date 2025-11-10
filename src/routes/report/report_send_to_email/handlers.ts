@@ -5,6 +5,7 @@ import nodemailer from 'nodemailer';
 import * as HSCode from 'stoker/http-status-codes';
 
 import { generateEmailHtmlContent } from '@/lib/email_html_content';
+import { generatePdf } from '@/lib/monthly_payment_slip_pdf';
 import { createToast } from '@/utils/return';
 
 import type { BulkReportSendToEmailRoute, BulkReportSendToEmailWithoutFormRoute, ReportSendToEmailRoute } from './routes';
@@ -134,7 +135,51 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
 
 export const bulkReportSendToEmailWithoutForm: AppRouteHandler<BulkReportSendToEmailWithoutFormRoute> = async (c: any) => {
   const requestBody = await c.req.json();
-  console.log('Received JSON data for bulk email without form:', requestBody);
 
-  return c.json(createToast('sent', 'Bulk Reports sent to emails successfully'), HSCode.OK);
+  console.log('Received request body for bulk email without form:', requestBody);
+
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: false,
+    auth: {
+      user: env.SMTP_EMAIL,
+      pass: env.SMTP_PASSWORD,
+    },
+  });
+  await Promise.all(
+    requestBody.map(async (item: any) => {
+      const { email: userEmail, name: userName, employee_name, start_date, employee_designation_name, employee_department_name, total_salary } = item;
+      const pdfBuffer: Buffer = await generatePdf({
+        employee_name,
+        start_date,
+        employee_designation_name,
+        employee_department_name,
+        total_salary,
+      });
+      const reportAttachment = {
+        filename: `Monthly_Payment_Slip_${employee_name.replace(/\s+/g, '_')}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      };
+      const info = await transporter.sendMail({
+        from: `${env.DEPARTMENT_NAME} <${env.SMTP_EMAIL}>`,
+        to: userEmail,
+        subject: 'Monthly Payment Slip',
+        text: `Hello ${userName}, your monthly payment slip has been generated and is attached.`,
+        html: generateEmailHtmlContent(userName, env.SUPPORT_EMAIL),
+        attachments: [reportAttachment],
+      });
+      console.log(`Message sent to ${userEmail}: ${info.messageId}`);
+    },
+    ),
+  );
+
+  return c.json(
+    createToast(
+      'sent',
+      `All emails sent successfully.`,
+    ),
+    HSCode.OK,
+  );
 };

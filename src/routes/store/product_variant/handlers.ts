@@ -5,9 +5,10 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
+import { handleImagePatch, PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
+import { deleteFile, insertFile } from '@/utils/upload_file';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
@@ -30,7 +31,39 @@ const createdByUser = alias(users, 'created_by_user');
 const updatedByUser = alias(users, 'updated_by_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
-  const value = c.req.valid('json');
+  const formData = await c.req.parseBody();
+
+  const image = formData.image;
+
+  const imagePath = await insertFile(image, 'public/product-variant');
+
+  const value = {
+    uuid: formData.uuid,
+    product_uuid: formData.product_uuid,
+    selling_price: formData.selling_price,
+    discount: formData.discount,
+    warehouse_1: formData.warehouse_1,
+    warehouse_2: formData.warehouse_2,
+    warehouse_3: formData.warehouse_3,
+    warehouse_4: formData.warehouse_4,
+    warehouse_5: formData.warehouse_5,
+    warehouse_6: formData.warehouse_6,
+    warehouse_7: formData.warehouse_7,
+    warehouse_8: formData.warehouse_8,
+    warehouse_9: formData.warehouse_9,
+    warehouse_10: formData.warehouse_10,
+    warehouse_11: formData.warehouse_11,
+    warehouse_12: formData.warehouse_12,
+    selling_warehouse: formData.selling_warehouse,
+    created_at: formData.created_at,
+    created_by: formData.created_by,
+    updated_at: formData.updated_at,
+    updated_by: formData.updated_by,
+    remarks: formData.remarks,
+    index: formData.index,
+    discount_unit: formData.discount_unit,
+    image: imagePath,
+  };
 
   const [data] = await db.insert(product_variant).values(value).returning({
     name: product_variant.uuid,
@@ -41,13 +74,24 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
-  const updates = c.req.valid('json');
+  const formData = await c.req.parseBody();
 
-  if (Object.keys(updates).length === 0)
+  const productVariantPromise = db
+    .select({
+      image: product_variant.image,
+    })
+    .from(product_variant)
+    .where(eq(product_variant.uuid, uuid));
+
+  const [productVariantData] = await productVariantPromise;
+
+  formData.image = await handleImagePatch(formData.image, productVariantData?.image ?? undefined, 'public/product-variant');
+
+  if (Object.keys(formData).length === 0)
     return ObjectNotFound(c);
 
   const [data] = await db.update(product_variant)
-    .set(updates)
+    .set(formData)
     .where(eq(product_variant.uuid, uuid))
     .returning({
       name: product_variant.uuid,
@@ -56,7 +100,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
-  return c.json(createToast('update', data.name), HSCode.OK);
+  return c.json(createToast('update', data.name ?? ''), HSCode.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
@@ -71,7 +115,19 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
       },
     );
 
-  // product_variant delete
+  const productVariantPromise = db
+    .select({
+      image: product_variant.image,
+    })
+    .from(product_variant)
+    .where(eq(product_variant.uuid, uuid));
+
+  const [productVariantData] = await productVariantPromise;
+
+  if (productVariantData && productVariantData.image) {
+    deleteFile(productVariantData.image);
+  }
+
   const [data] = await db.delete(product_variant)
     .where(eq(product_variant.uuid, uuid))
     .returning({
@@ -138,6 +194,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       warehouse_11_name: warehouse11.name,
       warehouse_12_uuid: warehouse12.uuid,
       warehouse_12_name: warehouse12.name,
+      image: product_variant.image,
     })
     .from(product_variant)
     .leftJoin(product, eq(product_variant.product_uuid, product.uuid))
@@ -193,6 +250,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     warehouse_11: PG_DECIMAL_TO_FLOAT(product_variant.warehouse_11),
     warehouse_12: PG_DECIMAL_TO_FLOAT(product_variant.warehouse_12),
     selling_warehouse: PG_DECIMAL_TO_FLOAT(product_variant.selling_warehouse),
+    image: product_variant.image,
     product_variant_values_entry: sql`(
      COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,

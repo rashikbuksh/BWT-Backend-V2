@@ -26,10 +26,15 @@ export const create = createRoute({
   path: '/store/product-variant',
   method: 'post',
   request: {
-    body: jsonContentRequired(
-      insertSchema,
-      'The product variant to create',
-    ),
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: {
+            ...insertSchema,
+          },
+        },
+      },
+    },
   },
   tags,
   responses: {

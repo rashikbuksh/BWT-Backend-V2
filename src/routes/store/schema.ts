@@ -135,6 +135,7 @@ export const product_variant = store.table('product_variant', {
   remarks: text('remarks').default(sql`null`),
   index: integer('index').notNull(),
   discount_unit: discountUnitEnum('discount_unit').default('bdt'),
+  image: text('image').default(sql`null`),
 });
 
 export const product_image = store.table('product_image', {
