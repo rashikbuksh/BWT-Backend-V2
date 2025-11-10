@@ -58,6 +58,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
       city: users.city,
       district: users.district,
       location: sql`${users.address} || ', ' || ${users.city} || ', ' || ${users.district}`,
+      is_affiliate: users.is_affiliate,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -242,6 +243,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       address: users.address,
       city: users.city,
       district: users.district,
+      is_affiliate: users.is_affiliate,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -307,6 +309,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       address: users.address,
       city: users.city,
       district: users.district,
+      is_affiliate: users.is_affiliate,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
