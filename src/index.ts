@@ -68,67 +68,246 @@ import app from './app';
 import env from './env';
 
 const port = env.PORT;
-const topic = 'anonymous-chat-room';
 
-// Add WebSocket route from BUN
+// Store user data associated with each WebSocket
+interface UserData {
+  username: string;
+  userId: string;
+  rooms: Set<string>;
+}
+
+// Map to track connected users
+const connectedUsers = new Map<ServerWebSocket, UserData>();
+
+// Helper function to get room users
+function getRoomUsers(room: string) {
+  const users: { username: string; userId: string }[] = [];
+  connectedUsers.forEach((userData) => {
+    if (userData.rooms.has(room)) {
+      users.push({ username: userData.username, userId: userData.userId });
+    }
+  });
+  return users;
+}
+
+// Add WebSocket route with room support
 app.get(
   '/ws',
   upgradeWebSocket(_ => ({
     onOpen(_, ws) {
       const rawWs = ws.raw as ServerWebSocket;
-      rawWs.subscribe(topic);
-      console.warn(`WebSocket server opened and subscribed to topic '${topic}'`);
+
+      // Initialize user data
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const userData: UserData = {
+        username: `Guest_${userId.substr(-6)}`,
+        userId,
+        rooms: new Set(),
+      };
+
+      connectedUsers.set(rawWs, userData);
+
+      console.warn(`WebSocket connection opened for user: ${userId}`);
+
+      // Send welcome message
+      rawWs.send(JSON.stringify({
+        type: 'connected',
+        userId,
+        username: userData.username,
+        message: 'Connected to WebSocket server',
+      }));
     },
+
     onClose(_, ws) {
       const rawWs = ws.raw as ServerWebSocket;
-      rawWs.unsubscribe(topic);
-      console.warn(`WebSocket server closed and unsubscribed from topic '${topic}'`);
+      const userData = connectedUsers.get(rawWs);
+
+      if (userData) {
+        // Notify all rooms that user left
+        userData.rooms.forEach((room) => {
+          rawWs.unsubscribe(room);
+
+          // Notify other users in the room
+          const notification = JSON.stringify({
+            type: 'user_left',
+            room,
+            username: userData.username,
+            userId: userData.userId,
+            roomUsers: getRoomUsers(room),
+          });
+
+          connectedUsers.forEach((ud, ws) => {
+            if (ud.rooms.has(room) && ws !== rawWs) {
+              ws.send(notification);
+            }
+          });
+        });
+
+        connectedUsers.delete(rawWs);
+        console.warn(`User ${userData.username} (${userData.userId}) disconnected`);
+      }
     },
+
     onMessage: async (event, ws) => {
       const rawWs = ws.raw as ServerWebSocket;
-      console.warn('Received message:', event.data);
+      const userData = connectedUsers.get(rawWs);
 
-      // Normalize the incoming data to string | BufferSource
-      let payload: string | ArrayBuffer | ArrayBufferView;
-      if (typeof event.data === 'string') {
-        payload = event.data;
-      }
-      else if (event.data instanceof ArrayBuffer || ArrayBuffer.isView(event.data)) {
-        payload = event.data as ArrayBuffer | ArrayBufferView;
-      }
-      else if (typeof Blob !== 'undefined' && event.data instanceof Blob) {
-        // Blob is not a BufferSource; convert to ArrayBuffer first
-        payload = await event.data.arrayBuffer();
-      }
-      else {
-        // Fallback: try to stringify unknown types
-        try {
-          payload = JSON.stringify(event.data);
-        }
-        catch {
-          payload = '';
-        }
+      if (!userData) {
+        console.error('❌ User data not found for WebSocket');
+        return;
       }
 
-      // Broadcast message to all subscribers
-      {
-        // Ensure we pass either a string or an ArrayBuffer (BufferSource) to publish.
-        let publishPayload: string | ArrayBuffer;
-        if (typeof payload === 'string') {
-          publishPayload = payload;
+      try {
+        // Parse incoming message
+        const messageStr = typeof event.data === 'string'
+          ? event.data
+          : new TextDecoder().decode(event.data as ArrayBuffer);
+
+        console.warn('📨 Raw message received:', messageStr);
+        const message = JSON.parse(messageStr);
+        console.warn('✅ Parsed message:', JSON.stringify(message, null, 2));
+        console.warn(`👤 From user: ${userData.username} (${userData.userId})`);
+
+        // Handle different message types
+        switch (message.type) {
+          case 'set_username': {
+            // Update username
+            userData.username = message.username || userData.username;
+            rawWs.send(JSON.stringify({
+              type: 'username_updated',
+              username: userData.username,
+              userId: userData.userId,
+            }));
+            break;
+          }
+
+          case 'join_room': {
+            // Join a room
+            const roomToJoin = message.room || 'general';
+            userData.rooms.add(roomToJoin);
+            rawWs.subscribe(roomToJoin);
+
+            console.warn(`✅ User ${userData.username} joined room: ${roomToJoin}`);
+
+            const roomUsers = getRoomUsers(roomToJoin);
+            console.warn(`👥 Users in room ${roomToJoin}:`, roomUsers.length);
+
+            // Send confirmation to user
+            const confirmation = {
+              type: 'room_joined',
+              room: roomToJoin,
+              roomUsers,
+            };
+            console.warn(`📤 Sending room_joined confirmation:`, JSON.stringify(confirmation, null, 2));
+            rawWs.send(JSON.stringify(confirmation));
+
+            // Notify others in the room
+            const joinNotification = JSON.stringify({
+              type: 'user_joined',
+              room: roomToJoin,
+              username: userData.username,
+              userId: userData.userId,
+              roomUsers: getRoomUsers(roomToJoin),
+            });
+
+            connectedUsers.forEach((ud, ws) => {
+              if (ud.rooms.has(roomToJoin) && ws !== rawWs) {
+                ws.send(joinNotification);
+              }
+            });
+            break;
+          }
+
+          case 'leave_room': {
+            // Leave a room
+            const roomToLeave = message.room;
+            if (userData.rooms.has(roomToLeave)) {
+              userData.rooms.delete(roomToLeave);
+              rawWs.unsubscribe(roomToLeave);
+
+              console.warn(`User ${userData.username} left room: ${roomToLeave}`);
+
+              // Send confirmation to user
+              rawWs.send(JSON.stringify({
+                type: 'room_left',
+                room: roomToLeave,
+              }));
+
+              // Notify others in the room
+              const leaveNotification = JSON.stringify({
+                type: 'user_left',
+                room: roomToLeave,
+                username: userData.username,
+                userId: userData.userId,
+                roomUsers: getRoomUsers(roomToLeave),
+              });
+
+              connectedUsers.forEach((ud, ws) => {
+                if (ud.rooms.has(roomToLeave)) {
+                  ws.send(leaveNotification);
+                }
+              });
+            }
+            break;
+          }
+
+          case 'chat_message': {
+            // Send chat message to room
+            const room = message.room || 'general';
+
+            if (!userData.rooms.has(room)) {
+              rawWs.send(JSON.stringify({
+                type: 'error',
+                message: `You are not in room: ${room}`,
+              }));
+              return;
+            }
+
+            const chatMessage = JSON.stringify({
+              type: 'chat_message',
+              room,
+              username: userData.username,
+              userId: userData.userId,
+              message: message.message,
+              timestamp: new Date().toISOString(),
+            });
+
+            // Broadcast to all users in the room including sender
+            rawWs.publish(room, chatMessage);
+            console.warn(`Message sent to room ${room} by ${userData.username}: ${message.message}`);
+            break;
+          }
+
+          case 'get_rooms': {
+            // Get list of available rooms
+            const rooms = Array.from(new Set(
+              Array.from(connectedUsers.values())
+                .flatMap(ud => Array.from(ud.rooms)),
+            ));
+
+            rawWs.send(JSON.stringify({
+              type: 'rooms_list',
+              rooms: rooms.map(r => ({
+                name: r,
+                userCount: getRoomUsers(r).length,
+              })),
+            }));
+            break;
+          }
+
+          default:
+            rawWs.send(JSON.stringify({
+              type: 'error',
+              message: 'Unknown message type',
+            }));
         }
-        else if (ArrayBuffer.isView(payload)) {
-          const view = payload as ArrayBufferView;
-          // Create a new ArrayBuffer that represents only the view's bytes.
-          // Copy the bytes into a new ArrayBuffer to ensure it's a plain ArrayBuffer (not SharedArrayBuffer).
-          const tmp = new Uint8Array(view.byteLength);
-          tmp.set(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
-          publishPayload = tmp.buffer;
-        }
-        else {
-          publishPayload = payload as ArrayBuffer;
-        }
-        rawWs.publish(topic, publishPayload);
+      }
+      catch (error) {
+        console.error('Error processing message:', error);
+        rawWs.send(JSON.stringify({
+          type: 'error',
+          message: 'Invalid message format',
+        }));
       }
     },
   })),
@@ -141,54 +320,26 @@ Bun.serve({
   fetch: app.fetch,
   websocket: {
     message(ws: ServerWebSocket, message: string | ArrayBuffer | ArrayBufferView) {
-      console.warn('WebSocket message received:', message);
-
-      // Normalize publish payload to string or ArrayBuffer
-      if (typeof message === 'string') {
-        ws.publish(topic, message);
+      // Handle messages at Bun server level - delegate to room-based handler
+      const userData = connectedUsers.get(ws);
+      if (!userData) {
         return;
       }
 
-      if (message instanceof ArrayBuffer) {
-        ws.publish(topic, message);
-        return;
-      }
-
-      // Handle ArrayBufferView (Uint8Array, DataView, etc.)
-      if (ArrayBuffer.isView(message)) {
-        const view = message as ArrayBufferView;
-        const tmp = new Uint8Array(view.byteLength);
-        tmp.set(new Uint8Array((view as any).buffer, (view as any).byteOffset || 0, view.byteLength));
-        ws.publish(topic, tmp.buffer);
-        return;
-      }
-
-      // Fallback for custom Buffer-like wrappers that expose byteLength & buffer
-      const bufLike = message as any;
-      if (bufLike && typeof bufLike.byteLength === 'number' && bufLike.buffer) {
-        const tmp = new Uint8Array(bufLike.byteLength);
-        tmp.set(new Uint8Array(bufLike.buffer, bufLike.byteOffset || 0, bufLike.byteLength));
-        ws.publish(topic, tmp.buffer);
-        return;
-      }
-
-      // As a last resort stringify
-      try {
-        ws.publish(topic, JSON.stringify(message));
-      }
-      catch {
-        ws.publish(topic, '');
-      }
+      // Messages are handled in the upgradeWebSocket handler above
+      // This is just for Bun's native websocket support
+      console.warn('WebSocket native message received:', message);
     },
-    open(ws: ServerWebSocket) {
-      console.warn('WebSocket connection opened');
-      ws.subscribe(topic);
+    open(_ws: ServerWebSocket) {
+      console.warn('WebSocket native connection opened');
     },
-    close(ws: ServerWebSocket) {
-      console.warn('WebSocket connection closed');
-      ws.unsubscribe(topic);
+    close(_ws: ServerWebSocket) {
+      console.warn('WebSocket native connection closed');
     },
   },
 });
 
-console.warn(`Server is running on port ${env.SERVER_URL}`);
+console.warn(`🚀 Server is running on http://localhost:${port}`);
+console.warn(`📡 WebSocket endpoint: ws://localhost:${port}/ws`);
+console.warn(`🧪 Test room chat at: http://localhost:${port}/ws-room-test`);
+console.warn(`🧪 Test simple WebSocket at: http://localhost:${port}/ws-test`);
