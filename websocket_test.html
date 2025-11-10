@@ -109,7 +109,13 @@
 
       function connect() {
         try {
-          ws = new WebSocket('ws://localhost:3007/ws');
+          // Dynamically construct WebSocket URL based on current location
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const host = window.location.host;
+          const wsUrl = `${protocol}//${host}/ws`;
+
+          console.log('Connecting to WebSocket:', wsUrl);
+          ws = new WebSocket(wsUrl);
 
           ws.onopen = function () {
             updateStatus(true);

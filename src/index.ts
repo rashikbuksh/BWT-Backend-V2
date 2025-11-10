@@ -137,6 +137,7 @@ app.get(
 // Use Bun's native server
 Bun.serve({
   port,
+  hostname: '0.0.0.0', // Listen on all network interfaces for production
   fetch: app.fetch,
   websocket: {
     message(ws: ServerWebSocket, message: string | ArrayBuffer | ArrayBufferView) {
