@@ -6,6 +6,7 @@ import {
   pgSchema,
   serial,
   text,
+  unique,
 } from 'drizzle-orm/pg-core';
 
 import {
@@ -534,6 +535,6 @@ export const affiliate = store.table('affiliate', {
   commission_rate: PG_DECIMAL('commission_rate').default(sql`0`),
   unit_type: unitTypeEnum('unit_type').default('bdt'),
   remarks: text('remarks').default(sql`null`),
-});
+}, table => [unique().on(table.user_uuid, table.product_uuid)]);
 
 export default store;
