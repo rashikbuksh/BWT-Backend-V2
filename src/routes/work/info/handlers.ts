@@ -228,52 +228,37 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const { customer_uuid, status, orderType, engineer_uuid } = c.req.valid('query');
 
-  // console.log('orderType:', orderType);
-
-  const orderCountSubquery = db
+  // Optimized: Combined counts in single subquery to reduce multiple scans
+  const orderStatsSubquery = db
     .select({
       info_uuid: order.info_uuid,
-      order_count: sql`COUNT(*)`.as('order_count'),
+      order_count: sql<number>`COUNT(*)`.as('order_count'),
+      delivered_without_challan_count: sql<number>`COUNT(*) FILTER (WHERE ${order.is_delivery_without_challan} = true)`.as('delivered_without_challan_count'),
     })
     .from(order)
     .groupBy(order.info_uuid)
-    .as('order_count_tbl');
+    .as('order_stats_tbl');
 
+  // Optimized: More efficient delivered count query starting from challan_entry
   const deliveredCountSubquery = db
     .select({
       info_uuid: order.info_uuid,
-      delivered_count: sql`COUNT(*)`.as('delivered_count'),
+      delivered_count: sql<number>`COUNT(DISTINCT ${order.uuid})`.as('delivered_count'),
     })
-    .from(deliverySchema.challan)
-    .leftJoin(
-      deliverySchema.challan_entry,
-      eq(
-        deliverySchema.challan.uuid,
-        deliverySchema.challan_entry.challan_uuid,
-      ),
+    .from(deliverySchema.challan_entry)
+    .innerJoin(
+      deliverySchema.challan,
+      eq(deliverySchema.challan_entry.challan_uuid, deliverySchema.challan.uuid),
     )
-    .leftJoin(
+    .innerJoin(
       order,
       eq(deliverySchema.challan_entry.order_uuid, order.uuid),
     )
-    .where(
-      eq(deliverySchema.challan.is_delivery_complete, true),
-    )
+    .where(eq(deliverySchema.challan.is_delivery_complete, true))
     .groupBy(order.info_uuid)
     .as('delivered_count_tbl');
 
-  const deliveredWithoutChallanCountSubquery = db
-    .select({
-      info_uuid: order.info_uuid,
-      delivered_without_challan_count: sql`COUNT(*)`.as('delivered_without_challan_count'),
-    })
-    .from(order)
-    .where(
-      eq(order.is_delivery_without_challan, true),
-    )
-    .groupBy(order.info_uuid)
-    .as('delivered_without_challan_count_tbl');
-
+  // Base query builder
   const infoPromise = db
     .select({
       id: info.id,
@@ -294,16 +279,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       zone_uuid: info.zone_uuid,
       zone_name: zone.name,
       submitted_by: info.submitted_by,
-      order_count:
-        sql`COALESCE(order_count_tbl.order_count::float8, 0)`,
-      delivered_count:
-        sql`COALESCE(delivered_count_tbl.delivered_count::float8, 0)`,
+      order_count: sql<number>`COALESCE(order_stats_tbl.order_count::float8, 0)`,
+      delivered_count: sql<number>`COALESCE(delivered_count_tbl.delivered_count::float8, 0)`,
       branch_uuid: info.branch_uuid,
       branch_name: storeSchema.branch.name,
       reference_user_uuid: info.reference_user_uuid,
       reference_user_name: reference_user.name,
       is_commission_amount: info.is_commission_amount,
-      commission_amount: sql`COALESCE(info.commission_amount::float8, 0)`,
+      commission_amount: sql<number>`COALESCE(info.commission_amount::float8, 0)`,
       is_contact_with_customer: info.is_contact_with_customer,
       customer_feedback: info.customer_feedback,
       order_info_status: info.order_info_status,
@@ -311,37 +294,46 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order_type: info.order_type,
       received_by: info.received_by,
       received_by_name: receivedByUser.name,
+      // Optimized: Added ORDER BY for consistent product ordering and removed redundant NULL checks
       products: sql`(
                 SELECT COALESCE(
-                  json_agg(json_build_object(
-                    'order_uuid', o.uuid,
-                    'order_id', CASE WHEN o.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) END,
-                    'serial_no', o.serial_no, 
-                    'model_uuid', o.model_uuid,
-                    'model_name', m.name,
-                    'brand_uuid', m.brand_uuid,
-                    'brand_name', b.name,
-                    'is_return', o.is_return,
-                    'is_return_date', o.is_return_date,
-                    'is_diagnosis_need', o.is_diagnosis_need,
-                    'is_diagnosis_need_date', o.is_diagnosis_need_date,
-                    'is_diagnosis_completed', d.is_diagnosis_completed,
-                    'is_diagnosis_completed_date', d.is_diagnosis_completed_date,
-                    'is_proceed_to_repair', o.is_proceed_to_repair,
-                    'is_proceed_to_repair_date', o.is_proceed_to_repair_date,
-                    'is_transferred_for_qc', o.is_transferred_for_qc,
-                    'is_transferred_for_qc_date', o.is_transferred_for_qc_date,
-                    'is_ready_for_delivery', o.is_ready_for_delivery,
-                    'ready_for_delivery_date', o.ready_for_delivery_date,
-                    'is_delivery_without_challan', o.is_delivery_without_challan,
-                    'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
-                    'is_delivered', ch.is_delivery_complete,
-                    'is_delivered_date', ch.is_delivery_complete_date,
-                    'is_reclaimed', o.is_reclaimed,
-                    'is_reclaimed_date', o.is_reclaimed_date,
-                    'reclaimed_order_uuid', o.reclaimed_order_uuid,
-                    'reclaimed_order_id', CASE WHEN ro.uuid IS NULL THEN NULL WHEN ro.reclaimed_order_uuid IS NULL THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) END
-                  )), '[]'::json
+                  json_agg(
+                    json_build_object(
+                      'order_uuid', o.uuid,
+                      'order_id', CASE WHEN o.reclaimed_order_uuid IS NULL 
+                        THEN CONCAT('WO', TO_CHAR(o.created_at, 'YY'), '-', o.id) 
+                        ELSE CONCAT('RWO', TO_CHAR(o.created_at, 'YY'), '-', o.id) 
+                      END,
+                      'serial_no', o.serial_no, 
+                      'model_uuid', o.model_uuid,
+                      'model_name', m.name,
+                      'brand_uuid', m.brand_uuid,
+                      'brand_name', b.name,
+                      'is_return', o.is_return,
+                      'is_return_date', o.is_return_date,
+                      'is_diagnosis_need', o.is_diagnosis_need,
+                      'is_diagnosis_need_date', o.is_diagnosis_need_date,
+                      'is_diagnosis_completed', d.is_diagnosis_completed,
+                      'is_diagnosis_completed_date', d.is_diagnosis_completed_date,
+                      'is_proceed_to_repair', o.is_proceed_to_repair,
+                      'is_proceed_to_repair_date', o.is_proceed_to_repair_date,
+                      'is_transferred_for_qc', o.is_transferred_for_qc,
+                      'is_transferred_for_qc_date', o.is_transferred_for_qc_date,
+                      'is_ready_for_delivery', o.is_ready_for_delivery,
+                      'ready_for_delivery_date', o.ready_for_delivery_date,
+                      'is_delivery_without_challan', o.is_delivery_without_challan,
+                      'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
+                      'is_delivered', ch.is_delivery_complete,
+                      'is_delivered_date', ch.is_delivery_complete_date,
+                      'is_reclaimed', o.is_reclaimed,
+                      'is_reclaimed_date', o.is_reclaimed_date,
+                      'reclaimed_order_uuid', o.reclaimed_order_uuid,
+                      'reclaimed_order_id', CASE WHEN ro.reclaimed_order_uuid IS NULL 
+                        THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) 
+                        ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) 
+                      END
+                    ) ORDER BY o.id
+                  ), '[]'::json
                 )
                 FROM work.order o
                 LEFT JOIN work.diagnosis d ON o.uuid = d.order_uuid
@@ -361,56 +353,42 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(user, eq(info.user_uuid, user.uuid))
     .leftJoin(hrSchema.users, eq(info.created_by, hrSchema.users.uuid))
     .leftJoin(zone, eq(info.zone_uuid, zone.uuid))
-    .leftJoin(
-      orderCountSubquery,
-      eq(info.uuid, orderCountSubquery.info_uuid),
-    )
-    .leftJoin(
-      deliveredCountSubquery,
-      eq(info.uuid, deliveredCountSubquery.info_uuid),
-    )
-    .leftJoin(
-      deliveredWithoutChallanCountSubquery,
-      eq(info.uuid, deliveredWithoutChallanCountSubquery.info_uuid),
-    )
+    .leftJoin(orderStatsSubquery, eq(info.uuid, orderStatsSubquery.info_uuid))
+    .leftJoin(deliveredCountSubquery, eq(info.uuid, deliveredCountSubquery.info_uuid))
     .leftJoin(storeSchema.branch, eq(info.branch_uuid, storeSchema.branch.uuid))
     .leftJoin(reference_user, eq(info.reference_user_uuid, reference_user.uuid))
     .leftJoin(receivedByUser, eq(info.received_by, receivedByUser.uuid))
     .leftJoin(deliverySchema.courier, eq(info.courier_uuid, deliverySchema.courier.uuid));
 
-  // Build filters array and apply them together
+  // Build filters array
   const filters = [];
 
-  // Filter by customer
   if (customer_uuid) {
     filters.push(eq(info.user_uuid, customer_uuid));
   }
 
-  // Filter by order status
   if (status === 'pending') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) > COALESCE(delivered_count_tbl.delivered_count, 0) + COALESCE(delivered_without_challan_count_tbl.delivered_without_challan_count, 0)`,
+      sql`COALESCE(order_stats_tbl.order_count, 0) > COALESCE(delivered_count_tbl.delivered_count, 0) + COALESCE(order_stats_tbl.delivered_without_challan_count, 0)`,
     );
   }
   else if (status === 'complete') {
     filters.push(
-      sql`COALESCE(order_count_tbl.order_count, 0) <= COALESCE(delivered_count_tbl.delivered_count, 0) + COALESCE(delivered_without_challan_count_tbl.delivered_without_challan_count, 0)
-          AND COALESCE(order_count_tbl.order_count, 0) > 0`,
+      sql`COALESCE(order_stats_tbl.order_count, 0) <= COALESCE(delivered_count_tbl.delivered_count, 0) + COALESCE(order_stats_tbl.delivered_without_challan_count, 0)
+          AND COALESCE(order_stats_tbl.order_count, 0) > 0`,
     );
   }
 
-  // Filter by order type (exclude undefined/null values)
   if (orderType && orderType !== 'undefined') {
     filters.push(eq(info.order_type, orderType));
   }
 
-  // Filter by engineer_uuid (checks if any order under the info is assigned to the engineer)
+  // Optimized: Only join order table when filtering by engineer
   if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     infoPromise.leftJoin(order, eq(info.uuid, order.info_uuid));
     filters.push(eq(order.engineer_uuid, engineer_uuid));
   }
 
-  // Apply all filters if any exist
   if (filters.length > 0) {
     infoPromise.where(filters.length === 1 ? filters[0] : and(...filters));
   }
