@@ -1,5 +1,5 @@
 import accessories from './accessories';
-import affiliate from './affiliate/routes';
+import affiliate from './affiliate';
 import bill_info from './bill_info';
 import box from './box';
 import branch from './branch';
