@@ -5,7 +5,6 @@ import hr from './hr';
 import other from './other';
 import publicRoute from './publicRoute';
 import report from './report';
-import socket from './socket';
 import store from './store';
 import work from './work';
 
@@ -18,7 +17,6 @@ const routes = [
   ...other,
   ...publicRoute,
   ...acc,
-  socket,
   chat,
 ] as const;
 
