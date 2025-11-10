@@ -150,13 +150,14 @@ export const bulkReportSendToEmailWithoutForm: AppRouteHandler<BulkReportSendToE
   await Promise.all(
     requestBody.map(async (item: any) => {
       const { email: userEmail, name: userName, employee_name, start_date, employee_designation_name, employee_department_name, total_salary } = item;
-      const pdfBuffer: Buffer = await generatePdf({
+      const pdfBytes = await generatePdf({
         employee_name,
         start_date,
         employee_designation_name,
         employee_department_name,
         total_salary,
       });
+      const pdfBuffer: Buffer = Buffer.from(pdfBytes);
       const reportAttachment = {
         filename: `Monthly_Payment_Slip_${employee_name.replace(/\s+/g, '_')}.pdf`,
         content: pdfBuffer,
