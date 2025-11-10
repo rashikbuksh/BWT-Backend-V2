@@ -51,6 +51,8 @@ export function initializeSocketIO(httpServer: any) {
 
   console.warn(`🌐 Socket.IO CORS origins: ${isDevelopment ? '*' : allowedOrigins.join(', ')}`);
 
+  app.use('/socket-debug');
+
   io = new Server(httpServer, {
     cors: {
       origin: isDevelopment ? '*' : allowedOrigins, // Restrict origins in production
@@ -305,6 +307,15 @@ const isVps = env.NODE_ENV === 'vps';
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads/*', serveStatic({ root: isDev ? './src/' : isVps ? './dist/src/' : './' }));
+
+app.get('/socket-stat', (c) => {
+  // Implement socket status logic here
+  return c.html(
+    `
+    <html><body><h1>Socket Status Page</h1><p>Implement socket status logic here.</p></body></html>
+    `,
+  );
+});
 
 // Serve Socket.IO client library explicitly (in case it's not auto-served)
 app.get('/socket.io/socket.io.js', async (c) => {
@@ -930,6 +941,21 @@ if (!isDev) {
 
 routes.forEach((route) => {
   app.route(basePath, route);
+});
+
+// WebSocket test page route
+app.get('/ws-test', async (c) => {
+  try {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const htmlPath = path.resolve(process.cwd(), 'websocket_test.html');
+    const htmlContent = await fs.readFile(htmlPath, 'utf-8');
+    return c.html(htmlContent);
+  }
+  catch (error) {
+    console.error('Error serving websocket_test.html:', error);
+    return c.text('WebSocket test file not found', 404);
+  }
 });
 
 // zkteco routes
