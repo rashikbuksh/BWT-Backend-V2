@@ -66,6 +66,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
     created_at: affiliate.created_at,
     updated_at: affiliate.updated_at,
+    commission_rate: PG_DECIMAL_TO_FLOAT(affiliate.commission_rate),
+    unit_type: affiliate.unit_type,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid));
@@ -86,6 +88,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
     created_at: affiliate.created_at,
     updated_at: affiliate.updated_at,
+    commission_rate: PG_DECIMAL_TO_FLOAT(affiliate.commission_rate),
+    unit_type: affiliate.unit_type,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))

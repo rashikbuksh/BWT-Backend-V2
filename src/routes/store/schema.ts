@@ -516,6 +516,11 @@ export const tags = store.table('tags', {
   remarks: text('remarks').default(sql`null`),
 });
 
+export const unitTypeEnum = pgEnum('unit_type', [
+  'percentage',
+  'bdt',
+]);
+
 export const affiliate = store.table('affiliate', {
   id: serial('id').notNull(),
   user_uuid: defaultUUID('user_uuid')
@@ -526,6 +531,9 @@ export const affiliate = store.table('affiliate', {
   purchased: integer('purchased').default(0),
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
+  commission_rate: PG_DECIMAL('commission_rate').default(sql`0`),
+  unit_type: unitTypeEnum('unit_type').default('bdt'),
+  remarks: text('remarks').default(sql`null`),
 });
 
 export default store;
