@@ -37,7 +37,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   let imagePath = null;
 
-  if (!image) {
+  if (image !== null && image !== undefined) {
     imagePath = await insertFile(image, 'public/product-variant');
   }
 
