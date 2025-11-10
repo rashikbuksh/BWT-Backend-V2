@@ -3,15 +3,21 @@ import type { TDocumentDefinitions } from 'pdfmake/interfaces'; // Import type f
 
 import { format } from 'date-fns';
 import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+import pdfFonts from 'pdfmake/build/vfs_fonts'; // This is the vfs data
 import { ToWords } from 'to-words';
 
-// console.log(pdfFonts); // Debug: Check if pdfFonts is loaded
-// console.log(pdfFonts.vfs); // Debug: Check if vfs is loaded
+// Assign the virtual file system for fonts
+// The 'pdfFonts' import is the object that contains the 'vfs' property.
+pdfMake.vfs = pdfFonts.vfs;
 
-pdfMake.vfs = pdfFonts.vfs; // Assign the virtual file system for fonts
-
-// console.log(pdfMake.vfs);
+pdfMake.fonts = {
+  Roboto: {
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
+  },
+};
 
 export async function generatePdf(data: {
   employee_name: string;
@@ -111,7 +117,8 @@ export async function generatePdf(data: {
 
   // Generate the PDF as a Buffer
   const pdfBuffer: Buffer = await new Promise((resolve, reject) => {
-    pdfMake.createPdf(pdfDocDefinition).getBuffer((buffer) => {
+    // Use getBuffer method
+    pdfMake.createPdf(pdfDocDefinition).getBuffer((buffer: Buffer) => {
       if (buffer) {
         resolve(buffer);
       }
