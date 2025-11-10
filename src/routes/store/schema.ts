@@ -516,4 +516,16 @@ export const tags = store.table('tags', {
   remarks: text('remarks').default(sql`null`),
 });
 
+export const affiliate = store.table('affiliate', {
+  id: serial('id').notNull(),
+  user_uuid: defaultUUID('user_uuid')
+    .references(() => hrSchema.users.uuid)
+    .notNull(),
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid).notNull(),
+  visited: integer('visited').default(0),
+  purchased: integer('purchased').default(0),
+  created_at: DateTime('created_at').notNull(),
+  updated_at: DateTime('updated_at').default(sql`null`),
+});
+
 export default store;

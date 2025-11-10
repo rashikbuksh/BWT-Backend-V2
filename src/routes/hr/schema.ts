@@ -93,6 +93,7 @@ export const users = hr.table('users', {
   address: text('address').default(sql`null`),
   city: text('city').default(sql`null`),
   district: text('district').default(sql`null`),
+  is_affiliate: boolean('is_affiliate').default(false),
 });
 
 export const policy_and_notice = hr.table('policy_and_notice', {
