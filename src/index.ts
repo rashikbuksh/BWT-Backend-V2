@@ -135,13 +135,49 @@ app.get(
 );
 
 // Use Bun's native server
-export default {
+Bun.serve({
   port,
   fetch: app.fetch,
   websocket: {
-    message(ws: ServerWebSocket, message: string | ArrayBuffer) {
+    message(ws: ServerWebSocket, message: string | ArrayBuffer | ArrayBufferView) {
       console.warn('WebSocket message received:', message);
-      ws.publish(topic, message);
+
+      // Normalize publish payload to string or ArrayBuffer
+      if (typeof message === 'string') {
+        ws.publish(topic, message);
+        return;
+      }
+
+      if (message instanceof ArrayBuffer) {
+        ws.publish(topic, message);
+        return;
+      }
+
+      // Handle ArrayBufferView (Uint8Array, DataView, etc.)
+      if (ArrayBuffer.isView(message)) {
+        const view = message as ArrayBufferView;
+        const tmp = new Uint8Array(view.byteLength);
+        tmp.set(new Uint8Array((view as any).buffer, (view as any).byteOffset || 0, view.byteLength));
+        ws.publish(topic, tmp.buffer);
+        return;
+      }
+
+      // Fallback for custom Buffer-like wrappers that expose byteLength & buffer
+      const bufLike = message as any;
+      if (bufLike && typeof bufLike.byteLength === 'number' && bufLike.buffer) {
+        const tmp = new Uint8Array(bufLike.byteLength);
+        tmp.set(new Uint8Array(bufLike.buffer, bufLike.byteOffset || 0, bufLike.byteLength));
+        ws.publish(topic, tmp.buffer);
+        return;
+      }
+
+      // As a last resort stringify
+      try {
+        ws.publish(topic, JSON.stringify(message));
+      }
+      catch {
+        ws.publish(topic, '');
+      }
     },
     open(ws: ServerWebSocket) {
       console.warn('WebSocket connection opened');
@@ -152,6 +188,6 @@ export default {
       ws.unsubscribe(topic);
     },
   },
-};
+});
 
 console.warn(`Server is running on port ${env.SERVER_URL}`);
