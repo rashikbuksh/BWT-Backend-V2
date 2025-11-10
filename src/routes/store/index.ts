@@ -1,4 +1,5 @@
 import accessories from './accessories';
+import affiliate from './affiliate/routes';
 import bill_info from './bill_info';
 import box from './box';
 import branch from './branch';
@@ -62,4 +63,5 @@ export default [
   accessories,
   forum,
   tags,
+  affiliate,
 ];
