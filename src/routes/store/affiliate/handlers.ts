@@ -114,7 +114,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   if (user_uuid && product_uuid) {
     const [data] = await affiliatePromise;
-    return c.json(data.id || {}, HSCode.OK);
+    return c.json(data ? { id: data.id } : {}, HSCode.OK);
   }
 
   const data = await affiliatePromise;
