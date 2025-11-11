@@ -49,6 +49,28 @@ export const orderDiagnosisCount = createRoute({
   },
 });
 
+export const orderDiagnosisCompleteCount = createRoute({
+  path: '/work/dashboard/order-diagnosis-complete-count',
+  method: 'get',
+  tags,
+  request: {
+    query: z.object({
+      engineer_uuid: z.string().optional(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(
+        z.object({
+          order_count: z.number().describe('The total count of distinct orders'),
+          product_quantity: z.number().describe('The total quantity of products across all orders'),
+        }),
+      ),
+      'The list of diagnoses',
+    ),
+  },
+});
+
 export const repairCount = createRoute({
   path: '/work/dashboard/repair-count',
   method: 'get',
@@ -164,6 +186,7 @@ export const dashboardReport = createRoute({
 
 export type OrderAndProductCountRoute = typeof orderAndProductCount;
 export type OrderDiagnosisCountRoute = typeof orderDiagnosisCount;
+export type OrderDiagnosisCompleteCountRoute = typeof orderDiagnosisCompleteCount;
 export type RepairCountRoute = typeof repairCount;
 export type QcCountRoute = typeof qcCount;
 export type ReadyForDeliveryCountRoute = typeof readyForDeliveryCount;

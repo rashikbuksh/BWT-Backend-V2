@@ -8,7 +8,7 @@ import db from '@/db';
 import { challan, challan_entry } from '@/routes/delivery/schema';
 import createApi from '@/utils/api';
 
-import type { DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
+import type { DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCompleteCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
 
 import { order } from '../schema';
 
@@ -56,6 +56,36 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
     WHERE
       info.is_product_received = TRUE
       AND wo.is_diagnosis_need = TRUE
+      AND wo.is_proceed_to_repair = FALSE
+      AND wo.is_transferred_for_qc = FALSE
+      AND wo.is_ready_for_delivery = FALSE
+      AND wo.is_delivery_without_challan = FALSE
+      AND ch.uuid IS NULL
+      AND wo.is_return = FALSE
+      ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
+  `;
+
+  const data = await db.execute(resultPromise);
+
+  return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
+};
+
+export const orderDiagnosisCompleteCount: AppRouteHandler<OrderDiagnosisCompleteCountRoute> = async (c: any) => {
+  const { engineer_uuid } = c.req.valid('query');
+
+  const resultPromise = sql`
+    SELECT
+      COUNT(DISTINCT wo.uuid)::float8 AS order_count,
+      COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
+    FROM work.order wo
+    LEFT JOIN work.diagnosis ON wo.uuid = diagnosis.order_uuid
+    LEFT JOIN work.info ON wo.info_uuid = info.uuid
+    LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
+    LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
+    WHERE
+      info.is_product_received = TRUE
+      AND wo.is_diagnosis_need = TRUE
+      AND diagnosis.is_diagnosis_complete = TRUE
       AND wo.is_proceed_to_repair = FALSE
       AND wo.is_transferred_for_qc = FALSE
       AND wo.is_ready_for_delivery = FALSE
@@ -155,16 +185,18 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(
-      or(
-        and(
-          eq(orderTable.is_proceed_to_repair, true),
-          eq(orderTable.is_ready_for_delivery, true),
-          eq(challan.is_delivery_complete, true),
-          eq(orderTable.is_return, false),
-          engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
+      and(
+        eq(orderTable.is_proceed_to_repair, true),
+        eq(orderTable.is_ready_for_delivery, true),
+        eq(challan.is_delivery_complete, true),
+        or(
+
+          eq(orderTable.is_delivery_without_challan, true),
         ),
-        eq(orderTable.is_delivery_without_challan, true),
+        eq(orderTable.is_return, false),
+        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
       ),
+
     );
   const data = await resultPromise;
 
@@ -178,6 +210,7 @@ export const dashboardReport: AppRouteHandler<DashboardReportRoute> = async (c: 
   const [
     receivedCount,
     diagnosisCount,
+    diagnosisCompleteCount,
     repairCountResult,
     qcCountResult,
     readyForDeliveryCountResult,
@@ -189,6 +222,9 @@ export const dashboardReport: AppRouteHandler<DashboardReportRoute> = async (c: 
     engineer_uuid
       ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
       : api.get('/v1/work/dashboard/order-diagnosis-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-complete-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/order-diagnosis-complete-count').then(res => res.data),
     engineer_uuid
       ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
       : api.get('/v1/work/dashboard/repair-count').then(res => res.data),
@@ -206,6 +242,57 @@ export const dashboardReport: AppRouteHandler<DashboardReportRoute> = async (c: 
   return c.json({
     received: receivedCount,
     diagnosis: diagnosisCount,
+    diagnosisComplete: diagnosisCompleteCount,
+    repair: repairCountResult,
+    qc: qcCountResult,
+    readyForDelivery: readyForDeliveryCountResult,
+    delivered: deliveredCountResult,
+  });
+};
+
+// * Dashboard All
+
+export const dashboardAllReport: AppRouteHandler<DashboardReportRoute> = async (c: any) => {
+  const { engineer_uuid } = c.req.valid('query');
+
+  const api = createApi(c);
+
+  const [
+    receivedCount,
+    diagnosisCount,
+    diagnosisCompleteCount,
+    repairCountResult,
+    qcCountResult,
+    readyForDeliveryCountResult,
+    deliveredCountResult,
+  ] = await Promise.all([
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/order-and-product-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/order-diagnosis-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-complete-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/order-diagnosis-complete-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/repair-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/qc-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/ready-for-delivery-count').then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}`).then(res => res.data)
+      : api.get('/v1/work/dashboard/delivered-count').then(res => res.data),
+  ]);
+
+  return c.json({
+    received: receivedCount,
+    diagnosis: diagnosisCount,
+    diagnosisComplete: diagnosisCompleteCount,
     repair: repairCountResult,
     qc: qcCountResult,
     readyForDelivery: readyForDeliveryCountResult,
