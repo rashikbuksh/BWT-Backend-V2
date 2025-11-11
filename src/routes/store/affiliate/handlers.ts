@@ -22,7 +22,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   ));
 
   if (data) {
-    return c.json({ message: 'Affiliate already exists' }, 400);
+    return c.json({ message: 'Affiliate already exists' }, HSCode.OK);
   }
 
   try {
