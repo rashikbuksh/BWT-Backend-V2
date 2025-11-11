@@ -22,7 +22,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   ));
 
   if (data) {
-    return c.json({ message: 'Affiliate already exists' }, HSCode.CONFLICT);
+    return c.json(createToast('warning', `Affiliate for user ${data.user_uuid} and product ${data.product_uuid} already exists.`), HSCode.OK);
   }
 
   try {
