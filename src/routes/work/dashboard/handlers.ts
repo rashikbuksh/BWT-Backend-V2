@@ -571,7 +571,9 @@ export const customerReceiveTypeCount: AppRouteHandler<CustomerReceiveTypeCountR
   const query = sql`
     SELECT
       COUNT(DISTINCT wo.uuid)::float8 AS order_count,
-      COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
+      SUM(CASE WHEN info.receive_type = 'customer_drop_off' THEN 1 ELSE 0 END)::float8 AS customer_drop_off_count,
+      SUM(CASE WHEN info.receive_type = 'home_received' THEN 1 ELSE 0 END)::float8 AS home_received_count,
+      SUM(CASE WHEN info.receive_type = 'courier_received' THEN 1 ELSE 0 END)::float8 AS courier_received_count
     FROM work.order wo
     LEFT JOIN work.info ON wo.info_uuid = info.uuid
     LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
