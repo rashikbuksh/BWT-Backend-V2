@@ -253,8 +253,8 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     const engineerQuery = db
       .select({
         value: hrSchema.users.uuid,
-        label: sql`CONCAT(${hrSchema.users.name}, ' - ', ${hrSchema.users.phone}, 
-            ' (', 'Work In Hand: ', (COUNT(${receivedTrue})::float8 + COUNT(${diagnosisTrue})::float8 + COUNT(${repairTrue})::float8), ')')`,
+        label: sql`CONCAT(${hrSchema.users.name}, 
+            ' (', 'WIH: ', (COUNT(${receivedTrue})::float8 + COUNT(${diagnosisTrue})::float8 + COUNT(${repairTrue})::float8), ')')`,
         received_count: sql`COUNT(${receivedTrue})::float8`,
         diagnosis_count: sql`COUNT(${diagnosisTrue})::float8`,
         repair_count: sql`COUNT(${repairTrue})::float8`,
