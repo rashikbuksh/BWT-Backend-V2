@@ -14,6 +14,12 @@ export const list = createRoute({
   path: '/store/affiliate',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+      user_uuid: z.string().optional(),
+      product_uuid: z.string().optional(),
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),

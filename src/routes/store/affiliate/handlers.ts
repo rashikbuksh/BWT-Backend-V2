@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -65,6 +65,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
+  const { user_uuid, product_uuid } = c.req.valid('query');
   const affiliatePromise = db.select({
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
@@ -78,6 +79,19 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid));
+
+  const filters = [];
+
+  if (user_uuid) {
+    filters.push(eq(affiliate.user_uuid, user_uuid));
+  }
+  if (product_uuid) {
+    filters.push(eq(affiliate.product_uuid, product_uuid));
+  }
+
+  if (filters.length > 0) {
+    affiliatePromise.where(and(...filters));
+  }
 
   const data = await affiliatePromise;
 
