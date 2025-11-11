@@ -99,12 +99,12 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     product_title: product.title,
     product_url: product.url,
     product_image: sql`(
-      SELECT pi.image
-      FROM store.product_image pi
-      WHERE pi.product_uuid = ${product.uuid}
-      ORDER BY pi.is_main DESC, pi.id ASC
-      LIMIT 1
-    )`,
+                  SELECT pi.image
+                  FROM store.product_image pi
+                  WHERE pi.product_uuid = ${affiliate.product_uuid}
+                  ORDER BY pi.is_main DESC, pi.created_at ASC
+                  LIMIT 1
+                )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
