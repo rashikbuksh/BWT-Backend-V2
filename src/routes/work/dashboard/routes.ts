@@ -11,6 +11,8 @@ export const orderAndProductCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   tags,
@@ -34,6 +36,8 @@ export const orderDiagnosisCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -56,6 +60,8 @@ export const orderDiagnosisCompleteCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -78,6 +84,8 @@ export const repairCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -100,6 +108,8 @@ export const qcCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -122,6 +132,8 @@ export const readyForDeliveryCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -144,6 +156,8 @@ export const deliveredCount = createRoute({
   request: {
     query: z.object({
       engineer_uuid: z.string().optional(),
+      from_date: z.string().optional(),
+      to_date: z.string().optional(),
     }),
   },
   responses: {
@@ -184,6 +198,48 @@ export const dashboardReport = createRoute({
   },
 });
 
+export const dashboardAllReport = createRoute({
+  path: '/work/dashboard-all/report',
+  method: 'get',
+  tags,
+  request: {
+    query: z.object({
+      engineer_uuid: z.string().optional(),
+      date: z.string().optional(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        received_3_day: z.number().describe('Total number of orders received in last 3 days'),
+        diagnosis_3_day: z.number().describe('Total number of diagnoses in last 3 days'),
+        diagnosisComplete_3_day: z.number().describe('Total number of complete diagnoses in last 3 days'),
+        repair_3_day: z.number().describe('Total number of repairs in last 3 days'),
+        qc_3_day: z.number().describe('Total number of quality checks in last 3 days'),
+        readyForDelivery_3_day: z.number().describe('Total number of orders ready for delivery in last 3 days'),
+        delivered_3_day: z.number().describe('Total number of delivered orders in last 3 days'),
+
+        received_7_day: z.number().describe('Total number of orders received in last 7 days'),
+        diagnosis_7_day: z.number().describe('Total number of diagnoses in last 7 days'),
+        diagnosisComplete_7_day: z.number().describe('Total number of complete diagnoses in last 7 days'),
+        repair_7_day: z.number().describe('Total number of repairs in last 7 days'),
+        qc_7_day: z.number().describe('Total number of quality checks in last 7 days'),
+        readyForDelivery_7_day: z.number().describe('Total number of orders ready for delivery in last 7 days'),
+        delivered_7_day: z.number().describe('Total number of delivered orders in last 7 days'),
+
+        received_all: z.number().describe('Total number of orders received in all time'),
+        diagnosis_all: z.number().describe('Total number of diagnoses in all time'),
+        diagnosisComplete_all: z.number().describe('Total number of complete diagnoses in all time'),
+        repair_all: z.number().describe('Total number of repairs in all time'),
+        qc_all: z.number().describe('Total number of quality checks in all time'),
+        readyForDelivery_all: z.number().describe('Total number of orders ready for delivery in all time'),
+        delivered_all: z.number().describe('Total number of delivered orders in all time'),
+      }),
+      'Dashboard report summary',
+    ),
+  },
+});
+
 export type OrderAndProductCountRoute = typeof orderAndProductCount;
 export type OrderDiagnosisCountRoute = typeof orderDiagnosisCount;
 export type OrderDiagnosisCompleteCountRoute = typeof orderDiagnosisCompleteCount;
@@ -192,3 +248,4 @@ export type QcCountRoute = typeof qcCount;
 export type ReadyForDeliveryCountRoute = typeof readyForDeliveryCount;
 export type DeliveredCountRoute = typeof deliveredCount;
 export type DashboardReportRoute = typeof dashboardReport;
+export type DashboardAllReportRoute = typeof dashboardAllReport;

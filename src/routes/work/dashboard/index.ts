@@ -6,10 +6,12 @@ import * as routes from './routes';
 const router = createRouter()
   .openapi(routes.orderAndProductCount, handlers.orderAndProductCount)
   .openapi(routes.orderDiagnosisCount, handlers.orderDiagnosisCount)
+  .openapi(routes.orderDiagnosisCompleteCount, handlers.orderDiagnosisCompleteCount)
   .openapi(routes.repairCount, handlers.repairCount)
   .openapi(routes.qcCount, handlers.qcCount)
   .openapi(routes.readyForDeliveryCount, handlers.readyForDeliveryCount)
   .openapi(routes.deliveredCount, handlers.deliveredCount)
-  .openapi(routes.dashboardReport, handlers.dashboardReport);
+  .openapi(routes.dashboardReport, handlers.dashboardReport)
+  .openapi(routes.dashboardAllReport, handlers.dashboardAllReport);
 
 export default router;
