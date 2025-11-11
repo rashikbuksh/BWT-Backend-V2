@@ -17,7 +17,7 @@ const orderTable = alias(order, 'work_order');
 export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
-  const resultPromise = sql`
+  let query = sql`
     SELECT
       COUNT(DISTINCT wo.uuid)::float8 AS order_count,
       COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
@@ -33,12 +33,20 @@ export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = 
       AND wo.is_ready_for_delivery = FALSE
       AND wo.is_delivery_without_challan = FALSE
       AND ch.uuid IS NULL
-      AND wo.is_return = FALSE
-      ${from_date && to_date ? sql`AND wo.created_at BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``}
-      ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
-  `;
+      AND wo.is_return = FALSE`;
 
-  const data = await db.execute(resultPromise);
+  // Build conditions dynamically
+  if (from_date && to_date) {
+    query = sql`${query}
+      AND wo.created_at BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`;
+  }
+
+  if (engineer_uuid) {
+    query = sql`${query}
+      AND wo.engineer_uuid = ${engineer_uuid}`;
+  }
+
+  const data = await db.execute(query);
 
   return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
 };
@@ -46,7 +54,7 @@ export const orderAndProductCount: AppRouteHandler<OrderAndProductCountRoute> = 
 export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
-  const resultPromise = sql`
+  let query = sql`
     SELECT
       COUNT(DISTINCT wo.uuid)::float8 AS order_count,
       COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
@@ -62,12 +70,20 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
       AND wo.is_ready_for_delivery = FALSE
       AND wo.is_delivery_without_challan = FALSE
       AND ch.uuid IS NULL
-      AND wo.is_return = FALSE
-      ${from_date && to_date ? sql`AND wo.created_at BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``}
-      ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
-  `;
+      AND wo.is_return = FALSE`;
 
-  const data = await db.execute(resultPromise);
+  // Build conditions dynamically
+  if (from_date && to_date) {
+    query = sql`${query}
+      AND wo.created_at BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`;
+  }
+
+  if (engineer_uuid) {
+    query = sql`${query}
+      AND wo.engineer_uuid = ${engineer_uuid}`;
+  }
+
+  const data = await db.execute(query);
 
   return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
 };
@@ -75,7 +91,7 @@ export const orderDiagnosisCount: AppRouteHandler<OrderDiagnosisCountRoute> = as
 export const orderDiagnosisCompleteCount: AppRouteHandler<OrderDiagnosisCompleteCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
-  const resultPromise = sql`
+  let query = sql`
     SELECT
       COUNT(DISTINCT wo.uuid)::float8 AS order_count,
       COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
@@ -93,12 +109,20 @@ export const orderDiagnosisCompleteCount: AppRouteHandler<OrderDiagnosisComplete
       AND wo.is_ready_for_delivery = FALSE
       AND wo.is_delivery_without_challan = FALSE
       AND ch.uuid IS NULL
-      AND wo.is_return = FALSE
-      ${from_date && to_date ? sql`AND wo.created_at BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``}
-      ${engineer_uuid ? sql`AND wo.engineer_uuid = ${engineer_uuid}` : sql``}
-  `;
+      AND wo.is_return = FALSE`;
 
-  const data = await db.execute(resultPromise);
+  // Build conditions dynamically
+  if (from_date && to_date) {
+    query = sql`${query}
+      AND wo.created_at BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`;
+  }
+
+  if (engineer_uuid) {
+    query = sql`${query}
+      AND wo.engineer_uuid = ${engineer_uuid}`;
+  }
+
+  const data = await db.execute(query);
 
   return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
 };
@@ -106,22 +130,31 @@ export const orderDiagnosisCompleteCount: AppRouteHandler<OrderDiagnosisComplete
 export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
+  // Build conditions array
+  const conditions = [
+    eq(orderTable.is_proceed_to_repair, true),
+    eq(orderTable.is_transferred_for_qc, false),
+    eq(orderTable.is_ready_for_delivery, false),
+    eq(orderTable.is_delivery_without_challan, false),
+    eq(orderTable.is_return, false),
+  ];
+
+  // Add date filter if provided
+  if (from_date && to_date) {
+    conditions.push(sql`${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`);
+  }
+
+  // Add engineer filter if provided
+  if (engineer_uuid) {
+    conditions.push(eq(orderTable.engineer_uuid, engineer_uuid));
+  }
+
   const resultPromise = db.select({
     order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .where(
-      and(
-        eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_transferred_for_qc, false),
-        eq(orderTable.is_ready_for_delivery, false),
-        eq(orderTable.is_delivery_without_challan, false),
-        eq(orderTable.is_return, false),
-        from_date && to_date ? sql`AND ${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``,
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
-      ),
-    );
+    .where(and(...conditions));
 
   const data = await resultPromise;
 
@@ -131,22 +164,31 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
 export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
+  // Build conditions array
+  const conditions = [
+    eq(orderTable.is_proceed_to_repair, true),
+    eq(orderTable.is_transferred_for_qc, true),
+    eq(orderTable.is_ready_for_delivery, false),
+    eq(orderTable.is_delivery_without_challan, false),
+    eq(orderTable.is_return, false),
+  ];
+
+  // Add date filter if provided
+  if (from_date && to_date) {
+    conditions.push(sql`${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`);
+  }
+
+  // Add engineer filter if provided
+  if (engineer_uuid) {
+    conditions.push(eq(orderTable.engineer_uuid, engineer_uuid));
+  }
+
   const resultPromise = db.select({
     order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
-    .where(
-      and(
-        eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_transferred_for_qc, true),
-        eq(orderTable.is_ready_for_delivery, false),
-        eq(orderTable.is_delivery_without_challan, false),
-        eq(orderTable.is_return, false),
-        from_date && to_date ? sql`AND ${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``,
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
-      ),
-    );
+    .where(and(...conditions));
 
   const data = await resultPromise;
 
@@ -156,6 +198,25 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
 export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
+  // Build conditions array
+  const conditions = [
+    eq(orderTable.is_proceed_to_repair, true),
+    eq(orderTable.is_ready_for_delivery, true),
+    eq(orderTable.is_delivery_without_challan, false),
+    sql`${challan_entry.uuid} IS NULL`,
+    eq(orderTable.is_return, false),
+  ];
+
+  // Add date filter if provided
+  if (from_date && to_date) {
+    conditions.push(sql`${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`);
+  }
+
+  // Add engineer filter if provided
+  if (engineer_uuid) {
+    conditions.push(eq(orderTable.engineer_uuid, engineer_uuid));
+  }
+
   const resultPromise = db.select({
     order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
@@ -163,17 +224,7 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
     .from(orderTable)
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
-    .where(
-      and(
-        eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_ready_for_delivery, true),
-        eq(orderTable.is_delivery_without_challan, false),
-        sql`${challan_entry.uuid} IS NULL`,
-        eq(orderTable.is_return, false),
-        from_date && to_date ? sql`AND ${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``,
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
-      ),
-    );
+    .where(and(...conditions));
 
   const data = await resultPromise;
 
@@ -183,6 +234,27 @@ export const readyForDeliveryCount: AppRouteHandler<ReadyForDeliveryCountRoute> 
 export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: any) => {
   const { engineer_uuid, from_date, to_date } = c.req.valid('query');
 
+  // Build conditions array
+  const conditions = [
+    eq(orderTable.is_proceed_to_repair, true),
+    eq(orderTable.is_ready_for_delivery, true),
+    or(
+      eq(challan.is_delivery_complete, true),
+      eq(orderTable.is_delivery_without_challan, true),
+    ),
+    eq(orderTable.is_return, false),
+  ];
+
+  // Add date filter if provided
+  if (from_date && to_date) {
+    conditions.push(sql`${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'`);
+  }
+
+  // Add engineer filter if provided
+  if (engineer_uuid) {
+    conditions.push(eq(orderTable.engineer_uuid, engineer_uuid));
+  }
+
   const resultPromise = db.select({
     order_count: sql`COUNT(DISTINCT ${orderTable.uuid})::float8`,
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
@@ -190,20 +262,8 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
     .from(orderTable)
     .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
     .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
-    .where(
-      and(
-        eq(orderTable.is_proceed_to_repair, true),
-        eq(orderTable.is_ready_for_delivery, true),
-        or(
-          eq(challan.is_delivery_complete, true),
-          eq(orderTable.is_delivery_without_challan, true),
-        ),
-        eq(orderTable.is_return, false),
-        from_date && to_date ? sql`AND ${orderTable.created_at} BETWEEN ${from_date}::timestamp AND ${to_date}::timestamp + INTERVAL '1 day'` : sql``,
-        engineer_uuid ? eq(orderTable.engineer_uuid, engineer_uuid) : sql`TRUE`,
-      ),
+    .where(and(...conditions));
 
-    );
   const data = await resultPromise;
 
   return c.json(data[0] || {}, HSCode.OK);
@@ -262,16 +322,30 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
   const { engineer_uuid, date } = c.req.valid('query');
 
   // 3 day range from date, where date is to_date
-  const from_date_3_day = date ? new Date(date) : null;
-  const to_date = date ? new Date(date) : null;
-  if (from_date_3_day) {
-    from_date_3_day.setDate(from_date_3_day.getDate() - 3);
+  const from_date_prev_3_day = date ? new Date(date) : null;
+  const to_date_now = date ? new Date(date) : null;
+  if (from_date_prev_3_day) {
+    from_date_prev_3_day.setDate(from_date_prev_3_day.getDate() - 3);
   }
 
-  const from_date_7_day = date ? new Date(date) : null;
-  if (from_date_7_day) {
-    from_date_7_day.setDate(from_date_7_day.getDate() - 7);
+  const from_date_prev_7_day = date ? new Date(date) : null;
+  if (from_date_prev_7_day) {
+    from_date_prev_7_day.setDate(from_date_prev_7_day.getDate() - 7);
   }
+
+  // fix the date format to YYYY-MM-DD
+  const formatDate = (d: Date | null) => {
+    if (!d)
+      return null;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const from_date_3_day = formatDate(from_date_prev_3_day);
+  const to_date = formatDate(to_date_now);
+  const from_date_7_day = formatDate(from_date_prev_7_day);
 
   const api = createApi(c);
 
