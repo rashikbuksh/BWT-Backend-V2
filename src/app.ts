@@ -273,12 +273,6 @@ export function getOnlineUsersCount(): number {
   return io?.sockets.sockets.size || 0;
 }
 
-// // log all the requests
-// app.use(async (c, next) => {
-//   console.warn(`[${new Date().toISOString()}] ${c.req.method} ${c.req.url}`);
-//   await next();
-// });
-
 // Apply 50 MB limit to all routes
 // app.use('*', bodyLimit({
 //   maxSize: 50 * 1024 * 1024, // 50 MB
@@ -406,6 +400,53 @@ app.get('/socket-debug', (c) => {
         origin_received: origin,
       },
     },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// IP information debug endpoint
+app.get('/ip-info', (c) => {
+  const allHeaders: Record<string, string> = {};
+  c.req.raw.headers.forEach((value, key) => {
+    allHeaders[key] = value;
+  });
+
+  const ip = c.req.header('x-forwarded-for')
+    || c.req.header('x-real-ip')
+    || c.req.header('cf-connecting-ip')
+    || c.req.header('x-client-ip')
+    || 'unknown';
+
+  return c.json({
+    client_info: {
+      detected_ip: ip,
+      all_ip_headers: {
+        'x-forwarded-for': c.req.header('x-forwarded-for'),
+        'x-real-ip': c.req.header('x-real-ip'),
+        'cf-connecting-ip': c.req.header('cf-connecting-ip'),
+        'x-client-ip': c.req.header('x-client-ip'),
+      },
+      user_agent: c.req.header('user-agent'),
+      origin: c.req.header('origin'),
+      referer: c.req.header('referer'),
+      host: c.req.header('host'),
+      connection: c.req.header('connection'),
+      accept: c.req.header('accept'),
+      accept_language: c.req.header('accept-language'),
+      accept_encoding: c.req.header('accept-encoding'),
+    },
+    server_info: {
+      environment: env.NODE_ENV,
+      server_url: env.NODE_ENV === 'development' ? env.SERVER_URL : env.PRODUCTION_URL,
+      port: env.PORT,
+    },
+    request_info: {
+      method: c.req.method,
+      url: c.req.url,
+      path: c.req.path,
+      query: c.req.query(),
+    },
+    all_headers: allHeaders,
     timestamp: new Date().toISOString(),
   });
 });
