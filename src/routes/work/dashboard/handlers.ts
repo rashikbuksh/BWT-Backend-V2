@@ -103,7 +103,7 @@ export const orderDiagnosisCompleteCount: AppRouteHandler<OrderDiagnosisComplete
     WHERE
       info.is_product_received = TRUE
       AND wo.is_diagnosis_need = TRUE
-      AND diagnosis.is_diagnosis_complete = TRUE
+      AND diagnosis.is_diagnosis_completed = TRUE
       AND wo.is_proceed_to_repair = FALSE
       AND wo.is_transferred_for_qc = FALSE
       AND wo.is_ready_for_delivery = FALSE
