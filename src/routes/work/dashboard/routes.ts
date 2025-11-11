@@ -247,8 +247,10 @@ export const customerReceiveTypeCount = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
-        received: z.number().describe('Total number of orders received'),
-        returned: z.number().describe('Total number of orders returned'),
+        order_count: z.number().describe('Total number of orders received'),
+        customer_drop_off_count: z.number().describe('Total number of orders returned'),
+        home_received_count: z.number().describe('Total number of orders received at home'),
+        courier_received_count: z.number().describe('Total number of orders received via courier'),
       }),
       'Customer receive type count',
     ),
