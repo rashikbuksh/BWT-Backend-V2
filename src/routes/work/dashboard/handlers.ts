@@ -328,9 +328,22 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
     from_date_prev_3_day.setDate(from_date_prev_3_day.getDate() - 3);
   }
 
+  // 7 day range from date, where date is to_date
   const from_date_prev_7_day = date ? new Date(date) : null;
   if (from_date_prev_7_day) {
     from_date_prev_7_day.setDate(from_date_prev_7_day.getDate() - 7);
+  }
+
+  // 14 day range from date, where date is to_date
+  const from_date_prev_14_day = date ? new Date(date) : null;
+  if (from_date_prev_14_day) {
+    from_date_prev_14_day.setDate(from_date_prev_14_day.getDate() - 14);
+  }
+
+  // 30 day range from date, where date is to_date
+  const from_date_prev_30_day = date ? new Date(date) : null;
+  if (from_date_prev_30_day) {
+    from_date_prev_30_day.setDate(from_date_prev_30_day.getDate() - 30);
   }
 
   // fix the date format to YYYY-MM-DD
@@ -346,6 +359,8 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
   const from_date_3_day = formatDate(from_date_prev_3_day);
   const to_date = formatDate(to_date_now);
   const from_date_7_day = formatDate(from_date_prev_7_day);
+  const from_date_14_day = formatDate(from_date_prev_14_day);
+  const from_date_30_day = formatDate(from_date_prev_30_day);
 
   const api = createApi(c);
 
@@ -414,6 +429,70 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
   ]);
 
   const [
+    receivedCount_14_day,
+    diagnosisCount_14_day,
+    diagnosisCompleteCount_14_day,
+    repairCountResult_14_day,
+    qcCountResult_14_day,
+    readyForDeliveryCountResult_14_day,
+    deliveredCountResult_14_day,
+  ] = await Promise.all([
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-and-product-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-diagnosis-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-complete-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-diagnosis-complete-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/repair-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/qc-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/ready-for-delivery-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/delivered-count?from_date=${from_date_14_day}&to_date=${from_date_7_day}`).then(res => res.data),
+  ]);
+
+  const [
+    receivedCount_30_day,
+    diagnosisCount_30_day,
+    diagnosisCompleteCount_30_day,
+    repairCountResult_30_day,
+    qcCountResult_30_day,
+    readyForDeliveryCountResult_30_day,
+    deliveredCountResult_30_day,
+  ] = await Promise.all([
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-and-product-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-diagnosis-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/order-diagnosis-complete-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-diagnosis-complete-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/repair-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/qc-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/ready-for-delivery-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+    engineer_uuid
+      ? api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/delivered-count?from_date=${from_date_30_day}&to_date=${from_date_14_day}`).then(res => res.data),
+  ]);
+
+  const [
     receivedCount_all,
     diagnosisCount_all,
     diagnosisCompleteCount_all,
@@ -461,6 +540,22 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
     qc_7_day: qcCountResult_7_day,
     readyForDelivery_7_day: readyForDeliveryCountResult_7_day,
     delivered_7_day: deliveredCountResult_7_day,
+
+    received_14_day: receivedCount_14_day,
+    diagnosis_14_day: diagnosisCount_14_day,
+    diagnosisComplete_14_day: diagnosisCompleteCount_14_day,
+    repair_14_day: repairCountResult_14_day,
+    qc_14_day: qcCountResult_14_day,
+    readyForDelivery_14_day: readyForDeliveryCountResult_14_day,
+    delivered_14_day: deliveredCountResult_14_day,
+
+    received_30_day: receivedCount_30_day,
+    diagnosis_30_day: diagnosisCount_30_day,
+    diagnosisComplete_30_day: diagnosisCompleteCount_30_day,
+    repair_30_day: repairCountResult_30_day,
+    qc_30_day: qcCountResult_30_day,
+    readyForDelivery_30_day: readyForDeliveryCountResult_30_day,
+    delivered_30_day: deliveredCountResult_30_day,
 
     received_all: receivedCount_all,
     diagnosis_all: diagnosisCount_all,
