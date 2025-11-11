@@ -317,26 +317,26 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
     deliveredCountResult_7_day,
   ] = await Promise.all([
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/order-and-product-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/order-and-product-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-and-product-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/order-diagnosis-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/order-diagnosis-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-diagnosis-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/order-diagnosis-complete-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/order-diagnosis-complete-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/order-diagnosis-complete-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/order-diagnosis-complete-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/repair-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/repair-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/repair-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/qc-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/qc-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/qc-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/ready-for-delivery-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/ready-for-delivery-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/ready-for-delivery-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
     engineer_uuid
-      ? api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data)
-      : api.get(`/v1/work/dashboard/delivered-count?from_date=${from_date_7_day}&to_date=${to_date}`).then(res => res.data),
+      ? api.get(`/v1/work/dashboard/delivered-count?engineer_uuid=${engineer_uuid}&from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data)
+      : api.get(`/v1/work/dashboard/delivered-count?from_date=${from_date_7_day}&to_date=${from_date_3_day}`).then(res => res.data),
   ]);
 
   const [
