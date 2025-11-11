@@ -100,7 +100,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     product_url: product.url,
     product_image: sql`(
       SELECT pi.image
-      FROM hr.product_image pi
+      FROM store.product_image pi
       WHERE pi.product_uuid = ${product.uuid}
       ORDER BY pi.is_main DESC, pi.id ASC
       LIMIT 1
