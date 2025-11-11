@@ -16,6 +16,15 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
   // console.log('Affiliate Create Value:', value);
 
+  const [data] = await db.select().from(affiliate).where(and(
+    eq(affiliate.user_uuid, value.user_uuid),
+    eq(affiliate.product_uuid, value.product_uuid),
+  ));
+
+  if (data) {
+    return c.json({ message: 'Affiliate already exists' }, 400);
+  }
+
   try {
     const [data] = await db.insert(affiliate).values(value).returning({
       name: affiliate.id,
