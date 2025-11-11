@@ -139,6 +139,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const affiliatePromise = db.select({
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
+    user_name: users.name,
     product_uuid: affiliate.product_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
@@ -146,9 +147,19 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     updated_at: affiliate.updated_at,
     commission_rate: PG_DECIMAL_TO_FLOAT(affiliate.commission_rate),
     unit_type: affiliate.unit_type,
+    product_title: product.title,
+    product_url: product.url,
+    product_image: sql`(
+                  SELECT pi.image
+                  FROM store.product_image pi
+                  WHERE pi.product_uuid = ${affiliate.product_uuid}
+                  ORDER BY pi.is_main DESC, pi.created_at ASC
+                  LIMIT 1
+                )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
+    .leftJoin(product, eq(affiliate.product_uuid, product.uuid))
     .where(eq(affiliate.id, id));
 
   const [data] = await affiliatePromise;
