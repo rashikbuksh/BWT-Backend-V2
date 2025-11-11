@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -88,6 +88,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const affiliatePromise = db.select({
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
+    user_name: users.name,
     product_uuid: affiliate.product_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
@@ -95,9 +96,19 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     updated_at: affiliate.updated_at,
     commission_rate: PG_DECIMAL_TO_FLOAT(affiliate.commission_rate),
     unit_type: affiliate.unit_type,
+    product_title: product.title,
+    product_url: product.url,
+    product_image: sql`(
+      SELECT pi.image
+      FROM hr.product_image pi
+      WHERE pi.product_uuid = ${product.uuid}
+      ORDER BY pi.is_main DESC, pi.id ASC
+      LIMIT 1
+    )`,
   })
     .from(affiliate)
-    .leftJoin(users, eq(affiliate.user_uuid, users.uuid));
+    .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
+    .leftJoin(product, eq(affiliate.product_uuid, product.uuid));
 
   const filters = [];
 
