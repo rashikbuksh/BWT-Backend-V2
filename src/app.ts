@@ -404,27 +404,81 @@ app.get('/socket-debug', (c) => {
   });
 });
 
-// IP information debug endpoint
+// IP information debug endpoint with enhanced detection
 app.get('/ip-info', (c) => {
   const allHeaders: Record<string, string> = {};
   c.req.raw.headers.forEach((value, key) => {
     allHeaders[key] = value;
   });
 
-  const ip = c.req.header('x-forwarded-for')
-    || c.req.header('x-real-ip')
-    || c.req.header('cf-connecting-ip')
-    || c.req.header('x-client-ip')
-    || 'unknown';
+  // Enhanced IP detection (same logic as middleware)
+  const xForwardedFor = c.req.header('x-forwarded-for');
+  const xRealIp = c.req.header('x-real-ip');
+  const cfConnectingIp = c.req.header('cf-connecting-ip');
+  const xClientIp = c.req.header('x-client-ip');
+  const xOriginalForwardedFor = c.req.header('x-original-forwarded-for');
+  const trueClientIp = c.req.header('true-client-ip');
+  const xClusterClientIp = c.req.header('x-cluster-client-ip');
+  const forwardedFor = c.req.header('forwarded-for');
+  const forwarded = c.req.header('forwarded');
+
+  let detectedIp = 'unknown';
+  let detectionMethod = 'none';
+
+  if (xForwardedFor) {
+    detectedIp = xForwardedFor.split(',')[0].trim();
+    detectionMethod = 'x-forwarded-for';
+  }
+  else if (xRealIp) {
+    detectedIp = xRealIp;
+    detectionMethod = 'x-real-ip';
+  }
+  else if (cfConnectingIp) {
+    detectedIp = cfConnectingIp;
+    detectionMethod = 'cf-connecting-ip';
+  }
+  else if (trueClientIp) {
+    detectedIp = trueClientIp;
+    detectionMethod = 'true-client-ip';
+  }
+  else if (xClientIp) {
+    detectedIp = xClientIp;
+    detectionMethod = 'x-client-ip';
+  }
+  else if (xOriginalForwardedFor) {
+    detectedIp = xOriginalForwardedFor.split(',')[0].trim();
+    detectionMethod = 'x-original-forwarded-for';
+  }
+  else if (xClusterClientIp) {
+    detectedIp = xClusterClientIp;
+    detectionMethod = 'x-cluster-client-ip';
+  }
+  else if (forwardedFor) {
+    detectedIp = forwardedFor.split(',')[0].trim();
+    detectionMethod = 'forwarded-for';
+  }
+  else if (forwarded) {
+    const forMatch = forwarded.match(/for=([^;,\s]+)/);
+    if (forMatch) {
+      detectedIp = forMatch[1].replace(/"/g, '');
+      detectionMethod = 'forwarded';
+    }
+  }
 
   return c.json({
     client_info: {
-      detected_ip: ip,
+      detected_ip: detectedIp,
+      detection_method: detectionMethod,
       all_ip_headers: {
-        'x-forwarded-for': c.req.header('x-forwarded-for'),
-        'x-real-ip': c.req.header('x-real-ip'),
-        'cf-connecting-ip': c.req.header('cf-connecting-ip'),
-        'x-client-ip': c.req.header('x-client-ip'),
+        'x-forwarded-for': xForwardedFor,
+        'x-real-ip': xRealIp,
+        'cf-connecting-ip': cfConnectingIp,
+        'x-client-ip': xClientIp,
+        'x-original-forwarded-for': xOriginalForwardedFor,
+        'true-client-ip': trueClientIp,
+        'x-cluster-client-ip': xClusterClientIp,
+        'forwarded-for': forwardedFor,
+        'forwarded': forwarded,
       },
       user_agent: c.req.header('user-agent'),
       origin: c.req.header('origin'),
