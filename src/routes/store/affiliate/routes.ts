@@ -51,10 +51,12 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/affiliate/{uuid}',
+  path: '/store/affiliate/{id}',
   method: 'get',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
   },
   tags,
   responses: {
@@ -74,10 +76,12 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/affiliate/{uuid}',
+  path: '/store/affiliate/{id}',
   method: 'patch',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
     body: jsonContentRequired(
       patchSchema,
       'The affiliate updates',
@@ -102,10 +106,12 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/affiliate/{uuid}',
+  path: '/store/affiliate/{id}',
   method: 'delete',
   request: {
-    params: param.uuid,
+    params: z.object({
+      id: z.string(),
+    }),
   },
   tags,
   responses: {
