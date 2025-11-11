@@ -188,9 +188,8 @@ export const deliveredCount: AppRouteHandler<DeliveredCountRoute> = async (c: an
       and(
         eq(orderTable.is_proceed_to_repair, true),
         eq(orderTable.is_ready_for_delivery, true),
-        eq(challan.is_delivery_complete, true),
         or(
-
+          eq(challan.is_delivery_complete, true),
           eq(orderTable.is_delivery_without_challan, true),
         ),
         eq(orderTable.is_return, false),
