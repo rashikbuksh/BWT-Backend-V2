@@ -240,6 +240,21 @@ export const dashboardAllReport = createRoute({
   },
 });
 
+export const customerReceiveTypeCount = createRoute({
+  path: '/work/dashboard/customer-receive-type-count',
+  method: 'get',
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        received: z.number().describe('Total number of orders received'),
+        returned: z.number().describe('Total number of orders returned'),
+      }),
+      'Customer receive type count',
+    ),
+  },
+});
+
 export type OrderAndProductCountRoute = typeof orderAndProductCount;
 export type OrderDiagnosisCountRoute = typeof orderDiagnosisCount;
 export type OrderDiagnosisCompleteCountRoute = typeof orderDiagnosisCompleteCount;
@@ -249,3 +264,4 @@ export type ReadyForDeliveryCountRoute = typeof readyForDeliveryCount;
 export type DeliveredCountRoute = typeof deliveredCount;
 export type DashboardReportRoute = typeof dashboardReport;
 export type DashboardAllReportRoute = typeof dashboardAllReport;
+export type CustomerReceiveTypeCountRoute = typeof customerReceiveTypeCount;

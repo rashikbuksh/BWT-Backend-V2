@@ -8,7 +8,7 @@ import db from '@/db';
 import { challan, challan_entry } from '@/routes/delivery/schema';
 import createApi from '@/utils/api';
 
-import type { DashboardAllReportRoute, DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCompleteCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
+import type { CustomerReceiveTypeCountRoute, DashboardAllReportRoute, DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCompleteCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
 
 import { order } from '../schema';
 
@@ -565,4 +565,21 @@ export const dashboardAllReport: AppRouteHandler<DashboardAllReportRoute> = asyn
     readyForDelivery_all: readyForDeliveryCountResult_all,
     delivered_all: deliveredCountResult_all,
   });
+};
+
+export const customerReceiveTypeCount: AppRouteHandler<CustomerReceiveTypeCountRoute> = async (c: any) => {
+  const query = sql`
+    SELECT
+      COUNT(DISTINCT wo.uuid)::float8 AS order_count,
+      COALESCE(SUM(wo.quantity), 0)::float8 AS product_quantity
+    FROM work.order wo
+    LEFT JOIN work.info ON wo.info_uuid = info.uuid
+    LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
+    LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
+    WHERE
+    wo.is_return = TRUE OR (wo.is_ready_for_delivery = TRUE AND wo.bill_amount > 0)`;
+
+  const data = await db.execute(query);
+
+  return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
 };
