@@ -57,6 +57,9 @@ export const getOne = createRoute({
     params: z.object({
       id: z.string(),
     }),
+    query: z.object({
+      ip: z.string().optional(),
+    }),
   },
   tags,
   responses: {

@@ -135,11 +135,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { id } = c.req.valid('param');
 
-  const ip = c.req.header('x-forwarded-for')
-    || c.req.header('x-real-ip')
-    || c.req.header('cf-connecting-ip')
-    || c.req.header('x-client-ip')
-    || 'unknown';
+  const { ip } = c.req.valid('query');
+
+  // const ip = c.req.header('x-forwarded-for')
+  //   || c.req.header('x-real-ip')
+  //   || c.req.header('cf-connecting-ip')
+  //   || c.req.header('x-client-ip')
+  //   || 'unknown';
 
   // const numericId = Number(id);
 
