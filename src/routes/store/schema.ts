@@ -537,4 +537,11 @@ export const affiliate = store.table('affiliate', {
   remarks: text('remarks').default(sql`null`),
 }, table => [unique().on(table.user_uuid, table.product_uuid)]);
 
+export const affiliate_click = store.table('affiliate_click', {
+  id: serial('id').notNull(),
+  affiliate_id: integer('affiliate_id').references(() => affiliate.id).notNull(),
+  ip_address: text('ip_address').notNull(),
+  created_at: DateTime('created_at').notNull(),
+});
+
 export default store;

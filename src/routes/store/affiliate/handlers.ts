@@ -10,8 +10,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { product } from '../../store/schema';
-import { affiliate } from '../schema';
+import { affiliate, affiliate_click, product } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -135,6 +134,27 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   const { id } = c.req.valid('param');
+
+  const ip = c.req.header('x-forwarded-for')
+    || c.req.header('x-real-ip')
+    || c.req.header('cf-connecting-ip')
+    || c.req.header('x-client-ip')
+    || 'unknown';
+
+  // const numericId = Number(id);
+
+  const [dataAffiliateClick] = await db.select().from(affiliate_click).where(and(
+    eq(affiliate_click.affiliate_id, Number(id)),
+    eq(affiliate_click.ip_address, ip),
+  ));
+
+  if (!dataAffiliateClick) {
+    await db.insert(affiliate_click).values({
+      affiliate_id: Number(id),
+      ip_address: ip,
+      created_at: new Date().toISOString(),
+    });
+  }
 
   const affiliatePromise = db.select({
     id: affiliate.id,
