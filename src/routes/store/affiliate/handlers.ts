@@ -10,19 +10,29 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
+import { product } from '../../store/schema';
 import { affiliate } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
   // console.log('Affiliate Create Value:', value);
 
-  const [data] = await db.select().from(affiliate).where(and(
-    eq(affiliate.user_uuid, value.user_uuid),
-    eq(affiliate.product_uuid, value.product_uuid),
-  ));
+  const [data] = await db.select({
+    user_uuid: affiliate.user_uuid,
+    user_name: users.name,
+    product_uuid: affiliate.product_uuid,
+    product_name: product.title,
+  })
+    .from(affiliate)
+    .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
+    .leftJoin(product, eq(affiliate.product_uuid, product.uuid))
+    .where(and(
+      eq(affiliate.user_uuid, value.user_uuid),
+      eq(affiliate.product_uuid, value.product_uuid),
+    ));
 
   if (data) {
-    return c.json(createToast('warning', `Affiliate for user ${data.user_uuid} and product ${data.product_uuid} already exists.`), HSCode.OK);
+    return c.json(createToast('warning', `Affiliate for user ${data.user_name} and product ${data.product_name} already exists.`), HSCode.OK);
   }
 
   try {
