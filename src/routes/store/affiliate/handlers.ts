@@ -102,9 +102,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     affiliatePromise.where(and(...filters));
   }
 
+  if (user_uuid && product_uuid) {
+    const [data] = await affiliatePromise;
+    return c.json(data || {}, HSCode.OK);
+  }
+
   const data = await affiliatePromise;
 
-  return c.json(user_uuid && product_uuid ? [data] : data || [], HSCode.OK);
+  return c.json (data || [], HSCode.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
