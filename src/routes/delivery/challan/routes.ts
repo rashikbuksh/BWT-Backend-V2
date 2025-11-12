@@ -140,9 +140,35 @@ export const getChallanDetailsByChallan = createRoute({
   },
 });
 
+export const getChallanByOrder = createRoute({
+  path: '/delivery/challan/by/order/{order_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      order_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      selectSchema,
+      'The created challan',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'challan not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetChallanDetailsByChallanRoute = typeof getChallanDetailsByChallan;
+export type GetChallanByOrderRoute = typeof getChallanByOrder;
