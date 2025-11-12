@@ -25,7 +25,7 @@ const receivedTrue = sql`CASE WHEN
       AND ${engineerOrder.is_delivery_without_challan} = FALSE
       AND ${engineerDeliveryChallan.uuid} IS NULL
       AND ${engineerOrder.is_return} = FALSE 
-      THEN ${engineerOrder.uuid} END`;
+      THEN ${engineerOrder.quantity} END`;
 const diagnosisTrue = sql`CASE WHEN 
       ${engineerWorkInfo.is_product_received} = TRUE 
       AND ${engineerOrder.is_diagnosis_need} = TRUE 
@@ -35,7 +35,7 @@ const diagnosisTrue = sql`CASE WHEN
       AND ${engineerOrder.is_delivery_without_challan} = FALSE
       AND ${engineerDeliveryChallan.uuid} IS NULL
       AND ${engineerOrder.is_return} = FALSE 
-      THEN ${engineerOrder.uuid} END`;
+      THEN ${engineerOrder.quantity} END`;
 const repairTrue = sql`CASE WHEN 
       ${engineerOrder.is_proceed_to_repair} = TRUE 
       AND ${engineerOrder.is_transferred_for_qc} = FALSE 
@@ -43,7 +43,7 @@ const repairTrue = sql`CASE WHEN
       AND ${engineerOrder.is_delivery_without_challan} = FALSE
       AND ${engineerDeliveryChallan.uuid} IS NULL
       AND ${engineerOrder.is_return} = FALSE 
-      THEN ${engineerOrder.uuid} END`;
+      THEN ${engineerOrder.quantity} END`;
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const {
@@ -124,10 +124,10 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       .select({
         value: hrSchema.users.uuid,
         label: sql`CONCAT(${hrSchema.users.name}, 
-            ' (', 'WIH: ', (COUNT(${receivedTrue})::float8 + COUNT(${diagnosisTrue})::float8 + COUNT(${repairTrue})::float8), ')')`,
-        received_count: sql`COUNT(${receivedTrue})::float8`,
-        diagnosis_count: sql`COUNT(${diagnosisTrue})::float8`,
-        repair_count: sql`COUNT(${repairTrue})::float8`,
+            ' (', 'WIH: ', (SUM(${receivedTrue})::float8 + SUM(${diagnosisTrue})::float8 + SUM(${repairTrue})::float8), ')')`,
+        received_count: sql`SUM(${receivedTrue})::float8`,
+        diagnosis_count: sql`SUM(${diagnosisTrue})::float8`,
+        repair_count: sql`SUM(${repairTrue})::float8`,
       })
       .from(hrSchema.users)
       .leftJoin(hrSchema.designation, eq(hrSchema.users.designation_uuid, hrSchema.designation.uuid))
