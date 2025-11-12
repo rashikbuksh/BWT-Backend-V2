@@ -497,6 +497,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     is_delivery_complete,
     engineer_uuid,
     is_received,
+    receive_type,
   } = c.req.valid('query');
 
   const orderPromise = db
@@ -636,6 +637,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         sql`${deliverySchema.challan_entry.uuid} IS NULL`,
       ),
     );
+
+    // Filter by receive type if provided
+    if (receive_type) {
+      filters.push(eq(sql`info.receive_type::text`, receive_type));
+    }
   }
 
   // Delivery completed

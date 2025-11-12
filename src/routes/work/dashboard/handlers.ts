@@ -585,7 +585,7 @@ export const customerReceiveTypeCount: AppRouteHandler<CustomerReceiveTypeCountR
     LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
     LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
     WHERE
-    wo.is_return = TRUE OR (wo.is_ready_for_delivery = TRUE AND wo.bill_amount > 0)`;
+      wo.is_ready_for_delivery = TRUE AND wo.bill_amount > 0`;
 
   const data = await db.execute(query);
 
