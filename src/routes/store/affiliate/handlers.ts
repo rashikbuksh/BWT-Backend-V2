@@ -144,18 +144,19 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   //   || 'unknown';
 
   // const numericId = Number(id);
+  if (id && ip) {
+    const [dataAffiliateClick] = await db.select().from(affiliate_click).where(and(
+      eq(affiliate_click.affiliate_id, Number(id)),
+      eq(affiliate_click.ip_address, ip),
+    ));
 
-  const [dataAffiliateClick] = await db.select().from(affiliate_click).where(and(
-    eq(affiliate_click.affiliate_id, Number(id)),
-    eq(affiliate_click.ip_address, ip),
-  ));
-
-  if (!dataAffiliateClick) {
-    await db.insert(affiliate_click).values({
-      affiliate_id: Number(id),
-      ip_address: ip,
-      created_at: new Date().toISOString(),
-    });
+    if (!dataAffiliateClick) {
+      await db.insert(affiliate_click).values({
+        affiliate_id: Number(id),
+        ip_address: ip,
+        created_at: new Date().toISOString(),
+      });
+    }
   }
 
   const affiliatePromise = db.select({
