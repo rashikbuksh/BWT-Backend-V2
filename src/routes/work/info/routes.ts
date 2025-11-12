@@ -6,6 +6,7 @@ import { notFoundSchema } from '@/lib/constants';
 import * as param from '@/lib/param';
 import { createRoute, z } from '@hono/zod-openapi';
 
+import { selectSchema as orderSelectSchema } from '../order/utils';
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
 const tags = ['work.info'];
@@ -207,7 +208,9 @@ export const getAllOrderByInfoUuid = createRoute({
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
+      selectSchema.extend({
+        order: z.array(orderSelectSchema),
+      }),
       'The list of orders for the info',
     ),
     [HSCode.NOT_FOUND]: jsonContent(

@@ -729,7 +729,7 @@ export const getAllOrderByInfoUuid: AppRouteHandler<GetAllOrderByInfoUuidRoute> 
 
   const fetchData = async (endpoint: string) =>
     await api
-      .get(`${endpoint}`)
+      .get(`/v1/work/${endpoint}`)
       .then(response => response.data)
       .catch((error) => {
         console.error(
@@ -739,14 +739,14 @@ export const getAllOrderByInfoUuid: AppRouteHandler<GetAllOrderByInfoUuidRoute> 
         throw error;
       });
 
-  const infoData = await fetchData(`/v1/work/info/${info_uuid}`);
+  const infoData = await fetchData(`info/${info_uuid}`);
 
   const enrichedOrders = await Promise.all(
     orders.map(async (orderItem: any) => {
       const { uuid: order_uuid } = orderItem;
       try {
         const orderData = await fetchData(
-          `/v1/work/diagnosis-details-by-order/${order_uuid}`,
+          `diagnosis-details-by-order/${order_uuid}`,
         );
         return orderData;
       }
