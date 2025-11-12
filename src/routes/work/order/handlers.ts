@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { and, desc, eq, exists, inArray, not, or, sql } from 'drizzle-orm';
+import { and, desc, eq, exists, gt, inArray, not, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
@@ -498,6 +498,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     engineer_uuid,
     is_received,
     receive_type,
+    bill_amount,
   } = c.req.valid('query');
 
   const orderPromise = db
@@ -637,11 +638,23 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         sql`${deliverySchema.challan_entry.uuid} IS NULL`,
       ),
     );
+  }
 
-    // Filter by receive type if provided
-    if (receive_type) {
-      filters.push(eq(sql`info.receive_type::text`, receive_type));
-    }
+  // Filter by receive type if provided
+  if (receive_type) {
+    filters.push(eq(sql`info.receive_type::text`, receive_type));
+  }
+
+  // Filter by bill amount if provided
+  if (bill_amount === 'true') {
+    filters.push(gt(sql`${orderTable.bill_amount}::float8`, 0));
+  }
+
+  if (bill_amount === 'false') {
+    filters.push(or(
+      eq(sql`${orderTable.bill_amount}::float8`, 0),
+      sql`${orderTable.bill_amount} IS NULL`,
+    ));
   }
 
   // Delivery completed

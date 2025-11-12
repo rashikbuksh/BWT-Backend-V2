@@ -14,7 +14,7 @@ import * as storeSchema from '@/routes/store/schema';
 import { createApi } from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneByUserUuidRoute, GetOneRoute, GetOrderDetailsByInfoUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetAllOrderByInfoUuidRoute, GetOneByUserUuidRoute, GetOneRoute, GetOrderDetailsByInfoUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { info, order, zone } from '../schema';
 
@@ -712,4 +712,56 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
   // });
 
   return c.json(data || [], HSCode.OK);
+};
+
+export const getAllOrderByInfoUuid: AppRouteHandler<GetAllOrderByInfoUuidRoute> = async (c: any) => {
+  const { info_uuid } = c.req.valid('param');
+
+  // get all orders by info_uuid
+  const orders = await db
+    .select({
+      uuid: order.uuid,
+    })
+    .from(order)
+    .where(eq(order.info_uuid, info_uuid));
+
+  const api = createApi(c);
+
+  const fetchData = async (endpoint: string) =>
+    await api
+      .get(`/v1/work/${endpoint}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
+
+  const infoData = await fetchData(`info/${info_uuid}`);
+
+  const enrichedOrders = await Promise.all(
+    orders.map(async (orderItem: any) => {
+      const { uuid: order_uuid } = orderItem;
+      try {
+        const orderData = await fetchData(
+          `diagnosis-details-by-order/${order_uuid}`,
+        );
+        return orderData;
+      }
+      catch (error) {
+        console.error(`Error enriching order ${order_uuid}:`, error);
+        // Return order without enriched data if API calls fail
+        return orderItem;
+      }
+    }),
+  );
+
+  const response = {
+    ...infoData,
+    order: enrichedOrders || [],
+  };
+
+  return c.json(response, HSCode.OK);
 };
