@@ -647,7 +647,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   // Filter by bill amount if provided
   if (bill_amount === 'true') {
-    filters.push(gt(sql`orderTable.bill_amount::float8`, 0));
+    filters.push(gt(sql`${orderTable.bill_amount}::float8`, 0));
   }
 
   // Delivery completed
