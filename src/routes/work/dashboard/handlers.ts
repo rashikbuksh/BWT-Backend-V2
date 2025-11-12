@@ -136,6 +136,7 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
     eq(orderTable.is_transferred_for_qc, false),
     eq(orderTable.is_ready_for_delivery, false),
     eq(orderTable.is_delivery_without_challan, false),
+    sql`${challan_entry.uuid} IS NULL`,
     eq(orderTable.is_return, false),
   ];
 
@@ -154,6 +155,8 @@ export const repairCount: AppRouteHandler<RepairCountRoute> = async (c: any) => 
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
+    .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
+    .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(and(...conditions));
 
   const data = await resultPromise;
@@ -170,6 +173,7 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
     eq(orderTable.is_transferred_for_qc, true),
     eq(orderTable.is_ready_for_delivery, false),
     eq(orderTable.is_delivery_without_challan, false),
+    sql`${challan_entry.uuid} IS NULL`,
     eq(orderTable.is_return, false),
   ];
 
@@ -188,6 +192,8 @@ export const qcCount: AppRouteHandler<QcCountRoute> = async (c: any) => {
     product_quantity: sql`COALESCE(SUM(${orderTable.quantity}), 0)::float8`,
   })
     .from(orderTable)
+    .leftJoin(challan_entry, eq(orderTable.uuid, challan_entry.order_uuid))
+    .leftJoin(challan, eq(challan_entry.challan_uuid, challan.uuid))
     .where(and(...conditions));
 
   const data = await resultPromise;
