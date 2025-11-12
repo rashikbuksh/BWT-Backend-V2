@@ -152,11 +152,19 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     value.status = 1; // Set status to active for customers
   }
 
-  const [data] = await db.insert(users).values(value).returning({
-    name: users.name,
-  });
-
-  return c.json(createToast('create', data.name), HSCode.OK);
+  try {
+    const [data] = await db.insert(users).values(value).returning({
+      name: users.name,
+    });
+    return c.json(createToast('create', data.name), HSCode.OK);
+  }
+  catch (error) {
+    console.error('Error creating user:', error);
+    return c.json(
+      createToast('error', 'Email already exists'),
+      HSCode.BAD_REQUEST,
+    );
+  }
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
