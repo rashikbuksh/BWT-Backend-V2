@@ -1074,6 +1074,21 @@ app.get('/ws-room-test', async (c) => {
   }
 });
 
+// Native WebSocket room chat test page route (no Socket.IO dependency)
+app.get('/ws-native-test', async (c) => {
+  try {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const htmlPath = path.resolve(process.cwd(), 'websocket_native_room_test.html');
+    const htmlContent = await fs.readFile(htmlPath, 'utf-8');
+    return c.html(htmlContent);
+  }
+  catch (error) {
+    console.error('Error serving websocket_native_room_test.html:', error);
+    return c.text('Native WebSocket room test file not found', 404);
+  }
+});
+
 // zkteco routes
 app.route('/', zktecoRouter);
 

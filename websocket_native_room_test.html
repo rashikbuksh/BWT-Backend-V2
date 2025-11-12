@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebSocket Room Chat Test</title>
+    <title>Native WebSocket Room Chat Test</title>
     <style>
       * {
         margin: 0;
@@ -272,7 +272,7 @@
     <div class="container">
       <!-- Sidebar -->
       <div class="sidebar">
-        <h2>🚀 Room Chat</h2>
+        <h2>🚀 Native WebSocket Chat</h2>
 
         <div class="user-info">
           <label>Your Username:</label>
@@ -345,13 +345,13 @@
       </div>
     </div>
 
-    <!-- Use native WebSocket instead of Socket.IO for Bun compatibility -->
     <script>
-      let ws = null; // Use native WebSocket instead of socket
+      let ws = null;
       let currentRoom = null;
       let userId = null;
       let username = 'Guest';
       let availableRooms = new Map();
+      let roomUsers = new Map(); // Map to store users in each room
 
       const status = document.getElementById('status');
       const connectBtn = document.getElementById('connectBtn');
@@ -414,6 +414,9 @@
         sendBtn.disabled = false;
         clearMessages();
         addMessage(`Joined room: ${room}`, 'system');
+
+        // Store room users
+        roomUsers.set(room, users);
 
         // Update room list to show active room
         updateRoomListDisplay();
@@ -514,8 +517,17 @@
 
           ws.onopen = function () {
             updateStatus(true);
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             console.log('✅ WebSocket connected successfully');
             addMessage('Connected to server', 'system');
+
+            // Send initial user info
+            const userInfo = {
+              type: 'user_connected',
+              userId: userId,
+              username: username,
+            };
+            ws.send(JSON.stringify(userInfo));
           };
 
           ws.onmessage = function (event) {
@@ -526,13 +538,10 @@
 
               switch (data.type) {
                 case 'connected':
-                  userId = data.userId;
-                  username = data.username;
+                  userId = data.userId || userId;
+                  username = data.username || username;
                   usernameInput.value = username;
-                  addMessage(data.message, 'system');
-
-                  // Request rooms list
-                  ws.send(JSON.stringify({ type: 'get_rooms' }));
+                  addMessage(data.message || 'Successfully connected', 'system');
                   break;
 
                 case 'username_updated':
@@ -541,7 +550,10 @@
                   break;
 
                 case 'room_joined':
-                  updateRoomUI(data.room, data.roomUsers);
+                  updateRoomUI(data.room, data.roomUsers || []);
+                  if (data.message) {
+                    addMessage(data.message, 'system');
+                  }
                   break;
 
                 case 'room_left':
@@ -556,30 +568,57 @@
                 case 'user_joined':
                   if (data.room === currentRoom) {
                     addMessage(`${data.username} joined the room`, 'system');
-                    roomInfo.textContent = `${data.roomUsers.length} user${data.roomUsers.length !== 1 ? 's' : ''} in this room`;
+                    // Update room user count
+                    const currentUsers = roomUsers.get(currentRoom) || [];
+                    if (!currentUsers.find((u) => u.userId === data.userId)) {
+                      currentUsers.push({ userId: data.userId, username: data.username });
+                      roomUsers.set(currentRoom, currentUsers);
+                      roomInfo.textContent = `${currentUsers.length} user${currentUsers.length !== 1 ? 's' : ''} in this room`;
+                    }
                   }
                   break;
 
                 case 'user_left':
                   if (data.room === currentRoom) {
                     addMessage(`${data.username} left the room`, 'system');
-                    roomInfo.textContent = `${data.roomUsers.length} user${data.roomUsers.length !== 1 ? 's' : ''} in this room`;
+                    // Update room user count
+                    const currentUsers = roomUsers.get(currentRoom) || [];
+                    const updatedUsers = currentUsers.filter((u) => u.userId !== data.userId);
+                    roomUsers.set(currentRoom, updatedUsers);
+                    roomInfo.textContent = `${updatedUsers.length} user${updatedUsers.length !== 1 ? 's' : ''} in this room`;
                   }
                   break;
 
                 case 'chat_message':
                   if (data.room === currentRoom) {
                     const isOwn = data.userId === userId;
-                    addMessage(data.message, isOwn ? 'own' : 'other', data);
+                    if (!isOwn) {
+                      // Don't duplicate our own messages
+                      addMessage(data.message, 'other', {
+                        username: data.username,
+                        timestamp: data.timestamp,
+                      });
+                    }
                   }
                   break;
 
                 case 'rooms_list':
-                  updateRoomList(data.rooms);
+                  updateRoomList(data.rooms || []);
+                  break;
+
+                case 'room_users':
+                  if (data.room === currentRoom) {
+                    roomUsers.set(data.room, data.users || []);
+                    roomInfo.textContent = `${data.users.length} user${data.users.length !== 1 ? 's' : ''} in this room`;
+                  }
                   break;
 
                 case 'error':
                   addMessage(`Error: ${data.message}`, 'system');
+                  break;
+
+                default:
+                  console.log('Unknown message type:', data.type);
                   break;
               }
             } catch (parseError) {
@@ -588,10 +627,10 @@
             }
           };
 
-          ws.onclose = function () {
+          ws.onclose = function (event) {
             updateStatus(false);
-            addMessage('Disconnected from server', 'system');
-            console.log('WebSocket disconnected');
+            addMessage(`Disconnected from server (Code: ${event.code})`, 'system');
+            console.log('WebSocket disconnected:', event.code, event.reason);
           };
 
           ws.onerror = function (error) {

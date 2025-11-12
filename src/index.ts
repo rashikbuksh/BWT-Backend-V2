@@ -279,4 +279,5 @@ Bun.serve({
 console.warn(`🚀 Server is running on http://localhost:${port}`);
 console.warn(`📡 WebSocket endpoint: ws://localhost:${port}/ws`);
 console.warn(`🧪 Test room chat at: http://localhost:${port}/ws-room-test`);
+console.warn(`🧪 Test native WebSocket at: http://localhost:${port}/ws-native-test`);
 console.warn(`🧪 Test simple WebSocket at: http://localhost:${port}/ws-test`);
