@@ -165,9 +165,7 @@ const diagnosisTrue = sql`CASE WHEN
       AND ${engineerOrder.is_return} = FALSE 
       THEN ${engineerOrder.uuid} END`;
 const repairTrue = sql`CASE WHEN 
-      ${engineerWorkInfo.is_product_received} = TRUE 
-      AND ${engineerOrder.is_diagnosis_need} = TRUE 
-      AND ${engineerOrder.is_proceed_to_repair} = TRUE 
+      ${engineerOrder.is_proceed_to_repair} = TRUE 
       AND ${engineerOrder.is_transferred_for_qc} = FALSE 
       AND ${engineerOrder.is_ready_for_delivery} = FALSE
       AND ${engineerOrder.is_delivery_without_challan} = FALSE
