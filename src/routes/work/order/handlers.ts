@@ -650,6 +650,13 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     filters.push(gt(sql`${orderTable.bill_amount}::float8`, 0));
   }
 
+  if (bill_amount === 'false') {
+    filters.push(or(
+      eq(sql`${orderTable.bill_amount}::float8`, 0),
+      sql`${orderTable.bill_amount} IS NULL`,
+    ));
+  }
+
   // Delivery completed
   if (is_delivery_complete === 'true') {
     filters.push(
