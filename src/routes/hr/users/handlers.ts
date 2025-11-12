@@ -160,7 +160,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     return c.json(createToast('create', data.name), HSCode.OK);
   }
   catch (error: any) {
-    return handleDatabaseErrorInRoute(c, error);
+    return handleDatabaseErrorInRoute(c, error, 'User Creation');
   }
 };
 
