@@ -8,7 +8,7 @@ import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetAffiliateDetailsRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { affiliate, affiliate_click, product } from '../schema';
 
@@ -191,4 +191,48 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   //   return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
+};
+
+export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = async (c: any) => {
+  const { user_uuid, product_uuid } = c.req.valid('query');
+
+  const affiliatePromise = db.select({
+    id: affiliate.id,
+    user_uuid: affiliate.user_uuid,
+    user_name: users.name,
+    product_uuid: affiliate.product_uuid,
+    visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
+    purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
+    created_at: affiliate.created_at,
+    updated_at: affiliate.updated_at,
+    commission_rate: PG_DECIMAL_TO_FLOAT(affiliate.commission_rate),
+    unit_type: affiliate.unit_type,
+    product_title: product.title,
+    product_url: product.url,
+    product_image: sql`(
+                  SELECT pi.image
+                  FROM store.product_image pi
+                  WHERE pi.product_uuid = ${affiliate.product_uuid}
+                  ORDER BY pi.is_main DESC, pi.created_at ASC
+                  LIMIT 1
+                )`,
+  })
+    .from(affiliate)
+    .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
+    .leftJoin(product, eq(affiliate.product_uuid, product.uuid));
+
+  const filters = [];
+
+  if (user_uuid) {
+    filters.push(eq(affiliate.user_uuid, user_uuid));
+  }
+  if (product_uuid) {
+    filters.push(eq(affiliate.product_uuid, product_uuid));
+  }
+  if (filters.length > 0) {
+    affiliatePromise.where(and(...filters));
+  }
+  const data = await affiliatePromise;
+
+  return c.json (data || [], HSCode.OK);
 };

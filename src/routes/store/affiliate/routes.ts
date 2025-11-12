@@ -132,8 +132,32 @@ export const remove = createRoute({
   },
 });
 
+export const getAffiliateDetails = createRoute({
+  path: '/store/affiliate-details',
+  method: 'get',
+  tags,
+  request: {
+    query: z.object({
+      user_uuid: z.string().optional(),
+      product_uuid: z.string().optional(),
+    }),
+  },
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(
+        z.object({
+          affiliate: selectSchema,
+          total_commission: z.number(),
+        }),
+      ),
+      'The list of affiliate details',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetAffiliateDetailsRoute = typeof getAffiliateDetails;
