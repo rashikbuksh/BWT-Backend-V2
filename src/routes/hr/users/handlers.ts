@@ -6,6 +6,7 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { ComparePass, CreateToken, HashPass, isHashedPassword } from '@/middlewares/auth';
+import { handleDatabaseErrorInRoute } from '@/utils/database_error_handler';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type {
@@ -152,11 +153,15 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     value.status = 1; // Set status to active for customers
   }
 
-  const [data] = await db.insert(users).values(value).returning({
-    name: users.name,
-  });
-
-  return c.json(createToast('create', data.name), HSCode.OK);
+  try {
+    const [data] = await db.insert(users).values(value).returning({
+      name: users.name,
+    });
+    return c.json(createToast('create', data.name), HSCode.OK);
+  }
+  catch (error: any) {
+    return handleDatabaseErrorInRoute(c, error, 'User Creation');
+  }
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
