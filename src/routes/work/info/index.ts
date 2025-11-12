@@ -21,6 +21,7 @@ const router = createRouter()
     return cacheFunction(c, cacheKey, handlers.remove, 'other');
   })
   .openapi(routes.getOrderDetailsByInfoUuid, handlers.getOrderDetailsByInfoUuid)
-  .openapi(routes.getOneByUserUuid, handlers.getOneByUserUuid);
+  .openapi(routes.getOneByUserUuid, handlers.getOneByUserUuid)
+  .openapi(routes.getAllOrderByInfoUuid, handlers.getAllOrderByInfoUuid);
 
 export default router;

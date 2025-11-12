@@ -196,6 +196,31 @@ export const getOneByUserUuid = createRoute({
   },
 });
 
+export const getAllOrderByInfoUuid = createRoute({
+  path: '/work/info-orders/{info_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      info_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The list of orders for the info',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'info not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({ info_uuid: z.string() })),
+      'Invalid info UUID error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -203,3 +228,4 @@ export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetOrderDetailsByInfoUuidRoute = typeof getOrderDetailsByInfoUuid;
 export type GetOneByUserUuidRoute = typeof getOneByUserUuid;
+export type GetAllOrderByInfoUuidRoute = typeof getAllOrderByInfoUuid;
