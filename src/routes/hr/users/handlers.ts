@@ -6,6 +6,7 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { ComparePass, CreateToken, HashPass, isHashedPassword } from '@/middlewares/auth';
+import { handleDatabaseErrorInRoute } from '@/utils/database_error_handler';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type {
@@ -158,12 +159,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     });
     return c.json(createToast('create', data.name), HSCode.OK);
   }
-  catch (error) {
-    console.error('Error creating user:', error);
-    return c.json(
-      createToast('error', 'Email already exists'),
-      HSCode.BAD_REQUEST,
-    );
+  catch (error: any) {
+    return handleDatabaseErrorInRoute(c, error);
   }
 };
 
