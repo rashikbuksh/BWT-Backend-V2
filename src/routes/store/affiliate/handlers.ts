@@ -216,6 +216,14 @@ export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = as
                   ORDER BY pi.is_main DESC, pi.created_at ASC
                   LIMIT 1
                 )`,
+    total_price: sql`(
+              SELECT COALESCE(SUM(o.selling_price::float8 * o.quantity::float8), 0)
+              FROM store.ordered o
+              LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
+              WHERE pv.product_uuid = ${affiliate.product_uuid}
+                AND o.is_paid = true
+                AND o.affiliate_id = ${affiliate.id}
+            )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
