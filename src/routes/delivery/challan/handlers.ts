@@ -235,7 +235,7 @@ export const getChallanDetailsByChallan: AppRouteHandler<GetChallanDetailsByChal
 };
 
 export const getChallanByOrder: AppRouteHandler<GetChallanByOrderRoute> = async (c: any) => {
-  const { uuid } = c.req.valid('param');
+  const { order_uuid } = c.req.valid('param');
 
   const challanPromise = db
     .select({
@@ -296,7 +296,7 @@ export const getChallanByOrder: AppRouteHandler<GetChallanByOrderRoute> = async 
       storeSchema.branch,
       eq(challan.branch_uuid, storeSchema.branch.uuid),
     )
-    .where(eq(challan.uuid, uuid));
+    .where(eq(workSchema.order.uuid, order_uuid));
 
   const [data] = await challanPromise;
 
