@@ -26,6 +26,7 @@ export const insertSchema = createInsertSchema(
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     remarks: schema => schema.remarks.optional(),
+    affiliate_id: z.number().optional(),
   },
 ).required({
   uuid: true,
@@ -42,6 +43,7 @@ export const insertSchema = createInsertSchema(
   order_status: true,
   serial_entry: true,
   created_by: true,
+  affiliate_id: true,
 });
 
 export const patchSchema = insertSchema.partial();

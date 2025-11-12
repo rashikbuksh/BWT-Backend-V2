@@ -425,6 +425,7 @@ export const ordered = store.table('ordered', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
   serial_entry: text('serial_entry').array().default([]),
+  affiliate_id: integer('affiliate_id').default(sql`null`),
 });
 
 export const ship_address = store.table('ship_address', {
