@@ -198,7 +198,7 @@ export const getOneByUserUuid = createRoute({
 });
 
 export const getAllOrderByInfoUuid = createRoute({
-  path: '/work/info-orders/{info_uuid}',
+  path: '/public/work/info-orders/{info_uuid}',
   method: 'get',
   request: {
     params: z.object({
