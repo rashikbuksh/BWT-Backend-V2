@@ -98,10 +98,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     product_title: product.title,
     product_url: product.url,
     product_image: sql`(
-                  SELECT pi.image
-                  FROM store.product_image pi
-                  WHERE pi.product_uuid = ${affiliate.product_uuid}
-                  ORDER BY pi.is_main DESC, pi.created_at ASC
+                  SELECT pv.image
+                  FROM store.product_variant pv
+                  WHERE pv.product_uuid = ${affiliate.product_uuid}
+                  ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
     total_price: sql`(
@@ -182,10 +182,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     product_title: product.title,
     product_url: product.url,
     product_image: sql`(
-                  SELECT pi.image
-                  FROM store.product_image pi
-                  WHERE pi.product_uuid = ${affiliate.product_uuid}
-                  ORDER BY pi.is_main DESC, pi.created_at ASC
+                  SELECT pv.image
+                  FROM store.product_variant pv
+                  WHERE pv.product_uuid = ${affiliate.product_uuid}
+                  ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
   })
@@ -219,10 +219,10 @@ export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = as
     product_title: product.title,
     product_url: product.url,
     product_image: sql`(
-                  SELECT pi.image
-                  FROM store.product_image pi
-                  WHERE pi.product_uuid = ${affiliate.product_uuid}
-                  ORDER BY pi.is_main DESC, pi.created_at ASC
+                  SELECT pv.image
+                  FROM store.product_variant pv
+                  WHERE pv.product_uuid = ${affiliate.product_uuid}
+                  ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
     total_price: sql`(
