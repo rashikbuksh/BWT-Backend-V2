@@ -641,7 +641,14 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   }
 
   // Filter by receive type if provided
-  if (receive_type) {
+  if (
+    receive_type !== ''
+    && receive_type !== 'null'
+    && receive_type !== 'undefined'
+    && receive_type !== null
+    && receive_type !== undefined
+    && receive_type !== 'all'
+  ) {
     filters.push(eq(sql`info.receive_type::text`, receive_type));
   }
 
