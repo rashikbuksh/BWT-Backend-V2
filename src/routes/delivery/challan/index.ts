@@ -9,6 +9,7 @@ const router = createRouter()
   .openapi(routes.getOne, handlers.getOne)
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
-  .openapi(routes.getChallanDetailsByChallan, handlers.getChallanDetailsByChallan);
+  .openapi(routes.getChallanDetailsByChallan, handlers.getChallanDetailsByChallan)
+  .openapi(routes.getChallanByOrder, handlers.getChallanByOrder);
 
 export default router;

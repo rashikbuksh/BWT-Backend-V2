@@ -1150,13 +1150,14 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
         throw error;
       });
 
-  const [order, diagnosis, process, product_transfer] = await Promise.all([
+  const [order, diagnosis, process, product_transfer, challan] = await Promise.all([
     engineer_uuid
       ? fetchData(`/v1/work/order/${order_uuid}?engineer_uuid=${engineer_uuid}`)
       : fetchData(`/v1/work/order/${order_uuid}`),
     fetchData(`/v1/work/diagnosis-by-order/${order_uuid}`),
     fetchData(`/v1/work/process?order_uuid=${order_uuid}`),
     fetchData(`/v1/store/product-transfer/by/${order_uuid}`),
+    fetchData(`/v1/delivery/challan/by/order/${order_uuid}`),
   ]);
 
   // If engineer_uuid is provided and order is null, return a blank response
@@ -1169,6 +1170,7 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
     diagnosis: diagnosis || [],
     process: process || [],
     product_transfer: product_transfer || [],
+    challan: challan || [],
   };
 
   if (!data)

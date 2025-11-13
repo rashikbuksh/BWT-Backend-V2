@@ -76,6 +76,8 @@ export function isPublicRoute(url: string, method: string, query?: Record<string
     { url: '/v1/store/forum-reply', method: 'POST' },
     { url: '/v1/other/store/product/value/label', method: 'GET' },
     { url: '/v1/store/affiliate/', method: 'GET' },
+    { url: '/v1/work/diagnosis-details-by-order', method: 'GET' },
+    { url: '/v1/delivery/challan/by/order', method: 'GET' },
   ];
 
   // Check for api-docs routes
