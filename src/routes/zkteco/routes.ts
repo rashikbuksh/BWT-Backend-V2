@@ -507,6 +507,52 @@ export const getTemporaryUsersRoute = createRoute({
   },
 });
 
+export const employeeBiometricSyncFromDeviceToBackend = createRoute({
+  path: '/v1/iclock/sync/employee-biometric/device-to-backend',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        employeesSynced: z.number(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'Employee biometric data sync completed',
+    ),
+  },
+});
+
+export const employeeBiometricSyncFromBackendToDevice = createRoute({
+  path: '/v1/iclock/sync/employee-biometric/backend-to-device',
+  method: 'post',
+  request: {
+    query: z.object({
+      SN: z.string().optional().describe('The device Serial Number'),
+      sn: z.string().optional().describe('The device Serial Number'),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        employeesSynced: z.number(),
+        deviceSN: z.string().optional(),
+        timestamp: z.string(),
+      }),
+      'Employee biometric data sync completed',
+    ),
+  },
+});
+
 export type GetRequestRoute = typeof getRequest;
 export type PostRoute = typeof post;
 export type ConnectionTestRoute = typeof connectionTest;
@@ -525,6 +571,8 @@ export type SyncEmployeesRoute = typeof syncEmployees;
 export type AddTemporaryUserRoute = typeof addTemporaryUser;
 export type CancelTemporaryAccessRoute = typeof cancelTemporaryAccess;
 export type GetTemporaryUsersRoute = typeof getTemporaryUsersRoute;
+export type EmployeeBiometricSyncFromDeviceToBackendRoute = typeof employeeBiometricSyncFromDeviceToBackend;
+export type EmployeeBiometricSyncFromBackendToDeviceRoute = typeof employeeBiometricSyncFromBackendToDevice;
 
 // Import backup route
 export { fullBackup } from './backup_routes';
