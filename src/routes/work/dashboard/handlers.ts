@@ -577,15 +577,39 @@ export const customerReceiveTypeCount: AppRouteHandler<CustomerReceiveTypeCountR
   const query = sql`
     SELECT
       COUNT(DISTINCT wo.uuid)::float8 AS order_count,
-      SUM(CASE WHEN info.receive_type = 'customer_drop_off' THEN 1 ELSE 0 END)::float8 AS customer_drop_off_count,
-      SUM(CASE WHEN info.receive_type = 'home_received' THEN 1 ELSE 0 END)::float8 AS home_received_count,
-      SUM(CASE WHEN info.receive_type = 'courier_received' THEN 1 ELSE 0 END)::float8 AS courier_received_count
-    FROM work.order wo
-    LEFT JOIN work.info ON wo.info_uuid = info.uuid
-    LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
-    LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
-    WHERE
-      wo.is_ready_for_delivery = TRUE AND wo.bill_amount > 0`;
+      SUM(
+          CASE
+              WHEN wo.bill_amount > 0 AND info.receive_type = 'customer_drop_off' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_drop_off_count,
+      SUM(
+          CASE
+              WHEN wo.bill_amount > 0 AND info.receive_type = 'home_received' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS home_received_count,
+      SUM(
+          CASE
+              WHEN wo.bill_amount > 0 AND info.receive_type = 'courier_received' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS courier_received_count,
+      SUM(
+          CASE
+              WHEN wo.bill_amount = 0 OR wo.bill_amount IS NULL THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS yet_to_bill_count
+  FROM work.order wo
+      LEFT JOIN work.info ON wo.info_uuid = info.uuid
+      LEFT JOIN delivery.challan_entry ce ON wo.uuid = ce.order_uuid
+      LEFT JOIN delivery.challan ch ON ce.challan_uuid = ch.uuid
+  WHERE
+      wo.is_return = FALSE
+      AND wo.is_ready_for_delivery = TRUE
+      AND wo.is_delivery_without_challan = false
+      AND ch.uuid IS NULL`;
 
   const data = await db.execute(query);
 
