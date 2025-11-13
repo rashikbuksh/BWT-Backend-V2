@@ -558,27 +558,6 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
       ) t
     )
     `,
-    product_image: sql`
-    (
-        SELECT json_agg(row_to_json(t))
-        FROM (
-          SELECT 
-            pi.uuid,
-            pi.product_uuid,
-            pi.variant_uuid,
-            pi.image,
-            pi.is_main,
-            pi.created_by,
-            pi.created_at,
-            pi.updated_at,
-            pi.remarks
-          FROM store.product_image pi
-          LEFT JOIN hr.users ON pi.created_by = users.uuid
-          WHERE pi.product_uuid = ${product.uuid}
-          ORDER BY pi.created_at ASC
-        ) t
-      ) as product_image
-    `,
     review: sql`(
       SELECT json_agg(row_to_json(t))
       FROM (
@@ -627,8 +606,6 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
   if (data) {
     if (data.product_specification == null)
       data.product_specification = [];
-    if (data.product_image == null)
-      data.product_image = [];
     if (data.product_variant == null)
       data.product_variant = [];
   }
