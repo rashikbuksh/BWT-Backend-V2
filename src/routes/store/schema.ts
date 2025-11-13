@@ -140,18 +140,6 @@ export const product_variant = store.table('product_variant', {
   image: text('image').default(sql`null`),
 });
 
-export const product_image = store.table('product_image', {
-  uuid: uuid_primary,
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
-  variant_uuid: defaultUUID('variant_uuid').references(() => product_variant.uuid).default(sql`null`),
-  image: text('image').notNull(),
-  is_main: boolean('is_main').default(false),
-  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
-  created_at: DateTime('created_at').notNull(),
-  updated_at: DateTime('updated_at').default(sql`null`),
-  remarks: text('remarks').default(sql`null`),
-});
-
 export const product_attributes = store.table('product_attributes', {
   uuid: uuid_primary,
   name: text('name').notNull(),
