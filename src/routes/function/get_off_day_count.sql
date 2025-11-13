@@ -1,3 +1,4 @@
+DROP FUNCTION IF EXISTS hr.get_offday_count(text, date, date);
 -- ...existing code...
 CREATE OR REPLACE FUNCTION hr.get_offday_count(
         p_employee_uuid TEXT,

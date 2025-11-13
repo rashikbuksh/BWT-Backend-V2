@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS hr.is_general_holiday(date);
+
 CREATE OR REPLACE FUNCTION hr.is_general_holiday(p_date date) RETURNS TABLE(
         is_general_holiday boolean,
         general_holiday_name text

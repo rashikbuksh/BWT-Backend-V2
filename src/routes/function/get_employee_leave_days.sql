@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS hr.get_total_leave_days(text, date, date);
+
 CREATE OR REPLACE FUNCTION hr.get_total_leave_days(
         p_employee_uuid text,
         p_from_date date,

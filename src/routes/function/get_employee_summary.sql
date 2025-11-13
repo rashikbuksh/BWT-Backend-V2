@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS hr.get_employee_summary(text);
+
 CREATE OR REPLACE FUNCTION hr.get_employee_summary(p_employee_uuid text DEFAULT NULL) RETURNS TABLE (
         employee_uuid text,
         employee_name text,

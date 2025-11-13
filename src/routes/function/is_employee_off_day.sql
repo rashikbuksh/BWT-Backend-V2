@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS hr.is_employee_off_day(text, date);
+
 CREATE OR REPLACE FUNCTION hr.is_employee_off_day(employee_uuid text, day_date date) RETURNS boolean LANGUAGE sql STABLE AS $$
 SELECT EXISTS (
         WITH sg AS (
