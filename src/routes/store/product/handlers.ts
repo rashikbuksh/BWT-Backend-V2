@@ -114,6 +114,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       care_maintenance_description: product.care_maintenance_description,
       attribute_list: product.attribute_list,
       refurbished: product.refurbished,
+      is_affiliate: product.is_affiliate,
       url: product.url,
       // Get is_main image, fallback to first image if none is_main
       image: sql`(
@@ -343,6 +344,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     is_order_exist: sql`EXISTS (SELECT 1 FROM store.ordered oi LEFT JOIN store.product_variant pv ON oi.product_variant_uuid = pv.uuid WHERE pv.product_uuid = ${product.uuid})`,
     extra_information: product.extra_information,
     refurbished: product.refurbished,
+    is_affiliate: product.is_affiliate,
     url: product.url,
     total_review: sql`(
         SELECT COUNT(*)::int
@@ -516,6 +518,7 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
     is_order_exist: sql`EXISTS (SELECT 1 FROM store.ordered oi LEFT JOIN store.product_variant pv ON oi.product_variant_uuid = pv.uuid WHERE pv.product_uuid = ${product.uuid})`,
     extra_information: product.extra_information,
     refurbished: product.refurbished,
+    is_affiliate: product.is_affiliate,
     url: product.url,
     total_review: sql`(
         SELECT COUNT(*)::int
