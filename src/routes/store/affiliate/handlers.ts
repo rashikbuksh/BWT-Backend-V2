@@ -107,9 +107,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     total_price: sql`(
               SELECT COALESCE(SUM(o.selling_price::float8 * o.quantity::float8), 0)
               FROM store.ordered o
+              LEFT JOIN store.bill_info bi ON o.bill_info_uuid = bi.uuid
               LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
               WHERE pv.product_uuid = ${affiliate.product_uuid}
-                AND o.is_paid = true
+                AND bi.is_paid = true
                 AND o.affiliate_id = ${affiliate.id}
             )`,
   })
@@ -227,9 +228,10 @@ export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = as
     total_price: sql`(
               SELECT COALESCE(SUM(o.selling_price::float8 * o.quantity::float8), 0)
               FROM store.ordered o
+              LEFT JOIN store.bill_info bi ON o.bill_info_uuid = bi.uuid
               LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
               WHERE pv.product_uuid = ${affiliate.product_uuid}
-                AND o.is_paid = true
+                AND bi.is_paid = true
                 AND o.affiliate_id = ${affiliate.id}
             )`,
   })

@@ -1,4 +1,4 @@
-------------Not Inserted Yet------------------
+------------Inserted------------------
 CREATE OR REPLACE FUNCTION affiliate_after_bill_info_insert_function() RETURNS TRIGGER AS $$
 DECLARE ord_row RECORD;
 pv_product_uuid TEXT;
@@ -31,12 +31,16 @@ END LOOP;
 RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
--- create trigger on bill_info insert or update
 CREATE OR REPLACE TRIGGER affiliate_after_bill_info_insert_trigger
 AFTER
 INSERT
     OR
 UPDATE ON store.bill_info FOR EACH ROW EXECUTE FUNCTION affiliate_after_bill_info_insert_function();
+
+
+
+
+
 ------------Not Inserted Yet------------------
 CREATE OR REPLACE FUNCTION affiliate_after_bill_info_update_function() RETURNS TRIGGER AS $$
 DECLARE ord_row RECORD;
