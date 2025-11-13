@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
+import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, EmployeeBiometricSyncFromBackendToDeviceRoute, EmployeeBiometricSyncFromDeviceToBackendRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
 
 import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -1206,6 +1206,288 @@ export const getTemporaryUsersHandler: AppRouteHandler<GetTemporaryUsersRoute> =
       error: error instanceof Error ? error.message : 'Failed to get temporary users',
       temporaryUsers: [],
       totalCount: 0,
+    }, 500);
+  }
+};
+
+export const employeeBiometricSyncFromDeviceToBackend: AppRouteHandler<EmployeeBiometricSyncFromDeviceToBackendRoute> = async (c: any) => {
+  const { sn } = c.req.valid('query');
+
+  try {
+    const targetDevices = sn ? [sn] : Array.from(commandQueue.keys());
+
+    if (targetDevices.length === 0) {
+      return c.json({
+        ok: false,
+        message: 'No ZKTeco devices found or connected',
+        syncResults: {
+          totalDevices: 0,
+          devicesProcessed: 0,
+          biometricsReceived: 0,
+          biometricsSaved: 0,
+          errors: 0,
+          details: [],
+        },
+      }, 400);
+    }
+
+    const syncDetails = [];
+    let totalErrors = 0;
+
+    for (const deviceSn of targetDevices) {
+      try {
+        // Queue commands to fetch biometric data from device
+        const q = ensureQueue(deviceSn, commandQueue);
+
+        // Command to fetch fingerprint templates
+        const fetchBioCmd = 'C:1:DATA QUERY BIODATA';
+        q?.push(fetchBioCmd);
+
+        console.warn(`[device-biometric-sync] SN=${deviceSn} queued command to fetch biometric data: ${fetchBioCmd}`);
+
+        // Get existing users for this device to match biometrics
+        const umap = ensureUserMap(deviceSn, usersByDevice);
+        const deviceUsers = Array.from(umap?.values() || []);
+
+        syncDetails.push({
+          device: deviceSn,
+          action: 'fetch_queued',
+          success: true,
+          message: `Biometric fetch command queued for device ${deviceSn}`,
+          usersOnDevice: deviceUsers.length,
+          error: undefined,
+        });
+
+        // Note: The actual biometric data will be received when the device responds
+        // and will be processed by the insertBiometricData function in the post route
+      }
+      catch (deviceError) {
+        syncDetails.push({
+          device: deviceSn,
+          action: 'error',
+          success: false,
+          message: `Failed to queue biometric fetch for device ${deviceSn}`,
+          error: deviceError instanceof Error ? deviceError.message : 'Unknown device error',
+        });
+        totalErrors++;
+      }
+    }
+
+    // For immediate response, we can only report that fetch commands were queued
+    // The actual biometric data will be processed asynchronously when devices respond
+    const message = `Biometric fetch commands queued for ${targetDevices.length - totalErrors} devices. Biometric data will be automatically saved to backend when devices respond.`;
+
+    console.warn(`[device-biometric-sync] ${message}`);
+
+    return c.json({
+      ok: true,
+      message,
+      syncResults: {
+        totalDevices: targetDevices.length,
+        devicesProcessed: targetDevices.length - totalErrors,
+        commandsQueued: targetDevices.length - totalErrors,
+        errors: totalErrors,
+        details: syncDetails,
+      },
+      note: 'Biometric data will be automatically processed and saved when devices respond to the fetch commands. Monitor the post endpoint logs for actual biometric data processing.',
+    });
+  }
+  catch (error) {
+    console.error('[device-biometric-sync] Error:', error);
+    return c.json({
+      error: error instanceof Error ? error.message : 'Failed to queue biometric fetch commands',
+    }, 500);
+  }
+};
+
+export const employeeBiometricSyncFromBackendToDevice: AppRouteHandler<EmployeeBiometricSyncFromBackendToDeviceRoute> = async (c: any) => {
+  const { sn } = c.req.valid('query');
+
+  try {
+    // Import the database and schemas to avoid circular dependencies
+    const db = (await import('@/db')).default;
+    const { employee, employee_biometric } = await import('@/routes/hr/schema');
+
+    const targetDevices = sn ? [sn] : Array.from(commandQueue.keys());
+
+    if (targetDevices.length === 0) {
+      return c.json({
+        ok: false,
+        message: 'No ZKTeco devices found or connected',
+        syncResults: {
+          totalDevices: 0,
+          devicesProcessed: 0,
+          biometricsSent: 0,
+          biometricsSkipped: 0,
+          errors: 0,
+          details: [],
+        },
+      }, 400);
+    }
+
+    // Get all employee biometric data from backend
+    const biometricData = await db
+      .select({
+        employeeId: employee.id,
+        employeePin: employee.pin,
+        biometricType: employee_biometric.biometric_type,
+        fingerIndex: employee_biometric.finger_index,
+        template: employee_biometric.template,
+        createdAt: employee_biometric.created_at,
+      })
+      .from(employee_biometric)
+      .leftJoin(employee, eq(employee_biometric.employee_uuid, employee.uuid));
+
+    if (biometricData.length === 0) {
+      return c.json({
+        ok: false,
+        message: 'No biometric data found in backend database',
+        syncResults: {
+          totalDevices: targetDevices.length,
+          devicesProcessed: 0,
+          biometricsSent: 0,
+          biometricsSkipped: 0,
+          errors: 0,
+          details: [],
+        },
+      });
+    }
+
+    console.warn(`[backend-biometric-sync] Found ${biometricData.length} biometric records to sync`);
+
+    const syncDetails = [];
+    let totalSent = 0;
+    let totalSkipped = 0;
+    let totalErrors = 0;
+
+    for (const deviceSn of targetDevices) {
+      try {
+        const q = ensureQueue(deviceSn, commandQueue);
+        const umap = ensureUserMap(deviceSn, usersByDevice);
+
+        if (!q) {
+          syncDetails.push({
+            device: deviceSn,
+            action: 'error',
+            success: false,
+            message: `No command queue found for device ${deviceSn}`,
+            biometricsSent: 0,
+            biometricsSkipped: 0,
+            error: 'Queue not initialized',
+          });
+          totalErrors++;
+          continue;
+        }
+
+        let deviceSent = 0;
+        let deviceSkipped = 0;
+        let deviceErrors = 0;
+
+        // Process biometric data for this device
+        for (const bioRecord of biometricData) {
+          try {
+            // Check if employee exists on this device by PIN
+            const deviceUser = Array.from(umap?.values() || []).find(user =>
+              user.pin === bioRecord.employeePin || user.pin === String(bioRecord.employeePin),
+            );
+
+            if (!deviceUser) {
+              console.warn(`[backend-biometric-sync] Employee PIN ${bioRecord.employeePin} not found on device ${deviceSn}, skipping biometric`);
+              deviceSkipped++;
+              continue;
+            }
+
+            // Validate required data
+            if (!bioRecord.template || !bioRecord.biometricType) {
+              console.warn(`[backend-biometric-sync] Missing template data or biometric type for employee ${bioRecord.employeePin}, skipping`);
+              deviceSkipped++;
+              continue;
+            }
+
+            // Build biometric upload command based on type
+            let uploadCmd = '';
+
+            if (bioRecord.biometricType === 'fingerprint') {
+              // Command format for fingerprint template: C:ID:DATA UPDATE BIOPHOTO PIN=1 FID=1 Size=XXX Valid=1 TMP=<base64_template>
+              const fingerIndex = bioRecord.fingerIndex || 1;
+              const templateSize = bioRecord.template.length;
+
+              uploadCmd = `C:${deviceSent + 1}:DATA UPDATE BIOPHOTO PIN=${deviceUser.pin} FID=${fingerIndex} Size=${templateSize} Valid=1 TMP=${bioRecord.template}`;
+            }
+            else if (bioRecord.biometricType === 'face') {
+              // Command format for face template: C:ID:DATA UPDATE USERPIC PIN=1 Content=<base64_image>
+              uploadCmd = `C:${deviceSent + 1}:DATA UPDATE USERPIC PIN=${deviceUser.pin} Content=${bioRecord.template}`;
+            }
+            else {
+              console.warn(`[backend-biometric-sync] Unsupported biometric type: ${bioRecord.biometricType}, skipping`);
+              deviceSkipped++;
+              continue;
+            }
+
+            // Queue the command
+            q.push(uploadCmd);
+            deviceSent++;
+
+            console.warn(`[backend-biometric-sync] SN=${deviceSn} queued biometric upload for employee PIN ${deviceUser.pin}, type: ${bioRecord.biometricType}, finger: ${bioRecord.fingerIndex}`);
+          }
+          catch (bioError) {
+            console.error(`[backend-biometric-sync] Error processing biometric for employee ${bioRecord.employeePin}:`, bioError);
+            deviceErrors++;
+          }
+        }
+
+        syncDetails.push({
+          device: deviceSn,
+          action: 'commands_queued',
+          success: true,
+          message: `Biometric upload commands queued for device ${deviceSn}`,
+          biometricsSent: deviceSent,
+          biometricsSkipped: deviceSkipped,
+          biometricErrors: deviceErrors,
+          error: undefined,
+        });
+
+        totalSent += deviceSent;
+        totalSkipped += deviceSkipped;
+        totalErrors += deviceErrors;
+      }
+      catch (deviceError) {
+        syncDetails.push({
+          device: deviceSn,
+          action: 'error',
+          success: false,
+          message: `Failed to process biometric sync for device ${deviceSn}`,
+          biometricsSent: 0,
+          biometricsSkipped: 0,
+          error: deviceError instanceof Error ? deviceError.message : 'Unknown device error',
+        });
+        totalErrors++;
+      }
+    }
+
+    const message = `Biometric upload commands queued: ${totalSent} biometrics sent, ${totalSkipped} skipped, ${totalErrors} errors across ${targetDevices.length} devices`;
+
+    console.warn(`[backend-biometric-sync] ${message}`);
+
+    return c.json({
+      ok: true,
+      message,
+      syncResults: {
+        totalDevices: targetDevices.length,
+        devicesProcessed: targetDevices.length,
+        totalBiometricsInBackend: biometricData.length,
+        biometricsSent: totalSent,
+        biometricsSkipped: totalSkipped,
+        errors: totalErrors,
+        details: syncDetails,
+      },
+      note: 'Biometric upload commands have been queued. Templates will be uploaded to devices when they next poll for commands.',
+    });
+  }
+  catch (error) {
+    console.error('[backend-biometric-sync] Error:', error);
+    return c.json({
+      error: error instanceof Error ? error.message : 'Failed to sync biometrics from backend to device',
     }, 500);
   }
 };

@@ -23,6 +23,8 @@ const router = createRouter()
   .openapi(routes.addTemporaryUser, handlers.addTemporaryUserHandler)
   .openapi(routes.cancelTemporaryAccess, handlers.cancelTemporaryAccessHandler)
   .openapi(routes.getTemporaryUsersRoute, handlers.getTemporaryUsersHandler)
-  .openapi(routes.fullBackup, backupHandlers.fullBackup);
+  .openapi(routes.fullBackup, backupHandlers.fullBackup)
+  .openapi(routes.employeeBiometricSyncFromDeviceToBackend, handlers.employeeBiometricSyncFromDeviceToBackend)
+  .openapi(routes.employeeBiometricSyncFromBackendToDevice, handlers.employeeBiometricSyncFromBackendToDevice);
 
 export default router;
