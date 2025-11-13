@@ -116,18 +116,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       refurbished: product.refurbished,
       is_affiliate: product.is_affiliate,
       url: product.url,
-      // Get is_main image, fallback to first image if none is_main
       image: sql`(
-          SELECT pi.image
-          FROM store.product_image pi
-          WHERE pi.product_uuid = ${product.uuid} AND pi.is_main = TRUE
-          LIMIT 1
-        )`,
-      fallback_image: sql`(
-          SELECT pi.image
-          FROM store.product_image pi
-          WHERE pi.product_uuid = ${product.uuid}
-          ORDER BY pi.created_at ASC
+          SELECT pv.image
+          FROM store.product_variant pv
+          WHERE pv.product_uuid = ${product.uuid}
+          ORDER BY pv.created_at ASC
           LIMIT 1
         )`,
       extra_information: product.extra_information,
@@ -272,7 +265,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   // For each product, use image if present, else fallback_image
   let result = data.map(item => ({
     ...item,
-    image: item.image || item.fallback_image || null,
+    image: item.image || null,
   }));
 
   if (categories) {
@@ -414,27 +407,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       ) t
     )
     `,
-    product_image: sql`
-    (
-        SELECT json_agg(row_to_json(t))
-        FROM (
-          SELECT 
-            pi.uuid,
-            pi.product_uuid,
-            pi.variant_uuid,
-            pi.image,
-            pi.is_main,
-            pi.created_by,
-            pi.created_at,
-            pi.updated_at,
-            pi.remarks
-          FROM store.product_image pi
-          LEFT JOIN hr.users ON pi.created_by = users.uuid
-          WHERE pi.product_uuid = ${product.uuid}
-          ORDER BY pi.created_at ASC
-        ) t
-      ) as product_image
-    `,
     review: sql`(
       SELECT json_agg(row_to_json(t))
       FROM (
@@ -483,8 +455,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   if (data) {
     if (data.product_specification == null)
       data.product_specification = [];
-    if (data.product_image == null)
-      data.product_image = [];
     if (data.product_variant == null)
       data.product_variant = [];
   }
