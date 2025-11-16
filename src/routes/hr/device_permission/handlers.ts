@@ -14,65 +14,162 @@ import { device_list, device_permission, employee, users } from '../schema';
 
 const createdByUser = alias(users, 'created_by_user');
 
+// export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
+//   const value = c.req.valid('json');
+
+//   console.log ('Creating device permissions with value:', value);
+
+//   const deviceInfo = await db.select()
+//     .from(device_list)
+//     .where(eq(device_list.uuid, value.device_list_uuid));
+
+//   if (deviceInfo.length === 0)
+//     return ObjectNotFound(c);
+
+//   const sn = deviceInfo[0]?.identifier;
+
+//   const api = createApi(c);
+
+//   value.map(async (valueOne: any) => {
+//     if (valueOne.permission_type === 'temporary') {
+//     // For temporary permissions, ensure temporary dates are provided
+//       const syncToDevice = api.post(
+//         `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${valueOne?.employee_uuid}&temporary=true&from=${valueOne.temporary_from_date}&to=${valueOne.temporary_to_date}`,
+//       );
+
+//       await syncToDevice.then((response) => {
+//         console.warn(response, ' response from sync to device');
+//         if (response.status === HSCode.OK) {
+//           console.warn(`[hr-device-permission] Successfully synced employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+//         }
+//         else {
+//           console.error(`[hr-device-permission] Failed to sync employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+//         }
+//       }).catch((error) => {
+//         console.error(`[hr-device-permission] Error syncing employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}:`, error);
+//       });
+//     }
+//     else {
+//       const syncToDevice = api.post(
+//         `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${valueOne?.employee_uuid}&temporary=false`,
+//       );
+
+//       await syncToDevice.then((response) => {
+//         console.warn(response, ' response from sync to device');
+//         if (response.status === HSCode.OK) {
+//           console.warn(`[hr-device-permission] Successfully synced employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+//         }
+//         else {
+//           console.error(`[hr-device-permission] Failed to sync employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+//         }
+//       }).catch((error) => {
+//         console.error(`[hr-device-permission] Error syncing employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}:`, error);
+//       });
+//     }
+//   });
+
+//   const data = await db.insert(device_permission).values(value).returning({
+//     name: device_permission.uuid,
+//   });
+
+//   return c.json(createToast('create', data.length), HSCode.OK);
+// };
+
+// ...existing code...
+
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
+  const items = Array.isArray(value) ? value : [value];
+
+  // console.log('Creating device permissions with value:', items);
+
+  if (items.length === 0) {
+    return c.json(createToast('error', 'No device permission payload provided'), HSCode.PRECONDITION_FAILED);
+  }
+
+  // Ensure all items reference the same device_list_uuid (adjust if you want mixed)
+  const deviceListUuid = items[0]?.device_list_uuid;
+  if (!deviceListUuid) {
+    return c.json(createToast('error', 'device_list_uuid is required'), HSCode.PRECONDITION_FAILED);
+  }
+
+  // Optional: reject if mixed device_list_uuid across items
+  if (items.some(it => it.device_list_uuid !== deviceListUuid)) {
+    return c.json(createToast('error', 'All items must have the same device_list_uuid for batch create'), HSCode.PRECONDITION_FAILED);
+  }
+
   const deviceInfo = await db.select()
     .from(device_list)
-    .where(eq(device_list.uuid, value.device_list_uuid));
+    .where(eq(device_list.uuid, deviceListUuid));
 
-  if (deviceInfo.length === 0)
+  if (deviceInfo.length === 0) {
     return ObjectNotFound(c);
+  }
 
   const sn = deviceInfo[0]?.identifier;
-
   const api = createApi(c);
 
-  value.map(async (valueOne: any) => {
-    if (valueOne.permission_type === 'temporary') {
-    // For temporary permissions, ensure temporary dates are provided
-      const syncToDevice = api.post(
-        `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${valueOne?.employee_uuid}&temporary=true&from=${valueOne.temporary_from_date}&to=${valueOne.temporary_to_date}`,
-      );
+  // Process sync to device sequentially and validate temporary dates
+  for (const item of items) {
+    if (!item.employee_uuid) {
+      console.warn('[hr-device-permission] skipping item without employee_uuid', item);
+      continue;
+    }
 
-      await syncToDevice.then((response) => {
+    if (item.permission_type === 'temporary') {
+      if (!item.temporary_from_date || !item.temporary_to_date) {
+        return c.json(createToast('error', `temporary_from_date and temporary_to_date required for employee ${item.employee_uuid}`), HSCode.PRECONDITION_FAILED);
+      }
+
+      const url = `/v1/hr/sync-to-device?sn=${encodeURIComponent(sn)}&employee_uuid=${encodeURIComponent(item.employee_uuid)}&temporary=true&from=${encodeURIComponent(item.temporary_from_date)}&to=${encodeURIComponent(item.temporary_to_date)}`;
+      try {
+        const response = await api.post(url);
         console.warn(response, ' response from sync to device');
         if (response.status === HSCode.OK) {
-          console.warn(`[hr-device-permission] Successfully synced employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+          console.warn(`[hr-device-permission] Successfully synced employee_uuid=${item.employee_uuid} to device SN=${sn}`);
         }
         else {
-          console.error(`[hr-device-permission] Failed to sync employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+          console.error(`[hr-device-permission] Failed to sync employee_uuid=${item.employee_uuid} to device SN=${sn}`, response);
         }
-      }).catch((error) => {
-        console.error(`[hr-device-permission] Error syncing employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}:`, error);
-      });
+      }
+      catch (error) {
+        console.error(`[hr-device-permission] Error syncing employee_uuid=${item.employee_uuid} to device SN=${sn}:`, error);
+      }
     }
     else {
-      const syncToDevice = api.post(
-        `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${valueOne?.employee_uuid}&temporary=false`,
-      );
-
-      await syncToDevice.then((response) => {
+      const url = `/v1/hr/sync-to-device?sn=${encodeURIComponent(sn)}&employee_uuid=${encodeURIComponent(item.employee_uuid)}&temporary=false`;
+      try {
+        const response = await api.post(url);
         console.warn(response, ' response from sync to device');
         if (response.status === HSCode.OK) {
-          console.warn(`[hr-device-permission] Successfully synced employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+          console.warn(`[hr-device-permission] Successfully synced employee_uuid=${item.employee_uuid} to device SN=${sn}`);
         }
         else {
-          console.error(`[hr-device-permission] Failed to sync employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+          console.error(`[hr-device-permission] Failed to sync employee_uuid=${item.employee_uuid} to device SN=${sn}`, response);
         }
-      }).catch((error) => {
-        console.error(`[hr-device-permission] Error syncing employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}:`, error);
-      });
+      }
+      catch (error) {
+        console.error(`[hr-device-permission] Error syncing employee_uuid=${item.employee_uuid} to device SN=${sn}:`, error);
+      }
     }
-  });
+  }
 
-  const data = await db.insert(device_permission).values(value).returning({
-    name: device_permission.uuid,
-  });
+  // Insert into DB (batch or single)
+  try {
+    const data = await db.insert(device_permission).values(items).returning({
+      name: device_permission.uuid,
+    });
 
-  return c.json(createToast('create', data.length), HSCode.OK);
+    const count = Array.isArray(data) ? data.length : (data ? 1 : 0);
+    return c.json(createToast('create', count), HSCode.OK);
+  }
+  catch (dbError) {
+    console.error('[hr-device-permission] DB insert error:', dbError);
+    return c.json(createToast('error', 'Failed to create device permissions'), HSCode.INTERNAL_SERVER_ERROR);
+  }
 };
-
+// ...existing code...
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
   const updates = c.req.valid('json');
