@@ -91,6 +91,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
     user_name: users.name,
+    product_uuid: product_variant.product_uuid,
     product_variant_uuid: affiliate.product_variant_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
@@ -116,6 +117,24 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 AND bi.is_paid = true
                 AND o.affiliate_id = ${affiliate.id}
             )`,
+    product_variant_values_entry: sql`(
+     COALESCE((SELECT jsonb_agg(json_build_object(
+          'uuid', pvve.uuid,
+          'product_variant_uuid', pvve.product_variant_uuid,
+          'attribute_uuid', pvve.attribute_uuid,
+          'attribute_name', pa.name,
+          'value', pvve.value,
+          'created_by', pvve.created_by,
+          'created_at', pvve.created_at,
+          'updated_by', pvve.updated_by,
+          'updated_at', pvve.updated_at,
+          'remarks', pvve.remarks
+        ))
+        FROM store.product_variant_values_entry pvve
+        LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+        WHERE pvve.product_variant_uuid = ${affiliate.product_variant_uuid}
+        ), '[]'::jsonb)
+    )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
@@ -180,6 +199,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
     user_name: users.name,
+    product_uuid: product_variant.product_uuid,
     product_variant_uuid: affiliate.product_variant_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
@@ -196,6 +216,34 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                   ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
+    total_price: sql`(
+              SELECT COALESCE(SUM(o.selling_price::float8 * o.quantity::float8), 0)
+              FROM store.ordered o
+              LEFT JOIN store.bill_info bi ON o.bill_info_uuid = bi.uuid
+              LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
+              WHERE pv.uuid = ${affiliate.product_variant_uuid}
+                AND bi.is_paid = true
+                AND o.affiliate_id = ${affiliate.id}
+            )`,
+    product_variant_values_entry: sql`(
+            COALESCE((SELECT jsonb_agg(json_build_object(
+                  'uuid', pvve.uuid,
+                  'product_variant_uuid', pvve.product_variant_uuid,
+                  'attribute_uuid', pvve.attribute_uuid,
+                  'attribute_name', pa.name,
+                  'value', pvve.value,
+                  'created_by', pvve.created_by,
+                  'created_at', pvve.created_at,
+                  'updated_by', pvve.updated_by,
+                  'updated_at', pvve.updated_at,
+                  'remarks', pvve.remarks
+                ))
+                FROM store.product_variant_values_entry pvve
+                LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+                WHERE pvve.product_variant_uuid = ${affiliate.product_variant_uuid}
+                ), '[]'::jsonb)
+              )`,
+
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
@@ -243,6 +291,24 @@ export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = as
                 AND bi.is_paid = true
                 AND o.affiliate_id = ${affiliate.id}
             )`,
+    product_variant_values_entry: sql`(
+            COALESCE((SELECT jsonb_agg(json_build_object(
+                  'uuid', pvve.uuid,
+                  'product_variant_uuid', pvve.product_variant_uuid,
+                  'attribute_uuid', pvve.attribute_uuid,
+                  'attribute_name', pa.name,
+                  'value', pvve.value,
+                  'created_by', pvve.created_by,
+                  'created_at', pvve.created_at,
+                  'updated_by', pvve.updated_by,
+                  'updated_at', pvve.updated_at,
+                  'remarks', pvve.remarks
+                ))
+                FROM store.product_variant_values_entry pvve
+                LEFT JOIN store.product_attributes pa ON pvve.attribute_uuid = pa.uuid
+                WHERE pvve.product_variant_uuid = ${affiliate.product_variant_uuid}
+                ), '[]'::jsonb)
+              )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
