@@ -364,6 +364,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       'remarks', pv.remarks,
       'index', pv.index,
       'discount_unit', pv.discount_unit,
+      'is_affiliate', pv.is_affiliate,
+      'commission_rate', pv.commission_rate::float8,
+      'unit_type', pv.unit_type,
       'product_variant_values_entry', (
         COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,
@@ -515,6 +518,9 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
       'remarks', pv.remarks,
       'index', pv.index,
       'discount_unit', pv.discount_unit,
+      'is_affiliate', pv.is_affiliate,
+      'commission_rate', pv.commission_rate::float8,
+      'unit_type', pv.unit_type,
       'product_variant_values_entry', (
         COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,
