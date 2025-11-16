@@ -112,6 +112,11 @@ export const product = store.table('product', {
 
 export const discountUnitEnum = pgEnum('discount_unit', ['bdt', 'percentage']);
 
+export const unitTypeEnum = pgEnum('unit_type', [
+  'percentage',
+  'bdt',
+]);
+
 export const product_variant = store.table('product_variant', {
   uuid: uuid_primary,
   product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
@@ -138,6 +143,9 @@ export const product_variant = store.table('product_variant', {
   index: integer('index').notNull(),
   discount_unit: discountUnitEnum('discount_unit').default('bdt'),
   image: text('image').default(sql`null`),
+  is_affiliate: boolean('is_affiliate').default(false),
+  commission_rate: PG_DECIMAL('commission_rate').default(sql`0`),
+  unit_type: unitTypeEnum('unit_type').default('bdt'),
 });
 
 export const product_attributes = store.table('product_attributes', {
@@ -506,11 +514,6 @@ export const tags = store.table('tags', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
 });
-
-export const unitTypeEnum = pgEnum('unit_type', [
-  'percentage',
-  'bdt',
-]);
 
 export const affiliate = store.table('affiliate', {
   id: serial('id').notNull(),

@@ -67,6 +67,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     index: formData.index,
     discount_unit: formData.discount_unit,
     image: imagePath,
+    is_affiliate: formData.is_affiliate,
+    commission_rate: formData.commission_rate,
+    unit_type: formData.unit_type,
   };
 
   const [data] = await db.insert(product_variant).values(value).returning({
@@ -199,6 +202,9 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       warehouse_12_uuid: warehouse12.uuid,
       warehouse_12_name: warehouse12.name,
       image: product_variant.image,
+      is_affiliate: product_variant.is_affiliate,
+      commission_rate: PG_DECIMAL_TO_FLOAT(product_variant.commission_rate),
+      unit_type: product_variant.unit_type,
     })
     .from(product_variant)
     .leftJoin(product, eq(product_variant.product_uuid, product.uuid))
@@ -255,6 +261,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     warehouse_12: PG_DECIMAL_TO_FLOAT(product_variant.warehouse_12),
     selling_warehouse: PG_DECIMAL_TO_FLOAT(product_variant.selling_warehouse),
     image: product_variant.image,
+    is_affiliate: product_variant.is_affiliate,
+    commission_rate: PG_DECIMAL_TO_FLOAT(product_variant.commission_rate),
+    unit_type: product_variant.unit_type,
     product_variant_values_entry: sql`(
      COALESCE((SELECT jsonb_agg(json_build_object(
           'uuid', pvve.uuid,

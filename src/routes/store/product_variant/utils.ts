@@ -66,6 +66,9 @@ export const insertSchema = createInsertSchema(
   discount: true,
   discount_unit: true,
   image: true,
+  is_affiliate: true,
+  commission_rate: true,
+  unit_type: true,
 });
 
 export const patchSchema = insertSchema.partial();
