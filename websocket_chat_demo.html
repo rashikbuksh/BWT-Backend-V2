@@ -434,6 +434,9 @@
     </div>
 
     <script>
+      // Configuration - change this to your server address
+      const SERVER_URL = 'http://103.147.163.46:5090';
+
       let ws = null;
       let currentRoom = null;
       let userId = null;
@@ -445,7 +448,7 @@
 
       // WebSocket Connection
       function connect() {
-        const wsUrl = 'ws://localhost:3007/ws';
+        const wsUrl = `ws://${SERVER_URL}/ws`;
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
