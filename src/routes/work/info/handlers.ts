@@ -424,6 +424,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       submitted_by: info.submitted_by,
       branch_uuid: info.branch_uuid,
       branch_name: storeSchema.branch.name,
+      branch_address: storeSchema.branch.address,
       reference_user_uuid: info.reference_user_uuid,
       reference_user_name: reference_user.name,
       is_commission_amount: info.is_commission_amount,
