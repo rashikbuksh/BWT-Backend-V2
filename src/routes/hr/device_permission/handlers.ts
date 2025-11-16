@@ -28,47 +28,49 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
 
   const api = createApi(c);
 
-  if (value.permission_type === 'temporary') {
+  value.map(async (valueOne: any) => {
+    if (valueOne.permission_type === 'temporary') {
     // For temporary permissions, ensure temporary dates are provided
-    const syncToDevice = api.post(
-      `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}&temporary=true&from=${value.temporary_from_date}&to=${value.temporary_to_date}`,
-    );
+      const syncToDevice = api.post(
+        `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${valueOne?.employee_uuid}&temporary=true&from=${valueOne.temporary_from_date}&to=${valueOne.temporary_to_date}`,
+      );
 
-    await syncToDevice.then((response) => {
-      console.warn(response, ' response from sync to device');
-      if (response.status === HSCode.OK) {
-        console.warn(`[hr-device-permission] Successfully synced employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
-      }
-      else {
-        console.error(`[hr-device-permission] Failed to sync employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
-      }
-    }).catch((error) => {
-      console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
-    });
-  }
-  else {
-    const syncToDevice = api.post(
-      `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${value?.employee_uuid}&temporary=false`,
-    );
+      await syncToDevice.then((response) => {
+        console.warn(response, ' response from sync to device');
+        if (response.status === HSCode.OK) {
+          console.warn(`[hr-device-permission] Successfully synced employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+        }
+        else {
+          console.error(`[hr-device-permission] Failed to sync employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+        }
+      }).catch((error) => {
+        console.error(`[hr-device-permission] Error syncing employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}:`, error);
+      });
+    }
+    else {
+      const syncToDevice = api.post(
+        `/v1/hr/sync-to-device?sn=${sn}&employee_uuid=${valueOne?.employee_uuid}&temporary=false`,
+      );
 
-    await syncToDevice.then((response) => {
-      console.warn(response, ' response from sync to device');
-      if (response.status === HSCode.OK) {
-        console.warn(`[hr-device-permission] Successfully synced employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
-      }
-      else {
-        console.error(`[hr-device-permission] Failed to sync employee_uuid=${value?.employee_uuid} to device SN=${sn}`);
-      }
-    }).catch((error) => {
-      console.error(`[hr-device-permission] Error syncing employee_uuid=${value?.employee_uuid} to device SN=${sn}:`, error);
-    });
-  }
+      await syncToDevice.then((response) => {
+        console.warn(response, ' response from sync to device');
+        if (response.status === HSCode.OK) {
+          console.warn(`[hr-device-permission] Successfully synced employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+        }
+        else {
+          console.error(`[hr-device-permission] Failed to sync employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}`);
+        }
+      }).catch((error) => {
+        console.error(`[hr-device-permission] Error syncing employee_uuid=${valueOne?.employee_uuid} to device SN=${sn}:`, error);
+      });
+    }
+  });
 
-  const [data] = await db.insert(device_permission).values(value).returning({
+  const data = await db.insert(device_permission).values(value).returning({
     name: device_permission.uuid,
   });
 
-  return c.json(createToast('create', data.name), HSCode.OK);
+  return c.json(createToast('create', data.length), HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
