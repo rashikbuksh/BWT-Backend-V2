@@ -41,11 +41,14 @@ export const create = createRoute({
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      selectSchema,
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+      }),
       'The created device-permission',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(insertSchema),
+      createErrorSchema(z.array(insertSchema)),
       'The validation error(s)',
     ),
   },
