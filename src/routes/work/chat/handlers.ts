@@ -5,7 +5,6 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { getIO } from '@/lib/socket';
 // import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 // import { box, branch, floor, rack, warehouse } from '@/routes/store/schema';
@@ -32,42 +31,6 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     created_at: chat.created_at,
   });
 
-  // Get the complete chat data with user info for socket emission
-  const [completeData] = await db
-    .select({
-      uuid: chat.uuid,
-      id: chat.id,
-      chat_id: sql`CONCAT('WD', TO_CHAR(${chat.created_at}, 'YY'), '-', ${chat.id})`,
-      order_uuid: chat.order_uuid,
-      order_id: sql`CONCAT('WO', TO_CHAR(${order.created_at}, 'YY'), '-', ${order.id})`,
-      page: chat.page,
-      user_uuid: chat.user_uuid,
-      user_name: chat_user.name,
-      user_phone: chat_user.phone,
-      message: chat.message,
-      created_by: chat.created_by,
-      created_by_name: users.name,
-      created_at: chat.created_at,
-      updated_at: chat.updated_at,
-      remarks: chat.remarks,
-    })
-    .from(chat)
-    .leftJoin(users, eq(chat.created_by, users.uuid))
-    .leftJoin(order, eq(chat.order_uuid, order.uuid))
-    .leftJoin(chat_user, eq(chat.user_uuid, chat_user.uuid))
-    .where(eq(chat.uuid, data.uuid));
-
-  // Emit new message to all clients in the order room
-  try {
-    const io = getIO();
-    io.to(`order_${data.order_uuid}`).emit('new_message', completeData);
-
-    console.log('Socket.IO initialized and message emitted:', completeData);
-  }
-  catch (error) {
-    console.log('Socket.IO not initialized or error emitting:', error);
-  }
-
   return c.json(createToast('create', data.uuid), HSCode.OK);
 };
 
@@ -90,39 +53,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
   if (!data)
     return DataNotFound(c);
-
-  // Get updated data and emit to room
-  const [updatedData] = await db
-    .select({
-      uuid: chat.uuid,
-      id: chat.id,
-      chat_id: sql`CONCAT('WD', TO_CHAR(${chat.created_at}, 'YY'), '-', ${chat.id})`,
-      order_uuid: chat.order_uuid,
-      order_id: sql`CONCAT('WO', TO_CHAR(${order.created_at}, 'YY'), '-', ${order.id})`,
-      page: chat.page,
-      user_uuid: chat.user_uuid,
-      user_name: chat_user.name,
-      user_phone: chat_user.phone,
-      message: chat.message,
-      created_by: chat.created_by,
-      created_by_name: users.name,
-      created_at: chat.created_at,
-      updated_at: chat.updated_at,
-      remarks: chat.remarks,
-    })
-    .from(chat)
-    .leftJoin(users, eq(chat.created_by, users.uuid))
-    .leftJoin(order, eq(chat.order_uuid, order.uuid))
-    .leftJoin(chat_user, eq(chat.user_uuid, chat_user.uuid))
-    .where(eq(chat.uuid, uuid));
-
-  try {
-    const io = getIO();
-    io.to(`order_${data.order_uuid}`).emit('new_message', updatedData);
-  }
-  catch (error) {
-    console.log('Socket.IO not initialized or error emitting:', error);
-  }
 
   return c.json(createToast('update', data.uuid), HSCode.OK);
 };
