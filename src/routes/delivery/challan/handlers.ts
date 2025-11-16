@@ -159,6 +159,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       zone_uuid: workSchema.info.zone_uuid,
       zone_name: workSchema.zone.name,
       location: workSchema.info.location,
+      bwt_contact_number: workSchema.info.bwt_contact_number,
       order_created_by: workSchema.order.created_by,
       order_created_by_name: orderUser.name,
       payment_method: challan.payment_method,

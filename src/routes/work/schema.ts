@@ -110,7 +110,7 @@ export const info = work.table('info', {
   courier_uuid: defaultUUID('courier_uuid').references(
     () => courier.uuid,
   ).default(sql`null`),
-  bwt_contact_number: text('bwt_contact_number').default('01901384304'),
+  bwt_contact_number: text('bwt_contact_number').default(sql`'01901384304'`),
 });
 
 export const order = work.table('order', {
