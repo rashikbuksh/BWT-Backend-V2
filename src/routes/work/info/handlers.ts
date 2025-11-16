@@ -348,6 +348,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       receiver: info.receiver,
       courier_uuid: info.courier_uuid,
       courier_name: deliverySchema.courier.name,
+      bwt_contact_number: info.bwt_contact_number,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -454,6 +455,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       receiver: info.receiver,
       courier_uuid: info.courier_uuid,
       courier_name: deliverySchema.courier.name,
+      bwt_contact_number: info.bwt_contact_number,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))
@@ -623,6 +625,7 @@ export const getOneByUserUuid: AppRouteHandler<GetOneByUserUuidRoute> = async (c
       receiver: info.receiver,
       courier_uuid: info.courier_uuid,
       courier_name: deliverySchema.courier.name,
+      bwt_contact_number: info.bwt_contact_number,
     })
     .from(info)
     .leftJoin(user, eq(info.user_uuid, user.uuid))

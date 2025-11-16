@@ -60,6 +60,7 @@ export const insertSchema = createInsertSchema(
   receive_type: true,
   receiver: true,
   courier_uuid: true,
+  bwt_contact_number: true,
 }).omit({
   id: true,
 }).extend({

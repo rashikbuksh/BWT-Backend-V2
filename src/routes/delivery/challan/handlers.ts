@@ -164,6 +164,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       payment_method: challan.payment_method,
       branch_uuid: challan.branch_uuid,
       branch_name: storeSchema.branch.name,
+      branch_address: storeSchema.branch.address,
       convince_bill_amount: PG_DECIMAL_TO_FLOAT(challan.convince_bill_amount),
       add_convince_bill_amount: challan.add_convince_bill_amount,
     })
