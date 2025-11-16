@@ -449,7 +449,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     setTimeout(async () => {
       try {
         console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
-        await api.post(`/iclock/device/refresh-users?sn=${sn}`, {});
+        await api.post(`/v1/iclock/device/refresh-users?sn=${sn}`, {});
       }
       catch (error) {
         console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
@@ -496,7 +496,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
       setTimeout(async () => {
         try {
           console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
-          await api.post(`/iclock/device/refresh-users?sn=${sn}`, {});
+          await api.post(`/v1/iclock/device/refresh-users?sn=${sn}`, {});
         }
         catch (error) {
           console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
