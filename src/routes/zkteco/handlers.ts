@@ -20,6 +20,7 @@ const devicePinKey = new Map(); // sn -> preferred PIN field key (PIN, Badgenumb
 const sentCommands = new Map(); // sn -> [{ id, cmd, queuedAt, sentAt(deprecated), deliveredAt, bytesSent, respondedAt, staleAt, postSeenAfterDelivery, remote }]
 const cdataEvents = new Map(); // sn -> [{ at, lineCount, firstLine, hasUserInfo, hasAttlog, hasOptionLike }]
 const rawCDataStore = new Map(); // sn -> [{ at, raw, bytes }]
+const initialUserFetchDone = new Map<string, boolean>(); // Track if initial user fetch has been done for each device
 
 // Export shared state for use in other modules
 export { commandQueue, usersByDevice };
@@ -39,6 +40,15 @@ export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
   const state = deviceState.get(sn) || {};
   state.lastSeenAt = new Date().toISOString();
   deviceState.set(sn, state);
+
+  // Fetch users at least once on first poll, or whenever user count is 0
+  const userMap = ensureUserMap(sn, usersByDevice);
+  const hasInitialFetch = initialUserFetchDone.get(sn);
+  if (!hasInitialFetch || (userMap && userMap.size < 1)) {
+    await ensureUsersFetched(sn, usersByDevice, commandQueue);
+    initialUserFetchDone.set(sn, true);
+    console.warn(`[cdata-GET] SN=${sn} triggered user fetch (initial=${!hasInitialFetch}, count=${userMap?.size})`);
+  }
 
   // Debug: log each poll (can be noisy; comment out if too verbose)
   const queueCheck = ensureQueue(sn, commandQueue);
@@ -543,11 +553,15 @@ export const getRequest_legacy: AppRouteHandler<GetRequestLegacyRoute> = async (
 
   const userMap = ensureUserMap(sn, usersByDevice);
 
-  if (userMap && userMap.size < 1) {
+  // Fetch users at least once on first poll, or whenever user count is 0
+  const hasInitialFetch = initialUserFetchDone.get(sn);
+  if (!hasInitialFetch || (userMap && userMap.size < 1)) {
     await ensureUsersFetched(sn, usersByDevice, commandQueue);
+    initialUserFetchDone.set(sn, true);
+    console.warn(`[getrequest-legacy] SN=${sn} triggered user fetch (initial=${!hasInitialFetch}, count=${userMap?.size})`);
   }
 
-  console.warn(`[getrequest-legacy] SN=${sn} fetched users, total now: ${userMap?.size}`);
+  console.warn(`[getrequest-legacy] SN=${sn} current users: ${userMap?.size}`);
 
   const queue = ensureQueue(sn, commandQueue);
 
