@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { getNextAvailablePinFromHandler } from '@/routes/zkteco/handlers';
 import createApi from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -110,6 +111,16 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const sn = deviceInfo[0]?.identifier;
   const api = createApi(c);
 
+  // using this getNextAvailablePin function from zkteco module to get next available pin
+  // also after getting the next available pin, then we will assign that pin to the user while syncing and pass the pin as well, because array of users wont be conflicted by the nextAvailablePin function
+
+  let pinVal = await getNextAvailablePinFromHandler(sn);
+
+  for (const item of items) {
+    item.pin = pinVal;
+    pinVal++;
+  }
+
   // Process sync to device sequentially and validate temporary dates
   for (const item of items) {
     if (!item.employee_uuid) {
@@ -122,7 +133,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
         return c.json(createToast('error', `temporary_from_date and temporary_to_date required for employee ${item.employee_uuid}`), HSCode.PRECONDITION_FAILED);
       }
 
-      const url = `/v1/hr/sync-to-device?sn=${encodeURIComponent(sn)}&employee_uuid=${encodeURIComponent(item.employee_uuid)}&temporary=true&from=${encodeURIComponent(item.temporary_from_date)}&to=${encodeURIComponent(item.temporary_to_date)}`;
+      const url = `/v1/hr/sync-to-device?sn=${encodeURIComponent(sn)}&employee_uuid=${encodeURIComponent(item.employee_uuid)}&temporary=true&from=${encodeURIComponent(item.temporary_from_date)}&to=${encodeURIComponent(item.temporary_to_date)}&pin=${encodeURIComponent(item.pin)}`;
       try {
         const response = await api.post(url);
         console.warn(response, ' response from sync to device');
@@ -138,7 +149,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
       }
     }
     else {
-      const url = `/v1/hr/sync-to-device?sn=${encodeURIComponent(sn)}&employee_uuid=${encodeURIComponent(item.employee_uuid)}&temporary=false`;
+      const url = `/v1/hr/sync-to-device?sn=${encodeURIComponent(sn)}&employee_uuid=${encodeURIComponent(item.employee_uuid)}&temporary=false&pin=${encodeURIComponent(item.pin)}`;
       try {
         const response = await api.post(url);
         console.warn(response, ' response from sync to device');
@@ -412,7 +423,7 @@ export const getNotAssignedEmployeeForPermissionByDeviceListUuid: AppRouteHandle
 };
 
 export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
-  const { employee_uuid, sn, temporary, from, to } = c.req.valid('query');
+  const { employee_uuid, sn, temporary, from, to, pin } = c.req.valid('query');
 
   console.warn(employee_uuid, ' employee_uuid');
 
@@ -431,11 +442,13 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   await clearQueue;
 
-  const requestBody = { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] };
+  const requestBody = pin
+    ? { users: [{ pin, name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] }
+    : { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] };
   console.warn(`[hr-device-permission] Sending request to add user bulk:`, JSON.stringify(requestBody, null, 2));
 
   let response = null;
-  let pin = null;
+  let pinKey = pin && null;
 
   if (temporary === 'false') {
     response = await api.post(
@@ -445,16 +458,16 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
     console.warn(`[hr-device-permission] Raw response from add user bulk:`, JSON.stringify(response, null, 2));
 
-    // Wait a moment for device to process the user addition, then refresh user list
-    setTimeout(async () => {
-      try {
-        console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
-        await api.post(`/v1/iclock/device/refresh-users?sn=${sn}`, {});
-      }
-      catch (error) {
-        console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
-      }
-    }, 3000); // Wait 3 seconds
+    // // Wait a moment for device to process the user addition, then refresh user list
+    // setTimeout(async () => {
+    //   try {
+    //     console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
+    //     await api.post(`/v1/iclock/device/refresh-users?sn=${sn}`, {});
+    //   }
+    //   catch (error) {
+    //     console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
+    //   }
+    // }, 3000); // Wait 3 seconds
 
     // Check if response and response.data exist
     if (!response || !response.data) {
@@ -476,12 +489,13 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
       return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No PIN was assigned.`), HSCode.INTERNAL_SERVER_ERROR);
     }
 
-    pin = processedUser.pin;
+    pinKey = processedUser.pin;
   }
   else {
     // Let the ZKTeco function automatically assign the next available PIN
     response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, {
       // Don't pass pin - let the function auto-generate it
+      pin: pinKey,
       name: userInfo[0].name,
       start_date: from,
       end_date: to,
@@ -490,7 +504,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     });
 
     if (response && response.data && response.data.success === true) {
-      pin = response.data.pin;
+      pinKey = response.data.pin;
 
       // Wait a moment for device to process the user addition, then refresh user list
       setTimeout(async () => {

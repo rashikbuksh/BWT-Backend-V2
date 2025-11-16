@@ -162,6 +162,7 @@ export const syncUser = createRoute({
       temporary: z.string().optional(),
       from: z.string().optional(),
       to: z.string().optional(),
+      pin: z.string().optional(),
     }),
   },
   tags,

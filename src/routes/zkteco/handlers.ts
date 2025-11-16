@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, EmployeeBiometricSyncFromBackendToDeviceRoute, EmployeeBiometricSyncFromDeviceToBackendRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
+import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, EmployeeBiometricSyncFromBackendToDeviceRoute, EmployeeBiometricSyncFromDeviceToBackendRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
 
 import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -25,93 +25,9 @@ const initialUserFetchDone = new Map<string, boolean>(); // Track if initial use
 // Export shared state for use in other modules
 export { commandQueue, usersByDevice };
 
-export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
-  const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
-  const options = c.req.valid('query').options || '';
-  const language = c.req.valid('query').language || '';
-  const pushver = c.req.valid('query').pushver || '';
-  const deviceType = c.req.valid('query').DeviceType || '';
-  const pushOptionsFlag = c.req.valid('query').PushOptionsFlag || '';
-
-  console.warn(`*** /ICLOCK/CDATA GET ENDPOINT CALLED ***`);
-  console.warn(`SN=${sn} options=${options} language=${language} pushver=${pushver}`);
-  console.warn(`DeviceType=${deviceType} PushOptionsFlag=${pushOptionsFlag}`);
-
-  const state = deviceState.get(sn) || {};
-  state.lastSeenAt = new Date().toISOString();
-  deviceState.set(sn, state);
-
-  // Fetch users at least once on first poll, or whenever user count is 0
-  const userMap = ensureUserMap(sn, usersByDevice);
-  const hasInitialFetch = initialUserFetchDone.get(sn);
-  if (!hasInitialFetch || (userMap && userMap.size < 1)) {
-    await ensureUsersFetched(sn, usersByDevice, commandQueue);
-    initialUserFetchDone.set(sn, true);
-    console.warn(`[cdata-GET] SN=${sn} triggered user fetch (initial=${!hasInitialFetch}, count=${userMap?.size})`);
-  }
-
-  // Debug: log each poll (can be noisy; comment out if too verbose)
-  const queueCheck = ensureQueue(sn, commandQueue);
-  if (queueCheck && queueCheck.length > 0) {
-    console.warn(
-      `[cdata-GET] poll SN=${sn} pullMode=${env.PULL_MODE} queued=${queueCheck.length}`,
-    );
-  }
-
-  const queue = ensureQueue(sn, commandQueue);
-
-  // Add a test command only once per device session (when device state doesn't have testCommandSent flag)
-  // if (queue && queue.length === 0 && !state.testCommandSent) {
-  //   queue.push('C:1:DATA QUERY USERINFO');
-  //   state.testCommandSent = true;
-  //   deviceState.set(sn, state);
-  //   console.warn(`[cdata-GET] SN=${sn} added one-time test USERINFO command to empty queue`);
-  // }
-
-  if (queue?.length) {
-    const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
-    const cmds = [...queue]; // Create a copy of the commands
-    queue.length = 0; // Clear the queue immediately after copying
-
-    const body = cmds.join(sep) + sep;
-    console.warn(cmds);
-    console.warn(`*[cdata-GET] SN=${sn} sending ${cmds.length} cmd(s), queue cleared`); // concise log
-    console.warn(body);
-    // Record commands (pre-write) for diagnostics
-    const remote = (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown');
-
-    const justIds: string[] = [];
-    const ensureSentList = (sn: string) => {
-      if (!sentCommands.has(sn))
-        sentCommands.set(sn, []);
-      return sentCommands.get(sn) ?? [];
-    };
-    cmds.forEach((c: string) => {
-      recordSentCommand(sn, c, remote, sentCommands, ensureSentList);
-      const list = sentCommands.get(sn);
-      // console.warn(`list`, list);
-      if (list)
-        justIds.push(list[list.length - 1].id);
-    });
-    // console.warn(`body`, body);
-    // Attempt send
-    const bytes = Buffer.byteLength(body, 'utf8');
-    markDelivered(sn, justIds, bytes, sentCommands);
-    recordPoll(sn, remote, queue.length + cmds.length, cmds.length, new Map());
-    markStaleCommands(sn, sentCommands);
-    return c.text(body); // Return plain text response
-  }
-  // if (env.PULL_MODE === '1') {
-  //   const cmd = buildFetchCommand(sn, 24, commandSyntax, deviceState);
-  //   const sep = env.USE_CRLF === '1' ? '\r\n' : '\n';
-  //   console.warn(`[cdata-GET] SN=${sn} auto cmd: ${cmd}`);
-  //   recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-  //   return c.text(cmd + sep);
-  // }
-  console.warn(`[cdata-GET] SN=${sn} idle (no commands, pullMode=${env.PULL_MODE})`);
-  recordPoll(sn, (c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown'), (queue?.length ?? 0), 0, new Map());
-  return c.text('OK');
-};
+export function getNextAvailablePinFromHandler(sn: string) {
+  return getNextAvailablePin(sn, '2', usersByDevice);
+}
 
 export const post: AppRouteHandler<PostRoute> = async (c: any) => {
   const sn = c.req.valid('query').SN || c.req.valid('query').sn || '';
@@ -355,7 +271,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
 
   const body = await c.req.json();
   const {
-    users, // array of user objects: [{ name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', group?: '' }]
+    users, // array of user objects: [{ pin?: '123', name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', group?: '' }]
     startPin, // optional: starting PIN number (default: auto-detect next available)
     pinKey, // override PIN field label (e.g. Badgenumber, EnrollNumber)
     style, // 'spaces' to use spaces instead of tabs
