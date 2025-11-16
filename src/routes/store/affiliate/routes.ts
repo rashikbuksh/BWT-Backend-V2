@@ -18,6 +18,7 @@ export const list = createRoute({
     query: z.object({
       user_uuid: z.string().optional(),
       product_uuid: z.string().optional(),
+      product_variant_uuid: z.string().optional(),
     }),
   },
   responses: {
@@ -140,6 +141,7 @@ export const getAffiliateDetails = createRoute({
     query: z.object({
       user_uuid: z.string().optional(),
       product_uuid: z.string().optional(),
+      product_variant_uuid: z.string().optional(),
     }),
   },
   responses: {

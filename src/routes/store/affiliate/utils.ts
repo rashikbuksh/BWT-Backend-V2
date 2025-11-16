@@ -12,7 +12,7 @@ export const insertSchema = createInsertSchema(
   affiliate,
   {
     user_uuid: schema => schema.user_uuid.length(15),
-    product_uuid: schema => schema.product_uuid.length(15),
+    product_variant_uuid: schema => schema.product_variant_uuid.length(15),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
@@ -25,7 +25,7 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   user_uuid: true,
-  product_uuid: true,
+  product_variant_uuid: true,
   created_at: true,
 }).partial({
   visited: true,

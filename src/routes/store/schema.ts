@@ -520,7 +520,7 @@ export const affiliate = store.table('affiliate', {
   user_uuid: defaultUUID('user_uuid')
     .references(() => hrSchema.users.uuid)
     .notNull(),
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid).notNull(),
+  product_variant_uuid: defaultUUID('product_variant_uuid').references(() => product_variant.uuid).notNull(),
   visited: integer('visited').default(0),
   purchased: integer('purchased').default(0),
   created_at: DateTime('created_at').notNull(),
@@ -528,7 +528,8 @@ export const affiliate = store.table('affiliate', {
   commission_rate: PG_DECIMAL('commission_rate').default(sql`0`),
   unit_type: unitTypeEnum('unit_type').default('bdt'),
   remarks: text('remarks').default(sql`null`),
-}, table => [unique().on(table.user_uuid, table.product_uuid)]);
+
+}, table => [unique().on(table.user_uuid, table.product_variant_uuid)]);
 
 export const affiliate_click = store.table('affiliate_click', {
   id: serial('id').notNull(),

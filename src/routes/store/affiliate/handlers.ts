@@ -10,7 +10,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetAffiliateDetailsRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { affiliate, affiliate_click, product } from '../schema';
+import { affiliate, affiliate_click, product, product_variant } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -19,15 +19,17 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const [data] = await db.select({
     user_uuid: affiliate.user_uuid,
     user_name: users.name,
-    product_uuid: affiliate.product_uuid,
+    product_variant_uuid: affiliate.product_variant_uuid,
+    product_uuid: product_variant.product_uuid,
     product_name: product.title,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
-    .leftJoin(product, eq(affiliate.product_uuid, product.uuid))
+    .leftJoin(product_variant, eq(affiliate.product_variant_uuid, product_variant.uuid))
+    .leftJoin(product, eq(product_variant.product_uuid, product.uuid))
     .where(and(
       eq(affiliate.user_uuid, value.user_uuid),
-      eq(affiliate.product_uuid, value.product_uuid),
+      eq(affiliate.product_variant_uuid, value.product_variant_uuid),
     ));
 
   if (data) {
@@ -83,12 +85,13 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { user_uuid, product_uuid } = c.req.valid('query');
+  const { user_uuid, product_uuid, product_variant_uuid } = c.req.valid('query');
+
   const affiliatePromise = db.select({
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
     user_name: users.name,
-    product_uuid: affiliate.product_uuid,
+    product_variant_uuid: affiliate.product_variant_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
     created_at: affiliate.created_at,
@@ -100,7 +103,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     product_image: sql`(
                   SELECT pv.image
                   FROM store.product_variant pv
-                  WHERE pv.product_uuid = ${affiliate.product_uuid}
+                  WHERE pv.uuid = ${affiliate.product_variant_uuid}
                   ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
@@ -109,14 +112,15 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
               FROM store.ordered o
               LEFT JOIN store.bill_info bi ON o.bill_info_uuid = bi.uuid
               LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
-              WHERE pv.product_uuid = ${affiliate.product_uuid}
+              WHERE pv.uuid = ${affiliate.product_variant_uuid}
                 AND bi.is_paid = true
                 AND o.affiliate_id = ${affiliate.id}
             )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
-    .leftJoin(product, eq(affiliate.product_uuid, product.uuid));
+    .leftJoin(product_variant, eq(affiliate.product_variant_uuid, product_variant.uuid))
+    .leftJoin(product, eq(product_variant.product_uuid, product.uuid));
 
   const filters = [];
 
@@ -124,7 +128,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     filters.push(eq(affiliate.user_uuid, user_uuid));
   }
   if (product_uuid) {
-    filters.push(eq(affiliate.product_uuid, product_uuid));
+    filters.push(eq(product_variant.product_uuid, product_uuid));
+  }
+
+  if (product_variant_uuid) {
+    filters.push(eq(affiliate.product_variant_uuid, product_variant_uuid));
   }
 
   if (filters.length > 0) {
@@ -172,7 +180,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
     user_name: users.name,
-    product_uuid: affiliate.product_uuid,
+    product_variant_uuid: affiliate.product_variant_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
     created_at: affiliate.created_at,
@@ -184,14 +192,15 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     product_image: sql`(
                   SELECT pv.image
                   FROM store.product_variant pv
-                  WHERE pv.product_uuid = ${affiliate.product_uuid}
+                  WHERE pv.uuid = ${affiliate.product_variant_uuid}
                   ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
-    .leftJoin(product, eq(affiliate.product_uuid, product.uuid))
+    .leftJoin(product_variant, eq(affiliate.product_variant_uuid, product_variant.uuid))
+    .leftJoin(product, eq(product_variant.product_uuid, product.uuid))
     .where(eq(affiliate.id, id));
 
   const [data] = await affiliatePromise;
@@ -203,13 +212,13 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 };
 
 export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = async (c: any) => {
-  const { user_uuid, product_uuid } = c.req.valid('query');
+  const { user_uuid, product_uuid, product_variant_uuid } = c.req.valid('query');
 
   const affiliatePromise = db.select({
     id: affiliate.id,
     user_uuid: affiliate.user_uuid,
     user_name: users.name,
-    product_uuid: affiliate.product_uuid,
+    product_variant_uuid: affiliate.product_variant_uuid,
     visited: PG_DECIMAL_TO_FLOAT(affiliate.visited),
     purchased: PG_DECIMAL_TO_FLOAT(affiliate.purchased),
     created_at: affiliate.created_at,
@@ -221,7 +230,7 @@ export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = as
     product_image: sql`(
                   SELECT pv.image
                   FROM store.product_variant pv
-                  WHERE pv.product_uuid = ${affiliate.product_uuid}
+                  WHERE pv.uuid = ${affiliate.product_variant_uuid} 
                   ORDER BY pv.created_at ASC
                   LIMIT 1
                 )`,
@@ -230,22 +239,27 @@ export const getAffiliateDetails: AppRouteHandler<GetAffiliateDetailsRoute> = as
               FROM store.ordered o
               LEFT JOIN store.bill_info bi ON o.bill_info_uuid = bi.uuid
               LEFT JOIN store.product_variant pv ON o.product_variant_uuid = pv.uuid
-              WHERE pv.product_uuid = ${affiliate.product_uuid}
+              WHERE pv.uuid = ${affiliate.product_variant_uuid} 
                 AND bi.is_paid = true
                 AND o.affiliate_id = ${affiliate.id}
             )`,
   })
     .from(affiliate)
     .leftJoin(users, eq(affiliate.user_uuid, users.uuid))
-    .leftJoin(product, eq(affiliate.product_uuid, product.uuid));
+    .leftJoin(product_variant, eq(affiliate.product_variant_uuid, product_variant.uuid))
+    .leftJoin(product, eq(product_variant.product_uuid, product.uuid));
 
   const filters = [];
 
   if (user_uuid) {
     filters.push(eq(affiliate.user_uuid, user_uuid));
   }
+
   if (product_uuid) {
-    filters.push(eq(affiliate.product_uuid, product_uuid));
+    filters.push(eq(product_variant.product_uuid, product_uuid));
+  }
+  if (product_variant_uuid) {
+    filters.push(eq(affiliate.product_variant_uuid, product_variant_uuid));
   }
   if (filters.length > 0) {
     affiliatePromise.where(and(...filters));
