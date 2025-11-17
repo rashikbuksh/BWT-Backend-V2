@@ -265,18 +265,20 @@ Bun.serve({
 
       // Messages are handled in the upgradeWebSocket handler above
       // This is just for Bun's native websocket support
-      console.warn('WebSocket native message received:', message);
+      console.log('WebSocket native message received:', message); // eslint-disable-line no-console
     },
     open(_ws: ServerWebSocket) {
-      console.warn('WebSocket native connection opened');
+      console.log('WebSocket native connection opened'); // eslint-disable-line no-console
     },
     close(_ws: ServerWebSocket) {
-      console.warn('WebSocket native connection closed');
+      console.log('WebSocket native connection closed'); // eslint-disable-line no-console
     },
   },
 });
 
-console.warn(`🚀 Server is running on http://localhost:${port}`);
-console.warn(`📡 WebSocket endpoint: ws://localhost:${port}/ws`);
-console.warn(`🧪 Test room chat at: http://localhost:${port}/ws-room-test`);
-console.warn(`🧪 Test simple WebSocket at: http://localhost:${port}/ws-test`);
+// Startup logs
+
+console.log(`🚀 Server is running on http://localhost:${port}`); // eslint-disable-line no-console
+console.log(`📡 WebSocket endpoint: ws://localhost:${port}/ws`); // eslint-disable-line no-console
+console.log(`🧪 Test room chat at: http://localhost:${port}/ws-room-test`); // eslint-disable-line no-console
+console.log(`🧪 Test simple WebSocket at: http://localhost:${port}/ws-test`); // eslint-disable-line no-console

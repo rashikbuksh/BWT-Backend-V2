@@ -51,7 +51,7 @@ export const reportSendToEmail: AppRouteHandler<ReportSendToEmailRoute> = async 
       html: generateEmailHtmlContent(userName, env.SUPPORT_EMAIL),
       attachments: reports,
     });
-    console.log('Message sent: %s', info.messageId);
+    console.log('Message sent: %s', info.messageId); // eslint-disable-line no-console
   })();
 
   return c.json(createToast('sent', 'Monthly Payment slip sent to email successfully'), HSCode.OK);
@@ -111,7 +111,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
           attachments: [reportAttachment],
         });
 
-        console.log(`Message sent to ${userEmail}: ${info.messageId}`);
+        console.log(`Message sent to ${userEmail}: ${info.messageId}`); // eslint-disable-line no-console
         return { success: true, email: userEmail, messageId: info.messageId };
       }
       catch (error: any) {
@@ -136,7 +136,7 @@ export const bulkReportSendToEmail: AppRouteHandler<BulkReportSendToEmailRoute> 
 export const bulkReportSendToEmailWithoutForm: AppRouteHandler<BulkReportSendToEmailWithoutFormRoute> = async (c: any) => {
   const requestBody = await c.req.json();
 
-  console.log('Received request body for bulk email without form:', requestBody);
+  console.log('Received request body for bulk email without form:', requestBody); // eslint-disable-line no-console
 
   const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
@@ -171,7 +171,7 @@ export const bulkReportSendToEmailWithoutForm: AppRouteHandler<BulkReportSendToE
         html: generateEmailHtmlContent(userName, env.SUPPORT_EMAIL),
         attachments: [reportAttachment],
       });
-      console.log(`Message sent to ${userEmail}: ${info.messageId}`);
+      console.log(`Message sent to ${userEmail}: ${info.messageId}`); // eslint-disable-line no-console
     },
     ),
   );

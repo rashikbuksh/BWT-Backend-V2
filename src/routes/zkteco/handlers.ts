@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import env from '@/env';
 import { parseLine } from '@/utils/attendence/iclock_parser';
 
-import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, EmployeeBiometricSyncFromBackendToDeviceRoute, EmployeeBiometricSyncFromDeviceToBackendRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
+import type { AddBulkUsersRoute, AddTemporaryUserRoute, CancelTemporaryAccessRoute, ClearCommandQueueRoute, ConnectionTestRoute, CustomCommandRoute, DeleteUserRoute, DeviceCmdRoute, DeviceHealthRoute, EmployeeBiometricSyncFromBackendToDeviceRoute, EmployeeBiometricSyncFromDeviceToBackendRoute, GetQueueStatusRoute, GetRequestLegacyRoute, GetRequestRoute, GetTemporaryUsersRoute, IclockRootRoute, PostRoute, RefreshUsersRoute, SyncAttendanceLogsRoute, SyncEmployeesRoute } from './routes';
 
 import { commandSyntax, deleteUserFromDevice, ensureQueue, ensureUserMap, ensureUsersFetched, getNextAvailablePin, insertBiometricData, insertRealTimeLogToBackend, markDelivered, markStaleCommands, recordCDataEvent, recordPoll, recordSentCommand } from './functions';
 
@@ -1420,4 +1420,9 @@ export const employeeBiometricSyncFromBackendToDevice: AppRouteHandler<EmployeeB
       error: error instanceof Error ? error.message : 'Failed to sync biometrics from backend to device',
     }, 500);
   }
+};
+
+export const getRequest: AppRouteHandler<GetRequestRoute> = async (c: any) => {
+  console.log('[getrequest] Handler not yet implemented'); // eslint-disable-line no-console
+  return c.text('OK');
 };
