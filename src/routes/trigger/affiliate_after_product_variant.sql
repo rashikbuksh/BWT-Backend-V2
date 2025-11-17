@@ -1,4 +1,4 @@
-----------------inserted in database already, no need to run again----------------------
+----------------Not inserted yet----------------------
 CREATE OR REPLACE FUNCTION affiliate_after_product_variant_insert_and_update_function() RETURNS TRIGGER AS $$ BEGIN -- Update affiliates that reference this product_variant with the l
     IF NEW.commission_rate IS NOT NULL
     AND NEW.unit_type IS NOT NULL THEN
