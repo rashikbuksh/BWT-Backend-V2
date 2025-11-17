@@ -1,10 +1,10 @@
+-----------------inserted in database already, no need to run again----------------------
 CREATE OR REPLACE FUNCTION affiliate_after_affiliate_click_insert_function() RETURNS TRIGGER AS $$
 DECLARE v_total_visited INT;
 BEGIN
 SELECT COUNT(*) INTO v_total_visited
 FROM store.affiliate_click
 WHERE affiliate_id = NEW.affiliate_id;
-
 UPDATE store.affiliate
 SET visited = v_total_visited
 WHERE id = NEW.affiliate_id;

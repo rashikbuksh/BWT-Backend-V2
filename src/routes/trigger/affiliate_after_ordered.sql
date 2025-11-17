@@ -1,3 +1,4 @@
+----------------------Not Inserted Yet And no needed anymore----------------------
 CREATE OR REPLACE FUNCTION affiliate_after_ordered_insert_function() RETURNS TRIGGER AS $$
 DECLARE -- This is the only line that changed.
     pv_product_uuid TEXT;

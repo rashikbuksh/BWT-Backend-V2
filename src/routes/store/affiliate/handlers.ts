@@ -36,6 +36,18 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
     return c.json(createToast('warning', `Affiliate for user ${data.user_name} and product ${data.product_name} already exists.`), HSCode.OK);
   }
 
+  const [productVariantData] = await db.select({
+    commission_rate: product_variant.commission_rate,
+    unit_type: product_variant.unit_type,
+  })
+    .from(product_variant)
+    .where(eq(product_variant.uuid, value.product_variant_uuid));
+
+  if (productVariantData) {
+    value.commission_rate = productVariantData.commission_rate;
+    value.unit_type = productVariantData.unit_type;
+  }
+
   try {
     const [data] = await db.insert(affiliate).values(value).returning({
       name: affiliate.id,
