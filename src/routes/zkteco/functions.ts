@@ -235,7 +235,7 @@ export async function insertRealTimeLogToBackend(pushedLogs: any[]) {
   // Use Promise.all to wait for all async operations
   const processedEntries = await Promise.all(
     logEntries.map(async (l: any) => {
-      const employeeInfomation = await db.select().from(employee).where(eq(employee.pin, l.pin)).limit(1);
+      const employeeInfomation = await db.select().from(employee).where(eq(employee.id, l.pin)).limit(1);
       const employee_uuid = employeeInfomation.length > 0 ? employeeInfomation[0].uuid : null;
 
       const punchType: 'fingerprint' | 'password' | 'rfid' | 'face' | 'other'
@@ -291,7 +291,7 @@ export async function insertBiometricData(biometricItems: any[]) {
       const employeeRecord = await db
         .select()
         .from(employee)
-        .where(eq(employee.pin, item.PIN || item.pin || item.Pin || ''))
+        .where(eq(employee.id, item.PIN || item.pin || item.Pin || ''))
         .limit(1);
 
       if (employeeRecord.length === 0) {
@@ -598,17 +598,8 @@ export async function addUserToDevice(
       try {
         // Always get next available PIN to avoid conflicts, unless pin is explicitly provided and valid
         if (!pin || pin.trim() === '' || pin === null) {
-          pin = String(await getNextAvailablePin(deviceSn, '1', usersByDevice));
-          console.warn(`[add-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
-        }
-        else {
-          // Check if provided PIN is already in use and get next available if needed
-          const umap = ensureUserMap(deviceSn, usersByDevice);
-          if (umap?.has(pin)) {
-            const originalPin = pin;
-            pin = String(await getNextAvailablePin(deviceSn, pin, usersByDevice));
-            console.warn(`[add-user] PIN ${originalPin} already in use, assigned next available PIN ${pin} for device ${deviceSn}`);
-          }
+          console.error(`[add-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
+          results.push({ device: deviceSn, success: false, note: 'No Pin Provided' });
         }
 
         // Ensure queue exists for this device
@@ -618,7 +609,7 @@ export async function addUserToDevice(
         const umap = ensureUserMap(deviceSn, usersByDevice);
         const existingUser = umap?.get(pin);
 
-        if (existingUser && existingUser.name === name) {
+        if (existingUser && existingUser.name === name && existingUser.pin === pin) {
           console.warn(`[add-user] User PIN ${pin} with name "${name}" already exists on device ${deviceSn}`);
           results.push({ device: deviceSn, success: true, note: 'User already exists with same name' });
           continue;
@@ -701,6 +692,10 @@ export async function addTemporaryUserToDevice(
   timeZone = '1', // Time zone ID for access control (1-50 available)
 ) {
   try {
+    if (!pin) {
+      console.error('[add-temp-user] PIN is required');
+      return { success: false, error: 'PIN is required' };
+    }
     if (!name) {
       console.error('[add-temp-user] Name is required');
       return { success: false, error: 'Name is required' };
@@ -715,7 +710,7 @@ export async function addTemporaryUserToDevice(
     const devicesToUpdate = sn ? [sn] : Array.from(commandQueue.keys());
 
     if (devicesToUpdate.length === 0) {
-      console.warn('[add-temp-user] No devices found to add user to');
+      console.log('[add-temp-user] No devices found to add user to'); // eslint-disable-line no-console
       return { success: false, error: 'No devices found' };
     }
 
@@ -724,21 +719,6 @@ export async function addTemporaryUserToDevice(
 
     for (const deviceSn of devicesToUpdate) {
       try {
-        // Always get next available PIN to avoid conflicts, unless pin is explicitly provided and valid
-        if (!pin || pin.trim() === '' || pin === null) {
-          pin = String(await getNextAvailablePin(deviceSn, '1', usersByDevice));
-          console.warn(`[add-temp-user] No PIN provided, assigned next available PIN ${pin} for device ${deviceSn}`);
-        }
-        else {
-          // Check if provided PIN is already in use and get next available if needed
-          const umap = ensureUserMap(deviceSn, usersByDevice);
-          if (umap?.has(pin)) {
-            const originalPin = pin;
-            pin = String(await getNextAvailablePin(deviceSn, pin, usersByDevice));
-            console.warn(`[add-temp-user] PIN ${originalPin} already in use, assigned next available PIN ${pin} for device ${deviceSn}`);
-          }
-        }
-
         // Ensure queue exists for this device
         const queue = ensureQueue(deviceSn, commandQueue);
 
@@ -746,9 +726,9 @@ export async function addTemporaryUserToDevice(
         const umap = ensureUserMap(deviceSn, usersByDevice);
         const existingUser = umap?.get(pin);
 
-        if (existingUser && existingUser.name === name) {
+        if (existingUser && existingUser.name === name && existingUser.pin === pin) {
           console.warn(`[add-temp-user] User PIN ${pin} with name "${name}" already exists on device ${deviceSn}`);
-          results.push({ device: deviceSn, success: true, note: 'User already exists with same name' });
+          results.push({ device: deviceSn, success: true, note: 'User or Pin already exists with same name or Pin' });
           continue;
         }
 
@@ -803,9 +783,6 @@ export async function addTemporaryUserToDevice(
             try {
               await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
 
-              await db.update(employee)
-                .set({ pin: null })
-                .where(eq(employee.pin, pin));
               // Clean up temporary user record
               const tempKey = `${pin}-${deviceSn}`;
               temporaryUsers.delete(tempKey);
@@ -889,7 +866,7 @@ export async function cancelTemporaryAccess(
           note: 'Temporary access cancelled before expiry',
         });
 
-        console.warn(`[cancel-temp-access] Cancelled temporary access for PIN ${pin} on device ${deviceSn}`);
+        console.log(`[cancel-temp-access] Cancelled temporary access for PIN ${pin} on device ${deviceSn}`); // eslint-disable-line no-console
       }
       else {
         results.push({

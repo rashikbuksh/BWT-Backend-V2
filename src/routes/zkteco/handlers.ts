@@ -271,8 +271,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
 
   const body = await c.req.json();
   const {
-    users, // array of user objects: [{ pin?: '123', name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', group?: '' }]
-    startPin, // optional: starting PIN number (default: auto-detect next available)
+    users, // array of user objects: [{ pin: '123', name: 'Anik2', card?: '123', privilege?: 0, department?: '', password?: '', group?: '' }]
     pinKey, // override PIN field label (e.g. Badgenumber, EnrollNumber)
     style, // 'spaces' to use spaces instead of tabs
     optimistic = true, // whether to apply optimistic caching
@@ -297,13 +296,12 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
   const umap = ensureUserMap(sn, usersByDevice);
   const nowIso = new Date().toISOString();
 
-  let currentPin = await getNextAvailablePin(sn, startPin, usersByDevice);
   const commands = [];
   const processedUsers = [];
   const errors = [];
 
   console.warn(
-    `[bulk-add-users] SN=${sn} starting bulk insert of ${users.length} users, starting from PIN ${currentPin}`,
+    `[bulk-add-users] SN=${sn} starting bulk insert of ${users.length} users`,
   );
 
   for (let i = 0; i < users.length; i++) {
@@ -317,7 +315,7 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
       }
 
       // Use provided PIN or auto-generate
-      const pinVal = user.pin ? clean(user.pin) : String(currentPin);
+      const pinVal = String(clean(user.pin));
 
       // Check if PIN already exists
       if (umap && umap.has(pinVal)) {
@@ -373,11 +371,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
         name: nameVal,
         command,
       });
-
-      // Increment PIN for next user (if auto-generating)
-      if (!user.pin) {
-        currentPin++;
-      }
     }
     catch (error) {
       const errorMsg = typeof error === 'object' && error !== null && 'message' in error
@@ -425,7 +418,6 @@ export const addBulkUsers: AppRouteHandler<AddBulkUsersRoute> = async (c: any) =
     queueSize: q?.length ?? 0,
     processedUsers,
     errors,
-    nextAvailablePin: currentPin,
     pinLabelUsed: pinLabel,
     optimisticApplied: optimistic,
     note: 'Users will be created with auto-generated PINs starting from the next available PIN number. Check /api/users to verify creation.',
@@ -884,12 +876,9 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
     let totalSkipped = 0;
     let totalErrors = 0;
 
-    // Get the starting PIN from the function
-    let currentPin = await getNextAvailablePin(sn || targetDevices[0], String(usersByDevice.size), usersByDevice);
-
     for (const employeeInd of employees) {
-      // Use getNextAvailablePin function instead of employee.pin
-      const pin = String(currentPin);
+      // Use employee ID as PIN
+      const pin = String(employeeInd.id);
       const name = employeeInd.name;
 
       if (!pin || !name) {
@@ -939,20 +928,6 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
           const result = await addUserToDevice(pin, name, commandQueue, usersByDevice, sn);
 
           if (result.success) {
-            // Update employee's pin field in database with the assigned device PIN
-            try {
-              await db
-                .update(employee)
-                .set({ pin })
-                .where(eq(employee.uuid, employeeInd.uuid)); // Use original employee.id as the ID to find the record
-
-              console.warn(`[sync-employees] Updated employee ID ${employeeInd.id} with device PIN ${pin}`);
-            }
-            catch (dbError) {
-              console.error(`[sync-employees] Failed to update employee PIN in database:`, dbError);
-              // Don't fail the sync operation for database update errors
-            }
-
             syncDetails.push({
               employee: { pin, name, email: employeeInd.email },
               action: 'added',
@@ -961,8 +936,6 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
               error: undefined,
             });
             totalAdded++;
-            // Increment PIN for next user
-            currentPin++;
           }
           else {
             syncDetails.push({
@@ -986,8 +959,6 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
             error: undefined,
           });
           totalAdded++;
-          // Increment PIN for next user even in dry run
-          currentPin++;
         }
       }
       catch (error) {
@@ -1039,6 +1010,13 @@ export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = a
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
 
+    if (pin) {
+      return c.json({
+        success: false,
+        error: 'PIN is required for temporary user',
+      }, 400);
+    }
+
     // Check if dates are valid
     if (Number.isNaN(startDate.getTime())) {
       return c.json({
@@ -1064,7 +1042,7 @@ export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = a
     const { addTemporaryUserToDevice } = await import('./functions');
 
     const result = await addTemporaryUserToDevice(
-      pin || '', // Pass empty string if pin is undefined, function will handle it
+      pin,
       name,
       commandQueue,
       usersByDevice,

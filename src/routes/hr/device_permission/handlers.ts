@@ -5,7 +5,6 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { getNextAvailablePinFromHandler } from '@/routes/zkteco/handlers';
 import createApi from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -111,14 +110,14 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const sn = deviceInfo[0]?.identifier;
   const api = createApi(c);
 
-  // using this getNextAvailablePin function from zkteco module to get next available pin
-  // also after getting the next available pin, then we will assign that pin to the user while syncing and pass the pin as well, because array of users wont be conflicted by the nextAvailablePin function
-
-  let pinVal = await getNextAvailablePinFromHandler(sn);
-
   for (const item of items) {
-    item.pin = pinVal;
-    pinVal++;
+    // get employee id from employee_uuid
+    const employeeInd = await db.select()
+      .from(employee)
+      .where(eq(employee.uuid, item.employee_uuid))
+      .limit(1)
+      .then(results => results[0]);
+    item.pin = String(employeeInd.id);
   }
 
   // Process sync to device sequentially and validate temporary dates
@@ -429,26 +428,24 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
 
   const userInfo = await db.select({
     name: users.name,
-    id: users.id,
+    employee_id: employee.id,
   })
-    .from(users)
-    .leftJoin(employee, eq(users.uuid, employee.user_uuid))
+    .from(employee)
+    .leftJoin(users, eq(users.uuid, employee.user_uuid))
     .where(eq(employee.uuid, employee_uuid));
 
   const api = createApi(c);
 
   // Clear queue before adding user to prevent command conflicts
-  const clearQueue = await api.post(`/iclock/device/clear-queue?sn=${sn}`, {});
+  const clearQueue = api.post(`/iclock/device/clear-queue?sn=${sn}`, {});
 
   await clearQueue;
 
-  const requestBody = pin
-    ? { users: [{ pin, name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] }
-    : { users: [{ name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] };
+  const requestBody = { users: [{ pin: userInfo[0].employee_id, name: userInfo[0].name, privilege: 0 }], pinKey: 'PIN', deviceSN: [sn] };
   console.warn(`[hr-device-permission] Sending request to add user bulk:`, JSON.stringify(requestBody, null, 2));
 
   let response = null;
-  let pinKey = pin && null;
+  let pinKey = userInfo[0].employee_id && null;
 
   if (temporary === 'false') {
     response = await api.post(
@@ -500,7 +497,7 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
       start_date: from,
       end_date: to,
       privilege: '0',
-      timeZone: userInfo[0].id.toString(),
+      timeZone: userInfo[0].employee_id.toString(),
     });
 
     if (response && response.data && response.data.success === true) {
@@ -546,25 +543,8 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
   }
 
   // Check if the operation was successful
-  if (response && response.data.ok === true && pin) {
-    console.warn(`[hr-device-permission] Successfully sent user to device SN=${sn} with PIN=${pin}`);
-
-    try {
-      const employeeUpdate = db.update(employee)
-        .set({ pin })
-        .where(eq(employee.uuid, employee_uuid))
-        .returning();
-
-      await employeeUpdate;
-
-      console.warn(`[hr-device-permission] Updated employee ${employee_uuid} with PIN=${pin}`);
-
-      return c.json(createToast('create', `${userInfo[0].name} synced to ${sn} with PIN ${pin}.`), HSCode.OK);
-    }
-    catch (dbError) {
-      console.error(`[hr-device-permission] Failed to update employee PIN in database:`, dbError);
-      return c.json(createToast('error', `User synced to device but failed to update PIN in database.`), HSCode.INTERNAL_SERVER_ERROR);
-    }
+  if (response && response.data.ok === true) {
+    console.log(`[hr-device-permission] Successfully sent user to device SN=${sn} with PIN=${pin}`); // eslint-disable-line no-console
   }
   else {
     console.error(`[hr-device-permission] Failed to sync user to device:`, {
