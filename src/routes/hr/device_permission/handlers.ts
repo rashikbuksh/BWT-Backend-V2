@@ -475,23 +475,38 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     }
   }
   else {
-    if (!userInfo[0].employee_id) {
+    if (!userInfo[0].employee_id || String(userInfo[0].employee_id).trim() === '' || !pin) {
       console.error(`[hr-device-permission] Employee ID is required to add temporary user but was not found for employee_uuid=${employee_uuid}`);
       return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Employee ID not found.`), HSCode.PRECONDITION_FAILED);
     }
 
-    response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, {
-      pin: String(userInfo[0].employee_id),
-      name: userInfo[0].name,
-      start_date: from,
-      end_date: to,
-      privilege: '0',
-      timeZone: userInfo[0].employee_id.toString(),
-    });
+    // Convert string dates to Date objects for the function
+    const startDate = new Date(from);
+    const endDate = new Date(to);
+
+    // Validate dates
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      console.error(`[hr-device-permission] Invalid date format for from=${from} or to=${to}`);
+      return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Invalid date format.`), HSCode.PRECONDITION_FAILED);
+    }
+
+    const requestBodyTemp = {
+      users: [{
+        pin: pin || userInfo[0].employee_id.toString(),
+        name: userInfo[0].name,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        privilege: '0',
+        password: '',
+        cardno: '',
+        timeZone: userInfo[0].employee_id.toString(),
+      }],
+    };
+
+    response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, requestBodyTemp);
 
     if (response && response.data && response.data.success === true) {
-      // Wait a moment for device to process the user addition
-      console.log(`[hr-device-permission] Successfully added temporary user to device SN=${sn} with PIN=${userInfo[0].employee_id}`); // eslint-disable-line no-console
+      console.log(`[hr-device-permission] Successfully added temporary user to device SN=${sn} with PIN=${pin || userInfo[0].employee_id}`); // eslint-disable-line no-console
     }
     else {
       console.error(`[hr-device-permission] Failed to add temporary user to device:`, response && response.data);

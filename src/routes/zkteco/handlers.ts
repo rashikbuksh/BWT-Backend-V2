@@ -1003,56 +1003,44 @@ export const syncEmployees: AppRouteHandler<SyncEmployeesRoute> = async (c: any)
 
 export const addTemporaryUserHandler: AppRouteHandler<AddTemporaryUserRoute> = async (c: any) => {
   const { sn } = c.req.valid('query');
-  const { pin, name, start_date, end_date, privilege = '0', password = '', cardno = '', timeZone = '1' } = c.req.valid('json');
+  const { users } = c.req.valid('json');
 
   try {
-    // Validate and convert date strings to Date objects
-    const startDate = new Date(start_date);
-    const endDate = new Date(end_date);
+    // Validate and convert users data
+    const processedUsers = users.map((user: any) => {
+      const startDate = new Date(user.start_date);
+      const endDate = new Date(user.end_date);
 
-    if (pin) {
-      return c.json({
-        success: false,
-        error: 'PIN is required for temporary user',
-      }, 400);
-    }
+      // Validate dates
+      if (Number.isNaN(startDate.getTime())) {
+        throw new TypeError(`Invalid start_date format for user ${user.name}: ${user.start_date}`);
+      }
+      if (Number.isNaN(endDate.getTime())) {
+        throw new TypeError(`Invalid end_date format for user ${user.name}: ${user.end_date}`);
+      }
+      if (endDate <= startDate) {
+        throw new RangeError(`end_date must be greater than start_date for user ${user.name}`);
+      }
 
-    // Check if dates are valid
-    if (Number.isNaN(startDate.getTime())) {
-      return c.json({
-        success: false,
-        error: 'Invalid start_date format. Expected ISO 8601 format (e.g., 2024-01-01T10:00:00Z)',
-      }, 400);
-    }
-
-    if (Number.isNaN(endDate.getTime())) {
-      return c.json({
-        success: false,
-        error: 'Invalid end_date format. Expected ISO 8601 format (e.g., 2024-01-01T18:00:00Z)',
-      }, 400);
-    }
-
-    if (endDate <= startDate) {
-      return c.json({
-        success: false,
-        error: 'End date must be greater than start date',
-      }, 400);
-    }
+      return {
+        pin: user.pin || '',
+        name: user.name,
+        start_date: startDate,
+        end_date: endDate,
+        privilege: user.privilege || '0',
+        password: user.password || '',
+        cardno: user.cardno || '',
+        timeZone: user.timeZone || user.pin || '1',
+      };
+    });
 
     const { addTemporaryUserToDevice } = await import('./functions');
 
     const result = await addTemporaryUserToDevice(
-      pin,
-      name,
+      processedUsers,
       commandQueue,
       usersByDevice,
-      startDate,
-      endDate,
       sn,
-      privilege,
-      password,
-      cardno,
-      timeZone,
     );
 
     if (result.success) {

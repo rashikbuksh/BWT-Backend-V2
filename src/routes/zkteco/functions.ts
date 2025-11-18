@@ -677,156 +677,187 @@ export async function addUserToDevice(
 // Store for temporary users with their expiry times
 const temporaryUsers = new Map<string, { pin: string; deviceSn: string; expiryTime: Date; timeoutId: NodeJS.Timeout }>();
 
-// Function to add a user to ZKTeco device with temporary access
+// Function to add multiple users to ZKTeco device with temporary access
 export async function addTemporaryUserToDevice(
-  pin: string,
-  name: string,
+  users: Array<{ pin: string; name: string; start_date: Date; end_date: Date; privilege?: string; password?: string; cardno?: string; timeZone?: string }>,
   commandQueue: Map<string, string[]>,
   usersByDevice: Map<string, Map<string, any>>,
-  start_date: Date,
-  end_date: Date,
-  sn?: string,
-  privilege = '0', // 0 = user, 1 = admin
-  password = '',
-  cardno = '',
-  timeZone = '1', // Time zone ID for access control (1-50 available)
+  sn: string,
 ) {
   try {
-    if (!pin) {
-      console.error('[add-temp-user] PIN is required');
-      return { success: false, error: 'PIN is required' };
-    }
-    if (!name) {
-      console.error('[add-temp-user] Name is required');
-      return { success: false, error: 'Name is required' };
-    }
-
-    if (end_date <= start_date) {
-      console.error('[add-temp-user] End date must be greater than start date');
-      return { success: false, error: 'End date must be greater than start date' };
+    // Validate input
+    if (!users || users.length === 0) {
+      console.error('[add-temp-user] No users provided');
+      return { success: false, error: 'No users provided' };
     }
 
     // If no specific device serial number provided, send to all devices
     const devicesToUpdate = sn ? [sn] : Array.from(commandQueue.keys());
 
     if (devicesToUpdate.length === 0) {
-      console.log('[add-temp-user] No devices found to add user to'); // eslint-disable-line no-console
+      console.warn('[add-temp-user] No devices found to add users to');
       return { success: false, error: 'No devices found' };
     }
 
-    const results = [];
-    const expiryTime = end_date;
+    const allResults: any[] = [];
+    let totalSuccessCount = 0;
+    let totalFailureCount = 0;
 
-    for (const deviceSn of devicesToUpdate) {
-      try {
-        // Ensure queue exists for this device
-        const queue = ensureQueue(deviceSn, commandQueue);
+    // Process each user
+    for (const user of users) {
+      const { pin, name, start_date, end_date, privilege = '0', password = '', cardno = '', timeZone } = user;
 
-        // Check if user already exists on device
-        const umap = ensureUserMap(deviceSn, usersByDevice);
-        const existingUser = umap?.get(pin);
+      // Validate individual user data
+      if (!pin) {
+        console.error(`[add-temp-user] PIN is required for user: ${name || 'Unknown'}`);
+        allResults.push({ pin, name, success: false, error: 'PIN is required' });
+        totalFailureCount++;
+        continue;
+      }
 
-        if (existingUser && existingUser.name === name && existingUser.pin === pin) {
-          console.warn(`[add-temp-user] User PIN ${pin} with name "${name}" already exists on device ${deviceSn}`);
-          results.push({ device: deviceSn, success: true, note: 'User or Pin already exists with same name or Pin' });
-          continue;
-        }
+      if (!name) {
+        console.error(`[add-temp-user] Name is required for PIN: ${pin}`);
+        allResults.push({ pin, name, success: false, error: 'Name is required' });
+        totalFailureCount++;
+        continue;
+      }
 
-        // Add user to device cache
-        if (umap) {
-          umap.set(pin, { pin, name, privilege, password, cardno, timeZone, temporary: true, expiryTime });
-          console.warn(`[add-temp-user] Added PIN ${pin} to device ${deviceSn} cache with expiry ${expiryTime}`);
-        }
+      if (end_date <= start_date) {
+        console.error(`[add-temp-user] End date must be greater than start date for PIN ${pin}`);
+        allResults.push({ pin, name, success: false, error: 'End date must be greater than start date' });
+        totalFailureCount++;
+        continue;
+      }
 
-        // Create time zone first (if not exists)
-        const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${timeZone || pin}\tAlias=TempAccess${timeZone || pin}\tStartTime=${start_date}\tEndTime=${expiryTime}`;
+      const userResults = [];
+      const expiryTime = end_date;
 
-        // Create add user command with time zone restriction
-        const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}\tTZ=${timeZone || pin}`;
+      // Process this user for each device
+      for (const deviceSn of devicesToUpdate) {
+        try {
+          // Ensure queue exists for this device
+          const queue = ensureQueue(deviceSn, commandQueue);
 
-        // Add commands to queue
-        if (queue) {
-          // Check if commands already exist in queue to avoid duplicates
-          const existingTzCmd = queue.find(cmd => cmd.includes(`TZId=${timeZone || pin}`) && cmd.includes('DATA UPDATE TIMEZONE'));
-          const existingAddCmd = queue.find(cmd => cmd.includes(`PIN=${pin}`) && cmd.includes('DATA UPDATE USERINFO'));
+          // Check if user already exists on device
+          const umap = ensureUserMap(deviceSn, usersByDevice);
+          const existingUser = umap?.get(pin);
 
-          if (!existingTzCmd) {
-            queue.push(timeZoneCommand);
-            console.warn(`[add-temp-user] Queued timezone command for device ${deviceSn}: ${timeZoneCommand}`);
+          if (existingUser && existingUser.name === name && existingUser.pin === pin) {
+            console.warn(`[add-temp-user] User PIN ${pin} with name "${name}" already exists on device ${deviceSn}`);
+            userResults.push({ device: deviceSn, success: true, note: 'User or Pin already exists with same name or Pin' });
+            continue;
           }
 
-          if (!existingAddCmd) {
-            queue.push(addCommand);
-            console.warn(`[add-temp-user] Queued add command for PIN ${pin} on device ${deviceSn}: ${addCommand}`);
+          // Add user to device cache
+          if (umap) {
+            umap.set(pin, { pin, name, privilege, password, cardno, timeZone, temporary: true, expiryTime });
+            console.warn(`[add-temp-user] Added PIN ${pin} to device ${deviceSn} cache with expiry ${expiryTime}`);
           }
 
-          results.push({
-            device: deviceSn,
-            success: true,
-            commands: [timeZoneCommand, addCommand],
-            expiryTime,
-          });
-        }
-        else {
-          console.error(`[add-temp-user] Failed to get command queue for device ${deviceSn}`);
-          results.push({ device: deviceSn, success: false, error: 'Failed to get command queue' });
-        }
+          // Create time zone first (if not exists)
+          const tzId = timeZone || pin;
+          const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${tzId}\tAlias=TempAccess${tzId}\tStartTime=${start_date.toISOString()}\tEndTime=${expiryTime.toISOString()}`;
 
-        // Schedule automatic deletion
-        const timeUntilExpiry = expiryTime.getTime() - start_date.getTime();
+          // Create add user command with time zone restriction
+          const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}\tTZ=${tzId}`;
 
-        // Only set timeout if expiry is in the future
-        if (timeUntilExpiry > 0) {
-          const timeoutId = setTimeout(async () => {
-            console.warn(`[add-temp-user] Auto-deleting expired user PIN ${pin} from device ${deviceSn}`);
+          // Add commands to queue
+          if (queue) {
+            // Check if commands already exist in queue to avoid duplicates
+            const existingTzCmd = queue.find(cmd => cmd.includes(`TZId=${tzId}`) && cmd.includes('DATA UPDATE TIMEZONE'));
+            const existingAddCmd = queue.find(cmd => cmd.includes(`PIN=${pin}`) && cmd.includes('DATA UPDATE USERINFO'));
 
-            try {
-              await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
-
-              // Clean up temporary user record
-              const tempKey = `${pin}-${deviceSn}`;
-              temporaryUsers.delete(tempKey);
-              console.warn(`[add-temp-user] Successfully auto-deleted expired user PIN ${pin} from device ${deviceSn}`);
+            if (!existingTzCmd) {
+              queue.push(timeZoneCommand);
+              console.warn(`[add-temp-user] Queued timezone command for device ${deviceSn}: ${timeZoneCommand}`);
             }
-            catch (error) {
-              console.error(`[add-temp-user] Failed to auto-delete expired user PIN ${pin} from device ${deviceSn}:`, error);
-            }
-          }, timeUntilExpiry);
 
-          // Store temporary user info for tracking
-          const tempKey = `${pin}-${deviceSn}`;
-          temporaryUsers.set(tempKey, {
-            pin,
-            deviceSn,
-            expiryTime,
-            timeoutId,
-          });
+            if (!existingAddCmd) {
+              queue.push(addCommand);
+              console.warn(`[add-temp-user] Queued add command for PIN ${pin} on device ${deviceSn}: ${addCommand}`);
+            }
+
+            userResults.push({
+              device: deviceSn,
+              success: true,
+              commands: [timeZoneCommand, addCommand],
+              expiryTime: expiryTime.toISOString(),
+            });
+          }
+          else {
+            console.error(`[add-temp-user] Failed to get command queue for device ${deviceSn}`);
+            userResults.push({ device: deviceSn, success: false, error: 'Failed to get command queue' });
+          }
+
+          // Schedule automatic deletion
+          const timeUntilExpiry = expiryTime.getTime() - Date.now();
+
+          // Only set timeout if expiry is in the future
+          if (timeUntilExpiry > 0) {
+            const timeoutId = setTimeout(async () => {
+              console.warn(`[add-temp-user] Auto-deleting expired user PIN ${pin} from device ${deviceSn}`);
+
+              try {
+                await deleteUserFromDevice(pin, commandQueue, usersByDevice, deviceSn);
+
+                // Clean up temporary user record
+                const tempKey = `${pin}-${deviceSn}`;
+                temporaryUsers.delete(tempKey);
+                console.warn(`[add-temp-user] Successfully auto-deleted expired user PIN ${pin} from device ${deviceSn}`);
+              }
+              catch (error) {
+                console.error(`[add-temp-user] Failed to auto-delete expired user PIN ${pin} from device ${deviceSn}:`, error);
+              }
+            }, timeUntilExpiry);
+
+            // Store temporary user info for tracking
+            const tempKey = `${pin}-${deviceSn}`;
+            temporaryUsers.set(tempKey, {
+              pin,
+              deviceSn,
+              expiryTime,
+              timeoutId,
+            });
+          }
+          else {
+            console.warn(`[add-temp-user] Expiry time is in the past for PIN ${pin} on device ${deviceSn}, not scheduling deletion`);
+          }
         }
-        else {
-          console.warn(`[add-temp-user] Expiry time is in the past for PIN ${pin} on device ${deviceSn}, not scheduling deletion`);
+        catch (error) {
+          console.error(`[add-temp-user] Error processing device ${deviceSn} for user PIN ${pin}:`, error);
+          userResults.push({ device: deviceSn, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
-      catch (error) {
-        console.error(`[add-temp-user] Error processing device ${deviceSn}:`, error);
-        results.push({ device: deviceSn, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
-      }
+
+      // Aggregate results for this user
+      const userSuccessCount = userResults.filter(r => r.success).length;
+      const userFailureCount = userResults.length - userSuccessCount;
+
+      totalSuccessCount += userSuccessCount;
+      totalFailureCount += userFailureCount;
+
+      allResults.push({
+        pin,
+        name,
+        start_date: start_date.toISOString(),
+        end_date: expiryTime.toISOString(),
+        success: userSuccessCount > 0,
+        devicesProcessed: devicesToUpdate.length,
+        successCount: userSuccessCount,
+        failureCount: userFailureCount,
+        deviceResults: userResults,
+      });
+
+      console.warn(`[add-temp-user] Add temporary user PIN ${pin} completed: ${userSuccessCount} success, ${userFailureCount} failures`);
     }
 
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.length - successCount;
-
-    console.warn(`[add-temp-user] Add temporary user PIN ${pin} completed: ${successCount} success, ${failureCount} failures`);
-
     return {
-      success: successCount > 0,
-      pin,
-      name,
-      start_date,
-      expiryTime,
-      devicesProcessed: devicesToUpdate.length,
-      successCount,
-      failureCount,
-      results,
+      success: totalSuccessCount > 0,
+      totalUsers: users.length,
+      totalDevices: devicesToUpdate.length,
+      totalSuccessCount,
+      totalFailureCount,
+      results: allResults,
     };
   }
   catch (error) {

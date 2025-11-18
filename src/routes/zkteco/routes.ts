@@ -418,16 +418,23 @@ export const addTemporaryUser = createRoute({
     query: z.object({
       sn: z.string().optional().describe('Specific device serial number (optional)'),
     }),
-    body: jsonContent(z.object({
-      pin: z.string().optional().describe('User PIN number (will be auto-generated if not provided)'),
-      name: z.string().describe('User name'),
-      start_date: z.string().describe('Access start date-time in ISO 8601 format'),
-      end_date: z.string().describe('Access end date-time in ISO 8601 format'),
-      privilege: z.string().optional().default('0').describe('User privilege (0=user, 1=admin)'),
-      password: z.string().optional().default('').describe('User password'),
-      cardno: z.string().optional().default('').describe('Card number'),
-      timeZone: z.string().optional().default('1').describe('Time zone ID (1-50)'),
-    }), 'Temporary user configuration'),
+    body: jsonContent(
+      z.object({
+        users: z.array(
+          z.object({
+            pin: z.string().optional().describe('User PIN number (will be auto-generated if not provided)'),
+            name: z.string().describe('User name'),
+            start_date: z.string().describe('Access start date-time in ISO 8601 format'),
+            end_date: z.string().describe('Access end date-time in ISO 8601 format'),
+            privilege: z.string().optional().default('0').describe('User privilege (0=user, 1=admin)'),
+            password: z.string().optional().default('').describe('User password'),
+            cardno: z.string().optional().default('').describe('Card number'),
+            timeZone: z.string().optional().default('1').describe('Time zone ID (1-50)'),
+          }),
+        ),
+      }),
+      'Temporary user configuration',
+    ),
   },
   tags,
   responses: {
