@@ -445,7 +445,6 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
   console.warn(`[hr-device-permission] Sending request to add user bulk:`, JSON.stringify(requestBody, null, 2));
 
   let response = null;
-  let pinKey = userInfo[0].employee_id && null;
 
   if (temporary === 'false') {
     response = await api.post(
@@ -454,17 +453,6 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     );
 
     console.warn(`[hr-device-permission] Raw response from add user bulk:`, JSON.stringify(response, null, 2));
-
-    // // Wait a moment for device to process the user addition, then refresh user list
-    // setTimeout(async () => {
-    //   try {
-    //     console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
-    //     await api.post(`/v1/iclock/device/refresh-users?sn=${sn}`, {});
-    //   }
-    //   catch (error) {
-    //     console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
-    //   }
-    // }, 3000); // Wait 3 seconds
 
     // Check if response and response.data exist
     if (!response || !response.data) {
@@ -485,17 +473,15 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
       console.error(`[hr-device-permission] No PIN assigned to processed user:`, processedUser);
       return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: No PIN was assigned.`), HSCode.INTERNAL_SERVER_ERROR);
     }
-
-    pinKey = processedUser.pin;
   }
   else {
-    if (!pinKey) {
+    if (!userInfo[0].employee_id) {
       console.error(`[hr-device-permission] Employee ID is required to add temporary user but was not found for employee_uuid=${employee_uuid}`);
       return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Employee ID not found.`), HSCode.PRECONDITION_FAILED);
     }
 
     response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, {
-      pin: String(pinKey),
+      pin: String(userInfo[0].employee_id),
       name: userInfo[0].name,
       start_date: from,
       end_date: to,
@@ -504,18 +490,8 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     });
 
     if (response && response.data && response.data.success === true) {
-      pinKey = response.data.pin;
-
-      // Wait a moment for device to process the user addition, then refresh user list
-      setTimeout(async () => {
-        try {
-          console.warn(`[hr-device-permission] Refreshing user list for device ${sn} after user addition`);
-          await api.post(`/v1/iclock/device/refresh-users?sn=${sn}`, {});
-        }
-        catch (error) {
-          console.error(`[hr-device-permission] Failed to refresh users for device ${sn}:`, error);
-        }
-      }, 3000); // Wait 3 seconds
+      // Wait a moment for device to process the user addition
+      console.log(`[hr-device-permission] Successfully added temporary user to device SN=${sn} with PIN=${userInfo[0].employee_id}`); // eslint-disable-line no-console
     }
     else {
       console.error(`[hr-device-permission] Failed to add temporary user to device:`, response && response.data);
