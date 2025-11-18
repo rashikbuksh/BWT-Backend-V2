@@ -489,10 +489,13 @@ export const syncUser: AppRouteHandler<PostSyncUser> = async (c: any) => {
     pinKey = processedUser.pin;
   }
   else {
-    // Let the ZKTeco function automatically assign the next available PIN
+    if (!pinKey) {
+      console.error(`[hr-device-permission] Employee ID is required to add temporary user but was not found for employee_uuid=${employee_uuid}`);
+      return c.json(createToast('error', `Failed to sync ${userInfo[0].name} to ${sn}: Employee ID not found.`), HSCode.PRECONDITION_FAILED);
+    }
+
     response = await api.post(`/zkteco/add-temporary-user?sn=${sn}`, {
-      // Don't pass pin - let the function auto-generate it
-      pin: pinKey,
+      pin: String(pinKey),
       name: userInfo[0].name,
       start_date: from,
       end_date: to,

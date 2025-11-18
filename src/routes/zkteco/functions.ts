@@ -739,15 +739,15 @@ export async function addTemporaryUserToDevice(
         }
 
         // Create time zone first (if not exists)
-        const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${timeZone}\tAlias=TempAccess${timeZone}\tStartTime=${start_date}\tEndTime=${expiryTime}`;
+        const timeZoneCommand = `C:1:DATA UPDATE TIMEZONE TZId=${timeZone || pin}\tAlias=TempAccess${timeZone || pin}\tStartTime=${start_date}\tEndTime=${expiryTime}`;
 
         // Create add user command with time zone restriction
-        const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}\tTZ=${timeZone}`;
+        const addCommand = `C:1:DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=${privilege}\tPasswd=${password}\tCard=${cardno}\tTZ=${timeZone || pin}`;
 
         // Add commands to queue
         if (queue) {
           // Check if commands already exist in queue to avoid duplicates
-          const existingTzCmd = queue.find(cmd => cmd.includes(`TZId=${timeZone}`) && cmd.includes('DATA UPDATE TIMEZONE'));
+          const existingTzCmd = queue.find(cmd => cmd.includes(`TZId=${timeZone || pin}`) && cmd.includes('DATA UPDATE TIMEZONE'));
           const existingAddCmd = queue.find(cmd => cmd.includes(`PIN=${pin}`) && cmd.includes('DATA UPDATE USERINFO'));
 
           if (!existingTzCmd) {
