@@ -21,6 +21,7 @@ export const list = createRoute({
       status: z.string().optional(),
       orderType: z.string().optional(),
       engineer_uuid: z.string().optional(),
+      service_type: z.string().optional(),
     }),
   },
   responses: {

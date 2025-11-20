@@ -226,7 +226,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { customer_uuid, status, orderType, engineer_uuid } = c.req.valid('query');
+  const { customer_uuid, status, orderType, engineer_uuid, service_type } = c.req.valid('query');
 
   // Optimized: Combined counts in single subquery to reduce multiple scans
   const orderStatsSubquery = db
@@ -389,6 +389,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   if (engineer_uuid !== undefined && engineer_uuid !== null && engineer_uuid !== '') {
     infoPromise.leftJoin(order, eq(info.uuid, order.info_uuid));
     filters.push(eq(order.engineer_uuid, engineer_uuid));
+  }
+
+  if (service_type && service_type !== 'undefined') {
+    filters.push(eq(info.service_type, service_type));
   }
 
   if (filters.length > 0) {
