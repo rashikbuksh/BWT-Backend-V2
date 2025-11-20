@@ -294,6 +294,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       order_type: info.order_type,
       received_by: info.received_by,
       received_by_name: receivedByUser.name,
+      service_type: info.service_type,
       // Optimized: Added ORDER BY for consistent product ordering and removed redundant NULL checks
       products: sql`(
                 SELECT COALESCE(
@@ -436,6 +437,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       order_type: info.order_type,
       received_by: info.received_by,
       received_by_name: receivedByUser.name,
+      service_type: info.service_type,
       products: sql`(
                 SELECT COALESCE(
                   json_agg(json_build_object(
