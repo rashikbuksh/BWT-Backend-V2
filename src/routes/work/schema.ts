@@ -66,6 +66,7 @@ export const serviceTypeEnum = pgEnum('service_type', [
   'all_in_one',
   'accessories',
   'tv',
+  'courier',
 ]);
 
 export const receiveTypeEnum = pgEnum('receive_type', [
