@@ -226,7 +226,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { customer_uuid, status, order, engineer_uuid, service_type, received } = c.req.valid('query');
+  const { customer_uuid, status, orderType, engineer_uuid, service_type, received } = c.req.valid('query');
 
   // Optimized: Combined counts in single subquery to reduce multiple scans
   const orderStatsSubquery = db
@@ -307,34 +307,37 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                       END,
                       'serial_no', o.serial_no, 
                       'model_uuid', o.model_uuid,
-                      'model_name', m.name,
+                      'model_name', COALESCE(m.name, ''),
                       'brand_uuid', m.brand_uuid,
-                      'brand_name', b.name,
-                      'is_return', o.is_return,
+                      'brand_name', COALESCE(b.name, ''),
+                      'is_return', COALESCE(o.is_return, false),
                       'is_return_date', o.is_return_date,
-                      'is_diagnosis_need', o.is_diagnosis_need,
+                      'is_diagnosis_need', COALESCE(o.is_diagnosis_need, false),
                       'is_diagnosis_need_date', o.is_diagnosis_need_date,
-                      'is_diagnosis_completed', d.is_diagnosis_completed,
+                      'is_diagnosis_completed', COALESCE(d.is_diagnosis_completed, false),
                       'is_diagnosis_completed_date', d.is_diagnosis_completed_date,
-                      'is_proceed_to_repair', o.is_proceed_to_repair,
+                      'is_proceed_to_repair', COALESCE(o.is_proceed_to_repair, false),
                       'is_proceed_to_repair_date', o.is_proceed_to_repair_date,
-                      'is_transferred_for_qc', o.is_transferred_for_qc,
+                      'is_transferred_for_qc', COALESCE(o.is_transferred_for_qc, false),
                       'is_transferred_for_qc_date', o.is_transferred_for_qc_date,
-                      'is_ready_for_delivery', o.is_ready_for_delivery,
+                      'is_ready_for_delivery', COALESCE(o.is_ready_for_delivery, false),
                       'ready_for_delivery_date', o.ready_for_delivery_date,
-                      'is_delivery_without_challan', o.is_delivery_without_challan,
+                      'is_delivery_without_challan', COALESCE(o.is_delivery_without_challan, false),
                       'is_delivery_without_challan_date', o.is_delivery_without_challan_date,
-                      'is_delivered', ch.is_delivery_complete,
+                      'is_delivered', COALESCE(ch.is_delivery_complete, false),
                       'is_delivered_date', ch.is_delivery_complete_date,
-                      'is_reclaimed', o.is_reclaimed,
+                      'is_reclaimed', COALESCE(o.is_reclaimed, false),
                       'is_reclaimed_date', o.is_reclaimed_date,
                       'reclaimed_order_uuid', o.reclaimed_order_uuid,
-                      'reclaimed_order_id', CASE WHEN ro.reclaimed_order_uuid IS NULL 
-                        THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) 
-                        ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) 
+                      'reclaimed_order_id', CASE WHEN ro.uuid IS NOT NULL THEN
+                        CASE WHEN ro.reclaimed_order_uuid IS NULL 
+                          THEN CONCAT('WO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) 
+                          ELSE CONCAT('RWO', TO_CHAR(ro.created_at, 'YY'), '-', ro.id) 
+                        END
+                        ELSE NULL
                       END
                     ) ORDER BY o.id
-                  ), '[]'::json
+                  ) FILTER (WHERE o.uuid IS NOT NULL), '[]'::json
                 )
                 FROM work.order o
                 LEFT JOIN work.diagnosis d ON o.uuid = d.order_uuid
@@ -381,8 +384,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     );
   }
 
-  if (order && order !== 'undefined') {
-    filters.push(eq(info.order_type, order));
+  if (orderType && orderType !== 'undefined') {
+    filters.push(eq(info.order_type, orderType));
   }
 
   // Optimized: Only join order table when filtering by engineer
