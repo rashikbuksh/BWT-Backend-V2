@@ -226,7 +226,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
-  const { customer_uuid, status, orderType, engineer_uuid, service_type } = c.req.valid('query');
+  const { customer_uuid, status, order, engineer_uuid, service_type, received } = c.req.valid('query');
 
   // Optimized: Combined counts in single subquery to reduce multiple scans
   const orderStatsSubquery = db
@@ -381,8 +381,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     );
   }
 
-  if (orderType && orderType !== 'undefined') {
-    filters.push(eq(info.order_type, orderType));
+  if (order && order !== 'undefined') {
+    filters.push(eq(info.order_type, order));
   }
 
   // Optimized: Only join order table when filtering by engineer
@@ -393,6 +393,35 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   if (service_type && service_type !== 'undefined') {
     filters.push(eq(info.service_type, service_type));
+  }
+
+  switch (received) {
+    case 'customer_monitor_count':
+      filters.push(eq(info.submitted_by, 'customer'));
+      filters.push(eq(info.service_type, 'monitor'));
+      break;
+    case 'customer_display_count':
+      filters.push(eq(info.submitted_by, 'customer'));
+      filters.push(eq(info.service_type, 'display'));
+      break;
+    case 'customer_all_in_one_count':
+      filters.push(eq(info.submitted_by, 'customer'));
+      filters.push(eq(info.service_type, 'all_in_one'));
+      break;
+    case 'customer_accessories_count':
+      filters.push(eq(info.submitted_by, 'customer'));
+      filters.push(eq(info.service_type, 'accessories'));
+      break;
+    case 'customer_tv_count':
+      filters.push(eq(info.submitted_by, 'customer'));
+      filters.push(eq(info.service_type, 'tv'));
+      break;
+    case 'customer_courier_count':
+      filters.push(eq(info.submitted_by, 'customer'));
+      filters.push(eq(info.service_type, 'courier'));
+      break;
+    default:
+      break;
   }
 
   if (filters.length > 0) {
