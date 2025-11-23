@@ -19,7 +19,7 @@ export const list = createRoute({
     query: z.object({
       customer_uuid: z.string().optional(),
       status: z.string().optional(),
-      order: z.string().optional(),
+      orderType: z.string().optional(),
       engineer_uuid: z.string().optional(),
       service_type: z.string().optional(),
       received: z.string().optional(),
