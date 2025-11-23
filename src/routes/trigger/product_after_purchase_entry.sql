@@ -1,3 +1,5 @@
+-- This trigger causing the purchase_entry column missing issue
+-- DELETED 
 -- inserted into database
 CREATE OR REPLACE FUNCTION product_after_purchase_entry_insert_function() RETURNS TRIGGER AS $$
 DECLARE 
@@ -138,3 +140,11 @@ CREATE OR REPLACE TRIGGER product_after_purchase_entry_update
 AFTER UPDATE ON store.purchase_entry
 FOR EACH ROW
 EXECUTE FUNCTION product_after_purchase_entry_update_function();
+
+-- DROP OLD TRIGGERS AND FUNCTIONS
+DROP TRIGGER IF EXISTS product_after_purchase_entry_delete ON store.purchase_entry;
+DROP FUNCTION IF EXISTS product_after_purchase_entry_delete_function ();
+DROP TRIGGER IF EXISTS product_after_purchase_entry_update ON store.purchase_entry;
+DROP FUNCTION IF EXISTS product_after_purchase_entry_update_function ();
+DROP TRIGGER IF EXISTS product_after_purchase_entry_insert ON store.purchase_entry;
+DROP FUNCTION IF EXISTS product_after_purchase_entry_insert_function ();
