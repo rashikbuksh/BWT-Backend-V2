@@ -640,12 +640,6 @@ export const customerYetToReceiveCount: AppRouteHandler<CustomerYetToReceiveCoun
       )::float8 AS customer_all_in_one_count,
       SUM(
           CASE
-              WHEN info.service_type = 'accessories' AND info.submitted_by = 'customer' THEN wo.quantity
-              ELSE 0
-          END
-      )::float8 AS customer_accessories_count,
-      SUM(
-          CASE
               WHEN info.service_type = 'tv' AND info.submitted_by = 'customer' THEN wo.quantity
               ELSE 0
           END
@@ -666,6 +660,13 @@ export const customerYetToReceiveCount: AppRouteHandler<CustomerYetToReceiveCoun
       LEFT JOIN work.info ON wo.info_uuid = info.uuid
   WHERE
       info.is_product_received = FALSE`;
+
+  // SUM(
+  //     CASE
+  //         WHEN info.service_type = 'accessories' AND info.submitted_by = 'customer' THEN wo.quantity
+  //         ELSE 0
+  //     END
+  // )::float8 AS customer_accessories_count,
 
   const data = await db.execute(query);
 

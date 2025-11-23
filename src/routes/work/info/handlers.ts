@@ -414,11 +414,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'all_in_one'));
       break;
-    case 'customer_accessories_count':
-      filters.push(eq(info.is_product_received, false));
-      filters.push(eq(info.submitted_by, 'customer'));
-      filters.push(eq(info.service_type, 'accessories'));
-      break;
+    // case 'customer_accessories_count':
+    //   filters.push(eq(info.is_product_received, false));
+    //   filters.push(eq(info.submitted_by, 'customer'));
+    //   filters.push(eq(info.service_type, 'accessories'));
+    //   break;
     case 'customer_tv_count':
       filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
