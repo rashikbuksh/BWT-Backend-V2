@@ -400,28 +400,37 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   switch (received) {
     case 'customer_monitor_count':
+      filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'monitor'));
       break;
     case 'customer_display_count':
+      filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'display'));
       break;
     case 'customer_all_in_one_count':
+      filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'all_in_one'));
       break;
     case 'customer_accessories_count':
+      filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'accessories'));
       break;
     case 'customer_tv_count':
+      filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'tv'));
       break;
     case 'customer_courier_count':
+      filters.push(eq(info.is_product_received, false));
       filters.push(eq(info.submitted_by, 'customer'));
       filters.push(eq(info.service_type, 'courier'));
+      break;
+    case 'not_received':
+      filters.push(eq(info.is_product_received, false));
       break;
     default:
       break;
