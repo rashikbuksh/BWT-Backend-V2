@@ -257,6 +257,27 @@ export const customerReceiveTypeCount = createRoute({
   },
 });
 
+export const customerYetToReceiveCount = createRoute({
+  path: '/work/dashboard/customer-yet-to-receive-count',
+  method: 'get',
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.object({
+        order_quantity: z.number().describe('Total number of orders entered'),
+        customer_monitor_count: z.number().describe('Total number of monitor orders entered by customer'),
+        customer_display_count: z.number().describe('Total number of display orders entered by customer'),
+        customer_all_in_one_count: z.number().describe('Total number of all-in-one orders entered by customer'),
+        customer_tv_count: z.number().describe('Total number of TV orders entered by customer'),
+        customer_courier_count: z.number().describe('Total number of orders entered by customer via courier'),
+        customer_accessories_count: z.number().describe('Total number of accessory orders entered by customer'),
+        employee_entry_count: z.number().describe('Total number of orders entered by employee'),
+      }),
+      'Customer yet to receive count',
+    ),
+  },
+});
+
 export type OrderAndProductCountRoute = typeof orderAndProductCount;
 export type OrderDiagnosisCountRoute = typeof orderDiagnosisCount;
 export type OrderDiagnosisCompleteCountRoute = typeof orderDiagnosisCompleteCount;
@@ -267,3 +288,4 @@ export type DeliveredCountRoute = typeof deliveredCount;
 export type DashboardReportRoute = typeof dashboardReport;
 export type DashboardAllReportRoute = typeof dashboardAllReport;
 export type CustomerReceiveTypeCountRoute = typeof customerReceiveTypeCount;
+export type CustomerYetToReceiveCountRoute = typeof customerYetToReceiveCount;

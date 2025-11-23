@@ -13,6 +13,7 @@ const router = createRouter()
   .openapi(routes.deliveredCount, handlers.deliveredCount)
   .openapi(routes.dashboardReport, handlers.dashboardReport)
   .openapi(routes.dashboardAllReport, handlers.dashboardAllReport)
-  .openapi(routes.customerReceiveTypeCount, handlers.customerReceiveTypeCount);
+  .openapi(routes.customerReceiveTypeCount, handlers.customerReceiveTypeCount)
+  .openapi(routes.customerYetToReceiveCount, handlers.customerYetToReceiveCount);
 
 export default router;

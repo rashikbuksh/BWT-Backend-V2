@@ -8,7 +8,7 @@ import db from '@/db';
 import { challan, challan_entry } from '@/routes/delivery/schema';
 import createApi from '@/utils/api';
 
-import type { CustomerReceiveTypeCountRoute, DashboardAllReportRoute, DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCompleteCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
+import type { CustomerReceiveTypeCountRoute, CustomerYetToReceiveCountRoute, DashboardAllReportRoute, DashboardReportRoute, DeliveredCountRoute, OrderAndProductCountRoute, OrderDiagnosisCompleteCountRoute, OrderDiagnosisCountRoute, QcCountRoute, ReadyForDeliveryCountRoute, RepairCountRoute } from './routes';
 
 import { order } from '../schema';
 
@@ -610,6 +610,62 @@ export const customerReceiveTypeCount: AppRouteHandler<CustomerReceiveTypeCountR
       AND wo.is_ready_for_delivery = TRUE
       AND wo.is_delivery_without_challan = false
       AND ch.uuid IS NULL`;
+
+  const data = await db.execute(query);
+
+  return c.json((data.rows && data.rows[0]) || {}, HSCode.OK);
+};
+
+export const customerYetToReceiveCount: AppRouteHandler<CustomerYetToReceiveCountRoute> = async (c: any) => {
+  const query = sql`
+    SELECT
+      SUM(wo.quantity)::float8 AS order_quantity,
+      SUM(
+          CASE
+              WHEN info.service_type = 'monitor' AND info.submitted_by = 'customer' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_monitor_count,
+      SUM(
+          CASE
+              WHEN info.service_type = 'display' AND info.submitted_by = 'customer' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_display_count,
+      SUM(
+          CASE
+              WHEN info.service_type = 'all_in_one' AND info.submitted_by = 'customer' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_all_in_one_count,
+      SUM(
+          CASE
+              WHEN info.service_type = 'accessories' AND info.submitted_by = 'customer' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_accessories_count,
+      SUM(
+          CASE
+              WHEN info.service_type = 'tv' AND info.submitted_by = 'customer' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_tv_count,
+      SUM(
+          CASE
+              WHEN info.service_type = 'courier' AND info.submitted_by = 'customer' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS customer_courier_count,
+      SUM(
+          CASE
+              WHEN info.submitted_by = 'employee' THEN wo.quantity
+              ELSE 0
+          END
+      )::float8 AS employee_entry_count
+  FROM work.order wo
+      LEFT JOIN work.info ON wo.info_uuid = info.uuid
+  WHERE
+      info.is_product_received = FALSE`;
 
   const data = await db.execute(query);
 
