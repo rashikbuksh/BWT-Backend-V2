@@ -187,7 +187,7 @@ export const getChallanEntryByChallan: AppRouteHandler<GetChallanEntryByChallanR
       image_1: workOrder.image_1,
       image_2: workOrder.image_2,
       image_3: workOrder.image_3,
-
+      advance_pay: PG_DECIMAL_TO_FLOAT(workOrder.advance_pay),
     })
     .from(challan_entry)
     .leftJoin(
