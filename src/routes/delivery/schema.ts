@@ -53,6 +53,10 @@ export const challanPaymentMethodEnum = pgEnum('challan_payment_method', [
   'cash',
   'due',
   'on_condition',
+  'bkash',
+  'bank',
+  'online',
+  'other',
 ]);
 
 export const challan = delivery.table('challan', {
