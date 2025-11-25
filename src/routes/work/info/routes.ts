@@ -23,6 +23,7 @@ export const list = createRoute({
       engineer_uuid: z.string().optional(),
       service_type: z.string().optional(),
       received: z.string().optional(),
+      branch_uuid: z.string().optional(),
     }),
   },
   responses: {
