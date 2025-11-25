@@ -499,6 +499,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     is_received,
     receive_type,
     bill_amount,
+    branch_uuid,
   } = c.req.valid('query');
 
   const orderPromise = db
@@ -617,6 +618,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
 
   // Build filters based on query parameters
   const filters = [];
+
+  if (branch_uuid) {
+    filters.push(eq(info.branch_uuid, branch_uuid));
+  }
 
   // Quality Control filter
   if (qc === 'true') {

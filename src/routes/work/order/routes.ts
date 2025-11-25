@@ -27,6 +27,7 @@ export const list = createRoute({
       is_received: z.string().optional(),
       receive_type: z.string().optional(),
       bill_amount: z.string().optional(),
+      branch_uuid: z.string().optional(),
     }),
   },
   responses: {
