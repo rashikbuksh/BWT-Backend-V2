@@ -37,6 +37,7 @@ export const insertSchema = createInsertSchema(
     updated_at: schema => schema.updated_at.regex(dateTimePattern, {
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
+    branch_uuid: schema => schema.branch_uuid.length(15).optional(),
   },
 ).required({
   uuid: true,
@@ -61,6 +62,8 @@ export const insertSchema = createInsertSchema(
   address: true,
   city: true,
   district: true,
+  is_affiliate: true,
+  branch_uuid: true,
 }).omit({
   id: true,
 });

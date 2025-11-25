@@ -94,6 +94,7 @@ export const users = hr.table('users', {
   city: text('city').default(sql`null`),
   district: text('district').default(sql`null`),
   is_affiliate: boolean('is_affiliate').default(false),
+  branch_uuid: defaultUUID('branch_uuid').default(sql`null`),
 });
 
 export const policy_and_notice = hr.table('policy_and_notice', {

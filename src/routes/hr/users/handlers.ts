@@ -60,6 +60,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
       district: users.district,
       location: sql`${users.address} || ', ' || ${users.city} || ', ' || ${users.district}`,
       is_affiliate: users.is_affiliate,
+      branch_uuid: users.branch_uuid,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -114,6 +115,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     // can_access: data.can_access,
     exp: now + 60 * 60 * 24,
     employee_uuid: data.employee_uuid,
+    branch_uuid: data.branch_uuid,
   };
 
   const token = await CreateToken(payload);
@@ -134,6 +136,7 @@ export const loginUser: AppRouteHandler<LoginRoute> = async (c: any) => {
     location: data.location,
     created_at: data.created_at,
     is_affiliate: data.is_affiliate,
+    branch_uuid: data.branch_uuid,
   };
 
   const can_access = data.can_access;
@@ -250,6 +253,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       city: users.city,
       district: users.district,
       is_affiliate: users.is_affiliate,
+      branch_uuid: users.branch_uuid,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -316,6 +320,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       city: users.city,
       district: users.district,
       is_affiliate: users.is_affiliate,
+      branch_uuid: users.branch_uuid,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
@@ -340,6 +345,10 @@ export const getCommonUser: AppRouteHandler<GetCommonUserRoute> = async (c: any)
       designation: designation.designation,
       ext: users.ext,
       phone: users.phone,
+      created_at: users.created_at,
+      updated_at: users.updated_at,
+      status: users.status,
+      branch_uuid: users.branch_uuid,
     })
     .from(users)
     .leftJoin(designation, eq(users.designation_uuid, designation.uuid));
