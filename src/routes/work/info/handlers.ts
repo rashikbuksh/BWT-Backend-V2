@@ -432,6 +432,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     case 'not_received':
       filters.push(eq(info.is_product_received, false));
       break;
+    case 'employee_entry_count':
+      filters.push(eq(info.is_product_received, false));
+      filters.push(eq(info.submitted_by, 'employee'));
+      break;
     default:
       break;
   }

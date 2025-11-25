@@ -619,47 +619,47 @@ export const customerReceiveTypeCount: AppRouteHandler<CustomerReceiveTypeCountR
 export const customerYetToReceiveCount: AppRouteHandler<CustomerYetToReceiveCountRoute> = async (c: any) => {
   const query = sql`
     SELECT
-      SUM(wo.quantity)::float8 AS order_quantity,
-      SUM(
+      COALESCE(SUM(wo.quantity), 0)::float8 AS order_quantity,
+      COALESCE(SUM(
           CASE
-              WHEN info.service_type = 'monitor' AND info.submitted_by = 'customer' THEN wo.quantity
+              WHEN info.service_type::text = 'monitor' AND info.submitted_by = 'customer' THEN wo.quantity
               ELSE 0
           END
-      )::float8 AS customer_monitor_count,
-      SUM(
+      ), 0)::float8 AS customer_monitor_count,
+      COALESCE(SUM(
           CASE
-              WHEN info.service_type = 'display' AND info.submitted_by = 'customer' THEN wo.quantity
+              WHEN info.service_type::text = 'display' AND info.submitted_by = 'customer' THEN wo.quantity
               ELSE 0
           END
-      )::float8 AS customer_display_count,
-      SUM(
+      ), 0)::float8 AS customer_display_count,
+      COALESCE(SUM(
           CASE
-              WHEN info.service_type = 'all_in_one' AND info.submitted_by = 'customer' THEN wo.quantity
+              WHEN info.service_type::text = 'all_in_one' AND info.submitted_by = 'customer' THEN wo.quantity
               ELSE 0
           END
-      )::float8 AS customer_all_in_one_count,
-      SUM(
+      ), 0)::float8 AS customer_all_in_one_count,
+      COALESCE(SUM(
           CASE
-              WHEN info.service_type = 'tv' AND info.submitted_by = 'customer' THEN wo.quantity
+              WHEN info.service_type::text = 'tv' AND info.submitted_by = 'customer' THEN wo.quantity
               ELSE 0
           END
-      )::float8 AS customer_tv_count,
-      SUM(
+      ), 0)::float8 AS customer_tv_count,
+      COALESCE(SUM(
           CASE
-              WHEN info.service_type = 'courier' AND info.submitted_by = 'customer' THEN wo.quantity
+              WHEN info.service_type::text = 'courier' AND info.submitted_by = 'customer' THEN wo.quantity
               ELSE 0
           END
-      )::float8 AS customer_courier_count,
-      SUM(
+      ), 0)::float8 AS customer_courier_count,
+      COALESCE(SUM(
           CASE
               WHEN info.submitted_by = 'employee' THEN wo.quantity
               ELSE 0
           END
-      )::float8 AS employee_entry_count
-  FROM work.order wo
-      LEFT JOIN work.info ON wo.info_uuid = info.uuid
-  WHERE
-      info.is_product_received = FALSE`;
+      ), 0)::float8 AS employee_entry_count
+    FROM work.order wo
+    LEFT JOIN work.info ON wo.info_uuid = info.uuid
+    WHERE
+        info.is_product_received = FALSE`;
 
   // SUM(
   //     CASE
