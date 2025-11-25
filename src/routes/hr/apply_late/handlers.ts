@@ -90,8 +90,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_late.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .orderBy(desc(apply_late.created_at));
 
   const filters = [];
@@ -141,8 +141,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_late.employee_uuid, employee.uuid))
     .leftJoin(users, eq(employee.user_uuid, users.uuid))
-    .leftJoin(department, eq(employee.department_uuid, department.uuid))
-    .leftJoin(designation, eq(employee.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(users.department_uuid, department.uuid))
+    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
     .where(eq(apply_late.uuid, uuid));
 
   const [data] = await applyLatePromise;
