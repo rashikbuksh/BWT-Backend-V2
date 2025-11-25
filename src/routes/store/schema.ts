@@ -538,4 +538,15 @@ export const affiliate_click = store.table('affiliate_click', {
   created_at: DateTime('created_at').notNull(),
 });
 
+export const product_image = store.table('product_image', {
+  uuid: uuid_primary,
+  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
+  image: text('image').notNull(),
+  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
+  created_at: DateTime('created_at').notNull(),
+  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
+  updated_at: DateTime('updated_at').default(sql`null`),
+  remarks: text('remarks').default(sql`null`),
+});
+
 export default store;
