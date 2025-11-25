@@ -44,6 +44,7 @@ export const insertSchema = createInsertSchema(
   extra_information: true,
   refurbished: true,
   is_affiliate: true,
+  is_details_image: true,
 });
 
 export const patchSchema = insertSchema.partial();

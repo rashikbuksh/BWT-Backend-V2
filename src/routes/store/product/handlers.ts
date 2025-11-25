@@ -116,6 +116,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       refurbished: product.refurbished,
       is_affiliate: sql`COALESCE((SELECT bool_or(pv.is_affiliate) FROM store.product_variant pv WHERE pv.product_uuid = ${product.uuid}), false)`,
       url: product.url,
+      is_details_image: product.is_details_image,
       image: sql`(
           SELECT pv.image
           FROM store.product_variant pv
@@ -173,6 +174,11 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
         LEFT JOIN store.product p ON p.uuid = pv.product_uuid
         WHERE bi.bill_status = 'completed'
           AND pv.product_uuid = ${product.uuid}
+      )`,
+      product_details_image: sql`(
+        SELECT COALESCE(json_agg(pi.image ORDER BY pi.created_at ASC), '[]'::json)
+        FROM store.product_image pi
+        WHERE pi.product_uuid = ${product.uuid}
       )`,
     })
     .from(product)
@@ -339,6 +345,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     refurbished: product.refurbished,
     is_affiliate: product.is_affiliate,
     url: product.url,
+    is_details_image: product.is_details_image,
     total_review: sql`(
         SELECT COUNT(*)::int
         FROM store.review r
@@ -435,6 +442,11 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         ORDER BY r.created_at DESC
       ) t
     )`,
+    product_details_image: sql`(
+        SELECT COALESCE(json_agg(pi.image ORDER BY pi.created_at ASC), '[]'::json)
+        FROM store.product_image pi
+        WHERE pi.product_uuid = ${product.uuid}
+      )`,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
@@ -492,6 +504,7 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
     extra_information: product.extra_information,
     refurbished: product.refurbished,
     url: product.url,
+    is_details_image: product.is_details_image,
     total_review: sql`(
         SELECT COUNT(*)::int
         FROM store.review r
@@ -588,6 +601,11 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
         ORDER BY r.created_at DESC
       ) t
     )`,
+    product_details_image: sql`(
+        SELECT COALESCE(json_agg(pi.image ORDER BY pi.created_at ASC), '[]'::json)
+        FROM store.product_image pi
+        WHERE pi.product_uuid = ${product.uuid}
+      )`,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
