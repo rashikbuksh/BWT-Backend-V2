@@ -150,8 +150,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
     .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
-    .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(employeeUser.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employeeUser.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(apply_leave.created_by, createdByUser.uuid),
@@ -212,8 +212,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     )
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
     .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
-    .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(employeeUser.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employeeUser.designation_uuid, designation.uuid))
     .leftJoin(
       createdByUser,
       eq(apply_leave.created_by, createdByUser.uuid),
@@ -288,8 +288,8 @@ export const selectAllApplyLeaveWithPagination: AppRouteHandler<SelectAllApplyLe
     .from(apply_leave)
     .leftJoin(employee, eq(apply_leave.employee_uuid, employee.uuid))
     .leftJoin(employeeUser, eq(employee.user_uuid, employeeUser.uuid))
-    .leftJoin(department, eq(users.department_uuid, department.uuid))
-    .leftJoin(designation, eq(users.designation_uuid, designation.uuid))
+    .leftJoin(department, eq(employeeUser.department_uuid, department.uuid))
+    .leftJoin(designation, eq(employeeUser.designation_uuid, designation.uuid))
     .leftJoin(
       leave_category,
       eq(apply_leave.leave_category_uuid, leave_category.uuid),
