@@ -184,7 +184,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
                 'created_at', pi.created_at,
                 'updated_by', pi.updated_by,
                 'updated_at', pi.updated_at,
-                'remarks', pi.remarks
+                'remarks', pi.remarks,
+                'index', pi.index
               )), '[]'::json)
               FROM store.product_image pi
               WHERE pi.product_uuid = ${product.uuid}
@@ -460,7 +461,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             'created_at', pi.created_at,
             'updated_by', pi.updated_by,
             'updated_at', pi.updated_at,
-            'remarks', pi.remarks
+            'remarks', pi.remarks,
+            'index', pi.index
           )), '[]'::json)
           FROM store.product_image pi
           WHERE pi.product_uuid = ${product.uuid}
@@ -628,7 +630,8 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
                'created_at', pi.created_at,
                'updated_by', pi.updated_by,
                'updated_at', pi.updated_at,
-               'remarks', pi.remarks
+               'remarks', pi.remarks,
+               'index', pi.index
              )), '[]'::json)
              FROM store.product_image pi
              WHERE pi.product_uuid = ${product.uuid}

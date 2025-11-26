@@ -548,6 +548,7 @@ export const product_image = store.table('product_image', {
   updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  index: integer('index').notNull().default(sql`0`),
 });
 
 export default store;
