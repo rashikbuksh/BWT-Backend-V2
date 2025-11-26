@@ -176,20 +176,20 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
           AND pv.product_uuid = ${product.uuid}
       )`,
       product_details_image: sql`(
-              SELECT COALESCE(json_agg(json_build_object(
-                'uuid', pi.uuid,
-                'product_uuid', pi.product_uuid,
-                'image', pi.image,
-                'created_by', pi.created_by,
-                'created_at', pi.created_at,
-                'updated_by', pi.updated_by,
-                'updated_at', pi.updated_at,
-                'remarks', pi.remarks,
-                'index', pi.index
-              )), '[]'::json)
-              FROM store.product_image pi
-              WHERE pi.product_uuid = ${product.uuid}
-          )`,
+             SELECT COALESCE(json_agg(json_build_object(
+               'uuid', pi.uuid,
+               'product_uuid', pi.product_uuid,
+               'image', pi.image,
+               'created_by', pi.created_by,
+               'created_at', pi.created_at,
+               'updated_by', pi.updated_by,
+               'updated_at', pi.updated_at,
+               'remarks', pi.remarks,
+               'index', pi.index
+             ) ORDER BY pi.index ASC), '[]'::json)
+             FROM store.product_image pi
+             WHERE pi.product_uuid = ${product.uuid}
+         )`,
     })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
@@ -453,20 +453,20 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       ) t
     )`,
     product_details_image: sql`(
-          SELECT COALESCE(json_agg(json_build_object(
-            'uuid', pi.uuid,
-            'product_uuid', pi.product_uuid,
-            'image', pi.image,
-            'created_by', pi.created_by,
-            'created_at', pi.created_at,
-            'updated_by', pi.updated_by,
-            'updated_at', pi.updated_at,
-            'remarks', pi.remarks,
-            'index', pi.index
-          )), '[]'::json)
-          FROM store.product_image pi
-          WHERE pi.product_uuid = ${product.uuid}
-      )`,
+             SELECT COALESCE(json_agg(json_build_object(
+               'uuid', pi.uuid,
+               'product_uuid', pi.product_uuid,
+               'image', pi.image,
+               'created_by', pi.created_by,
+               'created_at', pi.created_at,
+               'updated_by', pi.updated_by,
+               'updated_at', pi.updated_at,
+               'remarks', pi.remarks,
+               'index', pi.index
+             ) ORDER BY pi.index ASC), '[]'::json)
+             FROM store.product_image pi
+             WHERE pi.product_uuid = ${product.uuid}
+         )`,
   })
     .from(product)
     .leftJoin(category, eq(product.category_uuid, category.uuid))
@@ -632,7 +632,7 @@ export const getOneByUrl: AppRouteHandler<GetOneRouteByUrlRoute> = async (c: any
                'updated_at', pi.updated_at,
                'remarks', pi.remarks,
                'index', pi.index
-             )), '[]'::json)
+             ) ORDER BY pi.index ASC), '[]'::json)
              FROM store.product_image pi
              WHERE pi.product_uuid = ${product.uuid}
          )`,
