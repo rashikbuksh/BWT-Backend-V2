@@ -112,6 +112,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_by_name: updatedByUser.name,
       updated_at: product_image.updated_at,
       remarks: product_image.remarks,
+      index: product_image.index,
 
     })
     .from(product_image)
@@ -139,6 +140,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     updated_by_name: updatedByUser.name,
     updated_at: product_image.updated_at,
     remarks: product_image.remarks,
+    index: product_image.index,
   })
     .from(product_image)
     .leftJoin(product, eq(product_image.product_uuid, product.uuid))
