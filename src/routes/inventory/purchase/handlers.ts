@@ -154,8 +154,8 @@ export const getPurchaseEntryDetailsByPurchaseUuid: AppRouteHandler<GetPurchaseE
       });
 
   const [purchase, purchase_entry] = await Promise.all([
-    fetchData('/v1/store/purchase'),
-    fetchData('/v1/store/purchase-entry/by'),
+    fetchData('/v1/inventory/purchase'),
+    fetchData('/v1/inventory/purchase-entry/by'),
   ]);
 
   const response = {
