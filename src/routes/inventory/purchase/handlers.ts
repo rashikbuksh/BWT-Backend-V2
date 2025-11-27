@@ -1,6 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 
 import { desc, eq, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -12,6 +13,8 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 import type { CreateRoute, GetOneRoute, GetPurchaseEntryDetailsByPurchaseUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { purchase, vendor } from '../schema';
+
+const updatedByUser = alias(users, 'updated_by_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -73,6 +76,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       created_by: purchase.created_by,
       created_by_name: users.name,
       created_at: purchase.created_at,
+      updated_by: purchase.updated_by,
+      updated_by_name: updatedByUser.name,
       updated_at: purchase.updated_at,
       remarks: purchase.remarks,
     })
@@ -80,6 +85,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(vendor, eq(purchase.vendor_uuid, vendor.uuid))
     .leftJoin(branch, eq(purchase.branch_uuid, branch.uuid))
     .leftJoin(users, eq(purchase.created_by, users.uuid))
+    .leftJoin(
+      updatedByUser,
+      eq(purchase.updated_by, updatedByUser.uuid),
+    )
     .orderBy(desc(purchase.created_at));
 
   const data = await purchasePromise;
@@ -103,6 +112,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       payment_mode: purchase.payment_mode,
       created_by: purchase.created_by,
       created_by_name: users.name,
+      updated_by: purchase.updated_by,
+      updated_by_name: updatedByUser.name,
       created_at: purchase.created_at,
       updated_at: purchase.updated_at,
       remarks: purchase.remarks,
@@ -111,6 +122,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(vendor, eq(purchase.vendor_uuid, vendor.uuid))
     .leftJoin(branch, eq(purchase.branch_uuid, branch.uuid))
     .leftJoin(users, eq(purchase.created_by, users.uuid))
+    .leftJoin(
+      updatedByUser,
+      eq(purchase.updated_by, updatedByUser.uuid),
+    )
     .where(eq(purchase.uuid, uuid));
 
   const [data] = await purchasePromise;

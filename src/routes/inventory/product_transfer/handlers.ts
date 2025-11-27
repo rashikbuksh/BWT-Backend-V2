@@ -16,6 +16,8 @@ import type { CreateRoute, GetByOrderUuidRoute, GetOneRoute, ListRoute, PatchRou
 import { product, product_transfer, purchase_entry } from '../schema';
 
 const user = alias(users, 'user');
+const updatedByUser = alias(users, 'updated_by_user');
+
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
@@ -77,6 +79,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       quantity: PG_DECIMAL_TO_FLOAT(product_transfer.quantity),
       created_by: product_transfer.created_by,
       created_by_name: users.name,
+      updated_by: product_transfer.updated_by,
+      updated_by_name: updatedByUser.name,
       created_at: product_transfer.created_at,
       updated_at: product_transfer.updated_at,
       remarks: product_transfer.remarks,
@@ -120,6 +124,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(
       users,
       eq(product_transfer.created_by, users.uuid),
+    )
+    .leftJoin(
+      updatedByUser,
+      eq(product_transfer.updated_by, updatedByUser.uuid),
     )
     .leftJoin(
       workSchema.info,
@@ -150,6 +158,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       quantity: PG_DECIMAL_TO_FLOAT(product_transfer.quantity),
       created_by: product_transfer.created_by,
       created_by_name: users.name,
+      updated_by: product_transfer.updated_by,
+      updated_by_name: updatedByUser.name,
       created_at: product_transfer.created_at,
       updated_at: product_transfer.updated_at,
       remarks: product_transfer.remarks,
@@ -199,6 +209,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       eq(workSchema.order.info_uuid, workSchema.info.uuid),
     )
     .leftJoin(user, eq(workSchema.info.user_uuid, user.uuid))
+    .leftJoin(
+      updatedByUser,
+      eq(product_transfer.updated_by, updatedByUser.uuid),
+    )
     .leftJoin(branch, eq(warehouse.branch_uuid, branch.uuid))
     .where(eq(product_transfer.uuid, uuid));
 

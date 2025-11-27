@@ -1,6 +1,7 @@
 import type { AppRouteHandler } from '@/lib/types';
 
 import { desc, eq } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -11,6 +12,8 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
 import { vendor } from '../schema';
+
+const updatedByUser = alias(users, 'updated_by_user');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -71,6 +74,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_active: vendor.is_active,
       created_by: vendor.created_by,
       created_by_name: users.name,
+      updated_by: vendor.updated_by,
+      updated_by_name: updatedByUser.name,
       created_at: vendor.created_at,
       updated_at: vendor.updated_at,
       remarks: vendor.remarks,
@@ -78,6 +83,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .from(vendor)
     .leftJoin(brand, eq(vendor.brand_uuid, brand.uuid))
     .leftJoin(users, eq(vendor.created_by, users.uuid))
+    .leftJoin(
+      updatedByUser,
+      eq(vendor.updated_by, updatedByUser.uuid),
+    )
     .orderBy(desc(vendor.created_at));
 
   const data = await vendorPromise;
@@ -101,6 +110,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_active: vendor.is_active,
       created_by: vendor.created_by,
       created_by_name: users.name,
+      updated_by: vendor.updated_by,
+      updated_by_name: updatedByUser.name,
       created_at: vendor.created_at,
       updated_at: vendor.updated_at,
       remarks: vendor.remarks,
@@ -108,6 +119,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .from(vendor)
     .leftJoin(brand, eq(vendor.brand_uuid, brand.uuid))
     .leftJoin(users, eq(vendor.created_by, users.uuid))
+    .leftJoin(
+      updatedByUser,
+      eq(vendor.updated_by, updatedByUser.uuid),
+    )
     .where(eq(vendor.uuid, uuid));
 
   const [data] = await vendorPromise;

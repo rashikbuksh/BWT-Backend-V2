@@ -14,6 +14,8 @@ import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } fro
 
 import { internal_transfer, product, purchase_entry } from '../schema';
 
+const updatedByUser = alias(users, 'updated_by_user');
+
 const fromWarehouse = alias(warehouse, 'from_warehouse');
 const toWarehouse = alias(warehouse, 'to_warehouse');
 const fromBranch = alias(branch, 'from_branch');
@@ -87,6 +89,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       quantity: PG_DECIMAL_TO_FLOAT(internal_transfer.quantity),
       created_by: internal_transfer.created_by,
       created_by_name: users.name,
+      updated_by: internal_transfer.updated_by,
+      updated_by_name: updatedByUser.name,
       created_at: internal_transfer.created_at,
       updated_at: internal_transfer.updated_at,
       remarks: internal_transfer.remarks,
@@ -131,6 +135,10 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(
       users,
       eq(internal_transfer.created_by, users.uuid),
+    )
+    .leftJoin(
+      updatedByUser,
+      eq(internal_transfer.updated_by, updatedByUser.uuid),
     )
     .leftJoin(rack, eq(internal_transfer.rack_uuid, rack.uuid))
     .leftJoin(
@@ -178,6 +186,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       created_by: internal_transfer.created_by,
       created_by_name: users.name,
       created_at: internal_transfer.created_at,
+      updated_by: internal_transfer.updated_by,
+      updated_by_name: updatedByUser.name,
       updated_at: internal_transfer.updated_at,
       remarks: internal_transfer.remarks,
       from_warehouse_uuid: internal_transfer.from_warehouse_uuid,
@@ -224,6 +234,10 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(
       users,
       eq(internal_transfer.created_by, users.uuid),
+    )
+    .leftJoin(
+      updatedByUser,
+      eq(internal_transfer.updated_by, updatedByUser.uuid),
     )
     .leftJoin(rack, eq(internal_transfer.rack_uuid, rack.uuid))
     .leftJoin(
