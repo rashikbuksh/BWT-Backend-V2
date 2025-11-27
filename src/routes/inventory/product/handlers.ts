@@ -19,7 +19,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
   const [data] = await db.insert(product).values(value).returning({
-    name: product.title,
+    name: product.name,
   });
 
   return c.json(createToast('create', data.name || ''), HSCode.OK);
@@ -36,7 +36,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
     .set(updates)
     .where(eq(product.uuid, uuid))
     .returning({
-      name: product.title,
+      name: product.name,
     });
 
   if (!data)
@@ -51,7 +51,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const [data] = await db.delete(product)
     .where(eq(product.uuid, uuid))
     .returning({
-      name: product.title,
+      name: product.name,
     });
 
   if (!data)
@@ -63,7 +63,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
 export const list: AppRouteHandler<ListRoute> = async (c: any) => {
   const resultPromise = db.select({
     uuid: product.uuid,
-    title: product.title,
+    name: product.name,
     category_uuid: product.category_uuid,
     category_name: category.name,
     model_uuid: product.model_uuid,
@@ -77,6 +77,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     created_at: product.created_at,
     updated_at: product.updated_at,
     remarks: product.remarks,
+    warehouse_1: product.warehouse_1,
+    warehouse_2: product.warehouse_2,
+    warehouse_3: product.warehouse_3,
+    warehouse_4: product.warehouse_4,
+    warehouse_5: product.warehouse_5,
+    warehouse_6: product.warehouse_6,
+    warehouse_7: product.warehouse_7,
+    warehouse_8: product.warehouse_8,
+    warehouse_9: product.warehouse_9,
+    warehouse_10: product.warehouse_10,
+    warehouse_11: product.warehouse_11,
+    warehouse_12: product.warehouse_12,
   })
     .from(product)
     .leftJoin(users, eq(product.created_by, users.uuid))
@@ -96,7 +108,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
 
   const resultPromise = db.select({
     uuid: product.uuid,
-    title: product.title,
+    name: product.name,
     category_uuid: product.category_uuid,
     category_name: category.name,
     model_uuid: product.model_uuid,
@@ -110,6 +122,18 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     created_at: product.created_at,
     updated_at: product.updated_at,
     remarks: product.remarks,
+    warehouse_1: product.warehouse_1,
+    warehouse_2: product.warehouse_2,
+    warehouse_3: product.warehouse_3,
+    warehouse_4: product.warehouse_4,
+    warehouse_5: product.warehouse_5,
+    warehouse_6: product.warehouse_6,
+    warehouse_7: product.warehouse_7,
+    warehouse_8: product.warehouse_8,
+    warehouse_9: product.warehouse_9,
+    warehouse_10: product.warehouse_10,
+    warehouse_11: product.warehouse_11,
+    warehouse_12: product.warehouse_12,
   })
     .from(product)
     .leftJoin(users, eq(product.created_by, users.uuid))

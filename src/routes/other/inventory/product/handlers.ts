@@ -13,7 +13,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
 
   const productPromise = db.select({
     value: product.uuid,
-    label: product.title,
+    label: product.name,
   })
     .from(product);
 

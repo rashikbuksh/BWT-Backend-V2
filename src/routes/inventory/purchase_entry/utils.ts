@@ -15,6 +15,7 @@ export const insertSchema = createInsertSchema(
     purchase_uuid: schema => schema.purchase_uuid.length(15),
     product_uuid: schema => schema.product_uuid.length(15),
     quantity: z.number().optional(),
+    provided_quantity: z.number().optional().default(0),
     price_per_unit: z.number().optional(),
     discount: z.number().optional(),
     warehouse_uuid: schema => schema.warehouse_uuid.length(15),
@@ -42,6 +43,7 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
 }).partial({
+  provided_quantity: true,
   updated_by: true,
   rack_uuid: true,
   floor_uuid: true,

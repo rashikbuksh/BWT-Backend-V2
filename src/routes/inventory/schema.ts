@@ -38,7 +38,7 @@ export const refurbishedEnum = pgEnum('refurbished', ['yes', 'no']);
 
 export const product = inventory.table('product', {
   uuid: uuid_primary,
-  title: text('title').default(sql`null`),
+  name: text('name').default(sql`null`),
   category_uuid: defaultUUID('category_uuid').references(() => category.uuid),
   model_uuid: defaultUUID('model_uuid').references(() => storeSchema.model.uuid),
   warranty_days: integer('warranty_days').default(sql`null`),
@@ -48,6 +48,18 @@ export const product = inventory.table('product', {
   created_at: DateTime('created_at').notNull(),
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
+  warehouse_1: PG_DECIMAL('warehouse_1').default(sql`0`),
+  warehouse_2: PG_DECIMAL('warehouse_2').default(sql`0`),
+  warehouse_3: PG_DECIMAL('warehouse_3').default(sql`0`),
+  warehouse_4: PG_DECIMAL('warehouse_4').default(sql`0`),
+  warehouse_5: PG_DECIMAL('warehouse_5').default(sql`0`),
+  warehouse_6: PG_DECIMAL('warehouse_6').default(sql`0`),
+  warehouse_7: PG_DECIMAL('warehouse_7').default(sql`0`),
+  warehouse_8: PG_DECIMAL('warehouse_8').default(sql`0`),
+  warehouse_9: PG_DECIMAL('warehouse_9').default(sql`0`),
+  warehouse_10: PG_DECIMAL('warehouse_10').default(sql`0`),
+  warehouse_11: PG_DECIMAL('warehouse_11').default(sql`0`),
+  warehouse_12: PG_DECIMAL('warehouse_12').default(sql`0`),
 });
 
 export const vendor = inventory.table('vendor', {
@@ -88,26 +100,13 @@ export const purchase = inventory.table('purchase', {
   remarks: text('remarks').default(sql`null`),
 });
 
-export const stock = inventory.table('stock', {
-  uuid: uuid_primary,
-  id: serial('id').notNull().unique(),
-  product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
-  warehouse_1: PG_DECIMAL('warehouse_1').default(sql`0`),
-  warehouse_2: PG_DECIMAL('warehouse_2').default(sql`0`),
-  warehouse_3: PG_DECIMAL('warehouse_3').default(sql`0`),
-  created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
-  updated_by: defaultUUID('updated_by').references(() => hrSchema.users.uuid).default(sql`null`),
-  created_at: DateTime('created_at').notNull(),
-  updated_at: DateTime('updated_at').default(sql`null`),
-  remarks: text('remarks').default(sql`null`),
-});
-
 export const purchase_entry = inventory.table('purchase_entry', {
   uuid: uuid_primary,
   purchase_uuid: defaultUUID('purchase_uuid').references(() => purchase.uuid),
   product_uuid: defaultUUID('product_uuid').references(() => product.uuid),
   serial_no: text('serial_no').notNull(),
   quantity: PG_DECIMAL('quantity').notNull(),
+  provided_quantity: PG_DECIMAL('provided_quantity').default(sql`0`),
   price_per_unit: PG_DECIMAL('price_per_unit').notNull(),
   discount: PG_DECIMAL('discount').default(sql`0`),
   warehouse_uuid: defaultUUID('warehouse_uuid').references(
