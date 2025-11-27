@@ -1,3 +1,7 @@
+-- DROP EXISTING TRIGGER AND FUNCTION IF THEY EXIST
+DROP TRIGGER IF EXISTS stock_after_purchase_entry_update ON store.purchase_entry;
+DROP FUNCTION IF EXISTS stock_after_purchase_entry_update_function();
+
 -- TRIGGER FUNCTIONS FOR AUTOMATIC PROVIDED_QUANTITY MANAGEMENT
 CREATE OR REPLACE FUNCTION stock_after_purchase_entry_update_function()
 RETURNS TRIGGER AS $$
@@ -46,3 +50,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER FOR THE UPDATE FUNCTION
+CREATE OR REPLACE TRIGGER stock_after_purchase_entry_update
+AFTER UPDATE ON store.purchase_entry
+FOR EACH ROW
+EXECUTE FUNCTION stock_after_purchase_entry_update_function();

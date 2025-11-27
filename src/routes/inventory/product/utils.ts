@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import z from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -25,6 +26,18 @@ export const insertSchema = createInsertSchema(
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     remarks: schema => schema.remarks.optional(),
+    warehouse_1: z.coerce.number().optional(),
+    warehouse_2: z.coerce.number().optional(),
+    warehouse_3: z.coerce.number().optional(),
+    warehouse_4: z.coerce.number().optional(),
+    warehouse_5: z.coerce.number().optional(),
+    warehouse_6: z.coerce.number().optional(),
+    warehouse_7: z.coerce.number().optional(),
+    warehouse_8: z.coerce.number().optional(),
+    warehouse_9: z.coerce.number().optional(),
+    warehouse_10: z.coerce.number().optional(),
+    warehouse_11: z.coerce.number().optional(),
+    warehouse_12: z.coerce.number().optional(),
   },
 ).required({
   uuid: true,
@@ -39,6 +52,18 @@ export const insertSchema = createInsertSchema(
   service_warranty_days: true,
   updated_at: true,
   remarks: true,
+  warehouse_1: true,
+  warehouse_2: true,
+  warehouse_3: true,
+  warehouse_4: true,
+  warehouse_5: true,
+  warehouse_6: true,
+  warehouse_7: true,
+  warehouse_8: true,
+  warehouse_9: true,
+  warehouse_10: true,
+  warehouse_11: true,
+  warehouse_12: true,
 });
 
 export const patchSchema = insertSchema.partial();
