@@ -1,6 +1,6 @@
-import inventory from '../inventory';
 import delivery from './delivery';
 import hr from './hr';
+import inventory from './inventory';
 import store from './store';
 import work from './work';
 

@@ -7,4 +7,4 @@ import purchase_return from './purchase_return';
 import stock from './stock';
 import vendor from './vendor';
 
-export default [internal_transfer, purchase, purchase_entry, category, product, purchase_return, stock, vendor];
+export default [internal_transfer, purchase, purchase_entry, category, product, purchase_return, stock, vendor] as const;
