@@ -42,12 +42,15 @@ export const insertSchema = createInsertSchema(
 ).required({
   uuid: true,
   name: true,
+  type: true,
+  category_uuid: true,
+  model_uuid: true,
   created_by: true,
   created_at: true,
 }).partial({
   updated_by: true,
-  category_uuid: true,
-  model_uuid: true,
+  size_uuid: true,
+  is_maintaining_stock: true,
   warranty_days: true,
   service_warranty_days: true,
   updated_at: true,
