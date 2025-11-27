@@ -33,7 +33,7 @@ export const category = inventory.table('category', {
   image: text('image').default(sql`null`),
 });
 
-export const productTypeEnum = pgEnum('type', ['inventory', 'service']);
+export const inventoryProductTypeEnum = pgEnum('inventory_product_type', ['inventory', 'service']);
 
 export const product = inventory.table('product', {
   uuid: uuid_primary,
@@ -42,7 +42,7 @@ export const product = inventory.table('product', {
   model_uuid: defaultUUID('model_uuid').references(() => storeSchema.model.uuid),
   is_maintaining_stock: boolean('is_maintaining_stock').default(false),
   size_uuid: defaultUUID('size_uuid').references(() => storeSchema.size.uuid).default(sql`null`),
-  type: productTypeEnum('type').notNull(),
+  type: inventoryProductTypeEnum('type').notNull(),
   warranty_days: integer('warranty_days').default(sql`null`),
   service_warranty_days: integer('service_warranty_days').notNull(),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),
