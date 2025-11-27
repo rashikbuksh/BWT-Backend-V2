@@ -7,11 +7,12 @@ import * as HSCode from 'stoker/http-status-codes';
 import db from '@/db';
 import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
+import { box, branch, floor, rack, warehouse } from '@/routes/store/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { box, branch, floor, internal_transfer, product, purchase_entry, rack, warehouse } from '../schema';
+import { internal_transfer, product, purchase_entry } from '../schema';
 
 const fromWarehouse = alias(warehouse, 'from_warehouse');
 const toWarehouse = alias(warehouse, 'to_warehouse');
