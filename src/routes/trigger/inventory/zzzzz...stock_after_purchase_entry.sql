@@ -85,16 +85,16 @@ $$ LANGUAGE plpgsql;
 
 -- Triggers remain the same
 CREATE OR REPLACE TRIGGER stock_after_purchase_entry
-AFTER INSERT ON store.purchase_entry
+AFTER INSERT ON inventory.purchase_entry
 FOR EACH ROW
 EXECUTE FUNCTION stock_after_purchase_entry_insert_function();
 
 CREATE OR REPLACE TRIGGER stock_after_purchase_entry_delete
-AFTER DELETE ON store.purchase_entry
+AFTER DELETE ON inventory.purchase_entry
 FOR EACH ROW
 EXECUTE FUNCTION stock_after_purchase_entry_delete_function();
 
 CREATE OR REPLACE TRIGGER stock_after_purchase_entry_update
-AFTER UPDATE ON store.purchase_entry
+AFTER UPDATE ON inventory.purchase_entry
 FOR EACH ROW
 EXECUTE FUNCTION stock_after_purchase_entry_update_function();

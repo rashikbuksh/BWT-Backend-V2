@@ -17,7 +17,7 @@ BEGIN
     SELECT assigned INTO to_warehouse_name FROM store.warehouse WHERE uuid = NEW.to_warehouse_uuid;
 
     -- Ensure product_uuid is set
-    SELECT product_uuid INTO product_uuid_new FROM store.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
+    SELECT product_uuid INTO product_uuid_new FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
     
     -- Single UPDATE to handle both operations and prevent double processing
     UPDATE inventory.product
