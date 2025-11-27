@@ -1,3 +1,4 @@
+import inventory from '../inventory';
 import delivery from './delivery';
 import hr from './hr';
 import store from './store';
@@ -8,6 +9,7 @@ const other = [
   ...store,
   ...work,
   ...delivery,
+  ...inventory,
 ];
 
 export default other;
