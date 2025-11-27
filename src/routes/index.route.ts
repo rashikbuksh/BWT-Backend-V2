@@ -2,6 +2,7 @@ import acc from './acc';
 import chat from './chat';
 import delivery from './delivery';
 import hr from './hr';
+import inventory from './inventory';
 import other from './other';
 import publicRoute from './publicRoute';
 import report from './report';
@@ -17,6 +18,7 @@ const routes = [
   ...other,
   ...publicRoute,
   ...acc,
+  ...inventory,
   chat,
 ] as const;
 
