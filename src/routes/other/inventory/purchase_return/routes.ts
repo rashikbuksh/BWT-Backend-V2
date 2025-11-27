@@ -6,7 +6,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 const tags = ['others'];
 
 export const valueLabel = createRoute({
-  path: '/other/store/purchase/value/label',
+  path: '/other/inventory/purchase-return/value/label',
   method: 'get',
   tags,
   responses: {
@@ -15,7 +15,7 @@ export const valueLabel = createRoute({
         value: z.string(),
         label: z.string(),
       }),
-      'The valueLabel of purchase',
+      'The valueLabel of purchase return',
     ),
   },
 });

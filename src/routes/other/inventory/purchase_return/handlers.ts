@@ -4,7 +4,7 @@ import { sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { purchase_return } from '@/routes/store/schema';
+import { purchase_return } from '@/routes/inventory/schema';
 
 import type { ValueLabelRoute } from './routes';
 

@@ -4,7 +4,8 @@ import { and, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
-import { product, product_transfer, purchase_entry, purchase_return_entry, warehouse } from '@/routes/store/schema';
+import { product, product_transfer, purchase_entry, purchase_return_entry } from '@/routes/inventory/schema';
+import { warehouse } from '@/routes/store/schema';
 
 import type { ValueLabelRoute } from './routes';
 
@@ -45,7 +46,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
                         to_warehouse_uuid,
                         created_at,
                         ROW_NUMBER() OVER (PARTITION BY purchase_entry_uuid ORDER BY created_at DESC) as rn
-                      FROM store.internal_transfer
+                      FROM inventory.internal_transfer
                     )
                     SELECT purchase_entry_uuid 
                     FROM latest_transfers 
@@ -60,14 +61,14 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       filters.push(
         sql`(${purchase_entry.uuid} IN ${transferredPurchaseEntryUuids} OR 
            (${purchase_entry.warehouse_uuid} = ${warehouse_uuid} AND 
-            ${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM store.internal_transfer WHERE purchase_entry_uuid IS NOT NULL)))`,
+            ${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM inventory.internal_transfer WHERE purchase_entry_uuid IS NOT NULL)))`,
       );
     }
     else {
     // No internal transfers found, just filter by warehouse_uuid from purchase_entry
       filters.push(
         sql`${purchase_entry.warehouse_uuid} = ${warehouse_uuid} AND 
-          ${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM store.internal_transfer WHERE purchase_entry_uuid IS NOT NULL)`,
+          ${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM inventory.internal_transfer WHERE purchase_entry_uuid IS NOT NULL)`,
       );
     }
   }
@@ -80,7 +81,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
                         to_warehouse_uuid,
                         created_at,
                         ROW_NUMBER() OVER (PARTITION BY purchase_entry_uuid ORDER BY created_at DESC) as rn
-                      FROM store.internal_transfer
+                      FROM inventory.internal_transfer
                     )
                     SELECT purchase_entry_uuid 
                     FROM latest_transfers 
@@ -111,14 +112,14 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
                 to_warehouse_uuid,
                 created_at,
                 ROW_NUMBER() OVER (PARTITION BY purchase_entry_uuid ORDER BY created_at DESC) as rn
-              FROM store.internal_transfer
+              FROM inventory.internal_transfer
             )
             SELECT 
               lt.purchase_entry_uuid,
               w.uuid,
               w.name
             FROM latest_transfers lt
-            LEFT JOIN store.warehouse w ON w.uuid = lt.to_warehouse_uuid
+            LEFT JOIN inventory.warehouse w ON w.uuid = lt.to_warehouse_uuid
             WHERE rn = 1
           ) transfer_warehouse`,
           sql`transfer_warehouse.purchase_entry_uuid = ${purchase_entry.uuid}`,
@@ -126,13 +127,13 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       // Include entries from internal transfers OR entries from purchase_entry table not in internal_transfer
       filters.push(
         sql`(${purchase_entry.uuid} IN ${transferredPurchaseEntryUuids} OR
-            ${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM store.internal_transfer WHERE purchase_entry_uuid IS NOT NULL))`,
+            ${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM inventory.internal_transfer WHERE purchase_entry_uuid IS NOT NULL))`,
       );
     }
     else {
     // No internal transfers found, just filter by warehouse_uuid from purchase_entry
       filters.push(
-        sql`${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM store.internal_transfer WHERE purchase_entry_uuid IS NOT NULL)`,
+        sql`${purchase_entry.uuid} NOT IN (SELECT DISTINCT purchase_entry_uuid FROM inventory.internal_transfer WHERE purchase_entry_uuid IS NOT NULL)`,
       );
     }
   }

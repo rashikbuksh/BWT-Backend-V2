@@ -6,16 +6,20 @@ import { createRoute, z } from '@hono/zod-openapi';
 const tags = ['others'];
 
 export const valueLabel = createRoute({
-  path: '/other/store/internal-transfer/value/label',
+  path: '/other/inventory/category/value/label',
   method: 'get',
   tags,
+  request: {
+    query: z.object({
+    }),
+  },
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
         value: z.string(),
         label: z.string(),
       }),
-      'The valueLabel of internal transfer',
+      'The valueLabel of category',
     ),
   },
 });
