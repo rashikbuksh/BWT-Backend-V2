@@ -11,7 +11,7 @@ export const insertSchema = createInsertSchema(
   product,
   {
     uuid: schema => schema.uuid.length(15),
-    title: schema => schema.title.min(1),
+    name: schema => schema.name.min(1),
     category_uuid: schema => schema.category_uuid.length(15).optional(),
     model_uuid: schema => schema.model_uuid.length(15).optional(),
     warranty_days: schema => schema.warranty_days.optional(),
@@ -28,7 +28,7 @@ export const insertSchema = createInsertSchema(
   },
 ).required({
   uuid: true,
-  title: true,
+  name: true,
   created_by: true,
   created_at: true,
 }).partial({
