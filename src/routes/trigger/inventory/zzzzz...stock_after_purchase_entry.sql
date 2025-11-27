@@ -1,4 +1,11 @@
 -- ! NOT NEEDED ANYMORE
+-- DROP OLD TRIGGERS AND FUNCTIONS
+DROP TRIGGER IF EXISTS stock_after_purchase_entry_delete ON store.purchase_entry;
+DROP FUNCTION IF EXISTS stock_after_purchase_entry_delete_function ();
+DROP TRIGGER IF EXISTS stock_after_purchase_entry_update ON store.purchase_entry;
+DROP FUNCTION IF EXISTS stock_after_purchase_entry_update_function ();
+DROP TRIGGER IF EXISTS stock_after_purchase_entry ON store.purchase_entry;
+DROP FUNCTION IF EXISTS stock_after_purchase_entry_insert_function ();
 -- DELETED
 -- Insert Trigger
 CREATE OR REPLACE FUNCTION stock_after_purchase_entry_insert_function() RETURNS TRIGGER AS $$
@@ -91,16 +98,3 @@ CREATE OR REPLACE TRIGGER stock_after_purchase_entry_update
 AFTER UPDATE ON store.purchase_entry
 FOR EACH ROW
 EXECUTE FUNCTION stock_after_purchase_entry_update_function();
-
--- DROP OLD TRIGGERS AND FUNCTIONS
-DROP TRIGGER IF EXISTS stock_after_purchase_entry_delete ON store.purchase_entry;
-
-DROP FUNCTION IF EXISTS stock_after_purchase_entry_delete_function ();
-
-DROP TRIGGER IF EXISTS stock_after_purchase_entry_update ON store.purchase_entry;
-
-DROP FUNCTION IF EXISTS stock_after_purchase_entry_update_function ();
-
-DROP TRIGGER IF EXISTS stock_after_purchase_entry ON store.purchase_entry;
-
-DROP FUNCTION IF EXISTS stock_after_purchase_entry_insert_function ();

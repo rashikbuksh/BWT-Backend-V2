@@ -1,13 +1,25 @@
+-- DROP OLD TRIGGERS AND FUNCTIONS
+DROP TRIGGER IF EXISTS product_after_purchase_entry_delete ON store.purchase_entry;
+
+DROP FUNCTION IF EXISTS product_after_purchase_entry_delete_function ();
+
+DROP TRIGGER IF EXISTS product_after_purchase_entry_update ON store.purchase_entry;
+
+DROP FUNCTION IF EXISTS product_after_purchase_entry_update_function ();
+
+DROP TRIGGER IF EXISTS product_after_purchase_entry_insert ON store.purchase_entry;
+
+DROP FUNCTION IF EXISTS product_after_purchase_entry_insert_function ();
 -- This trigger causing the purchase_entry column missing issue
 -- DELETED 
 -- inserted into database
-CREATE OR REPLACE FUNCTION product_after_purchase_entry_insert_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION inventory.product_after_purchase_entry_insert_function() RETURNS TRIGGER AS $$
 DECLARE 
     warehouse_name TEXT;
 BEGIN
     SELECT assigned INTO warehouse_name FROM store.warehouse WHERE uuid = NEW.warehouse_uuid;
     
-    UPDATE store.product
+    UPDATE inventory.product
     SET
         warehouse_1 = CASE WHEN warehouse_name = 'warehouse_1' THEN warehouse_1 + NEW.quantity ELSE warehouse_1 END,
         warehouse_2 = CASE WHEN warehouse_name = 'warehouse_2' THEN warehouse_2 + NEW.quantity ELSE warehouse_2 END,
@@ -28,13 +40,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Delete Trigger
-CREATE OR REPLACE FUNCTION product_after_purchase_entry_delete_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION inventory.product_after_purchase_entry_delete_function() RETURNS TRIGGER AS $$
 DECLARE 
     warehouse_name TEXT;
 BEGIN
     SELECT assigned INTO warehouse_name FROM store.warehouse WHERE uuid = OLD.warehouse_uuid;
     
-    UPDATE store.product
+    UPDATE inventory.product
     SET
         warehouse_1 = CASE WHEN warehouse_name = 'warehouse_1' THEN warehouse_1 - OLD.quantity ELSE warehouse_1 END,
         warehouse_2 = CASE WHEN warehouse_name = 'warehouse_2' THEN warehouse_2 - OLD.quantity ELSE warehouse_2 END,
@@ -55,7 +67,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Update Trigger (handles warehouse changes)
-CREATE OR REPLACE FUNCTION product_after_purchase_entry_update_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION inventory.product_after_purchase_entry_update_function() RETURNS TRIGGER AS $$
 DECLARE 
     old_warehouse_name TEXT;
     new_warehouse_name TEXT;
@@ -66,7 +78,7 @@ BEGIN
 
     IF old_warehouse_name <> new_warehouse_name THEN
         -- Subtract from old warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN old_warehouse_name = 'warehouse_1' THEN warehouse_1 - OLD.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN old_warehouse_name = 'warehouse_2' THEN warehouse_2 - OLD.quantity ELSE warehouse_2 END,
@@ -84,7 +96,7 @@ BEGIN
         WHERE uuid = OLD.product_uuid;
 
         -- Add to new warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN new_warehouse_name = 'warehouse_1' THEN warehouse_1 + NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN new_warehouse_name = 'warehouse_2' THEN warehouse_2 + NEW.quantity ELSE warehouse_2 END,
@@ -102,7 +114,7 @@ BEGIN
         
     ELSE
         -- Update the quantity in the same warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN old_warehouse_name = 'warehouse_1' THEN warehouse_1 - OLD.quantity + NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN old_warehouse_name = 'warehouse_2' THEN warehouse_2 - OLD.quantity + NEW.quantity ELSE warehouse_2 END,
@@ -125,26 +137,18 @@ $$ LANGUAGE plpgsql;
 
 -- Trigger for insert
 CREATE OR REPLACE TRIGGER product_after_purchase_entry_insert
-AFTER INSERT ON store.purchase_entry
+AFTER INSERT ON inventory.purchase_entry
 FOR EACH ROW
-EXECUTE FUNCTION product_after_purchase_entry_insert_function();
+EXECUTE FUNCTION inventory.product_after_purchase_entry_insert_function();
 
 -- Trigger for delete
 CREATE OR REPLACE TRIGGER product_after_purchase_entry_delete
-AFTER DELETE ON store.purchase_entry
+AFTER DELETE ON inventory.purchase_entry
 FOR EACH ROW
-EXECUTE FUNCTION product_after_purchase_entry_delete_function();
+EXECUTE FUNCTION inventory.product_after_purchase_entry_delete_function();
 
 -- Trigger for update
 CREATE OR REPLACE TRIGGER product_after_purchase_entry_update
-AFTER UPDATE ON store.purchase_entry
+AFTER UPDATE ON inventory.purchase_entry
 FOR EACH ROW
-EXECUTE FUNCTION product_after_purchase_entry_update_function();
-
--- DROP OLD TRIGGERS AND FUNCTIONS
-DROP TRIGGER IF EXISTS product_after_purchase_entry_delete ON store.purchase_entry;
-DROP FUNCTION IF EXISTS product_after_purchase_entry_delete_function ();
-DROP TRIGGER IF EXISTS product_after_purchase_entry_update ON store.purchase_entry;
-DROP FUNCTION IF EXISTS product_after_purchase_entry_update_function ();
-DROP TRIGGER IF EXISTS product_after_purchase_entry_insert ON store.purchase_entry;
-DROP FUNCTION IF EXISTS product_after_purchase_entry_insert_function ();
+EXECUTE FUNCTION inventory.product_after_purchase_entry_update_function();

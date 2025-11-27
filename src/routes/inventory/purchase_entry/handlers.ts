@@ -6,11 +6,12 @@ import * as HSCode from 'stoker/http-status-codes';
 import db from '@/db';
 import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
+import { box, branch, floor, rack, warehouse } from '@/routes/store/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, GetPurchaseEntryByPurchaseUuidRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { box, branch, floor, product, purchase, purchase_entry, rack, warehouse } from '../schema';
+import { product, purchase, purchase_entry } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');

@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.vendor'];
+const tags = ['inventory.purchase'];
 
 export const list = createRoute({
-  path: '/store/vendor',
+  path: '/inventory/purchase',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of vendor',
+      'The list of purchase',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/store/vendor',
+  path: '/inventory/purchase',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The vendor to create',
+      'The purchase to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created vendor',
+      'The created purchase',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/vendor/{uuid}',
+  path: '/inventory/purchase/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested vendor',
+      'The requested purchase',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'vendor not found',
+      'purchase not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/vendor/{uuid}',
+  path: '/inventory/purchase/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The vendor updates',
+      'The purchase updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated vendor',
+      'The updated purchase',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'vendor not found',
+      'purchase not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/vendor/{uuid}',
+  path: '/inventory/purchase/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,36 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'vendor deleted',
+      description: 'purchase deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'vendor not found',
+      'purchase not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
+export const getPurchaseEntryDetailsByPurchaseUuid = createRoute({
+  path: '/inventory/purchase/purchase-entry-details/by/{purchase_uuid}',
+  method: 'get',
+  request: {
+    params: z.object({
+      purchase_uuid: z.string(),
+    }),
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(selectSchema),
+      'The purchase entry details',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'purchase entry details not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -122,3 +147,4 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetPurchaseEntryDetailsByPurchaseUuidRoute = typeof getPurchaseEntryDetailsByPurchaseUuid;

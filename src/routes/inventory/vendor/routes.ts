@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.internal_transfer'];
+const tags = ['inventory.vendor'];
 
 export const list = createRoute({
-  path: '/store/internal-transfer',
+  path: '/inventory/vendor',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of internal_transfer',
+      'The list of vendor',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/store/internal-transfer',
+  path: '/inventory/vendor',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The internal_transfer to create',
+      'The vendor to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created internal_transfer',
+      'The created vendor',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/internal-transfer/{uuid}',
+  path: '/inventory/vendor/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested internal_transfer',
+      'The requested vendor',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'internal_transfer not found',
+      'vendor not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/internal-transfer/{uuid}',
+  path: '/inventory/vendor/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The internal_transfer updates',
+      'The vendor updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated internal_transfer',
+      'The updated vendor',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'internal_transfer not found',
+      'vendor not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/internal-transfer/{uuid}',
+  path: '/inventory/vendor/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'internal_transfer deleted',
+      description: 'vendor deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'internal_transfer not found',
+      'vendor not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),

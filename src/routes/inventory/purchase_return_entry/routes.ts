@@ -8,10 +8,10 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.purchase_return_entry'];
+const tags = ['inventory.purchase_return_entry'];
 
 export const list = createRoute({
-  path: '/store/purchase-return-entry',
+  path: '/inventory/purchase-return-entry',
   method: 'get',
   tags,
   responses: {
@@ -23,7 +23,7 @@ export const list = createRoute({
 });
 
 export const create = createRoute({
-  path: '/store/purchase-return-entry',
+  path: '/inventory/purchase-return-entry',
   method: 'post',
   request: {
     body: jsonContentRequired(
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/purchase-return-entry/{uuid}',
+  path: '/inventory/purchase-return-entry/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -68,7 +68,7 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/purchase-return-entry/{uuid}',
+  path: '/inventory/purchase-return-entry/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/purchase-return-entry/{uuid}',
+  path: '/inventory/purchase-return-entry/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -118,7 +118,7 @@ export const remove = createRoute({
 });
 
 export const getByPurchaseReturnUuid = createRoute({
-  path: '/store/purchase-return-entry/by/{purchase_return_uuid}',
+  path: '/inventory/purchase-return-entry/by/{purchase_return_uuid}',
   method: 'get',
   request: {
     params: z.object({

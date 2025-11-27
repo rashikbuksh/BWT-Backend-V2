@@ -5,11 +5,12 @@ import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 import { users } from '@/routes/hr/schema';
+import { brand } from '@/routes/store/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { brand, vendor } from '../schema';
+import { vendor } from '../schema';
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');

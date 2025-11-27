@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.product_transfer'];
+const tags = ['inventory.purchase_return'];
 
 export const list = createRoute({
-  path: '/store/product-transfer',
+  path: '/inventory/purchase-return',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of product_transfer',
+      'The list of purchase_return',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/store/product-transfer',
+  path: '/inventory/purchase-return',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The product_transfer to create',
+      'The purchase_return to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created product_transfer',
+      'The created purchase_return',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/product-transfer/{uuid}',
+  path: '/inventory/purchase-return/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested product_transfer',
+      'The requested purchase_return',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'product_transfer not found',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/product-transfer/{uuid}',
+  path: '/inventory/purchase-return/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The product_transfer updates',
+      'The purchase_return updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated product_transfer',
+      'The updated purchase_return',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'product_transfer not found',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/product-transfer/{uuid}',
+  path: '/inventory/purchase-return/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'product_transfer deleted',
+      description: 'purchase_return deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'product_transfer not found',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -117,29 +117,29 @@ export const remove = createRoute({
   },
 });
 
-export const getByOrderUuid = createRoute({
-  path: '/store/product-transfer/by/{order_uuid}',
+export const getPurchaseReturnEntryDetailsByPurchaseReturnUuid = createRoute({
+  path: '/inventory/purchase-return/purchase-return-entry-details/by/{purchase_return_uuid}',
   method: 'get',
   request: {
     params: z.object({
-      order_uuid: z.string().length(15, 'Order UUID must be 15 characters long'),
+      purchase_return_uuid: z.string(),
     }),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of product transfers by order UUID',
+      'The list of purchase_return entries by purchase_return_uuid',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'No product transfers found for the given order UUID',
+      'purchase_return not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(z.object({
-        order_uuid: z.string().length(15, 'Order UUID must be 15 characters long'),
+        purchase_return_uuid: z.string().uuid(),
       })),
-      'Invalid order UUID error',
+      'Invalid purchase_return_uuid error',
     ),
   },
 });
@@ -149,4 +149,4 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
-export type GetByOrderUuidRoute = typeof getByOrderUuid;
+export type GetPurchaseReturnEntryDetailsByPurchaseReturnUuidRoute = typeof getPurchaseReturnEntryDetailsByPurchaseReturnUuid;

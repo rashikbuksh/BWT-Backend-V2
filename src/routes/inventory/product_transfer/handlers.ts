@@ -7,12 +7,13 @@ import * as HSCode from 'stoker/http-status-codes';
 import db from '@/db';
 import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
+import { branch, warehouse } from '@/routes/store/schema';
 import * as workSchema from '@/routes/work/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetByOrderUuidRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { branch, product, product_transfer, purchase_entry, warehouse } from '../schema';
+import { product, product_transfer, purchase_entry } from '../schema';
 
 const user = alias(users, 'user');
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {

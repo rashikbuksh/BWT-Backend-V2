@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['store.purchase_return'];
+const tags = ['inventory.category'];
 
 export const list = createRoute({
-  path: '/store/purchase-return',
+  path: '/inventory/category',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of purchase_return',
+      'The list of category',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/store/purchase-return',
+  path: '/inventory/category',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The purchase_return to create',
+      'The category to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created purchase_return',
+      'The created category',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/store/purchase-return/{uuid}',
+  path: '/inventory/category/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested purchase_return',
+      'The requested category',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'purchase_return not found',
+      'category not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/store/purchase-return/{uuid}',
+  path: '/inventory/category/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The purchase_return updates',
+      'The category updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated purchase_return',
+      'The updated category',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'purchase_return not found',
+      'category not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/store/purchase-return/{uuid}',
+  path: '/inventory/category/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,42 +104,15 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'purchase_return deleted',
+      description: 'category deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'purchase_return not found',
+      'category not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
       'Invalid id error',
-    ),
-  },
-});
-
-export const getPurchaseReturnEntryDetailsByPurchaseReturnUuid = createRoute({
-  path: '/store/purchase-return/purchase-return-entry-details/by/{purchase_return_uuid}',
-  method: 'get',
-  request: {
-    params: z.object({
-      purchase_return_uuid: z.string(),
-    }),
-  },
-  tags,
-  responses: {
-    [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
-      'The list of purchase_return entries by purchase_return_uuid',
-    ),
-    [HSCode.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      'purchase_return not found',
-    ),
-    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(z.object({
-        purchase_return_uuid: z.string().uuid(),
-      })),
-      'Invalid purchase_return_uuid error',
     ),
   },
 });
@@ -149,4 +122,3 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
-export type GetPurchaseReturnEntryDetailsByPurchaseReturnUuidRoute = typeof getPurchaseReturnEntryDetailsByPurchaseReturnUuid;

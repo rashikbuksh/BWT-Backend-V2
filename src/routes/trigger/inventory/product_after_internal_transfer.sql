@@ -1,5 +1,13 @@
+-- DROP OLD TRIGGER AND FUNCTION IF EXISTS
+DROP TRIGGER IF EXISTS product_after_internal_transfer_insert ON store.internal_transfer;
+DROP FUNCTION IF EXISTS product_after_internal_transfer_insert_function ();
+DROP TRIGGER IF EXISTS product_after_internal_transfer_delete ON store.internal_transfer;
+DROP FUNCTION IF EXISTS product_after_internal_transfer_delete_function ();
+DROP TRIGGER IF EXISTS product_after_internal_transfer_update ON store.internal_transfer;
+DROP FUNCTION IF EXISTS product_after_internal_transfer_update_function ();
+
 -- INSERT FUNCTION - Fixed to use single UPDATE
-CREATE OR REPLACE FUNCTION product_after_internal_transfer_insert_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION inventory.product_after_internal_transfer_insert_function() RETURNS TRIGGER AS $$
 DECLARE 
     from_warehouse_name TEXT;
     to_warehouse_name TEXT;
@@ -12,7 +20,7 @@ BEGIN
     SELECT product_uuid INTO product_uuid_new FROM store.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
     
     -- Single UPDATE to handle both operations and prevent double processing
-    UPDATE store.product
+    UPDATE inventory.product
     SET
         warehouse_1 = warehouse_1 
             - CASE WHEN from_warehouse_name = 'warehouse_1' THEN NEW.quantity ELSE 0 END
@@ -57,7 +65,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- DELETE FUNCTION - Fixed to use single UPDATE and fix warehouse_8 typo
-CREATE OR REPLACE FUNCTION product_after_internal_transfer_delete_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION inventory.product_after_internal_transfer_delete_function() RETURNS TRIGGER AS $$
 DECLARE 
     from_warehouse_name TEXT;
     to_warehouse_name TEXT;
@@ -67,10 +75,10 @@ BEGIN
     SELECT assigned INTO to_warehouse_name FROM store.warehouse WHERE uuid = OLD.to_warehouse_uuid;
 
     -- Ensure product_uuid is set
-    SELECT product_uuid INTO product_uuid_old FROM store.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
+    SELECT product_uuid INTO product_uuid_old FROM inventory.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
     
     -- Single UPDATE to reverse the transfer
-    UPDATE store.product
+    UPDATE inventory.product
     SET
         warehouse_1 = warehouse_1 
             + CASE WHEN from_warehouse_name = 'warehouse_1' THEN OLD.quantity ELSE 0 END
@@ -115,7 +123,7 @@ END;
 $$ LANGUAGE plpgsql;
 -- Trigger for update
 
-CREATE OR REPLACE FUNCTION product_after_internal_transfer_update_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION inventory.product_after_internal_transfer_update_function() RETURNS TRIGGER AS $$
 DECLARE 
     old_from_warehouse_name TEXT;
     new_from_warehouse_name TEXT;
@@ -131,12 +139,12 @@ BEGIN
     SELECT assigned INTO new_to_warehouse_name FROM store.warehouse WHERE uuid = NEW.to_warehouse_uuid;
 
     -- Ensure product_uuid is set
-    SELECT product_uuid INTO product_uuid_old FROM store.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
-    SELECT product_uuid INTO product_uuid_new FROM store.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
+    SELECT product_uuid INTO product_uuid_old FROM inventory.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
+    SELECT product_uuid INTO product_uuid_new FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
 
     IF old_from_warehouse_name <> new_from_warehouse_name THEN
         -- Subtract from old warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN old_from_warehouse_name = 'warehouse_1' THEN warehouse_1 + OLD.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN old_from_warehouse_name = 'warehouse_2' THEN warehouse_2 + OLD.quantity ELSE warehouse_2 END,
@@ -153,7 +161,7 @@ BEGIN
         WHERE uuid = product_uuid_old;
 
         -- Add to new warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN new_from_warehouse_name = 'warehouse_1' THEN warehouse_1 - NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN new_from_warehouse_name = 'warehouse_2' THEN warehouse_2 - NEW.quantity ELSE warehouse_2 END,
@@ -170,7 +178,7 @@ BEGIN
         WHERE uuid = product_uuid_new;
     ELSE
     -- Update the quantity in the same warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN old_from_warehouse_name = 'warehouse_1' THEN warehouse_1 + OLD.quantity - NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN old_from_warehouse_name = 'warehouse_2' THEN warehouse_2 + OLD.quantity - NEW.quantity ELSE warehouse_2 END,
@@ -190,7 +198,7 @@ BEGIN
 
     IF old_to_warehouse_name <> new_to_warehouse_name THEN
         -- Subtract from old warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN old_to_warehouse_name = 'warehouse_1' THEN warehouse_1 - OLD.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN old_to_warehouse_name = 'warehouse_2' THEN warehouse_2 - OLD.quantity ELSE warehouse_2 END,
@@ -207,7 +215,7 @@ BEGIN
         WHERE uuid = product_uuid_old;
 
         -- Add to new warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN new_to_warehouse_name = 'warehouse_1' THEN warehouse_1 + NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN new_to_warehouse_name = 'warehouse_2' THEN warehouse_2 + NEW.quantity ELSE warehouse_2 END,
@@ -224,7 +232,7 @@ BEGIN
         WHERE uuid = product_uuid_new;
     ELSE
     -- Update the quantity in the same warehouse
-        UPDATE store.product
+        UPDATE inventory.product
         SET
             warehouse_1 = CASE WHEN old_to_warehouse_name = 'warehouse_1' THEN warehouse_1 - OLD.quantity + NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN old_to_warehouse_name = 'warehouse_2' THEN warehouse_2 - OLD.quantity + NEW.quantity ELSE warehouse_2 END,
@@ -248,19 +256,19 @@ $$ LANGUAGE plpgsql;
 
 -- Trigger for insert
 CREATE OR REPLACE TRIGGER product_after_internal_transfer_insert
-AFTER INSERT ON store.internal_transfer
+AFTER INSERT ON inventory.internal_transfer
 FOR EACH ROW
-EXECUTE FUNCTION product_after_internal_transfer_insert_function();
+EXECUTE FUNCTION inventory.product_after_internal_transfer_insert_function();
 
 -- Trigger for delete
 CREATE OR REPLACE TRIGGER product_after_internal_transfer_delete
-AFTER DELETE ON store.internal_transfer
+AFTER DELETE ON inventory.internal_transfer
 FOR EACH ROW
-EXECUTE FUNCTION product_after_internal_transfer_delete_function();
+EXECUTE FUNCTION inventory.product_after_internal_transfer_delete_function();
 
 -- Trigger for update
 CREATE OR REPLACE TRIGGER product_after_internal_transfer_update
-AFTER UPDATE ON store.internal_transfer
+AFTER UPDATE ON inventory.internal_transfer
 FOR EACH ROW
-EXECUTE FUNCTION product_after_internal_transfer_update_function();
+EXECUTE FUNCTION inventory.product_after_internal_transfer_update_function();
 
