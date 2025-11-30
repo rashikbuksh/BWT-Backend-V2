@@ -18,10 +18,17 @@ BEGIN
 
    SELECT product_uuid INTO product_uuid_new FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
 
+   -- also update purchase entry provided quantity if needed
+   UPDATE
+        inventory.purchase_entry
+    SET
+        provided_quantity = provided_quantity + NEW.quantity
+    WHERE
+        uuid = NEW.purchase_entry_uuid;
+
    UPDATE
         inventory.product
     SET
-        
         warehouse_1 = CASE WHEN warehouse_name = 'warehouse_1' THEN warehouse_1 - NEW.quantity ELSE warehouse_1 END,
         warehouse_2 = CASE WHEN warehouse_name = 'warehouse_2' THEN warehouse_2 - NEW.quantity ELSE warehouse_2 END,
         warehouse_3 = CASE WHEN warehouse_name = 'warehouse_3' THEN warehouse_3 - NEW.quantity ELSE warehouse_3 END,
@@ -34,7 +41,6 @@ BEGIN
         warehouse_10 = CASE WHEN warehouse_name = 'warehouse_10' THEN warehouse_10 - NEW.quantity ELSE warehouse_10 END,
         warehouse_11 = CASE WHEN warehouse_name = 'warehouse_11' THEN warehouse_11 - NEW.quantity ELSE warehouse_11 END,
         warehouse_12 = CASE WHEN warehouse_name = 'warehouse_12' THEN warehouse_12 - NEW.quantity ELSE warehouse_12 END
-  
     WHERE
         uuid = product_uuid_new;
     RETURN NEW;
@@ -57,6 +63,14 @@ BEGIN
     SELECT product_uuid INTO product_uuid_new FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid;
 
     IF old_warehouse_name <> new_warehouse_name THEN
+
+        -- also update purchase entry provided quantity if needed
+        UPDATE inventory.purchase_entry
+        SET
+            provided_quantity = provided_quantity - OLD.quantity
+        WHERE
+            uuid = OLD.purchase_entry_uuid;
+
         UPDATE
             inventory.product
         SET
@@ -74,6 +88,14 @@ BEGIN
             warehouse_12 = CASE WHEN old_warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity ELSE warehouse_12 END
         WHERE
             uuid = product_uuid_old;
+
+        -- also update purchase entry provided quantity if needed
+        UPDATE inventory.purchase_entry
+        SET
+            provided_quantity = provided_quantity + NEW.quantity
+        WHERE
+            uuid = NEW.purchase_entry_uuid;
+
         UPDATE
             inventory.product
         SET
@@ -123,6 +145,15 @@ DECLARE
 BEGIN
     SELECT assigned INTO warehouse_name FROM store.warehouse WHERE uuid = OLD.warehouse_uuid;
     SELECT product_uuid INTO product_uuid_old FROM inventory.purchase_entry WHERE uuid = OLD.purchase_entry_uuid;
+
+    -- also update purchase entry provided quantity if needed
+    UPDATE
+        inventory.purchase_entry
+    SET
+        provided_quantity = provided_quantity - OLD.quantity
+    WHERE
+        uuid = OLD.purchase_entry_uuid;
+
     UPDATE
         inventory.product
     SET

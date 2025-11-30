@@ -16,6 +16,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     .select({
       value: purchase_entry.uuid,
       label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no})`,
+      max_trf_quantity: sql`${purchase_entry.quantity} - COALESCE(${purchase_return_entry.quantity}, 0) - COALESCE(${purchase_entry.provided_quantity}, 0)`,
       // warehouse_uuid: purchase_entry.warehouse_uuid,
       // warehouse_name: warehouse.name,
     })
@@ -27,7 +28,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
 
   const filters = [];
   filters.push(
-    sql`(${purchase_return_entry.quantity} IS NULL OR ${purchase_return_entry.quantity} < ${purchase_entry.quantity})`,
+    sql`(${purchase_return_entry.quantity} IS NULL OR ${purchase_return_entry.quantity} < ${purchase_entry.quantity}) AND (${purchase_entry.quantity} - COALESCE(${purchase_return_entry.quantity}, 0) - COALESCE(${purchase_entry.provided_quantity}, 0)) > 0`,
   );
   if (is_product_transfer === 'false') {
     filters.push(
