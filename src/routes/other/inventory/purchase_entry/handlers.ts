@@ -15,7 +15,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   let purchaseEntryPromise = db
     .select({
       value: purchase_entry.uuid,
-      label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no} - W:${warehouse.name})`,
+      label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no}, ' - W:',${warehouse.name})`,
       max_trf_quantity: sql`${purchase_entry.quantity} - COALESCE(${purchase_return_entry.quantity}, 0) - COALESCE(${purchase_entry.provided_quantity}, 0)::float8`,
       warehouse_uuid: purchase_entry.warehouse_uuid,
       // warehouse_name: warehouse.name,
