@@ -1,9 +1,9 @@
 -- DROP OLD FUNCTIONS AND TRIGGERS IF EXISTS
-DROP TRIGGER IF EXISTS product_after_purchase_return_entry_insert_trigger ON store.purchase_return_entry;
+DROP TRIGGER IF EXISTS product_after_purchase_return_entry_insert_trigger ON inventory.purchase_return_entry;
 DROP FUNCTION IF EXISTS product_after_purchase_return_entry_insert_function();
-DROP TRIGGER IF EXISTS product_after_purchase_return_entry_delete_trigger ON store.purchase_return_entry;
+DROP TRIGGER IF EXISTS product_after_purchase_return_entry_delete_trigger ON inventory.purchase_return_entry;
 DROP FUNCTION IF EXISTS product_after_purchase_return_entry_delete_function();
-DROP TRIGGER IF EXISTS product_after_purchase_return_entry_update_trigger ON store.purchase_return_entry;
+DROP TRIGGER IF EXISTS product_after_purchase_return_entry_update_trigger ON inventory.purchase_return_entry;
 DROP FUNCTION IF EXISTS product_after_purchase_return_entry_update_function();
 
 --inserted into database
