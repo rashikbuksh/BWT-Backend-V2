@@ -15,16 +15,16 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   let purchaseEntryPromise = db
     .select({
       value: purchase_entry.uuid,
-      label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no})`,
+      label: sql`CONCAT( ${product.name}, ' - ', ${purchase_entry.serial_no} - W:${warehouse.name})`,
       max_trf_quantity: sql`${purchase_entry.quantity} - COALESCE(${purchase_return_entry.quantity}, 0) - COALESCE(${purchase_entry.provided_quantity}, 0)::float8`,
-      // warehouse_uuid: purchase_entry.warehouse_uuid,
+      warehouse_uuid: purchase_entry.warehouse_uuid,
       // warehouse_name: warehouse.name,
     })
     .from(purchase_entry)
     .leftJoin(product, eq(purchase_entry.product_uuid, product.uuid))
     .leftJoin(purchase_return_entry, eq(purchase_entry.uuid, purchase_return_entry.purchase_entry_uuid))
-    .leftJoin(product_transfer, eq(purchase_entry.uuid, product_transfer.purchase_entry_uuid));
-    // .leftJoin(warehouse, eq(purchase_entry.warehouse_uuid, warehouse.uuid));
+    .leftJoin(product_transfer, eq(purchase_entry.uuid, product_transfer.purchase_entry_uuid))
+    .leftJoin(warehouse, eq(purchase_entry.warehouse_uuid, warehouse.uuid));
 
   const filters = [];
 
