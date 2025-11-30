@@ -32,13 +32,13 @@ export const insertSchema = createInsertSchema(
 ).required({
   uuid: true,
   name: true,
+  created_by: true,
+  created_at: true,
+}).partial({
   brand_uuid: true,
   company_name: true,
   phone: true,
   address: true,
-  created_by: true,
-  created_at: true,
-}).partial({
   updated_by: true,
   description: true,
   is_active: true,
