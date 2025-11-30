@@ -16,7 +16,21 @@ export const list = createRoute({
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      z.array(selectSchema),
+      z.array(z.object({
+        ...selectSchema.shape,
+        warehouse_1_uuid: z.string(),
+        warehouse_2_uuid: z.string(),
+        warehouse_3_uuid: z.string(),
+        warehouse_4_uuid: z.string(),
+        warehouse_5_uuid: z.string(),
+        warehouse_6_uuid: z.string(),
+        warehouse_7_uuid: z.string(),
+        warehouse_8_uuid: z.string(),
+        warehouse_9_uuid: z.string(),
+        warehouse_10_uuid: z.string(),
+        warehouse_11_uuid: z.string(),
+        warehouse_12_uuid: z.string(),
+      })),
       'The list of product',
     ),
   },

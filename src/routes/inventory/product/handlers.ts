@@ -7,7 +7,7 @@ import * as HSCode from 'stoker/http-status-codes';
 import db from '@/db';
 import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
-import { brand, model, size } from '@/routes/store/schema';
+import { brand, model, size, warehouse } from '@/routes/store/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
@@ -15,6 +15,18 @@ import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } fro
 import { category, product } from '../schema';
 
 const updatedByUser = alias(users, 'updated_by_user');
+const warehouse1 = alias(warehouse, 'warehouse_1_tbl');
+const warehouse2 = alias(warehouse, 'warehouse_2_tbl');
+const warehouse3 = alias(warehouse, 'warehouse_3_tbl');
+const warehouse4 = alias(warehouse, 'warehouse_4_tbl');
+const warehouse5 = alias(warehouse, 'warehouse_5_tbl');
+const warehouse6 = alias(warehouse, 'warehouse_6_tbl');
+const warehouse7 = alias(warehouse, 'warehouse_7_tbl');
+const warehouse8 = alias(warehouse, 'warehouse_8_tbl');
+const warehouse9 = alias(warehouse, 'warehouse_9_tbl');
+const warehouse10 = alias(warehouse, 'warehouse_10_tbl');
+const warehouse11 = alias(warehouse, 'warehouse_11_tbl');
+const warehouse12 = alias(warehouse, 'warehouse_12_tbl');
 
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
@@ -96,6 +108,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     warehouse_10: PG_DECIMAL_TO_FLOAT(product.warehouse_10),
     warehouse_11: PG_DECIMAL_TO_FLOAT(product.warehouse_11),
     warehouse_12: PG_DECIMAL_TO_FLOAT(product.warehouse_12),
+    warehouse_1_uuid: warehouse1.uuid,
+    warehouse_2_uuid: warehouse2.uuid,
+    warehouse_3_uuid: warehouse3.uuid,
+    warehouse_4_uuid: warehouse4.uuid,
+    warehouse_5_uuid: warehouse5.uuid,
+    warehouse_6_uuid: warehouse6.uuid,
+    warehouse_7_uuid: warehouse7.uuid,
+    warehouse_8_uuid: warehouse8.uuid,
+    warehouse_9_uuid: warehouse9.uuid,
+    warehouse_10_uuid: warehouse10.uuid,
+    warehouse_11_uuid: warehouse11.uuid,
+    warehouse_12_uuid: warehouse12.uuid,
   })
     .from(product)
     .leftJoin(users, eq(product.created_by, users.uuid))
@@ -104,6 +128,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .leftJoin(model, eq(product.model_uuid, model.uuid))
     .leftJoin(brand, eq(model.brand_uuid, brand.uuid))
     .leftJoin(size, eq(product.size_uuid, size.uuid))
+    .leftJoin(warehouse1, eq(warehouse1.assigned, 'warehouse_1'))
+    .leftJoin(warehouse2, eq(warehouse2.assigned, 'warehouse_2'))
+    .leftJoin(warehouse3, eq(warehouse3.assigned, 'warehouse_3'))
+    .leftJoin(warehouse4, eq(warehouse4.assigned, 'warehouse_4'))
+    .leftJoin(warehouse5, eq(warehouse5.assigned, 'warehouse_5'))
+    .leftJoin(warehouse6, eq(warehouse6.assigned, 'warehouse_6'))
+    .leftJoin(warehouse7, eq(warehouse7.assigned, 'warehouse_7'))
+    .leftJoin(warehouse8, eq(warehouse8.assigned, 'warehouse_8'))
+    .leftJoin(warehouse9, eq(warehouse9.assigned, 'warehouse_9'))
+    .leftJoin(warehouse10, eq(warehouse10.assigned, 'warehouse_10'))
+    .leftJoin(warehouse11, eq(warehouse11.assigned, 'warehouse_11'))
+    .leftJoin(warehouse12, eq(warehouse12.assigned, 'warehouse_12'))
     .orderBy(desc(product.created_at));
 
   const data = await resultPromise;
@@ -148,6 +184,18 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     warehouse_10: PG_DECIMAL_TO_FLOAT(product.warehouse_10),
     warehouse_11: PG_DECIMAL_TO_FLOAT(product.warehouse_11),
     warehouse_12: PG_DECIMAL_TO_FLOAT(product.warehouse_12),
+    warehouse_1_uuid: warehouse1.uuid,
+    warehouse_2_uuid: warehouse2.uuid,
+    warehouse_3_uuid: warehouse3.uuid,
+    warehouse_4_uuid: warehouse4.uuid,
+    warehouse_5_uuid: warehouse5.uuid,
+    warehouse_6_uuid: warehouse6.uuid,
+    warehouse_7_uuid: warehouse7.uuid,
+    warehouse_8_uuid: warehouse8.uuid,
+    warehouse_9_uuid: warehouse9.uuid,
+    warehouse_10_uuid: warehouse10.uuid,
+    warehouse_11_uuid: warehouse11.uuid,
+    warehouse_12_uuid: warehouse12.uuid,
   })
     .from(product)
     .leftJoin(users, eq(product.created_by, users.uuid))
@@ -156,6 +204,18 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .leftJoin(model, eq(product.model_uuid, model.uuid))
     .leftJoin(brand, eq(model.brand_uuid, brand.uuid))
     .leftJoin(size, eq(product.size_uuid, size.uuid))
+    .leftJoin(warehouse1, eq(warehouse1.assigned, 'warehouse_1'))
+    .leftJoin(warehouse2, eq(warehouse2.assigned, 'warehouse_2'))
+    .leftJoin(warehouse3, eq(warehouse3.assigned, 'warehouse_3'))
+    .leftJoin(warehouse4, eq(warehouse4.assigned, 'warehouse_4'))
+    .leftJoin(warehouse5, eq(warehouse5.assigned, 'warehouse_5'))
+    .leftJoin(warehouse6, eq(warehouse6.assigned, 'warehouse_6'))
+    .leftJoin(warehouse7, eq(warehouse7.assigned, 'warehouse_7'))
+    .leftJoin(warehouse8, eq(warehouse8.assigned, 'warehouse_8'))
+    .leftJoin(warehouse9, eq(warehouse9.assigned, 'warehouse_9'))
+    .leftJoin(warehouse10, eq(warehouse10.assigned, 'warehouse_10'))
+    .leftJoin(warehouse11, eq(warehouse11.assigned, 'warehouse_11'))
+    .leftJoin(warehouse12, eq(warehouse12.assigned, 'warehouse_12'))
     .where(eq(product.uuid, uuid));
 
   const [data] = await resultPromise;

@@ -1,11 +1,10 @@
 -- DROP OLD FUNCTIONS AND TRIGGERS IF EXISTS
 DROP TRIGGER IF EXISTS product_after_purchase_return_entry_insert_trigger ON inventory.purchase_return_entry;
-DROP FUNCTION IF EXISTS product_after_purchase_return_entry_insert_function();
+DROP FUNCTION IF EXISTS inventory.product_after_purchase_return_entry_insert_function();
 DROP TRIGGER IF EXISTS product_after_purchase_return_entry_delete_trigger ON inventory.purchase_return_entry;
-DROP FUNCTION IF EXISTS product_after_purchase_return_entry_delete_function();
+DROP FUNCTION IF EXISTS inventory.product_after_purchase_return_entry_delete_function();
 DROP TRIGGER IF EXISTS product_after_purchase_return_entry_update_trigger ON inventory.purchase_return_entry;
-DROP FUNCTION IF EXISTS product_after_purchase_return_entry_update_function();
-
+DROP FUNCTION IF EXISTS inventory.product_after_purchase_return_entry_update_function();
 --inserted into database
 CREATE OR REPLACE FUNCTION inventory.product_after_purchase_return_entry_insert_function() RETURNS TRIGGER AS $$
 DECLARE 
@@ -27,7 +26,7 @@ BEGIN
         warehouse_10 = CASE WHEN warehouse_name = 'warehouse_10' THEN warehouse_10 - NEW.quantity ELSE warehouse_10 END,
         warehouse_11 = CASE WHEN warehouse_name = 'warehouse_11' THEN warehouse_11 - NEW.quantity ELSE warehouse_11 END,
         warehouse_12 = CASE WHEN warehouse_name = 'warehouse_12' THEN warehouse_12 - NEW.quantity ELSE warehouse_12 END
-    WHERE uuid = NEW.product_uuid;
+    WHERE uuid = (SELECT product_uuid FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid);
     
     RETURN NEW;
 END;
@@ -54,7 +53,7 @@ BEGIN
         warehouse_10 = CASE WHEN warehouse_name = 'warehouse_10' THEN warehouse_10 + OLD.quantity ELSE warehouse_10 END,
         warehouse_11 = CASE WHEN warehouse_name = 'warehouse_11' THEN warehouse_11 + OLD.quantity ELSE warehouse_11 END,
         warehouse_12 = CASE WHEN warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity ELSE warehouse_12 END
-    WHERE uuid = OLD.product_uuid;
+    WHERE uuid = (SELECT product_uuid FROM inventory.purchase_entry WHERE uuid = OLD.purchase_entry_uuid);
     
     RETURN OLD;
 END;
@@ -86,7 +85,7 @@ BEGIN
             warehouse_10 = CASE WHEN old_warehouse_name = 'warehouse_10' THEN warehouse_10 + OLD.quantity ELSE warehouse_10 END,
             warehouse_11 = CASE WHEN old_warehouse_name = 'warehouse_11' THEN warehouse_11 + OLD.quantity ELSE warehouse_11 END,
             warehouse_12 = CASE WHEN old_warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity ELSE warehouse_12 END
-        WHERE uuid = OLD.product_uuid;
+        WHERE uuid = (SELECT product_uuid FROM inventory.purchase_entry WHERE uuid = OLD.purchase_entry_uuid);
 
         -- Add to new warehouse
         UPDATE inventory.product
@@ -103,7 +102,7 @@ BEGIN
             warehouse_10 = CASE WHEN new_warehouse_name = 'warehouse_10' THEN warehouse_10 - NEW.quantity ELSE warehouse_10 END,
             warehouse_11 = CASE WHEN new_warehouse_name = 'warehouse_11' THEN warehouse_11 - NEW.quantity ELSE warehouse_11 END,
             warehouse_12 = CASE WHEN new_warehouse_name = 'warehouse_12' THEN warehouse_12 - NEW.quantity ELSE warehouse_12 END
-        WHERE uuid = NEW.product_uuid;
+        WHERE uuid = (SELECT product_uuid FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid);
     ELSE
         -- Update the quantity in the same warehouse
         UPDATE inventory.product
@@ -120,7 +119,7 @@ BEGIN
             warehouse_10 = CASE WHEN old_warehouse_name = 'warehouse_10' THEN warehouse_10 + OLD.quantity - NEW.quantity ELSE warehouse_10 END,
             warehouse_11 = CASE WHEN old_warehouse_name = 'warehouse_11' THEN warehouse_11 + OLD.quantity - NEW.quantity ELSE warehouse_11 END,
             warehouse_12 = CASE WHEN old_warehouse_name = 'warehouse_12' THEN warehouse_12 + OLD.quantity - NEW.quantity ELSE warehouse_12 END
-        WHERE uuid = NEW.product_uuid;
+        WHERE uuid = (SELECT product_uuid FROM inventory.purchase_entry WHERE uuid = NEW.purchase_entry_uuid);
     END IF;
     RETURN NEW;
 END;

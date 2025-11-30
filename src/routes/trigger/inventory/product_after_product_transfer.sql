@@ -1,10 +1,10 @@
 --  DROP OLD TRIGGER AND FUNCTION IF EXISTS
-DROP TRIGGER IF EXISTS product_after_product_transfer_insert ON store.product_transfer;
-DROP FUNCTION IF EXISTS product_after_product_transfer_insert_function ();
-DROP TRIGGER IF EXISTS product_after_product_transfer_delete ON store.product_transfer;
-DROP FUNCTION IF EXISTS product_after_product_transfer_delete_function ();
-DROP TRIGGER IF EXISTS product_after_product_transfer_update ON store.product_transfer;
-DROP FUNCTION IF EXISTS product_after_product_transfer_update_function ();
+DROP TRIGGER IF EXISTS product_after_product_transfer_insert ON inventory.product_transfer;
+DROP FUNCTION IF EXISTS inventory.product_after_product_transfer_insert_function ();
+DROP TRIGGER IF EXISTS product_after_product_transfer_delete ON inventory.product_transfer;
+DROP FUNCTION IF EXISTS inventory.product_after_product_transfer_delete_function ();
+DROP TRIGGER IF EXISTS product_after_product_transfer_update ON inventory.product_transfer;
+DROP FUNCTION IF EXISTS inventory.product_after_product_transfer_update_function ();
 
 --inserted into database
 CREATE OR REPLACE FUNCTION inventory.product_after_product_transfer_insert_function()
@@ -64,8 +64,8 @@ BEGIN
             warehouse_2 = CASE WHEN old_warehouse_name = 'warehouse_2' THEN warehouse_2 + OLD.quantity ELSE warehouse_2 END,
             warehouse_3 = CASE WHEN old_warehouse_name = 'warehouse_3' THEN warehouse_3 + OLD.quantity ELSE warehouse_3 END,
             warehouse_4 = CASE WHEN old_warehouse_name = 'warehouse_4' THEN warehouse_4 + OLD.quantity ELSE warehouse_4 END,
-        warehouse_5 = CASE WHEN old_warehouse_name = 'warehouse_5' THEN warehouse_5 + OLD.quantity ELSE warehouse_5 END,
-        warehouse_6 = CASE WHEN old_warehouse_name = 'warehouse_6' THEN warehouse_6 + OLD.quantity ELSE warehouse_6 END,
+            warehouse_5 = CASE WHEN old_warehouse_name = 'warehouse_5' THEN warehouse_5 + OLD.quantity ELSE warehouse_5 END,
+            warehouse_6 = CASE WHEN old_warehouse_name = 'warehouse_6' THEN warehouse_6 + OLD.quantity ELSE warehouse_6 END,
             warehouse_7 = CASE WHEN old_warehouse_name = 'warehouse_7' THEN warehouse_7 + OLD.quantity ELSE warehouse_7 END,
             warehouse_8 = CASE WHEN old_warehouse_name = 'warehouse_8' THEN warehouse_8 + OLD.quantity ELSE warehouse_8 END,
             warehouse_9 = CASE WHEN old_warehouse_name = 'warehouse_9' THEN warehouse_9 + OLD.quantity ELSE warehouse_9 END,
@@ -80,8 +80,8 @@ BEGIN
             warehouse_1 = CASE WHEN new_warehouse_name = 'warehouse_1' THEN warehouse_1 - NEW.quantity ELSE warehouse_1 END,
             warehouse_2 = CASE WHEN new_warehouse_name = 'warehouse_2' THEN warehouse_2 - NEW.quantity ELSE warehouse_2 END,
             warehouse_3 = CASE WHEN new_warehouse_name = 'warehouse_3' THEN warehouse_3 - NEW.quantity ELSE warehouse_3 END,
-        warehouse_4 = CASE WHEN new_warehouse_name = 'warehouse_4' THEN warehouse_4 - NEW.quantity ELSE warehouse_4 END,
-        warehouse_5 = CASE WHEN new_warehouse_name = 'warehouse_5' THEN warehouse_5 - NEW.quantity ELSE warehouse_5 END,
+            warehouse_4 = CASE WHEN new_warehouse_name = 'warehouse_4' THEN warehouse_4 - NEW.quantity ELSE warehouse_4 END,
+            warehouse_5 = CASE WHEN new_warehouse_name = 'warehouse_5' THEN warehouse_5 - NEW.quantity ELSE warehouse_5 END,
             warehouse_6 = CASE WHEN new_warehouse_name = 'warehouse_6' THEN warehouse_6 - NEW.quantity ELSE warehouse_6 END,
             warehouse_7 = CASE WHEN new_warehouse_name = 'warehouse_7' THEN warehouse_7 - NEW.quantity ELSE warehouse_7 END,
             warehouse_8 = CASE WHEN new_warehouse_name = 'warehouse_8' THEN warehouse_8 - NEW.quantity ELSE warehouse_8 END,
@@ -99,8 +99,8 @@ BEGIN
             warehouse_2 = CASE WHEN old_warehouse_name = 'warehouse_2' THEN warehouse_2 + OLD.quantity - NEW.quantity ELSE warehouse_2 END,
             warehouse_3 = CASE WHEN old_warehouse_name = 'warehouse_3' THEN warehouse_3 + OLD.quantity - NEW.quantity ELSE warehouse_3 END,
             warehouse_4 = CASE WHEN old_warehouse_name = 'warehouse_4' THEN warehouse_4 + OLD.quantity - NEW.quantity ELSE warehouse_4 END,
-        warehouse_5 = CASE WHEN old_warehouse_name = 'warehouse_5' THEN warehouse_5 + OLD.quantity - NEW.quantity ELSE warehouse_5 END,
-        warehouse_6 = CASE WHEN old_warehouse_name = 'warehouse_6' THEN warehouse_6 + OLD.quantity - NEW.quantity ELSE warehouse_6 END,
+            warehouse_5 = CASE WHEN old_warehouse_name = 'warehouse_5' THEN warehouse_5 + OLD.quantity - NEW.quantity ELSE warehouse_5 END,
+            warehouse_6 = CASE WHEN old_warehouse_name = 'warehouse_6' THEN warehouse_6 + OLD.quantity - NEW.quantity ELSE warehouse_6 END,
             warehouse_7 = CASE WHEN old_warehouse_name = 'warehouse_7' THEN warehouse_7 + OLD.quantity - NEW.quantity ELSE warehouse_7 END,
             warehouse_8 = CASE WHEN old_warehouse_name = 'warehouse_8' THEN warehouse_8 + OLD.quantity - NEW.quantity ELSE warehouse_8 END,
             warehouse_9 = CASE WHEN old_warehouse_name = 'warehouse_9' THEN warehouse_9 + OLD.quantity - NEW.quantity ELSE warehouse_9 END,
