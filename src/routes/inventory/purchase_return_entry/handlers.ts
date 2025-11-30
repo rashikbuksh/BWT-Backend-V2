@@ -18,11 +18,10 @@ const updatedByUser = alias(users, 'updated_by_user');
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
-  const createValue = value.map((item: any) => ({
-    ...item,
-    updated_at: null,
-    updated_by: null,
-  }));
+  const createValue = value.map((item: any) => {
+    const { updated_at, updated_by, ...rest } = item;
+    return rest;
+  });
 
   const data = await db.insert(purchase_return_entry).values(createValue).returning({
     name: purchase_return_entry.uuid,
