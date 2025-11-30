@@ -14,7 +14,7 @@ export const insertSchema = createInsertSchema(
     uuid: schema => schema.uuid.length(15),
     purchase_return_uuid: schema => schema.purchase_return_uuid.length(15),
     purchase_entry_uuid: schema => schema.purchase_entry_uuid.length(15),
-    quantity: z.number().optional(),
+    quantity: z.number(),
     created_by: schema => schema.created_by.length(15),
     updated_by: schema => schema.updated_by.length(15).optional(),
     created_at: schema => schema.created_at.regex(dateTimePattern, {

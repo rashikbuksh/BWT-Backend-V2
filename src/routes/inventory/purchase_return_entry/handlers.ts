@@ -18,11 +18,17 @@ const updatedByUser = alias(users, 'updated_by_user');
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
-  const [data] = await db.insert(purchase_return_entry).values(value).returning({
+  const createValue = value.map((item: any) => ({
+    ...item,
+    updated_at: null,
+    updated_by: null,
+  }));
+
+  const data = await db.insert(purchase_return_entry).values(createValue).returning({
     name: purchase_return_entry.uuid,
   });
 
-  return c.json(createToast('create', data.name), HSCode.OK);
+  return c.json(createToast('create', data.length), HSCode.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
