@@ -11,7 +11,6 @@ export const valueLabel = createRoute({
   tags,
   request: {
     query: z.object({
-      is_purchase_return_entry: z.string().optional(),
       warehouse_uuid: z.string().optional(),
       purchase_uuid: z.string().optional(),
       is_product_transfer: z.string().optional(),

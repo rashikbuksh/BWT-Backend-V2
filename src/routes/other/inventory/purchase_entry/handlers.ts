@@ -10,7 +10,7 @@ import { warehouse } from '@/routes/store/schema';
 import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
-  const { is_purchase_return_entry, warehouse_uuid, purchase_uuid, is_product_transfer, is_warehouse } = c.req.valid('query');
+  const { warehouse_uuid, purchase_uuid, is_product_transfer, is_warehouse } = c.req.valid('query');
 
   let purchaseEntryPromise = db
     .select({
@@ -26,12 +26,9 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     // .leftJoin(warehouse, eq(purchase_entry.warehouse_uuid, warehouse.uuid));
 
   const filters = [];
-
-  if (is_purchase_return_entry === 'false') {
-    filters.push(
-      sql`${purchase_return_entry.purchase_entry_uuid} IS NULL`,
-    );
-  }
+  filters.push(
+    sql`(${purchase_return_entry.quantity} IS NULL OR ${purchase_return_entry.quantity} < ${purchase_entry.quantity})`,
+  );
   if (is_product_transfer === 'false') {
     filters.push(
       sql`${product_transfer.purchase_entry_uuid} IS NULL`,
