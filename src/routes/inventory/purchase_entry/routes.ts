@@ -27,18 +27,18 @@ export const create = createRoute({
   method: 'post',
   request: {
     body: jsonContentRequired(
-      insertSchema,
-      'The purchase_entry to create',
+      z.union([insertSchema, z.array(insertSchema)]),
+      'The purchase_entry or array of purchase_entries to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      selectSchema,
-      'The created purchase_entry',
+      z.union([selectSchema, z.array(selectSchema)]),
+      'The created purchase_entry or entries',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(insertSchema),
+      createErrorSchema(z.union([insertSchema, z.array(insertSchema)])),
       'The validation error(s)',
     ),
   },
