@@ -387,6 +387,15 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
           AND COALESCE(order_stats_tbl.order_count, 0) > 0`,
     );
   }
+  else if (status === 'returned') {
+    filters.push(
+      sql`EXISTS (
+        SELECT 1
+        FROM work.order o
+        WHERE o.info_uuid = info.uuid AND o.is_return = true
+      )`,
+    );
+  }
 
   if (orderType && orderType !== 'undefined') {
     filters.push(eq(info.order_type, orderType));
