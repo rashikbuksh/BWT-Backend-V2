@@ -863,7 +863,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     // Fetch product transfer data for the order
     for (const order of data) {
       const productTransfer = await fetchData(
-        `/v1/store/product-transfer/by/${order.uuid}`,
+        `/v1/inventory/product-transfer/by/${order.uuid}`,
       );
       (order as OrderWithExtras).product_transfer = productTransfer || [];
     }
@@ -1132,7 +1132,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   // Fetch product transfer data for the order
   for (const order of data) {
     const productTransfer = await fetchData(
-      `/v1/store/product-transfer/by/${order.uuid}`,
+      `/v1/inventory/product-transfer/by/${order.uuid}`,
     );
     (order as OrderWithExtras).product_transfer = productTransfer || [];
   }
@@ -1168,7 +1168,7 @@ export const getDiagnosisDetailsByOrder: AppRouteHandler<GetDiagnosisDetailsByOr
       : fetchData(`/v1/work/order/${order_uuid}`),
     fetchData(`/v1/work/diagnosis-by-order/${order_uuid}`),
     fetchData(`/v1/work/process?order_uuid=${order_uuid}`),
-    fetchData(`/v1/store/product-transfer/by/${order_uuid}`),
+    fetchData(`/v1/inventory/product-transfer/by/${order_uuid}`),
     fetchData(`/v1/delivery/challan/by/order/${order_uuid}`),
   ]);
 
