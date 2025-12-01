@@ -88,21 +88,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       info_id: sql`CONCAT ('WI', TO_CHAR(${workSchema.info.created_at}::timestamp, 'YY'), '-', ${workSchema.info.id})`,
       user_uuid: workSchema.info.user_uuid,
       user_name: user.name,
-      // max_quantity: sql`(CASE
-      //                     WHEN ${warehouse.assigned} = 'warehouse_1' THEN COALESCE(${product.warehouse_1}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_2' THEN COALESCE(${product.warehouse_2}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_3' THEN COALESCE(${product.warehouse_3}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_4' THEN COALESCE(${product.warehouse_4}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_5' THEN COALESCE(${product.warehouse_5}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_6' THEN COALESCE(${product.warehouse_6}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_7' THEN COALESCE(${product.warehouse_7}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_8' THEN COALESCE(${product.warehouse_8}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_9' THEN COALESCE(${product.warehouse_9}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_10' THEN COALESCE(${product.warehouse_10}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_11' THEN COALESCE(${product.warehouse_11}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     ELSE 0
-      //                   END)::float8`,
       serial_no: purchase_entry.serial_no,
       branch_uuid: warehouse.branch_uuid,
       branch_name: branch.name,
@@ -167,21 +152,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       info_id: sql`CONCAT ('WI', TO_CHAR(${workSchema.info.created_at}::timestamp, 'YY'), '-', ${workSchema.info.id})`,
       user_uuid: workSchema.info.user_uuid,
       user_name: user.name,
-      // max_quantity: sql`(CASE
-      //                     WHEN ${warehouse.assigned} = 'warehouse_1' THEN COALESCE(${product.warehouse_1}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_2' THEN COALESCE(${product.warehouse_2}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_3' THEN COALESCE(${product.warehouse_3}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_4' THEN COALESCE(${product.warehouse_4}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_5' THEN COALESCE(${product.warehouse_5}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_6' THEN COALESCE(${product.warehouse_6}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_7' THEN COALESCE(${product.warehouse_7}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_8' THEN COALESCE(${product.warehouse_8}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_9' THEN COALESCE(${product.warehouse_9}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_10' THEN COALESCE(${product.warehouse_10}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_11' THEN COALESCE(${product.warehouse_11}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     ELSE 0
-      //                   END)::float8`,
       serial_no: purchase_entry.serial_no,
       branch_uuid: warehouse.branch_uuid,
       branch_name: branch.name,
@@ -251,21 +221,6 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
       }::timestamp, 'YY'), '-', ${workSchema.info.id})`,
       user_uuid: workSchema.info.user_uuid,
       user_name: user.name,
-      // max_quantity: sql`(CASE
-      //                     WHEN ${warehouse.assigned} = 'warehouse_1' THEN COALESCE(${product.warehouse_1}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_2' THEN COALESCE(${product.warehouse_2}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_3' THEN COALESCE(${product.warehouse_3}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_4' THEN COALESCE(${product.warehouse_4}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_5' THEN COALESCE(${product.warehouse_5}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_6' THEN COALESCE(${product.warehouse_6}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_7' THEN COALESCE(${product.warehouse_7}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_8' THEN COALESCE(${product.warehouse_8}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_9' THEN COALESCE(${product.warehouse_9}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_10' THEN COALESCE(${product.warehouse_10}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_11' THEN COALESCE(${product.warehouse_11}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     WHEN ${warehouse.assigned} = 'warehouse_12' THEN COALESCE(${product.warehouse_12}, 0) + COALESCE(${product_transfer.quantity}, 0)
-      //                     ELSE 0
-      //                   END)::float8`,
       serial_no: purchase_entry.serial_no,
       branch_uuid: warehouse.branch_uuid,
       branch_name: branch.name,
@@ -316,18 +271,6 @@ export const getByOrderUuid: AppRouteHandler<GetByOrderUuidRoute> = async (c: an
       workSchema.info.id,
       workSchema.info.created_at,
       warehouse.assigned,
-      // product.warehouse_1,
-      // product.warehouse_2,
-      // product.warehouse_3,
-      // product.warehouse_4,
-      // product.warehouse_5,
-      // product.warehouse_6,
-      // product.warehouse_7,
-      // product.warehouse_8,
-      // product.warehouse_9,
-      // product.warehouse_10,
-      // product.warehouse_11,
-      // product.warehouse_12,
       purchase_entry.serial_no,
       branch.name,
       warehouse.branch_uuid,
