@@ -6,7 +6,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 const tags = ['others'];
 
 export const valueLabel = createRoute({
-  path: '/other/acc/cost-center/value/label',
+  path: '/other/acc/table-data/value/label',
   method: 'get',
   tags,
   responses: {
@@ -15,7 +15,7 @@ export const valueLabel = createRoute({
         value: z.string(),
         label: z.string(),
       }),
-      'The valueLabel of cost-center',
+      'The valueLabel of table-data',
     ),
   },
 });
