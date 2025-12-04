@@ -9,6 +9,9 @@ import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const { table_name } = c.req.query();
+
+  console.log('table_name', table_name);
+
   const option = [
     { value: 'inventory.purchase', label: 'IP' },
   ];
@@ -47,9 +50,9 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     }
 
     // Ensure we return an array when no rows are found and a valid HTTP status code
-    c.json(result?.rows || [], HSCode.OK);
+    return c.json(result?.rows || [], 200);
   }
   catch (error) {
-    return c.json(error, HSCode.INTERNAL_SERVER_ERROR);
+    return c.json(error, 500);
   }
 };
