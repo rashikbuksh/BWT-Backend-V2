@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -70,7 +71,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       ledger_uuid: voucher_entry.ledger_uuid,
       ledger_name: ledger.name,
       type: voucher_entry.type,
-      amount: voucher_entry.amount,
+      amount: PG_DECIMAL_TO_FLOAT(voucher_entry.amount),
       is_need_cost_center: voucher_entry.is_need_cost_center,
       is_payment: voucher_entry.is_payment,
       description: voucher_entry.description,
@@ -106,7 +107,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       ledger_uuid: voucher_entry.ledger_uuid,
       ledger_name: ledger.name,
       type: voucher_entry.type,
-      amount: voucher_entry.amount,
+      amount: PG_DECIMAL_TO_FLOAT(voucher_entry.amount),
       is_need_cost_center: voucher_entry.is_need_cost_center,
       is_payment: voucher_entry.is_payment,
       description: voucher_entry.description,
@@ -145,7 +146,7 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
       ledger_uuid: voucher_entry.ledger_uuid,
       ledger_name: ledger.name,
       type: voucher_entry.type,
-      amount: voucher_entry.amount,
+      amount: PG_DECIMAL_TO_FLOAT(voucher_entry.amount),
       is_need_cost_center: voucher_entry.is_need_cost_center,
       is_payment: voucher_entry.is_payment,
       description: voucher_entry.description,
@@ -162,7 +163,7 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
             'uuid', vecc.uuid,
             'cost_center_uuid', vecc.cost_center_uuid,
             'cost_center_name', cc.name,
-            'amount', vecc.amount,
+            'amount', vecc.amount::float8,
             'created_by', vecc.created_by,
             'created_by_name', cbu.name,
             'created_at', vecc.created_at,
@@ -184,7 +185,7 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
             'uuid', vep.uuid,
             'payment_type', vep.payment_type,
             'trx_no', vep.trx_no,
-            'amount', vep.amount,
+            'amount', vep.amount::float8,
             'date', vep.date,
             'created_by', vep.created_by,
             'created_by_name', cbu.name,

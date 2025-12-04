@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -66,7 +67,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       uuid: currency.uuid,
       currency: currency.currency,
       currency_name: currency.currency_name,
-      conversion_rate: currency.conversion_rate,
+      conversion_rate: PG_DECIMAL_TO_FLOAT(currency.conversion_rate),
       symbol: currency.symbol,
       created_by: currency.created_by,
       created_by_name: createdByUser.name,
@@ -95,7 +96,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       uuid: currency.uuid,
       currency: currency.currency,
       currency_name: currency.currency_name,
-      conversion_rate: currency.conversion_rate,
+      conversion_rate: PG_DECIMAL_TO_FLOAT(currency.conversion_rate),
       symbol: currency.symbol,
       created_by: currency.created_by,
       created_by_name: createdByUser.name,

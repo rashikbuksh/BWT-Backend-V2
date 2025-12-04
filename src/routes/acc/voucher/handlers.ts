@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -70,8 +71,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       voucher_id: sql`CONCAT('VO', TO_CHAR(${voucher.created_at}::timestamp, 'YY'), '-', ${voucher.id})`,
       date: voucher.date,
       conversion_rate: voucher.conversion_rate,
-      vat_deduction: voucher.vat_deduction,
-      tax_deduction: voucher.tax_deduction,
+      vat_deduction: PG_DECIMAL_TO_FLOAT(voucher.vat_deduction),
+      tax_deduction: PG_DECIMAL_TO_FLOAT(voucher.tax_deduction),
       category: voucher.category,
       narration: voucher.narration,
       currency_uuid: voucher.currency_uuid,
@@ -106,8 +107,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       voucher_id: sql`CONCAT('VO', TO_CHAR(${voucher.created_at}::timestamp, 'YY'), '-', ${voucher.id})`,
       date: voucher.date,
       conversion_rate: voucher.conversion_rate,
-      vat_deduction: voucher.vat_deduction,
-      tax_deduction: voucher.tax_deduction,
+      vat_deduction: PG_DECIMAL_TO_FLOAT(voucher.vat_deduction),
+      tax_deduction: PG_DECIMAL_TO_FLOAT(voucher.tax_deduction),
       category: voucher.category,
       narration: voucher.narration,
       currency_uuid: voucher.currency_uuid,

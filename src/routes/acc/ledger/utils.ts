@@ -1,4 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import z from 'zod';
 
 import { dateTimePattern } from '@/utils';
 
@@ -15,6 +16,8 @@ export const insertSchema = createInsertSchema(
     group_uuid: schema => schema.group_uuid.length(15),
     table_name: schema => schema.table_name.optional(),
     table_uuid: schema => schema.table_uuid.optional(),
+    vat_deduction: z.coerce.number().default(0),
+    tax_deduction: z.coerce.number().default(0),
     account_no: schema => schema.account_no.optional(),
     group_number: schema => schema.group_number.optional(),
     created_at: schema => schema.created_at.regex(dateTimePattern, {

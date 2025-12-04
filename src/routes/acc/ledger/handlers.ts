@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -74,8 +75,8 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       restrictions: ledger.restrictions,
       group_uuid: ledger.group_uuid,
       group_name: group.name,
-      vat_deduction: ledger.vat_deduction,
-      tax_deduction: ledger.tax_deduction,
+      vat_deduction: PG_DECIMAL_TO_FLOAT(ledger.vat_deduction),
+      tax_deduction: PG_DECIMAL_TO_FLOAT(ledger.tax_deduction),
       old_ledger_id: ledger.old_ledger_id,
       created_by: ledger.created_by,
       created_by_name: createdByUser.name,
@@ -119,8 +120,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       restrictions: ledger.restrictions,
       group_uuid: ledger.group_uuid,
       group_name: group.name,
-      vat_deduction: ledger.vat_deduction,
-      tax_deduction: ledger.tax_deduction,
+      vat_deduction: PG_DECIMAL_TO_FLOAT(ledger.vat_deduction),
+      tax_deduction: PG_DECIMAL_TO_FLOAT(ledger.tax_deduction),
       old_ledger_id: ledger.old_ledger_id,
       created_by: ledger.created_by,
       created_by_name: createdByUser.name,

@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -70,7 +71,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       voucher_id: sql`CONCAT('VO', TO_CHAR(${voucher.created_at}::timestamp, 'YY'), '-', ${voucher.id})`,
       payment_type: voucher_entry_payment.payment_type,
       trx_no: voucher_entry_payment.trx_no,
-      amount: voucher_entry_payment.amount,
+      amount: PG_DECIMAL_TO_FLOAT(voucher_entry_payment.amount),
       date: voucher_entry_payment.date,
       created_by: voucher_entry_payment.created_by,
       created_by_name: createdByUser.name,
