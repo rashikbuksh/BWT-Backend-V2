@@ -46,7 +46,8 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       `);
     }
 
-    c.json(result?.rows || {}, HSCode.OK);
+    // Ensure we return an array when no rows are found and a valid HTTP status code
+    c.json(result?.rows || [], HSCode.OK);
   }
   catch (error) {
     return c.json(error, HSCode.INTERNAL_SERVER_ERROR);
