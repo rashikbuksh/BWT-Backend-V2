@@ -117,4 +117,10 @@ export const ALLOWED_ROUTES: string[] = [
   'https://bwt-web.fortunezip.com',
   'https://bwt-admin.synaptech.cloud',
   'https://bwt-web.synaptech.cloud',
+  'http://bwt.com.bd',
+  'http://backend.bwt.com.bd',
+  'http://admin.bwt.com.bd',
+  'https://bwt.com.bd',
+  'https://backend.bwt.com.bd',
+  'https://admin.bwt.com.bd',
 ];
