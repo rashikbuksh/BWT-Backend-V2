@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
+import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
@@ -69,18 +70,18 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       end_date: fiscal_year.end_date,
       active: fiscal_year.active,
       locked: fiscal_year.locked,
-      jan_budget: fiscal_year.jan_budget,
-      feb_budget: fiscal_year.feb_budget,
-      mar_budget: fiscal_year.mar_budget,
-      apr_budget: fiscal_year.apr_budget,
-      may_budget: fiscal_year.may_budget,
-      jun_budget: fiscal_year.jun_budget,
-      jul_budget: fiscal_year.jul_budget,
-      aug_budget: fiscal_year.aug_budget,
-      sep_budget: fiscal_year.sep_budget,
-      oct_budget: fiscal_year.oct_budget,
-      nov_budget: fiscal_year.nov_budget,
-      dec_budget: fiscal_year.dec_budget,
+      jan_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.jan_budget),
+      feb_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.feb_budget),
+      mar_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.mar_budget),
+      apr_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.apr_budget),
+      may_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.may_budget),
+      jun_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.jun_budget),
+      jul_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.jul_budget),
+      aug_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.aug_budget),
+      sep_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.sep_budget),
+      oct_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.oct_budget),
+      nov_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.nov_budget),
+      dec_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.dec_budget),
       created_by: fiscal_year.created_by,
       created_by_name: createdByUser.name,
       created_at: fiscal_year.created_at,
@@ -89,7 +90,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_at: fiscal_year.updated_at,
       remarks: fiscal_year.remarks,
       currency_uuid: fiscal_year.currency_uuid,
-      rate: fiscal_year.rate,
+      rate: PG_DECIMAL_TO_FLOAT(fiscal_year.rate),
     })
     .from(fiscal_year)
     .leftJoin(createdByUser, eq(createdByUser.uuid, fiscal_year.created_by))
@@ -112,18 +113,18 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       end_date: fiscal_year.end_date,
       active: fiscal_year.active,
       locked: fiscal_year.locked,
-      jan_budget: fiscal_year.jan_budget,
-      feb_budget: fiscal_year.feb_budget,
-      mar_budget: fiscal_year.mar_budget,
-      apr_budget: fiscal_year.apr_budget,
-      may_budget: fiscal_year.may_budget,
-      jun_budget: fiscal_year.jun_budget,
-      jul_budget: fiscal_year.jul_budget,
-      aug_budget: fiscal_year.aug_budget,
-      sep_budget: fiscal_year.sep_budget,
-      oct_budget: fiscal_year.oct_budget,
-      nov_budget: fiscal_year.nov_budget,
-      dec_budget: fiscal_year.dec_budget,
+      jan_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.jan_budget),
+      feb_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.feb_budget),
+      mar_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.mar_budget),
+      apr_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.apr_budget),
+      may_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.may_budget),
+      jun_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.jun_budget),
+      jul_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.jul_budget),
+      aug_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.aug_budget),
+      sep_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.sep_budget),
+      oct_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.oct_budget),
+      nov_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.nov_budget),
+      dec_budget: PG_DECIMAL_TO_FLOAT(fiscal_year.dec_budget),
       created_by: fiscal_year.created_by,
       created_by_name: createdByUser.name,
       created_at: fiscal_year.created_at,
@@ -132,7 +133,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       updated_at: fiscal_year.updated_at,
       remarks: fiscal_year.remarks,
       currency_uuid: fiscal_year.currency_uuid,
-      rate: fiscal_year.rate,
+      rate: PG_DECIMAL_TO_FLOAT(fiscal_year.rate),
     })
     .from(fiscal_year)
     .leftJoin(createdByUser, eq(createdByUser.uuid, fiscal_year.created_by))
