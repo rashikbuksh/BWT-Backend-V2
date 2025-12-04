@@ -89,7 +89,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       is_bank_ledger: ledger.is_bank_ledger,
       is_cash_ledger: ledger.is_cash_ledger,
       identifier: ledger.identifier,
-      initial_amount: ledger.initial_amount,
+      initial_amount: PG_DECIMAL_TO_FLOAT(ledger.initial_amount),
       group_number: ledger.group_number,
       index: ledger.index,
     })
@@ -134,7 +134,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
       is_bank_ledger: ledger.is_bank_ledger,
       is_cash_ledger: ledger.is_cash_ledger,
       identifier: ledger.identifier,
-      initial_amount: ledger.initial_amount,
+      initial_amount: PG_DECIMAL_TO_FLOAT(ledger.initial_amount),
       group_number: ledger.group_number,
       index: ledger.index,
       vouchers: sql`
