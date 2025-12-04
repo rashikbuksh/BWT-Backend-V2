@@ -8,12 +8,19 @@ const tags = ['others'];
 export const valueLabel = createRoute({
   path: '/other/acc/cost-center/value/label',
   method: 'get',
+  request: {
+    query: z.object({
+      ledger_uuid: z.string(),
+    }),
+  },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.object({
         value: z.string(),
         label: z.string(),
+        invoice_no: z.string(),
+        identifier: z.string(),
       }),
       'The valueLabel of cost-center',
     ),

@@ -14,6 +14,9 @@ export const valueLabel = createRoute({
       z.object({
         value: z.string(),
         label: z.string(),
+        conversion_rate: z.number(),
+        default: z.boolean(),
+        symbol: z.string(),
       }),
       'The valueLabel of currency',
     ),

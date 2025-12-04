@@ -8,6 +8,11 @@ const tags = ['others'];
 export const valueLabel = createRoute({
   path: '/other/acc/table-data/value/label',
   method: 'get',
+  request: {
+    query: z.object({
+      table_name: z.string(),
+    }),
+  },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(

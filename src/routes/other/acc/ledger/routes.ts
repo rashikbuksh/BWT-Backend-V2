@@ -14,6 +14,9 @@ export const valueLabel = createRoute({
       z.object({
         value: z.string(),
         label: z.string(),
+        cost_center_count: z.number(),
+        is_cash_ledger: z.boolean(),
+        identifier: z.string(),
       }),
       'The valueLabel of ledger',
     ),
