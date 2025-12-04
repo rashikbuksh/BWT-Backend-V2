@@ -162,18 +162,71 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           WHERE ve.ledger_uuid = ${ledger.uuid}
       )
       `.as('vouchers'),
-      table_data: sql`
-        SELECT row_to_json(t) as data
+      associated_ledgers: sql`
+      (
+        SELECT COALESCE(
+            JSONB_AGG(
+              JSONB_BUILD_OBJECT(
+                'id', id,
+                'voucher_uuid', voucher_uuid, 
+                'voucher_id', voucher_id, 
+                'ledger_details', ledger_details, 
+                'category', category, 
+                'date', date,
+                'amount', total_amount,
+                'type', type,
+                'currency_uuid', currency_uuid,
+                'currency_symbol', currency_symbol
+              ) ORDER BY id DESC, date DESC
+            ), '[]'::jsonb
+          )
         FROM (
-          SELECT * FROM ${sql.raw(ledger.table_name.name)} 
-          WHERE uuid = ${ledger.table_uuid}
-        ) AS t
-      `.as('table_data'),
+          SELECT 
+            ve_other.voucher_uuid,
+            CONCAT('VO', TO_CHAR(v.created_at::timestamp, 'YY'), '-', v.id) as voucher_id,
+                        JSONB_AGG( JSONB_BUILD_OBJECT(
+                            'ledger_uuid', ve_other.ledger_uuid,
+                            'ledger_name', l_other.name
+                        )) as ledger_details,
+                        ve_main.type,
+            ve_main.amount as total_amount,
+            v.category,
+            v.date,
+            v.currency_uuid,
+            currency.currency || ' (' || currency.symbol || ')' as currency_symbol,
+            v.id
+          FROM acc.voucher_entry ve_main
+          LEFT JOIN acc.voucher v ON ve_main.voucher_uuid = v.uuid
+          LEFT JOIN acc.voucher_entry ve_other ON v.uuid = ve_other.voucher_uuid AND ve_other.ledger_uuid != ve_main.ledger_uuid AND ve_main.type != ve_other.type
+          LEFT JOIN acc.ledger l_other ON ve_other.ledger_uuid = l_other.uuid
+          LEFT JOIN acc.currency ON v.currency_uuid = currency.uuid
+          WHERE ve_main.ledger_uuid = ledger.uuid
+          GROUP BY ve_other.voucher_uuid, v.created_at, v.id, v.category, v.date, ve_main.type, currency.currency, currency.symbol, v.currency_uuid, ve_main.amount
+        ) subquery
+      )`,
+      total_amount: sql`${ledger.initial_amount}::float8 + (COALESCE(voucher_total.total_debit_amount, 0) - COALESCE(voucher_total.total_credit_amount, 0))::float8`,
     })
     .from(ledger)
     .leftJoin(group, eq(group.uuid, ledger.group_uuid))
     .leftJoin(createdByUser, eq(createdByUser.uuid, ledger.created_by))
     .leftJoin(updatedByUser, eq(updatedByUser.uuid, ledger.updated_by))
+    .leftJoin(
+      sql`
+        (
+        SELECT 
+          SUM(
+            CASE WHEN voucher_entry.type = 'dr' THEN voucher_entry.amount ELSE 0 END
+          ) as total_debit_amount,
+          SUM(
+            CASE WHEN voucher_entry.type = 'cr' THEN voucher_entry.amount ELSE 0 END
+          ) as total_credit_amount,
+          voucher_entry.ledger_uuid
+        FROM acc.voucher_entry
+        GROUP BY voucher_entry.ledger_uuid
+        ) as voucher_total
+      `,
+      eq(ledger.uuid, sql`voucher_total.ledger_uuid`),
+    )
     .where(eq(ledger.uuid, uuid));
 
   const [data] = await ledgerPromise;

@@ -11,7 +11,7 @@ import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
 
-import { currency, voucher } from '../schema';
+import { currency, voucher, voucher_entry, voucher_entry_cost_center, voucher_entry_payment } from '../schema';
 
 const createdByUser = alias(users, 'createdByUser');
 const updatedByUser = alias(users, 'updatedByUser');
@@ -49,6 +49,34 @@ export const patch: AppRouteHandler<PatchRoute> = async (c: any) => {
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c: any) => {
   const { uuid } = c.req.valid('param');
+
+  const getVoucherEntriesPromise = db
+    .select()
+    .from(voucher_entry)
+    .where(eq(voucher_entry.voucher_uuid, uuid));
+
+  // First, delete related voucher entries like voucher payments and voucher cost centers
+  await getVoucherEntriesPromise.then(async (voucherEntries) => {
+    for (const entry of voucherEntries) {
+      // Delete voucher payments related to this voucher entry
+      await db
+        .delete(voucher_entry_payment)
+        .where(
+          eq(voucher_entry_payment.voucher_entry_uuid, entry.uuid),
+        );
+      // Delete voucher cost centers related to this voucher entry
+      await db
+        .delete(voucher_entry_cost_center)
+        .where(
+          eq(voucher_entry_cost_center.voucher_entry_uuid, entry.uuid),
+        );
+    }
+  });
+
+  // Then, delete the voucher entries themselves
+  await db
+    .delete(voucher_entry)
+    .where(eq(voucher_entry.voucher_uuid, uuid));
 
   const [data] = await db.delete(voucher)
     .where(eq(voucher.uuid, uuid))
