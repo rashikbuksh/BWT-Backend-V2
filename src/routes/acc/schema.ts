@@ -29,7 +29,7 @@ export const currency = acc.table('currency', {
 
 export const fiscal_year = acc.table('fiscal_year', {
   uuid: uuid_primary,
-  year_no: integer('year_no').unique(),
+  year_no: text('year_no').unique(),
   start_date: DateTime('start_date'),
   end_date: DateTime('end_date'),
   active: boolean('active').default(true),
