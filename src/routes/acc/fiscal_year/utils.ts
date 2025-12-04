@@ -12,6 +12,7 @@ export const insertSchema = createInsertSchema(
   fiscal_year,
   {
     uuid: schema => schema.uuid.length(15),
+    year_no: schema => schema.year_no.min(1),
     jan_budget: z.number().default(0),
     feb_budget: z.number().default(0),
     mar_budget: z.number().default(0),
