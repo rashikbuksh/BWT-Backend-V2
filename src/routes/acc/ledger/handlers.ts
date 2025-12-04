@@ -159,9 +159,16 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           FROM acc.voucher_entry ve
           LEFT JOIN acc.voucher v ON ve.voucher_uuid = v.uuid
           LEFT JOIN acc.ledger l ON ve.ledger_uuid = l.uuid
-          WHERE ve.ledger_uuid = ledger.uuid
+          WHERE ve.ledger_uuid = ${ledger.uuid}
       )
       `.as('vouchers'),
+      table_data: sql`
+        SELECT row_to_json(t) as data
+        FROM (
+          SELECT * FROM ${sql.raw(ledger.table_name.name)} 
+          WHERE uuid = ${ledger.table_uuid}
+        ) AS t
+      `.as('table_data'),
     })
     .from(ledger)
     .leftJoin(group, eq(group.uuid, ledger.group_uuid))
@@ -174,5 +181,5 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
   if (!data)
     return DataNotFound(c);
 
-  return c.json(data || {}, HSCode.OK);
+  return c.json(data, HSCode.OK);
 };

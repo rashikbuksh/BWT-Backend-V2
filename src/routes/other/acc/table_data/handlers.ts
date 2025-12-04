@@ -1,7 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
 import { sql } from 'drizzle-orm';
-import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
 
@@ -9,8 +8,6 @@ import type { ValueLabelRoute } from './routes';
 
 export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
   const { table_name } = c.req.query();
-
-  console.log('table_name', table_name);
 
   const option = [
     { value: 'inventory.purchase', label: 'IP' },
