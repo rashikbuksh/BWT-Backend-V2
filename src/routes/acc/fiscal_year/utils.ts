@@ -24,6 +24,7 @@ export const insertSchema = createInsertSchema(
     oct_budget: z.number().default(0),
     nov_budget: z.number().default(0),
     dec_budget: z.number().default(0),
+    rate: z.number().default(0),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
