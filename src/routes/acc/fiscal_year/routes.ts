@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/fiscal-year/{uuid}',
+  path: '/acc/fiscal-year/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,

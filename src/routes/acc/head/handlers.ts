@@ -65,7 +65,6 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
     .select({
       uuid: head.uuid,
       name: head.name,
-      title: head.title,
       bs: head.bs,
       is_fixed: head.is_fixed,
       type: head.type,
@@ -96,7 +95,6 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     .select({
       uuid: head.uuid,
       name: head.name,
-      title: head.title,
       bs: head.bs,
       is_fixed: head.is_fixed,
       type: head.type,

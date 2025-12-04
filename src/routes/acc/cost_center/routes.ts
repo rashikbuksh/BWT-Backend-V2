@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/cost-center/{uuid}',
+  path: '/acc/cost-center/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,

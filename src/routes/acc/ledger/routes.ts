@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/ledger/{uuid}',
+  path: '/acc/ledger/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,

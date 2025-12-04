@@ -67,7 +67,6 @@ export const headTypeEnum = acc.enum('headTypeEnum', [
 export const head = acc.table('head', {
   uuid: uuid_primary,
   name: text('name').notNull().unique(),
-  title: text('title').notNull(),
   bs: boolean('bs').default(true),
   is_fixed: boolean('is_fixed').default(true),
   created_by: defaultUUID('created_by').references(() => hrSchema.users.uuid),

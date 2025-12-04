@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/hr/group/{uuid}',
+  path: '/acc/group/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
