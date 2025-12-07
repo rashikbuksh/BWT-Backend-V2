@@ -180,8 +180,8 @@ export const voucherDetails: AppRouteHandler<VoucherDetailsRoute> = async (c: an
   ]);
 
   const response = {
-    ...voucher?.data?.data,
-    voucher_entry: voucher_entry?.data?.data || [],
+    ...voucher,
+    voucher_entry: voucher_entry || [],
   };
 
   return c.json(response || [], HSCode.OK);
