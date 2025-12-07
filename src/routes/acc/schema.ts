@@ -78,7 +78,7 @@ export const head = acc.table('head', {
   remarks: text('remarks').default(sql`null`),
   type: headTypeEnum('type').default('assets'),
   group_number: text('group_number').default(sql`null`),
-  index: integer('index').default(0).unique(),
+  index: integer('index').default(0),
 });
 
 export const group = acc.table('group', {
@@ -97,7 +97,7 @@ export const group = acc.table('group', {
   updated_at: DateTime('updated_at').default(sql`null`),
   remarks: text('remarks').default(sql`null`),
   group_number: text('group_number').default(sql`null`),
-  index: integer('index').default(0).unique(),
+  index: integer('index').default(0),
 });
 
 export const restrictions_enum = acc.enum('restrictions_enum', [
@@ -146,7 +146,7 @@ export const ledger = acc.table('ledger', {
   identifier: identifierEnum('identifier').default('none'),
   initial_amount: PG_DECIMAL('initial_amount').default(sql`0`),
   group_number: text('group_number').default(sql`null`),
-  index: integer('index').default(0).unique(),
+  index: integer('index').default(0),
 });
 
 export const cost_center = acc.table('cost_center', {

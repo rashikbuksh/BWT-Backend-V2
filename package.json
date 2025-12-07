@@ -15,6 +15,7 @@
     "build": "bun x esbuild src/index.ts --bundle --platform=node --tsconfig=tsconfig.json --outfile=dist/src/index.js",
     "db-generate": "bun x drizzle-kit generate",
     "db-migrate": "bun x drizzle-kit migrate",
+    "db-gen-mig": "bun x drizzle-kit generate && bun x drizzle-kit migrate",
     "db-drop": "bun x drizzle-kit drop",
     "db-introspect": "bun x drizzle-kit introspect",
     "db-push": "bun x drizzle-kit push",
