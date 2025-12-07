@@ -7,9 +7,10 @@ import * as HSCode from 'stoker/http-status-codes';
 import db from '@/db';
 import { PG_DECIMAL_TO_FLOAT } from '@/lib/variables';
 import { users } from '@/routes/hr/schema';
+import createApi from '@/utils/api';
 import { createToast, DataNotFound, ObjectNotFound } from '@/utils/return';
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from './routes';
+import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute, VoucherDetailsRoute } from './routes';
 
 import { currency, voucher, voucher_entry, voucher_entry_cost_center, voucher_entry_payment } from '../schema';
 
@@ -162,4 +163,26 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
     return DataNotFound(c);
 
   return c.json(data || {}, HSCode.OK);
+};
+
+export const voucherDetails: AppRouteHandler<VoucherDetailsRoute> = async (c: any) => {
+  const { uuid } = c.req.valid('param');
+
+  const api = createApi(c);
+  // Fetch voucher details
+
+  const fetchData = async (endpoint: string) =>
+    await api.get(`/acc/${endpoint}/${uuid}`);
+
+  const [voucher, voucher_entry] = await Promise.all([
+    fetchData('voucher'),
+    fetchData('voucher-entry/by'),
+  ]);
+
+  const response = {
+    ...voucher?.data?.data,
+    voucher_entry: voucher_entry?.data?.data || [],
+  };
+
+  return c.json(response || [], HSCode.OK);
 };

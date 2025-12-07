@@ -117,8 +117,32 @@ export const remove = createRoute({
   },
 });
 
+export const voucherDetails = createRoute({
+  path: '/acc/voucher-details/{uuid}',
+  method: 'get',
+  request: {
+    params: param.uuid,
+  },
+  tags,
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.any(),
+      'The requested voucher details',
+    ),
+    [HSCode.NOT_FOUND]: jsonContent(
+      notFoundSchema,
+      'voucher not found',
+    ),
+    [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(param.uuid),
+      'Invalid id error',
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type VoucherDetailsRoute = typeof voucherDetails;
