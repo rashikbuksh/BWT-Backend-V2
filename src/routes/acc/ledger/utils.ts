@@ -11,6 +11,7 @@ export const selectSchema = createSelectSchema(ledger);
 export const insertSchema = createInsertSchema(
   ledger,
   {
+    id: schema => schema.id,
     uuid: schema => schema.uuid.length(15),
     name: schema => schema.name.min(1),
     group_uuid: schema => schema.group_uuid.length(15),
@@ -37,17 +38,12 @@ export const insertSchema = createInsertSchema(
   created_by: true,
   created_at: true,
 }).partial({
-  initial_amount: true,
-  vat_deduction: true,
-  tax_deduction: true,
-  account_no: true,
   table_name: true,
   table_uuid: true,
+  account_no: true,
   group_number: true,
   updated_by: true,
   updated_at: true,
-  remarks: true,
-  index: true,
 }).omit({
   id: true,
 });

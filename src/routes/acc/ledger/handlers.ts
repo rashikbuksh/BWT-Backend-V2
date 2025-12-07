@@ -19,7 +19,9 @@ const updatedByUser = alias(users, 'updatedByUser');
 export const create: AppRouteHandler<CreateRoute> = async (c: any) => {
   const value = c.req.valid('json');
 
-  const [data] = await db.insert(ledger).values(value).returning({
+  const { updated_by, updated_at, id, ...createValue } = value;
+
+  const [data] = await db.insert(ledger).values(createValue).returning({
     name: ledger.name,
   });
 
