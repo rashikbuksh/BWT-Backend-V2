@@ -21,12 +21,14 @@ export const insertSchema = createInsertSchema(
     tax_deduction: z.coerce.number().default(0),
     account_no: schema => schema.account_no.optional(),
     group_number: schema => schema.group_number.optional(),
+    created_by: schema => schema.created_by.length(15),
+    updated_by: schema => schema.updated_by.length(15).optional(),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
     updated_at: schema => schema.updated_at.regex(dateTimePattern, {
       message: 'updated_at must be in the format "YYYY-MM-DD HH:MM:SS"',
-    }),
+    }).optional(),
   },
 ).required({
   uuid: true,
@@ -46,6 +48,8 @@ export const insertSchema = createInsertSchema(
   updated_at: true,
   remarks: true,
   index: true,
+}).omit({
+  id: true,
 });
 
 export const patchSchema = insertSchema.partial();
