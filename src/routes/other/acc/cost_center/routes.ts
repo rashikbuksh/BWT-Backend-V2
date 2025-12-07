@@ -16,12 +16,12 @@ export const valueLabel = createRoute({
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
-      z.object({
+      z.array(z.object({
         value: z.string(),
         label: z.string(),
         invoice_no: z.string(),
         identifier: z.string(),
-      }),
+      })),
       'The valueLabel of cost-center',
     ),
   },
