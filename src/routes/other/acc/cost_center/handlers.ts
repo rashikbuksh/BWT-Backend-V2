@@ -1,6 +1,6 @@
 import type { AppRouteHandler } from '@/lib/types';
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as HSCode from 'stoker/http-status-codes';
 
 import db from '@/db';
@@ -15,7 +15,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
     value: cost_center.uuid,
     label: sql`CASE
           WHEN ${ledger.identifier} IS NOT NULL AND ${ledger.identifier} != 'none'
-            THEN CONCAT(${cost_center.name}, ' - ', (SELECT pd.lc_number FROM purchase.description pd WHERE pd.uuid = ${cost_center.table_uuid}))
+            THEN CONCAT(${cost_center.name}, ' - ', COALESCE((SELECT CONCAT('SP',TO_CHAR(ip.created_at, 'YY'),' - ',ip.id) FROM inventory.purchase ip WHERE ip.uuid = ${cost_center.table_uuid}), ''))
           ELSE ${cost_center.name}
         END`,
     invoice_no: cost_center.invoice_no,
@@ -27,10 +27,16 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
       eq(cost_center.ledger_uuid, ledger.uuid),
     );
 
+  const filters = [];
+
   if (ledger_uuid) {
-    cost_centerPromise.where(
+    filters.push(
       eq(cost_center.ledger_uuid, ledger_uuid),
     );
+  }
+
+  if (filters.length > 0) {
+    cost_centerPromise.where(and(...filters));
   }
 
   const data = await cost_centerPromise;
