@@ -14,6 +14,7 @@ export const insertSchema = createInsertSchema(
     uuid: schema => schema.uuid.length(15),
     vat_deduction: z.coerce.number().default(0),
     tax_deduction: z.coerce.number().default(0),
+    conversion_rate: z.coerce.number().default(1),
     created_at: schema => schema.created_at.regex(dateTimePattern, {
       message: 'created_at must be in the format "YYYY-MM-DD HH:MM:SS"',
     }),
@@ -30,8 +31,8 @@ export const insertSchema = createInsertSchema(
   currency_uuid: true,
   created_by: true,
   created_at: true,
-}).partial({
   conversion_rate: true,
+}).partial({
   updated_by: true,
   updated_at: true,
   remarks: true,
