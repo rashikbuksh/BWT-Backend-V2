@@ -172,16 +172,25 @@ export const voucherDetails: AppRouteHandler<VoucherDetailsRoute> = async (c: an
   // Fetch voucher details
 
   const fetchData = async (endpoint: string) =>
-    await api.get(`/v1/acc/${endpoint}/${uuid}`);
+    await api
+      .get(`${endpoint}`)
+      .then(response => response.data)
+      .catch((error) => {
+        console.error(
+          `Error fetching data from ${endpoint}:`,
+          error.message,
+        );
+        throw error;
+      });
 
   const [voucher, voucher_entry] = await Promise.all([
-    fetchData('voucher'),
-    fetchData('voucher-entry/by'),
+    fetchData(`/v1/acc/voucher/${uuid}`),
+    fetchData(`/v1/acc/voucher-entry/by/${uuid}`),
   ]);
 
   const response = {
-    ...voucher,
-    voucher_entry: voucher_entry || [],
+    ...(voucher?.data || voucher || {}),
+    voucher_entry: voucher_entry?.data || voucher_entry || [],
   };
 
   return c.json(response || [], HSCode.OK);
