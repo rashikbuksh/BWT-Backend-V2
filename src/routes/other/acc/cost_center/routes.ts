@@ -10,7 +10,7 @@ export const valueLabel = createRoute({
   method: 'get',
   request: {
     query: z.object({
-      ledger_uuid: z.string(),
+      ledger_uuid: z.string().optional(),
     }),
   },
   tags,

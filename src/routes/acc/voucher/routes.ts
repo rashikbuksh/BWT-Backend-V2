@@ -8,34 +8,34 @@ import { createRoute, z } from '@hono/zod-openapi';
 
 import { insertSchema, patchSchema, selectSchema } from './utils';
 
-const tags = ['acc.currency'];
+const tags = ['acc.voucher'];
 
 export const list = createRoute({
-  path: '/acc/currency',
+  path: '/acc/voucher',
   method: 'get',
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       z.array(selectSchema),
-      'The list of currency',
+      'The list of voucher',
     ),
   },
 });
 
 export const create = createRoute({
-  path: '/acc/currency',
+  path: '/acc/voucher',
   method: 'post',
   request: {
     body: jsonContentRequired(
       insertSchema,
-      'The currency to create',
+      'The voucher to create',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The created currency',
+      'The created voucher',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertSchema),
@@ -45,7 +45,7 @@ export const create = createRoute({
 });
 
 export const getOne = createRoute({
-  path: '/acc/currency/{uuid}',
+  path: '/acc/voucher/{uuid}',
   method: 'get',
   request: {
     params: param.uuid,
@@ -54,11 +54,11 @@ export const getOne = createRoute({
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The requested currency',
+      'The requested voucher',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'currency not found',
+      'voucher not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
@@ -68,24 +68,24 @@ export const getOne = createRoute({
 });
 
 export const patch = createRoute({
-  path: '/acc/currency/{uuid}',
+  path: '/acc/voucher/{uuid}',
   method: 'patch',
   request: {
     params: param.uuid,
     body: jsonContentRequired(
       patchSchema,
-      'The currency updates',
+      'The voucher updates',
     ),
   },
   tags,
   responses: {
     [HSCode.OK]: jsonContent(
       selectSchema,
-      'The updated currency',
+      'The updated voucher',
     ),
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'currency not found',
+      'voucher not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(patchSchema)
@@ -96,7 +96,7 @@ export const patch = createRoute({
 });
 
 export const remove = createRoute({
-  path: '/acc/currency/{uuid}',
+  path: '/acc/voucher/{uuid}',
   method: 'delete',
   request: {
     params: param.uuid,
@@ -104,11 +104,11 @@ export const remove = createRoute({
   tags,
   responses: {
     [HSCode.NO_CONTENT]: {
-      description: 'currency deleted',
+      description: 'voucher deleted',
     },
     [HSCode.NOT_FOUND]: jsonContent(
       notFoundSchema,
-      'currency not found',
+      'voucher not found',
     ),
     [HSCode.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(param.uuid),
