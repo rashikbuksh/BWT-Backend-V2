@@ -173,11 +173,11 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
             'remarks', vecc.remarks
           )
         ), '[]'::JSON)
-        FROM voucher_entry_cost_center AS vecc
-        LEFT JOIN cost_center AS cc ON cc.uuid = vecc.cost_center_uuid
-        LEFT JOIN users AS cbu ON cbu.uuid = vecc.created_by
-        LEFT JOIN users AS ubu ON ubu.uuid = vecc.updated_by
-        WHERE vecc.voucher_entry_uuid = voucher_entry.uuid
+        FROM acc.voucher_entry_cost_center AS vecc
+        LEFT JOIN acc.cost_center AS cc ON cc.uuid = vecc.cost_center_uuid
+        LEFT JOIN hr.users AS cbu ON cbu.uuid = vecc.created_by
+        LEFT JOIN hr.users AS ubu ON ubu.uuid = vecc.updated_by
+        WHERE vecc.voucher_entry_uuid = ${voucher_entry.uuid}
       )`,
       voucher_entry_payment: sql`(
         SELECT COALESCE(JSON_AGG(
@@ -196,10 +196,10 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
             'remarks', vep.remarks
           )
         ), '[]'::JSON)
-        FROM voucher_entry_payment AS vep
-        LEFT JOIN users AS cbu ON cbu.uuid = vep.created_by
-        LEFT JOIN users AS ubu ON ubu.uuid = vep.updated_by
-        WHERE vep.voucher_entry_uuid = voucher_entry.uuid
+        FROM acc.voucher_entry_payment AS vep
+        LEFT JOIN hr.users AS cbu ON cbu.uuid = vep.created_by
+        LEFT JOIN hr.users AS ubu ON ubu.uuid = vep.updated_by
+        WHERE vep.voucher_entry_uuid = ${voucher_entry.uuid}
       )`,
     })
     .from(voucher_entry)
@@ -209,10 +209,7 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
     .leftJoin(updatedByUser, eq(updatedByUser.uuid, voucher_entry.updated_by))
     .where(eq(voucher_entry.voucher_uuid, voucher_uuid));
 
-  const [data] = await voucher_entryPromise;
-
-  if (!data)
-    return DataNotFound(c);
+  const data = await voucher_entryPromise;
 
   return c.json(data || [], HSCode.OK);
 };
