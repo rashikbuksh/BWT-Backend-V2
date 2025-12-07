@@ -122,7 +122,7 @@ export const getByVoucherUuid = createRoute({
   method: 'get',
   request: {
     params: z.object({
-      voucher_uuid: param.uuid,
+      voucher_uuid: z.string(),
     }),
   },
   tags,
