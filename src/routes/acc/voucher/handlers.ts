@@ -172,7 +172,7 @@ export const voucherDetails: AppRouteHandler<VoucherDetailsRoute> = async (c: an
   // Fetch voucher details
 
   const fetchData = async (endpoint: string) =>
-    await api.get(`/acc/${endpoint}/${uuid}`);
+    await api.get(`/v1/acc/${endpoint}/${uuid}`);
 
   const [voucher, voucher_entry] = await Promise.all([
     fetchData('voucher'),
