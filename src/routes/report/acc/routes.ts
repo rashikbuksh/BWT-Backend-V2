@@ -50,5 +50,28 @@ export const chartOfAccountsReport = createRoute({
   tags,
 });
 
+export const chartOfAccountsReportTableView = createRoute({
+  path: '/report/acc/chart-of-accounts-report-table-view',
+  method: 'get',
+  summary: 'Chart of Accounts Report Table View',
+  description: 'Get the chart of accounts report in table view',
+  responses: {
+    [HSCode.OK]: jsonContent(
+      z.array(
+        z.object({
+          account_name: z.string(),
+          account_code: z.string(),
+          parent_account: z.string().nullable(),
+          account_type: z.string(),
+          balance: z.number(),
+        }),
+      ),
+      'The chart of accounts report in table view',
+    ),
+  },
+  tags,
+});
+
 export type BalanceReportRoute = typeof balanceReport;
 export type ChartOfAccountsReportRoute = typeof chartOfAccountsReport;
+export type ChartOfAccountsReportTableViewRoute = typeof chartOfAccountsReportTableView;

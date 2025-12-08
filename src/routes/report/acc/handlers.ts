@@ -6,7 +6,7 @@ import * as HSCode from 'stoker/http-status-codes';
 import db from '@/db';
 import { head } from '@/routes/acc/schema';
 
-import type { BalanceReportRoute, ChartOfAccountsReportRoute } from './routes';
+import type { BalanceReportRoute, ChartOfAccountsReportRoute, ChartOfAccountsReportTableViewRoute } from './routes';
 
 export const balanceReport: AppRouteHandler<BalanceReportRoute> = async (c: any) => {
   const { from, to, type } = c.req.valid('query');
@@ -206,7 +206,29 @@ export const chartOfAccountsReport: AppRouteHandler<ChartOfAccountsReportRoute> 
       sql`${head.type} IN ('assets', 'liability', 'income', 'expense')`,
     )
     .groupBy(head.type);
+
   const data = await db.execute(headPromise);
 
-  return c.json(data, HSCode.OK);
+  return c.json(data.rows, HSCode.OK);
+};
+
+export const chartOfAccountsReportTableView: AppRouteHandler<ChartOfAccountsReportTableViewRoute> = async (c: any) => {
+  const query = sql`
+        SELECT
+            l.uuid as ledger_uuid,
+            COALESCE(l.group_number::text, '') || ' ' || l.name AS ledger_name,
+            g.uuid as group_uuid,
+            COALESCE(g.group_number::text, '') || ' ' || g.name AS group_name,
+            h.uuid as head_uuid,
+            COALESCE(h.group_number::text, '') || ' ' || h.name AS head_name,
+            h.type
+        FROM acc.ledger l
+        LEFT JOIN acc.group g ON l.group_uuid = g.uuid
+        LEFT JOIN acc.head h ON g.head_uuid = h.uuid
+        ORDER BY h.type, h.group_number, g.group_number, l.group_number;
+    `;
+
+  const data = await db.execute(query);
+
+  return c.json(data.rows, HSCode.OK);
 };
