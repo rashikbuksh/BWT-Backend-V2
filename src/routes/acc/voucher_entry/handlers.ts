@@ -164,6 +164,7 @@ export const getByVoucherUuid: AppRouteHandler<GetByVoucherUuidRoute> = async (c
             'cost_center_uuid', vecc.cost_center_uuid,
             'cost_center_name', cc.name,
             'amount', vecc.amount::float8,
+            'invoice_no', cc.invoice_no,
             'created_by', vecc.created_by,
             'created_by_name', cbu.name,
             'created_at', vecc.created_at,
