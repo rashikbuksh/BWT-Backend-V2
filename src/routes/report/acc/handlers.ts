@@ -157,7 +157,7 @@ export const chartOfAccountsReport: AppRouteHandler<ChartOfAccountsReportRoute> 
     .select({
       name: head.type,
       children: sql`(
-            SELECT COALESCE(json_agg(head_obj), '[]'::json)
+            SELECT COALESCE(json_agg(head_obj), '[]'::json) as children
             FROM (
                 SELECT
                     json_build_object(
