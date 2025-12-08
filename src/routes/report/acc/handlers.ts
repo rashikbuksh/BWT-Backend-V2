@@ -207,9 +207,9 @@ export const chartOfAccountsReport: AppRouteHandler<ChartOfAccountsReportRoute> 
     )
     .groupBy(head.type);
 
-  const data = await db.execute(headPromise);
+  const data = await headPromise;
 
-  return c.json(data.rows, HSCode.OK);
+  return c.json(data, HSCode.OK);
 };
 
 export const chartOfAccountsReportTableView: AppRouteHandler<ChartOfAccountsReportTableViewRoute> = async (c: any) => {
