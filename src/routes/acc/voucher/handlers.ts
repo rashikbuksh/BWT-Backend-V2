@@ -116,7 +116,7 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       remarks: voucher.remarks,
       dr_ledgers: sql`COALESCE(voucher_agg.dr_ledgers, ARRAY[]::text[])`,
       cr_ledgers: sql`COALESCE(voucher_agg.cr_ledgers, ARRAY[]::text[])`,
-      amount: sql`COALESCE(voucher_agg.amount, 0)`,
+      amount: sql`COALESCE(voucher_agg.amount, 0)::float8`,
     })
     .from(voucher)
     .leftJoin(currency, eq(currency.uuid, voucher.currency_uuid))
