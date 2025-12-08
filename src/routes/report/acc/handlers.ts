@@ -119,7 +119,7 @@ export const balanceReport: AppRouteHandler<BalanceReportRoute> = async (c: any)
                         WHERE g_chk.head_uuid = h.uuid
                       )
                 ) hl
-            )`,
+            )`.as('head_list'),
     })
     .from(head); // Filter by relevant types;
 
