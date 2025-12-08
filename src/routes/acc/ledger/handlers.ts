@@ -178,7 +178,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
                 'amount', total_amount,
                 'type', type,
                 'currency_uuid', currency_uuid,
-                'currency_symbol', currency_symbol
+                'currency_symbol', currency_symbol,
+                'conversion_rate', conversion_rate
               ) ORDER BY id DESC, date DESC
             ), '[]'::jsonb
           )
@@ -196,6 +197,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
             v.date,
             v.currency_uuid,
             currency.currency || ' (' || currency.symbol || ')' as currency_symbol,
+            currency.conversion_rate,
             v.id
           FROM acc.voucher_entry ve_main
           LEFT JOIN acc.voucher v ON ve_main.voucher_uuid = v.uuid
@@ -203,7 +205,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
           LEFT JOIN acc.ledger l_other ON ve_other.ledger_uuid = l_other.uuid
           LEFT JOIN acc.currency ON v.currency_uuid = currency.uuid
           WHERE ve_main.ledger_uuid = ledger.uuid
-          GROUP BY ve_other.voucher_uuid, v.created_at, v.id, v.category, v.date, ve_main.type, currency.currency, currency.symbol, v.currency_uuid, ve_main.amount
+          GROUP BY ve_other.voucher_uuid, v.created_at, v.id, v.category, v.date, ve_main.type, currency.currency, currency.symbol, v.currency_uuid, ve_main.amount, currency.conversion_rate
         ) subquery
       )`,
       total_amount: sql`${ledger.initial_amount}::float8 + (COALESCE(voucher_total.total_debit_amount, 0) - COALESCE(voucher_total.total_credit_amount, 0))::float8`,
@@ -217,13 +219,15 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c: any) => {
         (
         SELECT 
           SUM(
-            CASE WHEN voucher_entry.type = 'dr' THEN voucher_entry.amount ELSE 0 END
+            CASE WHEN voucher_entry.type = 'dr' THEN voucher_entry.amount * currency.conversion_rate ELSE 0 END
           ) as total_debit_amount,
           SUM(
-            CASE WHEN voucher_entry.type = 'cr' THEN voucher_entry.amount ELSE 0 END
+            CASE WHEN voucher_entry.type = 'cr' THEN voucher_entry.amount * currency.conversion_rate ELSE 0 END
           ) as total_credit_amount,
           voucher_entry.ledger_uuid
         FROM acc.voucher_entry
+        LEFT JOIN acc.voucher ON voucher_entry.voucher_uuid = voucher.uuid
+        LEFT JOIN acc.currency ON voucher.currency_uuid = currency.uuid
         GROUP BY voucher_entry.ledger_uuid
         ) as voucher_total
       `,
