@@ -114,11 +114,29 @@ export const list: AppRouteHandler<ListRoute> = async (c: any) => {
       updated_by_name: updatedByUser.name,
       updated_at: voucher.updated_at,
       remarks: voucher.remarks,
+      dr_ledgers: sql`COALESCE(voucher_agg.dr_ledgers, ARRAY[]::text[])`,
+      cr_ledgers: sql`COALESCE(voucher_agg.cr_ledgers, ARRAY[]::text[])`,
+      amount: sql`COALESCE(voucher_agg.amount, 0)`,
     })
     .from(voucher)
     .leftJoin(currency, eq(currency.uuid, voucher.currency_uuid))
     .leftJoin(createdByUser, eq(createdByUser.uuid, voucher.created_by))
     .leftJoin(updatedByUser, eq(updatedByUser.uuid, voucher.updated_by))
+    .leftJoin(
+      sql`(
+        SELECT 
+          voucher_entry.voucher_uuid, 
+          array_agg(ledger.name::text) FILTER (WHERE voucher_entry.type = 'dr') as dr_ledgers,
+            array_agg(ledger.name::text) FILTER (WHERE voucher_entry.type = 'cr') as cr_ledgers,
+            SUM(
+            CASE WHEN voucher_entry.type = 'dr' THEN voucher_entry.amount ELSE 0 END
+          ) as amount
+        FROM acc.voucher_entry
+        LEFT JOIN acc.ledger ON voucher_entry.ledger_uuid = ledger.uuid
+        GROUP BY voucher_entry.voucher_uuid
+      ) as voucher_agg`,
+      eq(voucher.uuid, sql`voucher_agg.voucher_uuid`),
+    )
     .orderBy(desc(voucher.created_at));
 
   const data = await voucherPromise;
