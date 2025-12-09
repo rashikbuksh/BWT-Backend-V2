@@ -20,6 +20,7 @@ export const valueLabel: AppRouteHandler<ValueLabelRoute> = async (c: any) => {
         END`,
     invoice_no: cost_center.invoice_no,
     identifier: ledger.identifier,
+    ledger_uuid: cost_center.ledger_uuid,
   })
     .from(cost_center)
     .leftJoin(
